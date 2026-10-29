@@ -7,6 +7,9 @@
  * 在 public/header.php 最前面调用 ecod_go_intercept()，无需配置路由。
  *
  * @package Ecod Theme
+ * @author  Ecod
+ * @copyright Copyright (c) 2026 Ecod (https://ecod.cc)
+ * @license   MIT
  */
 
 if (!defined('__TYPECHO_ROOT_DIR__')) {
@@ -117,17 +120,17 @@ function ecod_go_is_image(string $url): bool
 }
 
 /**
- * 中转跳转地址（跟随站点的 rewrite 形态）
+ * 中转跳转地址
+ *
+ * 用 ?go= 查询串而不是 /go/ 路径：路径形态依赖「未匹配路由走到主题
+ * 的 404 模板 → header.php 里拦截」，部分 Typecho 版本在进主题前就
+ * 输出内置 404，整条链失效；查询串挂在任意正常页面上，必经 header.php。
  */
 function ecod_go_url(string $target): string
 {
     $options = \Widget\Options::alloc();
     $base = rtrim((string) $options->siteUrl, '/');
-    /* 站点链接本身带 index.php（未配 rewrite）时，go 也走 index.php 路径 */
-    if (strpos($base, 'index.php') !== false) {
-        return $base . '/go/' . ecod_go_token($target);
-    }
-    return $base . '/index.php/go/' . ecod_go_token($target);
+    return $base . '/?go=' . ecod_go_token($target);
 }
 
 /**
@@ -152,7 +155,7 @@ function ecod_go_rewrite(string $html): string
                 return $m[0];
             }
 
-            if (ecod_go_is_local($url) || strpos($url, '/go/') !== false) {
+            if (ecod_go_is_local($url) || strpos($url, '/go/') !== false || strpos($url, '?go=') !== false) {
                 return $m[0];
             }
 
@@ -197,8 +200,8 @@ function ecod_go_intercept(): void
 
     $token = '';
 
-    /* /go/<token>（含 /index.php/go/<token>） */
-    if (preg_match('#/go/([A-Za-z0-9_\-]+)/?$#', parse_url($uri, PHP_URL_PATH) ?? '', $m)) {
+    /* /go/<token>（含 /index.php/go/<token>）；token 带 .签名 后缀，须整段捕获 */
+    if (preg_match('#/go/([A-Za-z0-9_\-]+\.[a-f0-9]{10})/?$#', parse_url($uri, PHP_URL_PATH) ?? '', $m)) {
         $token = $m[1];
     }
 

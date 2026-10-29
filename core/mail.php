@@ -8,6 +8,9 @@
  *   3. 默认关闭，后台「评论 → 评论邮件通知」打开后才生效
  *
  * @package Ecod Theme
+ * @author  Ecod
+ * @copyright Copyright (c) 2026 Ecod (https://ecod.cc)
+ * @license   MIT
  */
 
 if (!defined('__TYPECHO_ROOT_DIR__')) {

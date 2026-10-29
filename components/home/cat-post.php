@@ -3,6 +3,9 @@
  * 首页模块 · M8 分类精选（取第一个分类）
  *
  * @package Ecod Theme
+ * @author  Ecod
+ * @copyright Copyright (c) 2026 Ecod (https://ecod.cc)
+ * @license   MIT
  */
 if (!defined('__TYPECHO_ROOT_DIR__')) {
     exit;

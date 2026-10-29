@@ -6,6 +6,9 @@
  * 模式：default | feature | gallery | bare | grid | title | compact | mosaic | item
  *
  * @package Ecod Theme
+ * @author  Ecod
+ * @copyright Copyright (c) 2026 Ecod (https://ecod.cc)
+ * @license   MIT
  */
 
 if (!defined('__TYPECHO_ROOT_DIR__')) {

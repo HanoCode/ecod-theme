@@ -17,6 +17,9 @@
  * 全部在 HTML 层面替换，因此必须避开 <pre> / <code> 里的内容。
  *
  * @package Ecod Theme
+ * @author  Ecod
+ * @copyright Copyright (c) 2026 Ecod (https://ecod.cc)
+ * @license   MIT
  */
 
 if (!defined('__TYPECHO_ROOT_DIR__')) {

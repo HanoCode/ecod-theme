@@ -6,6 +6,9 @@
  * 选项是真实链接（?sort=views），关掉 JS 也能用；JS 只负责展开/收起。
  *
  * @package Ecod Theme
+ * @author  Ecod
+ * @copyright Copyright (c) 2026 Ecod (https://ecod.cc)
+ * @license   MIT
  */
 if (!defined('__TYPECHO_ROOT_DIR__')) {
     exit;
@@ -24,6 +27,13 @@ $ecodSortCur = ecod_sort_current();
     <div class="ecod_sort__pop" id="ecod-sort-pop" role="menu">
         <p class="ecod_sort__head">排序方式</p>
         <?php foreach ($ecodSortOpts as $ecodSortKey => $ecodSortItem): ?>
+            <?php if (!empty($ecodSortItem['soon'])): ?>
+                <span class="ecod_sort__opt is-soon" aria-disabled="true">
+                    <?php echo ecod_icon($ecodSortItem['icon'], 13); ?>
+                    <span><?php echo htmlspecialchars($ecodSortItem['label']); ?></span>
+                    <i class="ecod_sort__soontag">待接入</i>
+                </span>
+            <?php else: ?>
             <a class="ecod_sort__opt<?php echo $ecodSortKey === $ecodSortCur ? ' is-active' : ''; ?>"
                role="menuitemradio"
                aria-checked="<?php echo $ecodSortKey === $ecodSortCur ? 'true' : 'false'; ?>"
@@ -33,6 +43,7 @@ $ecodSortCur = ecod_sort_current();
                 <span><?php echo htmlspecialchars($ecodSortItem['label']); ?></span>
                 <i class="ecod_sort__tick" aria-hidden="true"><?php echo ecod_icon('check', 12); ?></i>
             </a>
+            <?php endif; ?>
         <?php endforeach; ?>
     </div>
 </div>

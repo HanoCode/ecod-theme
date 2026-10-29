@@ -6,6 +6,9 @@
  * 主色与 Favicon 自动带入。浏览器据此提供「添加到主屏幕」。
  *
  * @package Ecod Theme
+ * @author  Ecod
+ * @copyright Copyright (c) 2026 Ecod (https://ecod.cc)
+ * @license   MIT
  */
 
 /* 向上查找 Typecho 根目录（与 api.php 同一套引导） */

@@ -3,6 +3,9 @@
  * 页脚块 · 站点公告（渲染在页头下方，全站顶部横幅）
  *
  * @package Ecod Theme
+ * @author  Ecod
+ * @copyright Copyright (c) 2026 Ecod (https://ecod.cc)
+ * @license   MIT
  */
 if (!defined('__TYPECHO_ROOT_DIR__')) {
     exit;

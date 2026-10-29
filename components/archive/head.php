@@ -9,6 +9,9 @@
  * 开关与形态由主题设置控制：ECatHead / ECatHeadBg / ECatHeadStats / ECatHeadTopics。
  *
  * @package Ecod Theme
+ * @author  Ecod
+ * @copyright Copyright (c) 2026 Ecod (https://ecod.cc)
+ * @license   MIT
  */
 if (!defined('__TYPECHO_ROOT_DIR__')) {
     exit;

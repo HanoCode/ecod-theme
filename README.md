@@ -48,8 +48,9 @@ ecod-theme/
 ├── page-random.php        独立页模板：随机跳转
 ├── friends.php / live.php / video.php / wallpaper.php / census.php / leaving.php
 │                          独立页模板：友链 / 直播 / 视频 / 壁纸 / 统计 / 留言板
-├── api.php                轻量接口：点赞、后台工具
-├── core/
+├── api.php                轻量接口：点赞、登录、支付回调、后台工具
+├── core/                  领域逻辑（按文件单一职责拆分，见各文件头注释）
+│   ├── asset.php          构建产物解析（dist 哈希文件优先，带回退）
 │   ├── config.php         后台设置页
 │   ├── blocks.php         模块注册与渲染
 │   ├── blocks-def.php     37 个模块的定义与参数
@@ -61,10 +62,25 @@ ecod-theme/
 │   ├── snapshot.php       配置快照
 │   └── pages.php          特色页一键创建
 ├── components/            卡片、图标、页面头、各个模块的模板
-├── docs/shortcodes.md     短代码手册（32 个标签 + 表情）
-├── public/                header / footer / aside / include
-└── assets/                css / js / admin
+├── public/                header / footer / aside / include（页面壳）
+├── admin/                 后台编辑器注入（editor.php / js / css）
+├── assets/
+│   ├── css / js           前台源码（构建前的真身）
+│   ├── admin/             后台界面源码
+│   ├── dist/              构建产物（哈希文件名 + manifest.php，见「前端构建」）
+│   ├── vendor/            第三方与自研无依赖库（prism、ecod-qr）
+│   └── avatar/ img/       内置头像池与表情图
+├── build/                 前端构建工程（esbuild，开发期使用）
+├── docs/
+│   ├── shortcodes.md      短代码手册（32 个标签 + 表情）
+│   ├── paywall-design.md  付费体系设计
+│   └── ARCHITECTURE.md    架构说明与演进路线
+└── docs/dev/              设计稿与审计报告（仅开发用，服务器上应屏蔽）
 ```
+
+> 根目录的模板文件名是 Typecho 的硬约定（`index.php` / `post.php` /
+> `page*.php` / 自定义模板按文件名发现），不能挪进子目录；架构上把
+> 逻辑下沉到 `core/`、视图下沉到 `components/`，根目录只留「壳」。
 
 ---
 
@@ -279,10 +295,51 @@ add_header Strict-Transport-Security "max-age=31536000" always;
 location ~* ^/usr/uploads/.+\.php$ { deny all; }
 ```
 
+**静态资源长缓存**（Apache 已由主题 `.htaccess` 内置，nginx 手工加）。
+主题静态文件都是内容寻址的：`assets/dist/*` 文件名带哈希，其余带 `?v=filemtime`，
+内容一变 URL 就变，可以放心发一年期 immutable：
+
+```nginx
+location ~* ^/usr/themes/ecod-theme/.+\.(css|js|png|jpe?g|webp|avif|gif|svg|ico|woff2?)$ {
+    expires 1y;
+    add_header Cache-Control "public, max-age=31536000, immutable";
+}
+
+# 文本压缩（js / css / svg 收益最大；开启 brotli 则优先 brotli）
+gzip on;
+gzip_comp_level 5;
+gzip_types text/css application/javascript application/json image/svg+xml;
+```
+
 主题自身已在 `public/header.php` 输出 `X-Content-Type-Options` / `X-Frame-Options` / `Referrer-Policy` / `Permissions-Policy`；CSP 建议先用 `Content-Security-Policy-Report-Only` 观察、收集到违反报告后再收紧为正式策略。
 
 ---
 
-## 十一、许可
+## 十一、前端构建（可选）
 
-主题代码可自由修改与二次分发，请保留原始署名。
+主题**开箱即用不依赖 Node**：仓库里 `assets/` 下的源码就是运行文件，不构建也完整可用。
+构建是开发期的优化步骤：把 CSS / JS 压缩成带内容哈希的 dist 产物，让浏览器吃一年期强缓存。
+
+```bash
+cd build
+npm install     # 仅装 esbuild 一个依赖
+npm run build   # 产物写进 assets/dist/，manifest 同步更新
+```
+
+工作方式：
+
+1. `build/build.mjs` 逐文件 minify（只压缩、不合并、不转译），产物落 `assets/dist/`，
+   文件名形如 `ecod.a1b2c3d4.min.js`（内容哈希，内容变 → 文件名变）；
+2. 同时生成 `assets/dist/manifest.php`（源路径 → 产物路径）；
+3. PHP 侧 `core/asset.php` 是唯一查询入口：`ecod_asset()`（前台）、
+   `widget.php`、`admin/editor.php` 都先查 manifest，命中发哈希文件，
+   未构建 / manifest 缺失 / 产物被删则自动回退源文件 + `?v=filemtime`；
+4. 产物连同 manifest 一起提交进 git，服务器不需要装任何工具。
+
+改了源码忘了构建也没关系——回退路径永远可用，只是没压缩。dist 里出现孤儿产物会被下次构建自动清掉。
+
+---
+
+## 十二、许可
+
+MIT License，详见根目录 `LICENSE` 文件。可自由使用、修改与二次分发，请保留文件头部的版权与署名（`@author` / `@copyright`）。

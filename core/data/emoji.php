@@ -8,6 +8,9 @@
  * 结构：代码 => [文件名（assets/img/smiley/ 下）, 中文名]
  *
  * @package Ecod Theme
+ * @author  Ecod
+ * @copyright Copyright (c) 2026 Ecod (https://ecod.cc)
+ * @license   MIT
  */
 
 return [

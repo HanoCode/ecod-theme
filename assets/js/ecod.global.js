@@ -3,6 +3,8 @@
  *
  * 模块：主题切换 / 抽屉 / 导航滚动 / 回到顶部 / 阅读进度 / 目录
  *      内容增强 / 点赞收藏 / 轮播 / 无刷新跳转
+ *
+ * Copyright (c) 2026 Ecod · MIT License · https://ecod.cc
  */
 (function () {
     'use strict';
@@ -1610,6 +1612,28 @@
                 var ta = document.getElementById('textarea');
                 if (ta) ta.focus({ preventScroll: true });
             }, 480);
+        });
+    };
+
+    /* ---------- F3 分类工具条：/ 热键聚焦分类内搜索 ---------- */
+    Ecod.initCatTools = function () {
+        var box = document.querySelector('[data-ecod-cattools]');
+        if (!box || box.dataset.catToolsReady === '1') return;
+        box.dataset.catToolsReady = '1';
+        var input = box.querySelector('input[type="search"]');
+        if (!input) return;
+
+        once(document, 'cattools', 'keydown', function (e) {
+            /* / 聚焦：正在输入时（输入框/文本域/可编辑元素）不抢 */
+            var t = e.target;
+            var typing = t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable);
+            if (e.key === '/' && !typing && !e.ctrlKey && !e.metaKey && !e.altKey) {
+                e.preventDefault();
+                input.focus();
+                input.select();
+            } else if (e.key === 'Escape' && document.activeElement === input) {
+                input.blur();
+            }
         });
     };
 
@@ -5585,6 +5609,7 @@
         Ecod.initEmoji();
         Ecod.initTabs();
         Ecod.initCatbar();
+        Ecod.initCatTools();
         Ecod.initSort();
         Ecod.initRank();
         Ecod.initExtras();

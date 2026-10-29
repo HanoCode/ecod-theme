@@ -7,6 +7,9 @@
  *   2. 自动取文章（置顶或最新），没有自定义条目时兜底
  *
  * @package Ecod Theme
+ * @author  Ecod
+ * @copyright Copyright (c) 2026 Ecod (https://ecod.cc)
+ * @license   MIT
  */
 if (!defined('__TYPECHO_ROOT_DIR__')) {
     exit;

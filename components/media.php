@@ -3,6 +3,9 @@
  * 特色页公共组件：媒体提取 / 友链解析 / 页头
  *
  * @package Ecod Theme
+ * @author  Ecod
+ * @copyright Copyright (c) 2026 Ecod (https://ecod.cc)
+ * @license   MIT
  */
 
 if (!defined('__TYPECHO_ROOT_DIR__')) {

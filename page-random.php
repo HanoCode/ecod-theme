@@ -7,6 +7,8 @@
  * @since   2026-10-29
  * @version 2.0.0
  * @link    https://ecod.cc
+ * @copyright Copyright (c) 2026 Ecod (https://ecod.cc)
+ * @license   MIT
  *
  * 在后台「页面 → 新建页面 → 自定义模板」里选择「随机文章」即可，例如建一个
  * 标题为「随便看看」、地址为 random 的页面，访问 /index.php/random.html 就会

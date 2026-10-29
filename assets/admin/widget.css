@@ -11,6 +11,8 @@
  * @since   2026-10-29
  * @version 2.1.0
  * @link    https://ecod.cc
+ * @copyright Copyright (c) 2026 Ecod (https://ecod.cc)
+ * @license   MIT
  */
 
 :root {
@@ -249,10 +251,6 @@ code { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 12px; b
     transition: border-color .14s, box-shadow .14s;
 }
 .wgt-area.is-drop { border-color: var(--c); box-shadow: 0 0 0 3px rgba(79, 110, 242, .14); }
-/* 模块不在区域白名单：红色禁用反馈，松手 toast 提示 */
-.wgt-area.is-nodrop { border-color: #e5484d; box-shadow: 0 0 0 3px rgba(229, 72, 77, .12); cursor: not-allowed; }
-.wgt-area.is-nodrop .wgt-area__hint { border-color: #f3c6c8; background: #fdf3f3; color: #b42318; }
-.wgt-area.is-nodrop .wgt-area__hd { background: #fdf1f1; }
 /* 有表单展开：横跨整行，给 slides / 图片这类宽控件留位置 */
 .wgt-area.is-wide { grid-column: 1 / -1; }
 
@@ -527,9 +525,6 @@ code { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 12px; b
     .wgt-empty, .wgt-field__desc, .wgt-area__hd span, .wgt-item__go, .wgt-libcard__go, .wgt-col__tip, .wgt-used { color: #7f8798; }
     .wgt-area__hint { border-color: #2b303c; color: #7f8798; }
     .wgt-area.is-drop .wgt-area__hint { border-color: #2f6f57; background: #152420; color: #5fd0a4; }
-    .wgt-area.is-nodrop { border-color: #a83236; }
-    .wgt-area.is-nodrop .wgt-area__hint { border-color: #6b3033; background: #2a1b1c; color: #ff9a9e; }
-    .wgt-area.is-nodrop .wgt-area__hd { background: #2a1d1e; }
     .wgt-chip { background: #232734; color: #b7bfd0; }
     .wgt-aside__sel { background: #1b1e26; }
     .wgt-toast { background: #e6e9f0; color: #14161c; }

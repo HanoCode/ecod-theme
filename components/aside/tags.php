@@ -7,6 +7,9 @@
  * 数量直接用 Typecho metas 表现成的 count 列，不做额外统计查询。
  *
  * @package Ecod Theme
+ * @author  Ecod
+ * @copyright Copyright (c) 2026 Ecod (https://ecod.cc)
+ * @license   MIT
  */
 if (!defined('__TYPECHO_ROOT_DIR__')) {
     exit;

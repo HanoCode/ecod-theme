@@ -5,26 +5,30 @@
  * 独立入口（/usr/themes/<主题>/widget.php），仅站长可用。
  * 布局照 WordPress「外观 → 小工具」经典设计：
  *   - 左栏「可用模块」：全部模块可搜索，拖到右栏区域 = 添加实例，
- *     单击卡片展开目标位置列表（只列 areas 白名单允许的位置）
+ *     单击卡片展开目标位置列表（列出全部区域，已满的置灰）
  *   - 右栏「区域盒子」：全部区域按页面类型分组，组内一行多列排布；
  *     区域头即折叠开关（空区域默认收起，手动状态记 localStorage），
  *     折叠区仍可投放、悬停自动展开；实例行点击头部内联展开参数表单
  *     与操作行；有表单展开的区域横跨整行
  *   - 显式保存：改动先暂存（状态点「未保存」+ 按钮点亮），点「保存改动」
- *     或 Ctrl/Cmd+S 一次性按序提交全部脏区域；拒绝投放有红色禁用反馈
+ *     或 Ctrl/Cmd+S 一次性按序提交全部脏区域
+ *   - 自由投放：不做区域白名单拦截，任何模块可放任何区域，放错由用户
+ *     自行调整；唯一拦截是区域已满（20 个）
  *   - 顶部折叠卡：侧栏按页面类型显示（右侧栏 / 左侧栏 / 无侧栏）
  *
  * 为什么不放进主题设置页：主题设置是一张原生表单，改一个参数要整页 POST，
  * 还得防其它分组未保存的内容被一起提交。这里一个动作只写一个区域，
  * 数据落在 options 表 user=0 的独立行 EWidgets（不碰 theme:{slug} 主题配置行）。
  *
- * 设计见 design-proposal.html §31。
+ * 设计见 docs/dev/design-proposal.html §31。
  *
  * @package Ecod Theme
  * @author  Ecod
  * @since   2026-10-29
- * @version 2.3.0
+ * @version 2.3.1
  * @link    https://ecod.cc
+ * @copyright Copyright (c) 2026 Ecod (https://ecod.cc)
+ * @license   MIT
  */
 
 error_reporting(E_ALL & ~E_DEPRECATED & ~E_NOTICE & ~E_WARNING);
@@ -129,6 +133,7 @@ header('X-Robots-Tag: noindex, nofollow');
  * 令牌与输出助手
  * ---------------------------------------------------------------- */
 if (!function_exists('ecod_wgt_token')) {
+    /** 取本页表单令牌（Typecho Security 的防 CSRF token） */
     function ecod_wgt_token(): string
     {
         try {
@@ -140,6 +145,7 @@ if (!function_exists('ecod_wgt_token')) {
 }
 
 if (!function_exists('ecod_wgt_token_ok')) {
+    /** 常量时间比对请求令牌；令牌不可用一律拒绝 */
     function ecod_wgt_token_ok(string $token): bool
     {
         $expect = ecod_wgt_token();
@@ -148,6 +154,7 @@ if (!function_exists('ecod_wgt_token_ok')) {
 }
 
 if (!function_exists('ecod_wgt_json')) {
+    /** 以 JSON 输出并终止；状态码统一走 ecod_wgt_status()（见该函数说明） */
     function ecod_wgt_json(array $data, int $status = 200): void
     {
         /* Typecho 在响应收尾时会重设状态码，统一走 ecod_wgt_status() */
@@ -259,7 +266,7 @@ function ecod_wgt_clean_slides($value): string
 }
 
 /**
- * 一整组实例的清洗：类型必须存在、必须允许放在该区域、uid 唯一
+ * 一整组实例的清洗：类型必须存在、uid 唯一（不校验区域白名单，任何模块可放任何区域）
  *
  * @return array<int,array> 可写入的实例行
  */
@@ -275,9 +282,6 @@ function ecod_wgt_clean_rows(string $area, array $rows): array
         }
         $type = (string) ($row['type'] ?? '');
         if ($type === '' || !isset($defs[$type])) {
-            continue;
-        }
-        if (!in_array($area, ecod_block_allowed_areas($defs[$type]), true)) {
             continue;
         }
 
@@ -393,8 +397,15 @@ foreach ($ecodWgt['defs'] as $ecodDef) {
 $ecodSite = rtrim((string) \Widget\Options::alloc()->siteUrl, '/');
 $ecodBase = $ecodSite . '/usr/themes/' . basename(__DIR__);
 $ecodAdminUrl = rtrim((string) \Widget\Options::alloc()->adminUrl, '/');
-$ecodCss = $ecodBase . '/assets/admin/widget.css?v=' . (is_file(__DIR__ . '/assets/admin/widget.css') ? filemtime(__DIR__ . '/assets/admin/widget.css') : '1');
-$ecodJs = $ecodBase . '/assets/admin/widget.js?v=' . (is_file(__DIR__ . '/assets/admin/widget.js') ? filemtime(__DIR__ . '/assets/admin/widget.js') : '1');
+/* 资源地址：dist 哈希产物优先（文件名即版本，不再拼 ?v=），
+   未构建时回退源文件 + filemtime 版本号（与 ecod_asset 同一解析器） */
+require_once __DIR__ . '/core/asset.php';
+$ecodWgtAsset = static function (string $path) use ($ecodBase): string {
+    $dist = ecod_dist_resolve($path);
+    return $ecodBase . '/' . ($dist ?? $path);
+};
+$ecodCss = $ecodWgtAsset('assets/admin/widget.css');
+$ecodJs = $ecodWgtAsset('assets/admin/widget.js');
 ?>
 <!DOCTYPE html>
 <html lang="zh-CN">

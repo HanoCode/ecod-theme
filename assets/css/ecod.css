@@ -2,6 +2,8 @@
  * Ecod Theme · 设计系统
  * 0. 令牌  1. 基础  2. 布局  3. 导航/抽屉  4. 首页  5. 卡片
  * 6. 分页  7. 侧栏  8. 文章  9. 评论  10. 页脚  11. 工具  12. 暗色  13. 响应式
+ *
+ * Copyright (c) 2026 Ecod · MIT License · https://ecod.cc
  */
 
 /* ============ 0. 设计令牌 ============ */
@@ -8921,4 +8923,86 @@ html.ecod-shcard-lock body { overflow: hidden; }
     font-size: var(--ecod-fs-2xs);
     font-weight: 600;
     vertical-align: 1px;
+}
+
+/* ==========================================================================
+   §30 第 5 轮 · F3 分类工具条（分类内搜索 + 排序按钮）
+   ========================================================================== */
+
+.ecod_cattools {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 14px;
+    padding: 9px 12px;
+    background: var(--ecod-surface);
+    border: 1px solid var(--ecod-border);
+    border-radius: var(--ecod-radius);
+    box-sizing: border-box;
+}
+/* 搜索表单占 1fr，排序按钮固定右侧 */
+.ecod_cattools__search {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex: 1 1 auto;
+    min-width: 0;
+    padding: 7px 12px;
+    background: var(--ecod-surface-2);
+    border: 1px solid transparent;
+    border-radius: 999px;
+    box-sizing: border-box;
+    transition: border-color var(--ecod-dur), background-color var(--ecod-dur);
+}
+.ecod_cattools__search:focus-within {
+    background: var(--ecod-surface);
+    border-color: var(--ecod-primary);
+}
+.ecod_cattools__icon {
+    display: inline-flex;
+    flex: none;
+    color: var(--ecod-text-3);
+}
+.ecod_cattools__search input {
+    flex: 1 1 auto;
+    min-width: 0;
+    border: 0;
+    background: none;
+    color: var(--ecod-text);
+    font-size: var(--ecod-fs-sm);
+    outline: none;
+    box-sizing: border-box;
+}
+.ecod_cattools__search input::placeholder { color: var(--ecod-text-3); }
+.ecod_cattools__search input::-webkit-search-cancel-button { display: none; }
+.ecod_cattools__kbd {
+    flex: none;
+    padding: 0 6px;
+    border: 1px solid var(--ecod-border);
+    border-radius: 4px;
+    background: var(--ecod-surface);
+    color: var(--ecod-text-3);
+    font-family: inherit;
+    font-size: var(--ecod-fs-2xs);
+    line-height: 1.7;
+}
+.ecod_cattools .ecod_sort { flex: none; }
+/* 排序浮层留白项（最多点赞）：降透明、不出手型 */
+.ecod_sort__opt.is-soon {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: default;
+    color: var(--ecod-text-3);
+    opacity: .62;
+}
+.ecod_sort__soontag {
+    margin-left: auto;
+    font-style: normal;
+    font-size: var(--ecod-fs-2xs);
+    color: var(--ecod-text-3);
+}
+@media (max-width: 680px) {
+    .ecod_cattools { padding: 7px 9px; }
+    .ecod_cattools__kbd { display: none; }
 }

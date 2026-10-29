@@ -3,6 +3,8 @@
  *
  * 只在 .ecod-tpb 内生效；颜色与按钮复用 config.css 的 --ea-* 令牌与 .ecod-btn。
  * 一行一个专题：摘要行常驻，展开后是字段与挑稿器。
+ *
+ * Copyright (c) 2026 Ecod · MIT License · https://ecod.cc
  */
 
 /* 本页不依赖全局 reset：所有撑满容器的输入框/按钮统一 border-box，

@@ -6,6 +6,8 @@
  *  - 右侧 iframe 实时预览，Markdown 用 Typecho 自带 HyperDown 渲染，与前台一致；
  *  - 图片支持粘贴 / 拖拽上传，复用 /action/upload；
  *  - 本地草稿、字数统计、大纲定位、全屏专注。
+ *
+ * Copyright (c) 2026 Ecod · MIT License · https://ecod.cc
  */
 (function () {
     'use strict';

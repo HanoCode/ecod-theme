@@ -10,9 +10,12 @@
  * require，此上下文不加载主题 functions.php，因此这里只依赖
  * core/schema.php 与 Typecho 框架自身，任何失败一律静默降级。
  *
- * 规格：design-proposal.html §32
+ * 规格：docs/dev/design-proposal.html §32
  *
  * @package Ecod Theme
+ * @author  Ecod
+ * @copyright Copyright (c) 2026 Ecod (https://ecod.cc)
+ * @license   MIT
  */
 
 if (!defined('__TYPECHO_ROOT_DIR__')) {

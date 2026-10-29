@@ -2,13 +2,15 @@
 /**
  * 首页
  *
- * 模块顺序、开关与参数在「模块管理台」里按位置摆放（见 design-proposal.html §31）。
+ * 模块顺序、开关与参数在「模块管理台」里按位置摆放（见 docs/dev/design-proposal.html §31）。
  *
  * @package Ecod Theme
  * @author  Ecod
  * @since   2026-10-29
  * @version 2.0.0
  * @link    https://ecod.cc
+ * @copyright Copyright (c) 2026 Ecod (https://ecod.cc)
+ * @license   MIT
  */
 if (!defined('__TYPECHO_ROOT_DIR__')) {
     exit;

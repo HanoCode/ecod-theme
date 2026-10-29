@@ -8,6 +8,8 @@
  *   EcodMedia.pick({ multiple:false, value:'', onPick:function(urls){...} });
  *
  * @package ecod-theme
+ *
+ * Copyright (c) 2026 Ecod · MIT License · https://ecod.cc
  */
 (function () {
     'use strict';

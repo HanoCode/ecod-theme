@@ -11,6 +11,9 @@
  * 升级前只存过单份 ENavMenu 的站，读取时在内存里提升为「默认导航」一套。
  *
  * @package Ecod Theme
+ * @author  Ecod
+ * @copyright Copyright (c) 2026 Ecod (https://ecod.cc)
+ * @license   MIT
  */
 
 if (!defined('__TYPECHO_ROOT_DIR__')) {

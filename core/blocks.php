@@ -6,7 +6,7 @@
  * 模块 = 注册表里的一个条目（声明 + 参数 schema + 一个模板文件），
  * 后台在独立管理台里按「位置」摆放实例、改参数，前台按区域顺序渲染。
  *
- * 与 v1 的区别（设计见 design-proposal.html §31）：
+ * 与 v1 的区别（设计见 docs/dev/design-proposal.html §31）：
  *   - 位置从 4 个页面级桶扩成「页面类型 × 5 个位置」+ 全局区；
  *   - 区域里存实例（uid），同一模块可放多个实例，参数各自独立；
  *   - 存储搬到 options 表 user=0 的独立行 EWidgets，不再整行覆盖主题配置；
@@ -17,6 +17,8 @@
  * @since   2026-10-29
  * @version 2.0.0
  * @link    https://ecod.cc
+ * @copyright Copyright (c) 2026 Ecod (https://ecod.cc)
+ * @license   MIT
  */
 
 if (!defined('__TYPECHO_ROOT_DIR__')) {
@@ -298,92 +300,6 @@ function ecod_block_defs(): array
 {
     ecod_blocks_boot();
     return ecod_block_registry();
-}
-
-/**
- * 模块默认可放的位置（声明 > 按模板目录推导）
- *
- * @return array<int,string> 位置 key
- */
-function ecod_block_slots(array $def): array
-{
-    $all = array_keys(ecod_widget_slots());
-
-    if (!empty($def['slots']) && is_array($def['slots'])) {
-        $slots = array_values(array_intersect($def['slots'], $all));
-        if ($slots) {
-            return $slots;
-        }
-    }
-
-    /* 模板目录 → 默认位置：home 类是全站通用内容块，aside 类偏侧栏 */
-    $map = [
-        'home'   => ['top_fluid', 'top_content', 'bottom_content', 'bottom_fluid', 'sidebar'],
-        'aside'  => ['sidebar', 'top_content', 'bottom_content'],
-        'post'   => ['top_content', 'bottom_content'],
-        'footer' => [],  // 定点块：由模板按 id 单独渲染
-        'header' => [],  // 同上
-    ];
-
-    return $map[$def['area']] ?? ['top_content', 'bottom_content'];
-}
-
-/**
- * 模块允许的页面类型（声明 > 全部）
- *
- * @return array<int,string> 页面 key
- */
-function ecod_block_pages(array $def): array
-{
-    $all = array_keys(ecod_widget_pages());
-
-    if (!empty($def['pages']) && is_array($def['pages'])) {
-        $pages = array_values(array_intersect($def['pages'], $all));
-        if ($pages) {
-            return $pages;
-        }
-    }
-
-    /* 定点块不属于任何页面，只出现在定点区 */
-    if (ecod_block_slots($def) === []) {
-        return [];
-    }
-
-    return $all;
-}
-
-/**
- * 模块允许放置的区域 id 列表（管理台「添加模块」用这里过滤）
- *
- * @return array<int,string> 区域 id
- */
-function ecod_block_allowed_areas(array $def): array
-{
-    $slots = ecod_block_slots($def);
-    if (!$slots) {
-        return [ECOD_WIDGET_PINNED];
-    }
-
-    $globals = ecod_widget_globals();
-    $out = [];
-
-    foreach (ecod_block_pages($def) as $page) {
-        foreach ($slots as $slot) {
-            $out[] = $page . '_' . $slot;
-        }
-    }
-
-    /* 全局区：同一位置的通栏 / 侧栏也能放；仅当模块不限页面时才给 */
-    $pages = ecod_block_pages($def);
-    if (count($pages) >= count(ecod_widget_pages())) {
-        foreach ($globals as $id => $meta) {
-            if (in_array($meta['slot'], $slots, true)) {
-                $out[] = $id;
-            }
-        }
-    }
-
-    return array_values(array_unique($out));
 }
 
 /* ==================================================================
@@ -1109,7 +1025,6 @@ function ecod_widgets_admin_data(): array
             'on'       => (bool) $def['on'],
             'fixed'    => !empty($def['fixed']),
             'required' => !empty($def['required']),
-            'areas'    => ecod_block_allowed_areas($def),
             'params'   => array_map(static function ($p) {
                 return [
                     'label'   => $p['label'] ?? '',

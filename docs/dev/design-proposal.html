@@ -1909,6 +1909,7 @@ details .in{padding-bottom:12px}
       <tr><th style="width:30%">项</th><th>规格</th></tr>
       <tr><td>生效范围</td><td><code>index</code> / <code>category</code> / <code>tag</code> / <code>author</code> / <code>search</code> 五种归档主查询</td></tr>
       <tr><td>排序字段</td><td><code>views</code> → <code>contents.views DESC</code>；<code>hot</code> → <code>commentsNum DESC</code>；两者都以 <code>created DESC</code> 兜底</td></tr>
+      <tr><td>置顶优先</td><td><code>pin</code> 字段非空的文章浮到流的<b>最上面</b>（首页 / 分类 / 标签 / 作者四种归档；<code>search</code> 不置顶——搜索要的是相关度）。实现：主查询 <code>LEFT JOIN table.fields</code>（<code>name='pin' AND str_value&lt;&gt;''</code>）按 <code>str_value DESC</code> 排首列，JOIN 条件收在 <code>ON</code> 里不产生重复行；<b>必须同时 <code>select('table.contents.*')</code></b>——框架 <code>fields</code> 默认 <code>*</code>，JOIN 后会带出 <code>fields</code> 表的同名列（<code>cid</code>）覆盖正文数据。置顶内部按 <code>created DESC</code> 排序；空值 <code>pin</code> 字段（写作页关闭置顶留下的空串行）不参与 JOIN，不受影响。分类 / 标签页的置顶只在该归档自己的结果集里浮——不在该分类的置顶文不进结果集，自然不会乱浮。三种排序（recent/views/hot）下置顶都最优先；轮播 <code>source=pin</code> 与角标逻辑不变，<code>ecod_pinned_cids()</code> 仍归轮播专用</td></tr>
       <tr><td>不做点赞排序</td><td>点赞按行存储（<code>ecod_likes</code> 一人一行），排序要子查询或冗余计数列，为一个排序项改表不值</td></tr>
       <tr><td>落点</td><td><code>core/sort.php</code>（钩子）、<code>components/home/sort.php</code>（浮层）、<code>components/home/list.php</code>（挂载）</td></tr>
     </table>
@@ -1985,7 +1986,7 @@ details .in{padding-bottom:12px}
       <tr><td>第 1 轮</td><td>C1 排序浮层 · C5 首屏 · D5 / D6 · F1 琥珀角标</td><td>已完成</td></tr>
       <tr><td>第 2 轮</td><td>专题子系统：ETopics + 后台管理 + 文章标记 + <code>/topics</code> + E2 专题墙 + C2b 专题卡 + E1 分类页头</td><td>已完成（2026-10-30）</td></tr>
       <tr><td>第 3 轮</td><td>C3 目录进度条 · C4 搜索面板（热词 / 标签 / ⌘K）</td><td>已完成（2026-10-30）</td></tr>
-      <tr><td>第 4 轮</td><td>D2 点赞头像堆叠 · D3 底部快速评论条 · D7 作者卡</td><td>待开始</td></tr>
+      <tr><td>第 4 轮</td><td>D2 点赞头像堆叠 · D3 底部快速评论条 · D7 作者卡</td><td>已完成（2026-10-30）</td></tr>
       <tr><td>第 5 轮</td><td>F3 分类工具条 · 收尾与回归</td><td>待开始</td></tr>
     </table>
   </div>
@@ -2055,6 +2056,49 @@ details .in{padding-bottom:12px}
       <tr><td><code>EAuthorOnline</code></td><td>on</td><td>侧栏作者卡在线点 + 博主徽章总开关</td></tr>
     </table>
   </div>
+
+  <h3>第 4 轮 · 验收记录</h3>
+  <div class="card pad">
+    <table>
+      <tr><th style="width:22%">项</th><th>结论</th></tr>
+      <tr><td>D2 数据迁移</td><td>改完代码后首次访问文章页即自动迁移：<code>typecho_ecod_likes</code> 出现 <code>uid</code> 列与 <code>cid_uid</code> 索引，<code>EcodSchema</code> = 9。老表 3800 行数据未受影响（uid 全部默认 0，等价于游客行）</td></tr>
+      <tr><td>D2 展示实测</td><td>seed 2 个注册用户 + 1 条游客点赞 → 互动条输出「@Ecod 等 <b>3</b> 人觉得不错」+ 2 个 24px 头像（−7px 重叠、2px 白描边，第三位是首字占位）。删掉 uid 行后整块消失，回落纯数字——降级路径成立</td></tr>
+      <tr><td>D3 输出与显隐</td><td>评论开启的文章输出 <code>.ecod_quickbar</code>；桌面 1000px 截图确认 <code>display:none</code>，390px 下 is-on 形态为圆角胶囊 + 阴影，距底 70px 正好压在 dock 之上。锁定 / 付费锁 / 关评论三个条件任一命中即不输出 DOM</td></tr>
+      <tr><td>D7 判定实测</td><td>博主 <code>logged</code> 为 6 小时前 → 只有徽章无绿点；刷成当前时间 → 绿点出现（<code>ecod_authorcard__dot</code> = 1）。徽章不受在线状态影响，只受开关控制</td></tr>
+      <tr><td>设置联动</td><td><code>ELikers / EQuickBar / EAuthorOnline</code> 全置 off → 文章页 <code>data-ecod-likers</code> / <code>ecod_quickbar</code> / <code>ecod_authorcard__dot</code> / <code>__badge</code> 计数全部为 0；恢复后主题设置行按字节还原（md5 <code>aab1c2fed475</code> 与备份一致）</td></tr>
+      <tr><td>验收坑 1</td><td>nginx 在 2026-10-30 做过安全加固：<code>^/usr/themes/ecod-theme/</code> 下只放行 <code>api / media / pay-admin / manifest</code> 四个 PHP 入口，其余直连一律 404。<b>视觉 harness 必须放站点根目录</b>，不要为此改 nginx 规则</td></tr>
+      <tr><td>验收坑 2</td><td>seed 点赞行写 uid 时要用<b>真实用户 uid</b>：测试用户自增不连续（本次实际是 17，不是 2），写错的孤儿行会被二段查昵称过滤掉，表现为「明明插了数据却没头像」</td></tr>
+      <tr><td>实现坑 3</td><td>Typecho <code>Query::join()</code> 会把条件串交给 <code>filterColumn</code> 逐字符处理，表别名的转义不可控。<code>ecod_post_likers</code> 改为两步查询（uid 列表 → <code>IN</code> 取昵称），5 人规模没有性能问题</td></tr>
+      <tr><td>实现坑 4</td><td><code>users.screenName</code> 可为 NULL（本站 admin 就是空），昵称必须回落 <code>name</code>；否则昵称为空被过滤，头像永远出不来</td></tr>
+      <tr><td>回归</td><td>首页 / 文章页 / 搜索页 / <code>topics.html</code> / <code>archives.html</code> 均 200；8 个改动文件 <code>php -l</code> 与 <code>node --check</code> 干净；错误日志无 8.4+ 弃用告警</td></tr>
+    </table>
+  </div>
+</section>
+
+<!-- 30 · 第 5 轮 -->
+<section id="s-round5">
+<h2>§30.5 第 5 轮：F3 分类工具条 + 收尾回归（2026-10-30）</h2>
+
+<h3>第 5 轮 · 规格决议</h3>
+<div class="card pad">
+<table>
+<tr><th style="width:22%">项</th><th>决议</th></tr>
+<tr><td>F3 形态</td><td>E1 分类页头下方独占一条 62px 工具条（<code>components/archive/cattools.php</code>，新增）：左侧分类内搜索表单占 1fr（placeholder「在『分类名』中搜索」，右侧 <kbd>/</kbd> 热键提示，热键聚焦输入框），右侧排序按钮固定宽度，复用 <code>components/home/sort.php</code> 同一枚按钮 + 浮层（与 C1 同套）</td></tr>
+<tr><td>隐藏重复导航</td><td>分类页启用工具条时隐藏 <code>home/list.php</code> 的整条 streambar（catbar tabs 在分类页是重复导航，拆解已否决；「共 N 篇」在 E1 统计里已有）；<code>ECatTools=off</code> 时分类页回退现有 catbar 形态，首页不受影响</td></tr>
+<tr><td>排序项</td><td>在现有 最新/最多浏览/最多评论 基础上加「随机一篇」（rand，全站归档可用）；「最多点赞」按拆解决议<b>留白</b>——点赞按行存储需子查询/冗余列才能排序，浮层里以禁用项展示「待接入」，<code>ecod_sort_current()</code> 拒绝该键防伪造参数</td></tr>
+<tr><td>rand 语义</td><td>主归档分页列表的随机 = <b>按日种子的稳定随机</b>：<code>ORDER BY MD5(CONCAT(cid, '当日种子'))</code>，同一天内顺序稳定（翻页/加载更多不重排，跨天换一批），与 EcodPostQuery 的「最近 200 篇打乱」是两种场景，互不影响。置顶优先在 rand 下保留</td></tr>
+<tr><td>分类内搜索</td><td>GET <code>?q=</code> 提交到当前分类 URL；<code>query</code> 钩子里对 category 归档追加 <code>title/text LIKE</code> 过滤，并<b>同步改写 <code>getCountSql()</code> 返回的计数查询</b>（getTotal 是惰性的，渲染期才执行）→ 「共 N 篇」与分页都按过滤后计数。翻页链接由 <code>ecod_sort_pager()</code> 白名单补 <code>q</code>，「加载更多」随之正确</td></tr>
+<tr><td>降级</td><td>搜索框无 JS 也可用（原生 GET 表单）；排序浮层本就是真实链接；<code>ECatTools=off</code> 回到旧形态；rand 在 <code>MD5()</code> 不可用（非 MySQL）时静默回落最新发布</td></tr>
+</table>
+</div>
+
+<h3>第 5 轮 · 新设置项</h3>
+<div class="card pad">
+<table>
+<tr><th style="width:22%">设置项</th><th style="width:10%">默认</th><th>作用</th></tr>
+<tr><td><code>ECatTools</code></td><td>on</td><td>分类页工具条总开关（分类内搜索 + 排序按钮）；关闭后分类页回到 catbar tabs 旧形态</td></tr>
+</table>
+</div>
 </section>
 
 <!-- 31 -->
@@ -2177,7 +2221,7 @@ details .in{padding-bottom:12px}
             <div class="wgt-card is-open"><i class="wgt-grip"></i><b>热门文章</b><small>点击展开 ↓</small></div>
             <div class="wgt-target on">首页 · 侧栏<span>+</span></div>
             <div class="wgt-target">文章 · 侧栏<span>+</span></div>
-            <div class="wgt-target off">页脚定点<span>不允许</span></div>
+            <div class="wgt-target off">首页 · 全宽通栏<span>已满 20</span></div>
             <div class="wgt-card"><i class="wgt-grip"></i><b>分类导航</b><small>全站分类</small></div>
           </div>
         </div>
@@ -2220,7 +2264,7 @@ details .in{padding-bottom:12px}
   <div class="card pad" style="margin-top:16px">
     <table>
       <tr><th style="width:16%">区域</th><th>行为</th></tr>
-      <tr><td>左栏 · 可用模块</td><td>主题提供的全部模块（按声明顺序），带搜索过滤。<b>拖到右栏任一区域</b> = 添加实例（参数用默认值）；<b>单击卡片</b>展开目标位置列表（只列 <code>areas</code> 白名单允许的区域，已到上限的置灰），点选即添加 —— 与 WordPress 可用组件的行为一致</td></tr>
+      <tr><td>左栏 · 可用模块</td><td>主题提供的全部模块（按声明顺序），带搜索过滤。<b>拖到右栏任一区域</b> = 添加实例（参数用默认值）；<b>单击卡片</b>展开目标位置列表（列出<b>全部</b>区域，已到上限的置灰），点选即添加 —— 与 WordPress 可用组件的行为一致</td></tr>
       <tr><td>右栏 · 区域盒子</td><td>全部区域按「全局 / 页脚定点 / 首页 / 文章 / 页面 / 分类 / 标签 / 搜索 / 作者 / 个性页」分组；同一组内<b>一行多列</b>排布（<code>grid</code> 自适应 <code>minmax(300px, 1fr)</code>，1400px 宽下 2–3 列），区域头常显实例数，区域体是投放目标（拖拽高亮）；空区域显示投放提示线</td></tr>
       <tr><td>折叠</td><td>区域头即折叠开关（左侧 ▸ / ▾）。<b>默认规则：有实例 → 展开；空区域 → 折叠</b>，避免 45 个区域把页面拉成一条长卷；用户手动折叠 / 展开后写入 <code>localStorage</code>（<code>ecod-wgt-fold</code>），此后以手动状态为准。右栏头部提供「全部展开 / 全部折叠」两个动作</td></tr>
       <tr><td>折叠区投放</td><td>折叠状态下区域头仍是有效投放目标（拖到头上 = 追加到末尾）；悬停 500ms 自动展开，方便精确落位。折叠只影响显示，不改变实例与保存逻辑</td></tr>
@@ -2228,7 +2272,7 @@ details .in{padding-bottom:12px}
       <tr><td>实例行</td><td>一行 = 拖柄 + 名称 + 启用开关；<b>点击行头内联展开参数表单</b>（同区域手风琴，一次只展开一行）；表单底部操作行：复制 · 移到 · 重置参数 · 删除；行可跨区域拖拽排序 / 移动（同一 <code>uid</code> 换区域保留参数）</td></tr>
       <tr><td>侧栏显示</td><td>「按页面类型开关侧栏」不占区域，固定为右栏顶部的折叠卡片，展开后 8 行下拉（右侧栏 / 左侧栏 / 无侧栏）</td></tr>
       <tr><td>保存</td><td><b>显式保存</b>：改动先暂存在本地（状态点变「未保存」，顶部「保存改动」按钮点亮），点按钮或 <code>Ctrl/Cmd+S</code> 一次性按顺序提交全部脏区域；任一失败即停并提示重试，全部成功回「已保存」。离开页面前有 <code>beforeunload</code> 拦截。「侧栏显示」的下拉改动走同一条保存队列（伪区域 <code>__aside</code>）</td></tr>
-      <tr><td>拒绝投放</td><td>模块不在区域白名单（<code>areas</code>）时：拖拽悬停该区域显示<b>红色禁用态</b>（<code>is-nodrop</code>），松手 toast 提示「模块名」不能放在「区域名」，不产生任何请求。页脚定点类模块（版权信息 / 站点年龄等）只允许放「页脚与浮动控件」</td></tr>
+      <tr><td>自由投放（第 4 轮修订）</td><td><b>不做区域白名单拦截</b>：任何模块都可以拖入任何区域，模块声明里的 <code>slots</code> / <code>pages</code> 仅作展示参考、不再限制落点；放错了前台显示不对，由用户自行拖回正确的区域。拖拽悬停不再出现红色禁用态（<code>is-nodrop</code> 已废除），唯一的落点拦截是<b>区域已满</b>（20 个）：悬停无高亮、松手 toast「区域已满」。后端 <code>ecod_wgt_clean_rows()</code> 同步取消白名单过滤（原先会静默丢弃不允许的实例，与前端限制叠加造成「拖进去了却不生效」的假象），只保留类型存在 + uid 唯一 + 数量上限三项校验</td></tr>
       <tr><td>清空</td><td>区域为空时前台不输出任何包裹 DOM —— 不产生空 <code>&lt;div&gt;</code> 与多余间距</td></tr>
     </table>
   </div>
@@ -2241,7 +2285,7 @@ details .in{padding-bottom:12px}
       <tr><td>CSRF</td><td>Typecho security token，页面渲染时注入 <code>window.ECOD_WGT.token</code>；缺失或过期返回 403，前端提示刷新</td></tr>
       <tr><td>写入</td><td><code>ecod_cache_set('EWidgets', $data)</code>，只动 <code>user=0</code> 的那一行；不触碰 <code>theme:{slug}</code> 主题配置行</td></tr>
       <tr><td>并发</td><td>读时带 <code>rev</code>（受影响的区域数组哈希），写时比对；不一致返回 409 + 最新数据，前端提示「已被其他标签页修改」并重绘</td></tr>
-      <tr><td>校验</td><td><code>area</code> 必须在注册表内；<code>uid</code> 匹配 <code>[a-z0-9-]{1,40}</code>；<code>type</code> 必须在 <code>blocks-def.php</code> 声明过且允许放该区域；<code>params</code> 按 schema 白名单裁剪，未知键丢弃</td></tr>
+      <tr><td>校验</td><td><code>area</code> 必须在注册表内；<code>uid</code> 匹配 <code>[a-z0-9-]{1,40}</code>；<code>type</code> 必须在 <code>blocks-def.php</code> 声明过（<b>不校验区域白名单</b>，第 4 轮修订取消）；<code>params</code> 按 schema 白名单裁剪，未知键丢弃</td></tr>
       <tr><td>返回</td><td><code>{ok:true, rev:"…", area:"…"}</code>；失败给 <code>{ok:false, error:"…"}</code>，不返回堆栈</td></tr>
     </table>
   </div>
@@ -2295,6 +2339,7 @@ details .in{padding-bottom:12px}
       <tr><td>7</td><td>并发</td><td>两个标签页同时改同一区域，后者收到 409 而非静默覆盖</td></tr>
       <tr><td>8</td><td>回滚</td><td>删掉 <code>EWidgets</code> 行，前台立刻回到 <code>EBlocks</code> 的旧布局</td></tr>
     </table>
+    <p class="sec-desc" style="margin:12px 0 0"><b>第 4 轮修订（2026-10-30）· 取消区域白名单</b>：用户反馈「既然是 widget，位置应由用户自行调整」——拖放不再有允许区域拦截，红色禁用态与「不能放在」toast 一并移除，前端 <code>canDrop()</code> 只剩「区域已满」一个条件；后端 <code>ecod_wgt_clean_rows()</code> 删除白名单过滤（修复「拖进去保存了却没生效」的静默丢失）；<code>ecod_block_allowed_areas()</code> 及其仅有的两个辅助函数 <code>ecod_block_slots()</code> / <code>ecod_block_pages()</code> 无人使用，删除。验收补两条：① 任意模块拖入任意区域保存成功且前台按所在区域渲染；② 区域满 20 个时仍被拦截并 toast 提示。</p>
   </div>
 
   <h3>非目标</h3>

@@ -39,6 +39,9 @@
  *   [spoiler]剧透内容[/spoiler]                             剧透遮罩（点击展开）
  *
  * @package Ecod Theme
+ * @author  Ecod
+ * @copyright Copyright (c) 2026 Ecod (https://ecod.cc)
+ * @license   MIT
  */
 
 if (!defined('__TYPECHO_ROOT_DIR__')) {

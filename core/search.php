@@ -7,6 +7,9 @@
  * - 空结果建议：逐词统计命中数并给出可点击的二次搜索，附最新文章兜底
  *
  * @package Ecod Theme
+ * @author  Ecod
+ * @copyright Copyright (c) 2026 Ecod (https://ecod.cc)
+ * @license   MIT
  */
 
 if (!defined('__TYPECHO_ROOT_DIR__')) {

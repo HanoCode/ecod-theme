@@ -5,6 +5,8 @@
  * thumb / mode / side / pin / series / topic / excerpt，
  * 原控件保留在 DOM 中（display:none）作为提交载体，本脚本只负责读写它们的值，
  * 因此保存逻辑与 Typecho 原生完全一致。
+ *
+ * Copyright (c) 2026 Ecod · MIT License · https://ecod.cc
  */
 (function () {
     'use strict';

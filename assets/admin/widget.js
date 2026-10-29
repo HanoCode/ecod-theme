@@ -3,7 +3,7 @@
  *
  * 布局照 WordPress「外观 → 小工具」经典设计：
  *  1. 左栏「可用模块」：全部模块卡，可搜索；拖到右栏区域 = 添加实例；
- *     单击卡片展开目标位置列表（只列 areas 白名单允许的区域）
+ *     单击卡片展开目标位置列表（列出全部区域，已满的置灰）
  *  2. 右栏「区域盒子」：全部区域按页面类型分组、组内一行多列；区域头即折叠开关
  *     （空区域默认收起，手动状态记 localStorage）；折叠区仍是投放目标；
  *     实例行点击头部内联展开参数表单 + 操作行；有表单展开的区域横跨整行
@@ -12,15 +12,17 @@
  *     侧栏显示改动走同一队列（伪区域 __aside）
  *  4. 顶部「侧栏显示（按页面）」折叠卡：8 种页面类型的侧栏开关
  *  5. 乐观锁：每次保存带 rev，冲突返回 409 时提示重新载入；
- *     模块不在区域白名单时拖拽悬停显示红色禁用态、松手 toast 提示
+ *     自由投放：不做区域白名单，唯一拦截是区域已满（新添加时）
  *
  * 数据由 widget.php 输出到 window.ECOD_WGT，渲染仍走前台那套块模板。
  *
  * @package Ecod Theme
  * @author  Ecod
  * @since   2026-10-29
- * @version 2.3.0
+ * @version 2.3.1
  * @link    https://ecod.cc
+ *
+ * Copyright (c) 2026 Ecod · MIT License · https://ecod.cc
  */
 (function () {
     'use strict';
@@ -248,25 +250,17 @@
         return !!(def.fixed || def.required);
     }
 
-    /* 模块允许放进该区域（areas 白名单） */
-    function allowed(area, type) {
-        var def = DEFS[type] || {};
-        return !def.areas || def.areas.indexOf(area) > -1;
-    }
-
     function areaFull(area) {
         return rows(area).length >= LIMIT;
     }
 
+    /* 自由投放：不做区域白名单，唯一拦截是区域已满（新添加时） */
     function canDrop(area, drag) {
         if (!drag) {
             return false;
         }
-        if (!allowed(area, drag.type)) {
-            return false;
-        }
         if (drag.kind === 'move') {
-            return drag.area !== area || true; /* 同区域排序也允许 */
+            return true; /* 同区域排序、跨区域移动都允许 */
         }
         return !areaFull(area);
     }
@@ -471,7 +465,7 @@
             state.drag = null;
             card.classList.remove('is-drag');
             $$('.wgt-area').forEach(function (node) {
-                node.classList.remove('is-drop', 'is-nodrop');
+                node.classList.remove('is-drop');
             });
         });
 
@@ -479,13 +473,12 @@
             var targets = el('div', 'wgt-targets');
             areaGroups().forEach(function (group) {
                 group.ids.forEach(function (id) {
-                    var ok = allowed(id, type);
                     var full = areaFull(id);
-                    var btn = el('button', 'wgt-target' + (ok && !full ? '' : ' off'));
+                    var btn = el('button', 'wgt-target' + (full ? ' off' : ''));
                     btn.type = 'button';
                     btn.innerHTML = '<b>' + esc(AREAS[id].label) + '</b><span>' +
-                        (!ok ? '不允许' : (full ? '已满 ' + LIMIT : '+ 添加')) + '</span>';
-                    if (!ok || full) {
+                        (full ? '已满 ' + LIMIT : '+ 添加') + '</span>';
+                    if (full) {
                         btn.disabled = true;
                     } else {
                         btn.addEventListener('click', function (event) {
@@ -566,10 +559,6 @@
 
     function createAdd(area, type, index) {
         var def = DEFS[type] || {};
-        if (!allowed(area, type)) {
-            toast('「' + def.name + '」不允许放在这个位置', 'bad');
-            return;
-        }
         if (areaFull(area)) {
             toast('这个位置最多放 ' + LIMIT + ' 个模块', 'bad');
             return;
@@ -662,13 +651,12 @@
             box.appendChild(buildBody());
         }
 
-        /* 区域级投放：拖到空白 = 追加到末尾；不允许的模块给红色禁用反馈 */
+        /* 区域级投放：拖到空白 = 追加到末尾；只有区域已满才拦截 */
         box.addEventListener('dragover', function (event) {
             if (!state.drag) {
                 return;
             }
             if (!canDrop(id, state.drag)) {
-                box.classList.add('is-nodrop');
                 return;
             }
             if (overItem(event)) {
@@ -685,19 +673,18 @@
             if (box.contains(event.relatedTarget)) {
                 return;
             }
-            box.classList.remove('is-drop', 'is-nodrop');
+            box.classList.remove('is-drop');
             window.clearTimeout(box._unfold);
         });
         box.addEventListener('drop', function (event) {
-            box.classList.remove('is-drop', 'is-nodrop');
+            box.classList.remove('is-drop');
             window.clearTimeout(box._unfold);
             if (!state.drag) {
                 return;
             }
             if (!canDrop(id, state.drag)) {
                 event.preventDefault();
-                var def = DEFS[state.drag.type] || {};
-                toast('「' + (def.name || state.drag.type) + '」不能放在「' + meta.label + '」', 'bad');
+                toast('「' + (AREAS[id].label || id) + '」已满 ' + LIMIT + ' 个模块', 'bad');
                 return;
             }
             if (overItem(event)) {
@@ -791,7 +778,7 @@
         item.addEventListener('dragend', function () {
             item.classList.remove('is-drag');
             $$('.wgt-area').forEach(function (node) {
-                node.classList.remove('is-drop', 'is-nodrop');
+                node.classList.remove('is-drop');
             });
         });
         item.addEventListener('dragover', function (event) {

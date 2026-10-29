@@ -10,6 +10,9 @@
  * 通道只负责「怎么收钱」，一律不碰权益：结算统一走 ecod_pay_settle()。
  *
  * @package Ecod Theme
+ * @author  Ecod
+ * @copyright Copyright (c) 2026 Ecod (https://ecod.cc)
+ * @license   MIT
  */
 
 if (!defined('__TYPECHO_ROOT_DIR__')) {
@@ -122,16 +125,19 @@ function ecod_pay_site_url(string $path = ''): string
 
 class EcodPayManualChannel implements EcodPayChannel
 {
+    /** 通道标识：manual（无线上回调，订单靠后台确认收款收口） */
     public function id(): string
     {
         return 'manual';
     }
 
+    /** 收银台展示名 */
     public function name(): string
     {
         return '联系站长 / 线下付款';
     }
 
+    /** 渲染线下付款说明：优先用设置项 EPayManualDoc 的文案 */
     public function create(array $order): array
     {
         $doc = trim((string) ecod_option('EPayManualDoc', ''));
@@ -146,9 +152,9 @@ class EcodPayManualChannel implements EcodPayChannel
         ];
     }
 
+    /** 手动通道没有回调可验，结算只由后台「确认收款」触发 */
     public function verify(array $request): array
     {
-        /* 手动通道没有回调，结算只由后台「确认收款」触发 */
         return ['ok' => false, 'message' => 'manual 通道不支持回调'];
     }
 }
@@ -159,16 +165,19 @@ class EcodPayManualChannel implements EcodPayChannel
 
 class EcodPayCardChannel implements EcodPayChannel
 {
+    /** 通道标识：card */
     public function id(): string
     {
         return 'card';
     }
 
+    /** 收银台展示名 */
     public function name(): string
     {
         return '卡密兑换';
     }
 
+    /** 渲染卡密输入框（卡密由站长在后台生成发放） */
     public function create(array $order): array
     {
         return [
@@ -180,6 +189,7 @@ class EcodPayCardChannel implements EcodPayChannel
         ];
     }
 
+    /** 校验并核销卡密：转发 ecod_pay_card_redeem()，由它负责幂等与状态流转 */
     public function verify(array $request): array
     {
         $code = trim((string) ($request['code'] ?? ''));
@@ -377,11 +387,13 @@ function ecod_pay_post_title(int $cid): string
 
 class EcodPayEpayChannel implements EcodPayChannel
 {
+    /** 通道标识：epay（api.php 据此路由回调） */
     public function id(): string
     {
         return 'epay';
     }
 
+    /** 收银台展示名 */
     public function name(): string
     {
         return '支付宝 / 微信';
@@ -406,6 +418,7 @@ class EcodPayEpayChannel implements EcodPayChannel
         return md5(implode('&', $pairs) . $key);
     }
 
+    /** 组签名参数并跳易支付收银台；三项配置缺任一个则回退手动通道 */
     public function create(array $order): array
     {
         $cfg = ecod_pay_epay_config();
@@ -434,6 +447,7 @@ class EcodPayEpayChannel implements EcodPayChannel
         ];
     }
 
+    /** 回调验签 + 交易状态 + 金额解析，全部通过才返回订单信息供上层核账 */
     public function verify(array $request): array
     {
         $cfg = ecod_pay_epay_config();

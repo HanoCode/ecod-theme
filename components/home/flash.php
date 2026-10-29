@@ -3,6 +3,9 @@
  * 首页模块 · 快讯（时间线形式，日期戳 + 短句，无封面）
  *
  * @package Ecod Theme
+ * @author  Ecod
+ * @copyright Copyright (c) 2026 Ecod (https://ecod.cc)
+ * @license   MIT
  */
 if (!defined('__TYPECHO_ROOT_DIR__')) {
     exit;

@@ -1,4 +1,4 @@
-# Ecod Theme · 目录加固（Apache）
+# Ecod Theme · 目录加固与静态资源策略（Apache）
 #
 # 主题内只有 4 个独立入口需要被浏览器直接访问：
 #   api.php      前台接口（登录 / 点赞 / 支付回调 / 缩略图…）
@@ -15,7 +15,7 @@
   RewriteRule ^.+\.php$ - [F,L]
 </IfModule>
 
-# 设计稿 / 审计报告等开发文档不对外暴露
+# 开发文档（docs/dev/ 设计稿与审计报告）不对外暴露
 <FilesMatch "\.(md|markdown|lock)$">
   <IfModule mod_authz_core.c>
     Require all denied
@@ -25,7 +25,7 @@
     Deny from all
   </IfModule>
 </FilesMatch>
-<FilesMatch "^(MIRAI-REFERENCE(-ANALYSIS)?|REFERENCE-TEARDOWN|design-proposal)\.html$">
+<FilesMatch "(^|/)(MIRAI-REFERENCE(-ANALYSIS)?|REFERENCE-TEARDOWN|design-proposal)\.html$">
   <IfModule mod_authz_core.c>
     Require all denied
   </IfModule>
@@ -34,6 +34,37 @@
     Deny from all
   </IfModule>
 </FilesMatch>
+
+# ------------------------------------------------------------------
+# 静态资源长缓存
+#
+# 前台/后台静态文件都允许一年期 immutable：
+#   - dist 哈希产物（assets/dist/*.min.*）：文件名即版本，内容变 → URL 变；
+#   - 源文件：URL 带 ?v=filemtime，改动后版本号变化同样换新 URL。
+# 因此这里不区分两者，统一按内容寻址的语义发长缓存。
+# 注意：只匹配静态扩展名，PHP 入口不受影响。
+# ------------------------------------------------------------------
+<IfModule mod_headers.c>
+  <FilesMatch "\.(css|js|png|jpe?g|webp|avif|gif|svg|ico|woff2?)$">
+    Header set Cache-Control "public, max-age=31536000, immutable"
+  </FilesMatch>
+</IfModule>
+<IfModule mod_expires.c>
+  ExpiresActive On
+  ExpiresByType text/css "access plus 1 year"
+  ExpiresByType application/javascript "access plus 1 year"
+  ExpiresByType image/png "access plus 1 year"
+  ExpiresByType image/jpeg "access plus 1 year"
+  ExpiresByType image/webp "access plus 1 year"
+  ExpiresByType image/svg+xml "access plus 1 year"
+  ExpiresByType font/woff2 "access plus 1 year"
+</IfModule>
+
+# 文本资源压缩（nginx 场景见 README 的 gzip/brotli 配置示例）
+<IfModule mod_deflate.c>
+  AddOutputFilterByType DEFLATE text/html text/css text/plain \
+    application/javascript application/json image/svg+xml
+</IfModule>
 
 # 不列目录
 Options -Indexes

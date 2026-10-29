@@ -6,6 +6,9 @@
  * 因此可以直接访问 $post、$page、$options、$security 等后台上下文。
  *
  * @package ecod-theme
+ * @author  Ecod
+ * @copyright Copyright (c) 2026 Ecod (https://ecod.cc)
+ * @license   MIT
  */
 
 if (!defined('__TYPECHO_ADMIN__')) {
@@ -22,11 +25,19 @@ $ecodIsMarkdown = !empty($options->markdown)
 $ecodCid  = !empty($ecodContent->cid) ? (int) $ecodContent->cid : 0;
 $ecodBase = (string) $options->themeUrl;
 
+/* 资源地址：dist 哈希产物优先（core/asset.php 查构建 manifest，文件名即版本）；
+   未构建时回退源文件 + filemtime 版本号，与前台 ecod_asset 同一解析器 */
+require_once dirname(__DIR__) . '/core/asset.php';
+
 $ecodAssetUrl = static function (string $path) use ($ecodBase): string {
-    return \Typecho\Common::url($path, $ecodBase);
+    $dist = ecod_dist_resolve(ltrim($path, '/'));
+    return \Typecho\Common::url($dist ?? $path, $ecodBase);
 };
 
 $ecodVer = static function (string $path): string {
+    if (ecod_dist_resolve(ltrim($path, '/')) !== null) {
+        return '';
+    }
     $file = dirname(__DIR__) . '/' . ltrim($path, '/');
     return file_exists($file) ? '?v=' . filemtime($file) : '';
 };

@@ -11,6 +11,9 @@
  * 鉴权沿用后台登录 cookie + 账户令牌，与其他写接口同一套。
  *
  * @package Ecod Theme
+ * @author  Ecod
+ * @copyright Copyright (c) 2026 Ecod (https://ecod.cc)
+ * @license   MIT
  */
 
 error_reporting(E_ALL & ~E_DEPRECATED & ~E_NOTICE & ~E_WARNING);
@@ -27,6 +30,7 @@ if (!is_file($ecodRoot . '/config.inc.php')) {
 }
 require_once $ecodRoot . '/config.inc.php';
 require_once __DIR__ . '/core/schema.php';
+require_once __DIR__ . '/core/seo.php';
 require_once __DIR__ . '/core/account.php';
 require_once __DIR__ . '/core/pay.php';
 require_once __DIR__ . '/core/pay-channel.php';
@@ -63,7 +67,8 @@ try {
 
 $ecodIsAdmin = $ecodUser->hasLogin() && $ecodUser->pass('administrator', true);
 if (!$ecodIsAdmin) {
-    http_response_code(403);
+    /* Typecho 引导后原生 http_response_code 会被 ob 回调重写回 200，走双写 */
+    ecod_http_status(403);
     header('Content-Type: text/html; charset=UTF-8');
     echo '<!doctype html><meta charset="utf-8"><title>403</title>'
         . '<p style="font:15px/1.7 system-ui;padding:40px">需要管理员登录。'

@@ -10,6 +10,9 @@
  * 上传仍复用 Typecho 自带的 /action/upload，这里只负责「读」。
  *
  * @package Ecod Theme
+ * @author  Ecod
+ * @copyright Copyright (c) 2026 Ecod (https://ecod.cc)
+ * @license   MIT
  */
 
 /* 独立 JSON 入口：不让任何 warning/notice 混进响应体 */
@@ -27,6 +30,7 @@ if (!is_file($ecodRoot . '/config.inc.php')) {
     exit;
 }
 require_once $ecodRoot . '/config.inc.php';
+require_once __DIR__ . '/core/seo.php';
 
 header('Content-Type: application/json; charset=UTF-8');
 header('Cache-Control: no-store, no-cache, must-revalidate');
@@ -38,10 +42,13 @@ header('X-Robots-Tag: noindex, nofollow');
  */
 function ecod_media_out(array $data, int $status = 200): void
 {
+    /* 状态必须先写进 Response 单例再关缓冲：Typecho 的 ob 回调在缓冲
+     * 收尾时用单例状态行覆盖一切（单例还停在 200 就被写成 200），
+     * 关闭缓冲之后再补 http_response_code 已经来不及 */
+    ecod_http_status($status);
     while (ob_get_level() > 0) {
         ob_end_clean();
     }
-    http_response_code($status);
     echo json_encode($data, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
     exit;
 }

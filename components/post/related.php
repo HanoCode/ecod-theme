@@ -6,6 +6,9 @@
  * 仍不足时用最近发布兜底，因此这个区域不会因为「文章没有标签」而消失。
  *
  * @package Ecod Theme
+ * @author  Ecod
+ * @copyright Copyright (c) 2026 Ecod (https://ecod.cc)
+ * @license   MIT
  */
 if (!defined('__TYPECHO_ROOT_DIR__')) {
     exit;

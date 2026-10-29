@@ -3,6 +3,9 @@
  * 侧栏块 · 标题速览（首页「标题速览」放到侧栏时的紧凑版）
  *
  * @package Ecod Theme
+ * @author  Ecod
+ * @copyright Copyright (c) 2026 Ecod (https://ecod.cc)
+ * @license   MIT
  */
 if (!defined('__TYPECHO_ROOT_DIR__')) {
     exit;

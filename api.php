@@ -12,6 +12,9 @@
  * NAT / 校园网 / CDN 下每个浏览器仍是独立个体，刷新与爬虫也不会重复计数。
  *
  * @package Ecod Theme
+ * @author  Ecod
+ * @copyright Copyright (c) 2026 Ecod (https://ecod.cc)
+ * @license   MIT
  */
 
 /* 向上查找 Typecho 根目录 */

@@ -3,6 +3,9 @@
  * 侧栏块 · 排行榜（缩略图 + 名次徽章，可切总榜/周榜/月榜）
  *
  * @package Ecod Theme
+ * @author  Ecod
+ * @copyright Copyright (c) 2026 Ecod (https://ecod.cc)
+ * @license   MIT
  */
 if (!defined('__TYPECHO_ROOT_DIR__')) {
     exit;

@@ -15,6 +15,11 @@
  *   - 生成失败一律 302 回原图，前端永远有图可显示
  *
  * 模板与 api.php 独立入口共用，配置读取走 ecod_account_opt。
+ *
+ * @package Ecod Theme
+ * @author  Ecod
+ * @copyright Copyright (c) 2026 Ecod (https://ecod.cc)
+ * @license   MIT
  */
 
 if (!defined('__TYPECHO_ROOT_DIR__')) {

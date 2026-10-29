@@ -9,6 +9,9 @@
  *   $this->widget('EcodPostQuery', 'pageSize=3&related=25')->to($q);  // 同标签优先的相关文章
  *
  * @package Ecod Theme
+ * @author  Ecod
+ * @copyright Copyright (c) 2026 Ecod (https://ecod.cc)
+ * @license   MIT
  */
 
 if (!defined('__TYPECHO_ROOT_DIR__')) {
@@ -17,6 +20,12 @@ if (!defined('__TYPECHO_ROOT_DIR__')) {
 
 class EcodPostQuery extends \Widget\Base\Contents
 {
+    /**
+     * 组装主查询
+     *
+     * 参数见文件头用法示例；related 模式下行的顺序就是相关度序，
+     * push 时不可打乱（Widget 栈顺序即输出顺序）。
+     */
     public function execute()
     {
         $this->parameter->setDefault([

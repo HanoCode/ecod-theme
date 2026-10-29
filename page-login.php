@@ -7,6 +7,8 @@
  * @since   2026-10-29
  * @version 2.0.0
  * @link    https://ecod.cc
+ * @copyright Copyright (c) 2026 Ecod (https://ecod.cc)
+ * @license   MIT
  *
  * 在后台「页面 → 新建页面 → 自定义模板」里选择「登录」即可。
  * 登录与后台共用同一套校验（Widget\User::login）；

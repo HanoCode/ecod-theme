@@ -15,6 +15,9 @@
  * 文件不依赖主题其他函数，可被 api.php 单独引入。
  *
  * @package Ecod Theme
+ * @author  Ecod
+ * @copyright Copyright (c) 2026 Ecod (https://ecod.cc)
+ * @license   MIT
  */
 
 if (!defined('__TYPECHO_ROOT_DIR__')) {
@@ -675,7 +678,7 @@ function ecod_schema_ensure_throttle(\Typecho\Db $db): bool
 }
 
 /**
- * 确保分类 / 标签增强字段表存在（规格：design-proposal.html §32）
+ * 确保分类 / 标签增强字段表存在（规格：docs/dev/design-proposal.html §32）
  *
  * mid + mkey 复合主键：metas.mid 全站唯一，无需 type 列；
  * 保存语义 = 先删后插，管理员操作低频，不值得 upsert 兼容层。

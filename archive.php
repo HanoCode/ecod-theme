@@ -7,6 +7,8 @@
  * @since   2026-10-29
  * @version 2.0.0
  * @link    https://ecod.cc
+ * @copyright Copyright (c) 2026 Ecod (https://ecod.cc)
+ * @license   MIT
  */
 if (!defined('__TYPECHO_ROOT_DIR__')) {
     exit;
@@ -33,6 +35,8 @@ if ($this->is('search')) {
     <?php if (empty($GLOBALS['ecodCatHeadDone'])): ?>
         <h1 class="ecod_sr"><?php $this->archiveTitle(['category' => _t('分类：%s')], '', ''); ?></h1>
     <?php endif; ?>
+    <?php /* 分类工具条（F3）：分类内搜索 + 排序按钮；启用时接管 catbar */ ?>
+    <?php $this->need('components/archive/cattools.php'); ?>
     <?php /* 分类归档复用首页文章流：tab 条 + 列表 + 分页，支持无刷新切换 */ ?>
     <?php $this->need('components/home/list.php'); ?>
 <?php else: ?>

@@ -11,7 +11,7 @@
 
 return [
     'assets/css/ecod.css' => 'assets/dist/css/ecod.3b82b641.min.css',
-    'assets/js/ecod.global.js' => 'assets/dist/js/ecod.global.ca241274.min.js',
+    'assets/js/ecod.global.js' => 'assets/dist/js/ecod.global.e6fc4613.min.js',
     'assets/admin/config.css' => 'assets/dist/admin/config.932a75d5.min.css',
     'assets/admin/config.js' => 'assets/dist/admin/config.c54e90c0.min.js',
     'assets/admin/media.css' => 'assets/dist/admin/media.eb626ace.min.css',
@@ -21,8 +21,8 @@ return [
     'assets/admin/topics.css' => 'assets/dist/admin/topics.60d2de9e.min.css',
     'assets/admin/topics.js' => 'assets/dist/admin/topics.f3f5bf6a.min.js',
     'assets/admin/tools.js' => 'assets/dist/admin/tools.0a2bcb50.min.js',
-    'assets/admin/widget.css' => 'assets/dist/admin/widget.4cd258b9.min.css',
-    'assets/admin/widget.js' => 'assets/dist/admin/widget.93f82b2c.min.js',
+    'assets/admin/widget.css' => 'assets/dist/admin/widget.8dede95d.min.css',
+    'assets/admin/widget.js' => 'assets/dist/admin/widget.d5b34762.min.js',
     'admin/editor.css' => 'assets/dist/admin/editor.39884c77.min.css',
     'admin/editor.js' => 'assets/dist/admin/editor.770e834e.min.js',
     'admin/fields.js' => 'assets/dist/admin/fields.7069f7d5.min.js',

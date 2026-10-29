@@ -16,6 +16,7 @@
  * @author  Ecod
  * @license MIT
  * @link    https://ecod.cc
+ * @copyright Copyright (c) 2026 Ecod (https://ecod.cc)
  */
 
 if (!defined('ECOD_THEME_DIR')) {

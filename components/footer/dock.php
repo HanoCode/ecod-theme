@@ -6,6 +6,9 @@
  * 仅移动端显示（CSS 控制），启用后移动端右下角悬浮按钮由 dock 接管。
  *
  * @package Ecod Theme
+ * @author  Ecod
+ * @copyright Copyright (c) 2026 Ecod (https://ecod.cc)
+ * @license   MIT
  */
 if (!defined('__TYPECHO_ROOT_DIR__')) {
     exit;

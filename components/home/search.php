@@ -7,6 +7,9 @@
  * - 没配背景图 → 原来的浅色卡片，数据带降级为浅底
  *
  * @package Ecod Theme
+ * @author  Ecod
+ * @copyright Copyright (c) 2026 Ecod (https://ecod.cc)
+ * @license   MIT
  */
 if (!defined('__TYPECHO_ROOT_DIR__')) {
     exit;

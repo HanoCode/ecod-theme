@@ -7,6 +7,9 @@
  * - 里程碑：目标篇数由块参数给出，进度条只在前端算百分比
  *
  * @package Ecod Theme
+ * @author  Ecod
+ * @copyright Copyright (c) 2026 Ecod (https://ecod.cc)
+ * @license   MIT
  */
 if (!defined('__TYPECHO_ROOT_DIR__')) {
     exit;

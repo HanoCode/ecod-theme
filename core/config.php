@@ -11,6 +11,8 @@
  * @since   2026-10-29
  * @version 2.0.0
  * @link    https://ecod.cc
+ * @copyright Copyright (c) 2026 Ecod (https://ecod.cc)
+ * @license   MIT
  */
 
 if (!defined('__TYPECHO_ROOT_DIR__')) {
@@ -134,7 +136,7 @@ if (!function_exists('ecod_admin_media')) {
         <div class="ecod-admin__search">
             <div class="ecod-search__box">
                 <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.6-3.6"/></svg>
-                <input type="search" data-ecod-search placeholder="搜索设置项 / 模块" aria-label="搜索设置项" autocomplete="off">
+                <input type="search" data-ecod-search placeholder="搜索设置项" aria-label="搜索设置项" autocomplete="off">
                 <kbd data-search-hint>/</kbd>
             </div>
             <div class="ecod-searchres" data-search-results hidden></div>
@@ -306,7 +308,7 @@ if (!function_exists('ecod_admin_media')) {
                 <div class="ecod-tool">
                     <div class="ecod-tool__text">
                         <b>导出配置</b>
-                        <p>把当前全部设置与模块布局保存成 JSON 文件，换主题或重装后可原样恢复。</p>
+                        <p>把当前全部设置保存成 JSON 文件，换主题或重装后可原样恢复。模块布局的备份请用「模块管理台」右上角的导出。</p>
                     </div>
                     <button type="button" class="ecod-btn" data-ecod-export>下载 JSON</button>
                 </div>
@@ -314,7 +316,7 @@ if (!function_exists('ecod_admin_media')) {
                 <div class="ecod-tool">
                     <div class="ecod-tool__text">
                         <b>导入配置</b>
-                        <p>选择之前导出的 JSON 文件，字段与模块布局会被回填，确认无误后再点「保存设置」。</p>
+                        <p>选择之前导出的 JSON 文件，设置项会被回填，确认无误后再点「保存设置」。</p>
                     </div>
                     <label class="ecod-btn ecod-btn--ghost">
                         选择文件
@@ -395,25 +397,6 @@ if (!function_exists('ecod_admin_media')) {
                 <p class="ecod-tool__status" data-ecod-tool-status hidden></p>
             </section>
         </div>
-    </div>
-</div>
-
-<div class="ecod-drawer" data-drawer hidden>
-    <div class="ecod-drawer__mask" data-drawer-close></div>
-    <div class="ecod-drawer__panel" role="dialog" aria-modal="true" aria-label="模块参数">
-        <header class="ecod-drawer__head">
-            <div>
-                <b data-drawer-title>模块参数</b>
-                <small data-drawer-desc></small>
-            </div>
-            <button type="button" class="ecod-drawer__close" data-drawer-close aria-label="关闭">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" width="16" height="16"><path d="M18 6L6 18M6 6l12 12"/></svg>
-            </button>
-        </header>
-        <div class="ecod-drawer__body" data-drawer-body></div>
-        <footer class="ecod-drawer__foot">
-            <button type="button" class="ecod-btn" data-drawer-close>完成</button>
-        </footer>
     </div>
 </div>
 
@@ -773,7 +756,7 @@ ecod_admin_field($form, 'text', 'EVip2Year', '', '超级会员 · 年价（元�
 ecod_admin_field($form, 'text', 'EVip2Forever', '', '超级会员 · 永久价（元）', '留空表示不提供', [], 'pay', $ecodPayWhen);
 
 /* 隐藏：模块状态 */
-ecod_admin_field($form, 'hidden', 'EBlocks', '', '', '', [], 'tools');
+/* （旧 EBlocks 隐藏字段已移除：模块布局存于独立行 EWidgets，由模块管理台读写） */
 /* 隐藏：多套导航 JSON（由「导航」分组的构建器写入，core/nav.php 读取） */
 ecod_admin_field($form, 'hidden', 'ENavSets', '', '', '', [], 'nav');
 
@@ -824,6 +807,10 @@ ecod_admin_field($form, 'select', 'ECatHeadTopics', 'on', '相关专题', '分�
     'on'  => '显示',
     'off' => '不显示',
 ], 'topics', $ecodCatHeadWhen);
+ecod_admin_field($form, 'select', 'ECatTools', 'on', '分类工具条', '页头下方的工具条：分类内搜索（GET ?q=，/ 热键聚焦）+ 排序按钮（最新 / 最多浏览 / 最多评论 / 随机一篇）；启用时隐藏分类页重复的分类 Tab 条，关闭后回到旧形态', [
+    'on'  => '开启（默认）',
+    'off' => '关闭',
+], 'topics');
 
 /* ---------------- 搜索（C4 快捷搜索面板） ---------------- */
 ecod_admin_field($form, 'select', 'ESearchPanel', 'on', '快捷搜索面板', '⌘K / 点击导航搜索框 / 移动端 dock 搜索按钮唤起居中面板：热词、标签、实时联想与键盘导航；关闭后保留原地的搜索下拉与 ⌘K 聚焦', [
@@ -842,22 +829,13 @@ ecod_admin_field($form, 'select', 'ESearchTagCount', '10', '标签个数', '面�
 ecod_admin_field($form, 'hidden', 'ENavHide', '', '', '', [], 'tools');
 
 /* ------------------------------------------------------------------
- * 传给前端的数据
+ * 传给前端的数据（模块布局数据由模块管理台 widget.php 自己输出）
  * ---------------------------------------------------------------- */
-$ecodAdminData = ecod_widgets_admin_data();
-
-$ecodIconMap = [];
-foreach ($ecodAdminData['defs'] as $def) {
-    $name = $def['icon'];
-    if (!isset($ecodIconMap[$name])) {
-        $ecodIconMap[$name] = ecod_icon($name, 18);
-    }
-}
-$ecodAdminData['icons'] = $ecodIconMap;
-$ecodAdminData['panes'] = array_map(static function ($p) {
-    return ['title' => $p[0], 'desc' => $p[1]];
-}, $ecodPanes);
-$ecodAdminData['option'] = ECOD_BLOCKS_OPTION;
+$ecodAdminData = [
+    'panes' => array_map(static function ($p) {
+        return ['title' => $p[0], 'desc' => $p[1]];
+    }, $ecodPanes),
+];
 
 /* 选图器：媒体库列表走主题自带接口，上传复用 Typecho 原生动作 */
 $ecodUploadIndex = '';

@@ -7,6 +7,8 @@
  * @since   2026-10-29
  * @version 2.0.0
  * @link    https://ecod.cc
+ * @copyright Copyright (c) 2026 Ecod (https://ecod.cc)
+ * @license   MIT
  */
 
 if (!defined('__TYPECHO_ROOT_DIR__')) {
@@ -64,7 +66,7 @@ require_once __DIR__ . '/core/topics.php';
 /* 分类统计（分类页头的篇数 / 阅读 / 最近更新） */
 require_once __DIR__ . '/core/catstats.php';
 
-/* 分类 / 标签增强：封面与独立 SEO（规格 design-proposal.html §32） */
+/* 分类 / 标签增强：封面与独立 SEO（规格 docs/dev/design-proposal.html §32） */
 require_once __DIR__ . '/core/meta-meta.php';
 
 /* 付费与会员可见：门槛 / 权益 / 交易三层分离（见 docs/paywall-design.md） */
@@ -276,7 +278,7 @@ function themeInit($archive = null)
         ecod_pay_describe($archive);
     }
 
-    /* 分类 / 标签增强：独立 SEO 描述（规格 design-proposal.html §32）。
+    /* 分类 / 标签增强：独立 SEO 描述（规格 docs/dev/design-proposal.html §32）。
        header() 的 description / og:description 取 archiveDescription，
        这里用 setArchiveDescription 覆盖（同 paywall 先例），空值回退原生行为。 */
     if ($archive !== null && function_exists('ecod_meta_meta_for_archive')) {
@@ -357,6 +359,7 @@ function ecod_primary_soft(): string
     return ecod_color_mix(ecod_primary(), '#ffffff', 0.92);
 }
 
+/** 主色对应的深色字（描边 / 悬停态），供 CSS 派生变量使用 */
 function ecod_primary_deep(): string
 {
     return ecod_color_mix(ecod_primary(), '#000000', 0.16);
@@ -1002,6 +1005,7 @@ function ecod_views_value($archive, int $cid): int
     }
 }
 
+/** 把某篇的浏览量写进请求内缓存，同页多次读取不再查库 */
 function ecod_views_seed(int $cid, int $views): int
 {
     $cache = &ecod_views_cache();
@@ -1064,6 +1068,7 @@ function ecod_views_seen(int $cid): bool
     return in_array($cid, array_map('intval', explode('.', $raw)), true);
 }
 
+/** 把 cid 追加进 ecod_seen cookie，实现「同访客同文章只计一次阅读」 */
 function ecod_views_mark_seen(int $cid): void
 {
     if ($cid <= 0) {
@@ -2410,11 +2415,13 @@ if (!function_exists('threadedComments')) {
  * 模板层的接管仍在 post.php / page.php，二者按顺序执行是幂等的。
  * ---------------------------------------------------------------- */
 if (!function_exists('ecod_feed_content')) {
+    /** feed 正文：过短代码，[reply] 隐藏块替换为订阅提示（见上） */
     function ecod_feed_content(string $content, $widget = null): string
     {
         return ecod_shortcode_apply($content, $widget);
     }
 
+    /** feed 摘要：剥掉短代码标记，订阅器只留纯文本 */
     function ecod_feed_excerpt(string $excerpt, $widget = null): string
     {
         return ecod_shortcode_strip($excerpt);

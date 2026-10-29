@@ -9,6 +9,9 @@
  *   - 未绑定 → 按邮箱匹配站内账号自动绑定（可关）；匹配不到则自动建号（可关）
  *
  * @package Ecod Theme
+ * @author  Ecod
+ * @copyright Copyright (c) 2026 Ecod (https://ecod.cc)
+ * @license   MIT
  */
 
 if (!defined('__TYPECHO_ROOT_DIR__')) {

@@ -3,6 +3,9 @@
  * 首页块 · 正文流
  *
  * @package Ecod Theme
+ * @author  Ecod
+ * @copyright Copyright (c) 2026 Ecod (https://ecod.cc)
+ * @license   MIT
  */
 if (!defined('__TYPECHO_ROOT_DIR__')) {
     exit;
@@ -18,6 +21,9 @@ $ecodLayoutMode = ecod_list_force_mode($ecodLayout);
 $ecodListClass = ecod_list_class($ecodLayoutMode);
 ?>
 <section class="ecod_stream" id="ecod-stream">
+    <?php if ($this->is('category') && !empty($GLOBALS['ecodCatToolsDone'])): ?>
+        <?php /* F3 分类工具条已接管：catbar tabs 是重复导航，「共 N 篇」在 E1 统计里已有 */ ?>
+    <?php else: ?>
     <div class="ecod_streambar">
         <?php if ($ecodShowTabs): ?>
             <div class="ecod_catbar" data-ecod-catbar>
@@ -41,6 +47,7 @@ $ecodListClass = ecod_list_class($ecodLayoutMode);
             <span class="ecod_streambar__note">共 <?php echo (int) $this->getTotal(); ?> 篇</span>
         </div>
     </div>
+    <?php endif; ?>
 
     <div class="<?php echo $ecodListClass; ?>" data-ecod-infinite>
         <?php if ($this->have()): ?>

@@ -12,6 +12,9 @@
  * 在 post.php / page.php 的短代码之后、图片懒加载与外链中转之前调用。
  *
  * @package Ecod Theme
+ * @author  Ecod
+ * @copyright Copyright (c) 2026 Ecod (https://ecod.cc)
+ * @license   MIT
  */
 
 if (!defined('__TYPECHO_ROOT_DIR__')) {

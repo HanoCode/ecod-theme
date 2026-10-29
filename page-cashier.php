@@ -7,6 +7,8 @@
  * @since   2026-10-29
  * @version 2.0.0
  * @link    https://ecod.cc
+ * @copyright Copyright (c) 2026 Ecod (https://ecod.cc)
+ * @license   MIT
  *
  * 后台「页面 → 新建页面 → 自定义模板」选「收银台」。
  * 页面本身只读：下单、支付、查状态全部走 api.php，避免 GET 请求产生写操作。

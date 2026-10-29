@@ -14,6 +14,9 @@
  * 顺序一律 created DESC：专题是策展，读者要的是叙事顺序，不是热度榜。
  *
  * @package Ecod Theme
+ * @author  Ecod
+ * @copyright Copyright (c) 2026 Ecod (https://ecod.cc)
+ * @license   MIT
  */
 
 if (!defined('__TYPECHO_ROOT_DIR__')) {
