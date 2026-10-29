@@ -3,6 +3,10 @@
  * 评论墙：按留言数排行的活跃读者榜
  *
  * @package custom
+ * @author  Ecod
+ * @since   2026-10-29
+ * @version 2.0.0
+ * @link    https://ecod.cc
  *
  * 在后台「页面 → 新建页面 → 自定义模板」里选择「评论墙」即可。
  * 按邮箱聚合已通过评论数，排除站长本人。
@@ -62,7 +66,8 @@ try {
             );
             if ($last) {
                 $name = (string) $last['author'];
-                $url = (string) $last['url'];
+                /* 访客可控：只放行 http(s)，挡掉 javascript: 等带内协议 */
+                $url = ecod_safe_url((string) $last['url']);
             }
         } catch (\Throwable $e) {
         }
@@ -73,7 +78,7 @@ try {
             'url'    => $url,
             'count'  => (int) $ecodRow['num'],
             'last'   => (int) $ecodRow['last'],
-            'avatar' => ecod_avatar_prefix() . md5($mail) . '?s=72&d=mp&r=G',
+            'avatar' => ecod_comment_avatar_url($mail),
         ];
     }
 } catch (\Throwable $e) {
@@ -90,6 +95,7 @@ if ($ecodTotalComments > 0) {
 }
 ?>
 <main class="ecod_main" id="ecod-main">
+    <?php /* 模块 · 内容区上方（模块管理台） */ ecod_widgets_render("top_content", $this); ?>
 
     <nav class="ecod_crumb" aria-label="面包屑">
         <a href="<?php $this->options->siteUrl(); ?>"><?php echo ecod_icon('home', 12); ?>首页</a>
@@ -144,6 +150,8 @@ if ($ecodTotalComments > 0) {
         </div>
     <?php endif; ?>
 
+
+    <?php /* 模块 · 内容区下方（模块管理台） */ ecod_widgets_render("bottom_content", $this); ?>
 </main>
 
 <?php $this->need('public/aside.php'); ?>

@@ -135,6 +135,7 @@ if (!function_exists('ecod_card')) {
                     ? '<a class="ecod_card__meta-cat" href="' . $categoryUrl . '">' . $category . '</a>'
                     : '<span class="ecod_card__meta-cat">' . $category . '</span>';
             }
+            echo ecod_topic_chip($archive);
             echo '<time datetime="' . $fullDate . '">' . $date . '</time>';
             echo '<span>' . ecod_icon('eye', 12) . ecod_num_short($views) . '</span>';
             echo '</div>';
@@ -219,6 +220,7 @@ if (!function_exists('ecod_card')) {
                     ? '<a class="ecod_card__meta-cat" href="' . $categoryUrl . '">' . $category . '</a>'
                     : '<span class="ecod_card__meta-cat">' . $category . '</span>';
             }
+            echo ecod_topic_chip($archive);
             echo '<time datetime="' . $fullDate . '">' . $date . '</time>';
             echo '<span>' . ecod_icon('eye', 12) . ecod_num_short($views) . '</span>';
             echo '</div>';
@@ -310,6 +312,7 @@ if (!function_exists('ecod_card')) {
                 : '<span class="ecod_card__meta-cat">' . $category . '</span>';
         }
         echo implode('', $tags);
+        echo ecod_topic_chip($archive);
         echo '<time datetime="' . $fullDate . '">' . ecod_icon('calendar', 12) . $date . '</time>';
         echo '<span>' . ecod_icon('eye', 12) . ecod_num_short($views) . '</span>';
         echo '<a href="' . $permalink . '#comments">' . ecod_icon('comment', 12) . $comments . '</a>';

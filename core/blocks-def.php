@@ -2,10 +2,15 @@
 /**
  * Ecod Theme · 块声明
  *
- * 每个块 = 名称 + 图标 + 区域 + 参数 schema + 模板。
+ * 每个块 = 名称 + 图标 + 模板目录（area）+ 可放位置（slots）+ 可放页面（pages）
+ * + 参数 schema + 模板。
  * 新增块只需在这里追加一条声明，并在 components/{area}/{id}.php 放模板。
  *
  * @package Ecod Theme
+ * @author  Ecod
+ * @since   2026-10-29
+ * @version 2.0.0
+ * @link    https://ecod.cc
  */
 
 if (!defined('__TYPECHO_ROOT_DIR__')) {
@@ -21,6 +26,7 @@ ecod_block_define('search', [
     'desc'   => '首页顶部标题、站点数据与搜索框',
     'icon'   => 'search',
     'area'   => 'home',
+    'pages'  => ['home'],
     'order'  => 10,
     'params' => [
         'eyebrow'  => [
@@ -46,6 +52,44 @@ ecod_block_define('search', [
             'type'    => 'switch',
             'default' => 1,
         ],
+        'band'     => [
+            'label'   => '数据带样式',
+            'type'    => 'switch',
+            'default' => 1,
+            'desc'    => '开：三格玻璃数据带；关：一行文字',
+        ],
+        'style'    => [
+            'label'   => '首屏形态',
+            'type'    => 'select',
+            'default' => 'immersive',
+            'options' => [
+                'immersive' => '沉浸式（480px，左对齐）',
+                'card'      => '浅色卡片（紧凑）',
+            ],
+        ],
+        'bg'       => [
+            'label'   => '背景图',
+            'type'    => 'text',
+            'default' => '',
+            'desc'    => '沉浸式首屏的背景图地址；留空则用主题色渐变',
+        ],
+        'height'   => [
+            'label'   => '首屏高度',
+            'type'    => 'number',
+            'default' => 480,
+            'min'     => 320,
+            'max'     => 720,
+            'desc'    => '仅背景图模式生效，单位 px',
+        ],
+        'align'    => [
+            'label'   => '内容对齐',
+            'type'    => 'select',
+            'default' => 'left',
+            'options' => [
+                'left'   => '左对齐',
+                'center' => '居中',
+            ],
+        ],
     ],
 ]);
 
@@ -54,6 +98,7 @@ ecod_block_define('catnav', [
     'desc'   => '分类卡片横排，带文章数',
     'icon'   => 'folder',
     'area'   => 'home',
+    'pages'  => ['home'],
     'order'  => 20,
     'params' => [
         'limit' => [
@@ -71,6 +116,7 @@ ecod_block_define('slider', [
     'desc'   => '大图轮播：可自定义图文与链接，也可取置顶 / 最新文章',
     'icon'   => 'image',
     'area'   => 'home',
+    'pages'  => ['home'],
     'order'  => 30,
     'params' => [
         'slides' => [
@@ -177,6 +223,7 @@ ecod_block_define('focus', [
     'desc'   => '左侧大图 + 右侧标题列表',
     'icon'   => 'layers',
     'area'   => 'home',
+    'pages'  => ['home'],
     'order'  => 70,
     'params' => [
         'count' => [
@@ -199,6 +246,7 @@ ecod_block_define('cat-post', [
     'desc'   => '指定分类的文章卡片',
     'icon'   => 'hash',
     'area'   => 'home',
+    'pages'  => ['home', 'cat'],
     'areas'  => ['home', 'aside'],
     'order'  => 80,
     'params' => [
@@ -247,6 +295,7 @@ ecod_block_define('overview', [
     'desc'   => '文章、评论、标签、运行天数',
     'icon'   => 'chart',
     'area'   => 'home',
+    'pages'  => ['home'],
     'order'  => 100,
     'params' => [
         'views' => [
@@ -322,6 +371,7 @@ ecod_block_define('collection', [
     'desc'   => '按分类聚合的专题卡片，封面取分类最新文章',
     'icon'   => 'layers',
     'area'   => 'home',
+    'pages'  => ['home'],
     'order'  => 150,
     'on'     => false,
     'params' => [
@@ -342,6 +392,42 @@ ecod_block_define('collection', [
             'type'    => 'text',
             'default' => '',
             'desc'    => '分类 mid，逗号分隔；留空则按分类顺序取前几个',
+        ],
+    ],
+]);
+
+ecod_block_define('topics', [
+    'name'   => '专题',
+    'desc'   => '专题墙切片：跨分类的策展合集，封面取专题封面或最新文章首图',
+    'icon'   => 'layers',
+    'area'   => 'home',
+    'pages'  => ['home'],
+    'order'  => 160,
+    'on'     => false,
+    'params' => [
+        'title' => [
+            'label'   => '标题',
+            'type'    => 'text',
+            'default' => '专题',
+        ],
+        'count' => [
+            'label'   => '显示数量',
+            'type'    => 'number',
+            'default' => 3,
+            'min'     => 1,
+            'max'     => 12,
+        ],
+        'cols'  => [
+            'label'   => '每行列数',
+            'type'    => 'select',
+            'default' => '3',
+            'options' => ['2' => '2 列', '3' => '3 列', '4' => '4 列'],
+        ],
+        'style' => [
+            'label'   => '卡片形态',
+            'type'    => 'select',
+            'default' => 'cover',
+            'options' => ['cover' => '封面卡（上图下文）', 'plain' => '文字卡（紧凑）'],
         ],
     ],
 ]);
@@ -424,6 +510,7 @@ ecod_block_define('author', [
     'desc'   => '头像、时段问候、简介与社交链接',
     'icon'   => 'user',
     'area'   => 'aside',
+    'pages'  => ['single', 'author'],
     'order'  => 15,
     'on'     => false,
     'params' => [
@@ -461,6 +548,17 @@ ecod_block_define('author', [
             'type'    => 'switch',
             'default' => 1,
         ],
+        'uid'    => [
+            'label'   => '博主 uid',
+            'type'    => 'text',
+            'default' => '',
+            'desc'    => '在线点按这个用户的最近登录判定；留空自动取管理员组最早的账号',
+        ],
+        'online' => [
+            'label'   => '显示在线点与博主徽章',
+            'type'    => 'switch',
+            'default' => 1,
+        ],
     ],
 ]);
 
@@ -469,6 +567,7 @@ ecod_block_define('toc', [
     'desc'   => '仅文章页显示，自动抽取正文标题',
     'icon'   => 'file',
     'area'   => 'aside',
+    'pages'  => ['single'],
     'order'  => 20,
     'params' => [
         'title' => [
@@ -755,6 +854,7 @@ ecod_block_define('act', [
     'desc'   => '点赞 / 收藏 / 复制链接 / 社交分享 / 赞赏收款码',
     'icon'   => 'heart',
     'area'   => 'post',
+    'pages'  => ['single'],
     'order'  => 10,
     'params' => [
         'like'  => [
@@ -799,6 +899,7 @@ ecod_block_define('tts', [
     'desc'   => '用浏览器语音合成朗读正文，可调语速、显示进度',
     'icon'   => 'volume',
     'area'   => 'post',
+    'pages'  => ['single'],
     'order'  => 12,
     'anchor' => 'top', // 锚定文章顶部：正文之前渲染（post.php 单独调用）
     'params' => [],
@@ -809,6 +910,7 @@ ecod_block_define('copyright', [
     'desc'   => '作者、原文链接与转载协议',
     'icon'   => 'file',
     'area'   => 'post',
+    'pages'  => ['single'],
     'order'  => 15,
     'params' => [
         'title'   => [
@@ -839,6 +941,7 @@ ecod_block_define('postnav', [
     'desc'   => '相邻文章跳转',
     'icon'   => 'arrow-up-right',
     'area'   => 'post',
+    'pages'  => ['single'],
     'order'  => 20,
     'params' => [],
 ]);
@@ -848,6 +951,7 @@ ecod_block_define('related', [
     'desc'   => '同标签优先，同分类补齐，不足用最近文章兜底',
     'icon'   => 'link',
     'area'   => 'post',
+    'pages'  => ['single'],
     'order'  => 30,
     'params' => [
         'title' => [
@@ -886,13 +990,36 @@ ecod_block_define('credits', [
     ],
 ]);
 
+ecod_block_define('siteage', [
+    'name'   => '站点年龄 · 里程碑',
+    'desc'   => '「本站已运行 N 天」与目标篇数进度条，数字自动统计',
+    'icon'   => 'calendar',
+    'area'   => 'footer',
+    'order'  => 15,
+    'on'     => true,
+    'params' => [
+        'days' => [
+            'label'   => '显示已运行天数',
+            'type'    => 'switch',
+            'default' => 1,
+        ],
+        'goal' => [
+            'label'   => '目标篇数',
+            'type'    => 'number',
+            'default' => 0,
+            'min'     => 0,
+            'max'     => 100000,
+            'desc'    => '填 0 不显示进度条；达成后自动改成「已达成」',
+        ],
+    ],
+]);
+
 ecod_block_define('links', [
     'name'   => '页脚链接',
     'desc'   => '备案号、首页、RSS',
     'icon'   => 'link',
     'area'   => 'footer',
-    'order'  => 20,
-    'params' => [
+    'order'  => 20,    'params' => [
         'icp'  => [
             'label'   => '备案号',
             'type'    => 'text',

@@ -2,9 +2,13 @@
 /**
  * 文章页
  *
- * 互动按钮 / 上下篇 / 相关推荐由后台「文章页」区块管理（块系统）。
+ * 互动按钮 / 上下篇 / 相关推荐在「模块管理台」里按位置摆放（见 design-proposal.html §31）。
  *
  * @package Ecod Theme
+ * @author  Ecod
+ * @since   2026-10-29
+ * @version 2.0.0
+ * @link    https://ecod.cc
  */
 if (!defined('__TYPECHO_ROOT_DIR__')) {
     exit;
@@ -125,7 +129,7 @@ if ($ecodStaleDays > 0) {
             </section>
         <?php endif; ?>
 
-        <?php ecod_blocks_render('post', $this, 'top'); ?>
+        <?php ecod_widgets_render('top_content', $this); ?>
 
         <?php
         /* 已解锁：只显示一条「已购买 / 会员权益」状态 */
@@ -168,9 +172,23 @@ if ($ecodStaleDays > 0) {
             </div>
         <?php endif; ?>
 
-        <?php ecod_blocks_render('post', $this); ?>    </article>
+        <?php ecod_widgets_render('bottom_content', $this); ?>    </article>
 
     <?php $this->need('comments.php'); ?>
+
+    <?php
+    /* D3 底部快速评论条（仅移动端显示，见 CSS 媒体查询）：
+       锁定 / 付费锁 / 评论关闭的文章不输出；第三方评论区也允许（滚动到 #comments） */
+    if (ecod_option('EQuickBar', 'on') === 'on'
+        && !$ecodLocked && !$ecodPayLocked
+        && ecod_option('EComment', 'on') !== 'off'
+        && $this->allow('comment')):
+    ?>
+    <button type="button" class="ecod_quickbar" data-ecod-quickbar aria-label="写评论">
+        <?php echo ecod_icon('comment', 15); ?>
+        <span>我来说说…</span>
+    </button>
+    <?php endif; ?>
 
     <?php if (ecod_option('EFloatToc', 'on') === 'on'): ?>
         <div class="ecod_floattoc" data-ecod-floattoc></div>

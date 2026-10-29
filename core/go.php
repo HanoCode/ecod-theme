@@ -41,19 +41,52 @@ function ecod_go_hosts(): array
 }
 
 /**
- * URL → 中转 token（base64url）
+ * 签名密钥（与评论令牌同一密钥源）
  */
-function ecod_go_token(string $url): string
+function ecod_go_secret(): string
 {
-    return rtrim(strtr(base64_encode($url), '+/', '-_'), '=');
+    if (function_exists('ecod_comment_secret')) {
+        return ecod_comment_secret();
+    }
+    try {
+        $options = \Widget\Options::alloc();
+        return (string) ($options->secret !== '' ? $options->secret : $options->siteUrl);
+    } catch (\Throwable $e) {
+        return 'ecod';
+    }
 }
 
 /**
- * token → URL（非法返回空）
+ * URL → 中转 token（base64url + HMAC 签名）
+ *
+ * 纯 base64 任何人都能构造（开放重定向会被扫描器和钓鱼利用），
+ * 加 10 位 HMAC 后，只有本站渲染出的链接才会被中转页放行。
+ */
+function ecod_go_token(string $url): string
+{
+    $b64 = rtrim(strtr(base64_encode($url), '+/', '-_'), '=');
+    return $b64 . '.' . substr(hash_hmac('sha256', $b64, ecod_go_secret()), 0, 10);
+}
+
+/**
+ * token → URL（无签名、签名不符或非法返回空）
  */
 function ecod_go_untoken(string $token): string
 {
-    $pad = strtr($token, '-_', '+/');
+    $dot = strrpos($token, '.');
+    if ($dot === false) {
+        return '';
+    }
+    $b64 = substr($token, 0, $dot);
+    $sig = substr($token, $dot + 1);
+    if (!preg_match('/^[A-Za-z0-9_\-]{8,}$/', $b64) || !preg_match('/^[a-f0-9]{10}$/', $sig)) {
+        return '';
+    }
+    if (!hash_equals(substr(hash_hmac('sha256', $b64, ecod_go_secret()), 0, 10), $sig)) {
+        return '';
+    }
+
+    $pad = strtr($b64, '-_', '+/');
     $pad .= str_repeat('=', (4 - strlen($pad) % 4) % 4);
     $url = base64_decode($pad, true);
     if ($url === false || !preg_match('#^https?://#i', $url)) {
@@ -174,7 +207,7 @@ function ecod_go_intercept(): void
         $token = (string) $_GET['go'];
     }
 
-    if ($token === '' || !preg_match('#^[A-Za-z0-9_\-]{8,}$#', $token)) {
+    if ($token === '' || !preg_match('#^[A-Za-z0-9_\-]{8,}\.[a-f0-9]{10}$#', $token)) {
         return;
     }
 

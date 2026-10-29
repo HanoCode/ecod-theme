@@ -351,19 +351,26 @@
     };
 
     /* ---------- 阅读进度 ---------- */
+    /* 进度计算：0-100 的阅读百分比。顶部进度条与目录进度环共用这一份口径 */
+    Ecod.readProgress = function () {
+        var article = document.querySelector('[data-ecod-article]');
+        if (!article) return 0;
+        var total = article.offsetHeight - window.innerHeight + 120;
+        var rect = article.getBoundingClientRect();
+        var read = Math.min(Math.max(-rect.top + 120, 0), Math.max(total, 1));
+        return Math.min(read / Math.max(total, 1) * 100, 100);
+    };
+
     Ecod.initProgress = function () {
         var bar = document.querySelector('[data-ecod-progress]');
-        var article = document.querySelector('[data-ecod-article]');
-        if (!bar || !article) {
-            if (bar) bar.style.width = '0%';
+        if (!bar) return;
+        if (!document.querySelector('[data-ecod-article]')) {
+            bar.style.width = '0%';
             return;
         }
 
         Ecod.addScroll(function () {
-            var rect = article.getBoundingClientRect();
-            var total = article.offsetHeight - window.innerHeight + 120;
-            var read = Math.min(Math.max(-rect.top + 120, 0), Math.max(total, 1));
-            var pct = Math.min(read / Math.max(total, 1) * 100, 100);
+            var pct = Ecod.readProgress();
             bar.style.width = pct + '%';
             bar.classList.toggle('is-done', pct >= 99);
         });
@@ -418,6 +425,19 @@
             var targets = links.map(function (a) { return document.getElementById(a.dataset.toc); });
 
             var activeIndex = -1;
+
+            /* C3：进度环 / 弹层进度条 / 章节计数，与顶部进度条共用同一口径。
+               必须在「章节未变化」时也跑 —— 同一节内滚动 pct 仍在变，
+               否则进度只在跨章节时跳变。 */
+            function syncProgress(next) {
+                if (!showProg || !floatBox) return;
+                var pct = Math.round(Ecod.readProgress());
+                if (ringBar) ringBar.style.strokeDashoffset = String(100 - pct);
+                if (meterBar) meterBar.style.width = pct + '%';
+                if (stat) stat.textContent = (next + 1) + ' / ' + targets.length + ' 节 · ' + pct + '%';
+                floatBox.classList.toggle('is-done', pct >= 99);
+            }
+
             function spy() {
                 var line = headerOffset();
                 var atBottom = window.innerHeight + window.scrollY >= document.body.scrollHeight - 4;
@@ -426,13 +446,19 @@
                     if (t && t.getBoundingClientRect().top <= line) next = i;
                 });
                 if (atBottom) next = targets.length - 1;
-                if (next === activeIndex) return;
+                if (next === activeIndex) {
+                    syncProgress(next);
+                    return;
+                }
                 activeIndex = next;
                 links.forEach(function (a, i) {
                     a.classList.toggle('is-active', i === next);
+                    /* C3：当前节之前的项目标已读，读进度在目录里可视化 */
+                    a.classList.toggle('is-read', i < next);
                     if (i === next) a.setAttribute('aria-current', 'true');
                     else a.removeAttribute('aria-current');
                 });
+                syncProgress(next);
                 /* 列表过长时把当前项滚进可视区 */
                 var cur = links[next];
                 if (cur && list.scrollHeight > list.clientHeight + 8) {
@@ -458,18 +484,29 @@
             var layout = document.querySelector('.ecod_layout');
             var side = layout && layout.getAttribute('data-aside') === 'left' ? 'right' : 'left';
             floatBox.className = 'ecod_floattoc is-' + side;
+            /* C3 目录进度条：ETocProgress=on 时按钮套进度环、弹层头部加进度条与章节计数 */
+            var showProg = CFG.tocProgress !== false;
+            var RING = '<svg class="ecod_floattoc__ring" viewBox="0 0 36 36" aria-hidden="true">'
+                + '<circle class="ecod_floattoc__ring-t" cx="18" cy="18" r="16"/>'
+                + '<circle class="ecod_floattoc__ring-b" cx="18" cy="18" r="16" pathLength="100"/></svg>';
             floatBox.innerHTML =
                 '<button type="button" class="ecod_floattoc__btn" data-ecod-ft-btn aria-expanded="false" aria-haspopup="true">'
                 + '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 6h13M8 12h13M8 18h13"/><path d="M3 6h.01M3 12h.01M3 18h.01"/></svg>'
-                + '<span>目录</span></button>'
+                + '<span>目录</span>'
+                + (showProg ? RING : '') + '</button>'
                 + '<div class="ecod_floattoc__pop" data-ecod-ft-pop role="menu" aria-label="文章目录">'
-                + '<p class="ecod_floattoc__head">目录</p>'
+                + '<p class="ecod_floattoc__head">目录'
+                + (showProg ? '<span class="ecod_floattoc__stat" data-ecod-ft-stat></span>' : '') + '</p>'
+                + (showProg ? '<div class="ecod_floattoc__meter" aria-hidden="true"><i data-ecod-ft-meter></i></div>' : '')
                 + '<nav class="ecod_toc ecod_floattoc__list"></nav>'
                 + '</div>';
 
             var btn = floatBox.querySelector('[data-ecod-ft-btn]');
             var pop = floatBox.querySelector('[data-ecod-ft-pop]');
             var list = floatBox.querySelector('.ecod_floattoc__list');
+            var ringBar = floatBox.querySelector('.ecod_floattoc__ring-b');
+            var meterBar = floatBox.querySelector('[data-ecod-ft-meter]');
+            var stat = floatBox.querySelector('[data-ecod-ft-stat]');
             mount(list);
 
             function setOpen(open) {
@@ -992,9 +1029,9 @@
         }
         var html = '';
         list.forEach(function (f) {
-            html += '<a class="ecod_favs__item" href="' + f.url + '">'
-                + '<span class="ecod_favs__title">' + (f.title || '未命名') + '</span>'
-                + '<button type="button" class="ecod_favs__del" data-ecod-fav-del="' + f.url + '" aria-label="移除收藏">'
+            html += '<a class="ecod_favs__item" href="' + escapeHtml(f.url) + '">'
+                + '<span class="ecod_favs__title">' + escapeHtml(f.title || '未命名') + '</span>'
+                + '<button type="button" class="ecod_favs__del" data-ecod-fav-del="' + escapeHtml(f.url) + '" aria-label="移除收藏">'
                 + Ecod.icon('x', 12) + '</button></a>';
         });
         box.innerHTML = html;
@@ -1198,7 +1235,7 @@
         if (!history.length) {
             renderList('history', emptyBox('clock', '暂无浏览记录'));
         } else {
-            html = '';
+            var html = '';
             history.forEach(function (h) {
                 html += '<a class="ecod_uc__item" href="' + esc(h.url) + '">'
                     + '<span class="ecod_uc__main"><b>' + esc(h.title || '未命名') + '</b>'
@@ -1215,7 +1252,7 @@
             renderList('orders', emptyBox('inbox', '暂无订单；支付类插件提交的订单会显示在这里'));
         } else {
             var statusMap = { pending: '待支付', paid: '已完成', closed: '已关闭' };
-            html = '';
+            var html = '';
             orders.forEach(function (o) {
                 html += '<div class="ecod_uc__item is-order">'
                     + '<span class="ecod_uc__main"><b>' + esc(o.title) + '</b>'
@@ -1536,6 +1573,44 @@
                 btn.hidden = false;
             });
         }
+    };
+
+    /* ---------- D3 底部快速评论条（移动端）+ D2 点赞头像堆叠跳评论区 ---------- */
+    Ecod.initQuickBar = function () {
+        var bar = document.querySelector('[data-ecod-quickbar]');
+        var comments = document.getElementById('comments');
+        var on = false;
+
+        /* 滚动显隐：评论区整体还在视口下方且已滚过一屏才出现，进入评论区即隐藏 */
+        if (bar && comments) {
+            var sync = function () {
+                var cRect = comments.getBoundingClientRect();
+                var vh = window.innerHeight || 1;
+                var show = cRect.top > vh && window.scrollY > vh * 0.6;
+                if (show !== on) {
+                    on = show;
+                    bar.classList.toggle('is-on', show);
+                }
+            };
+            Ecod.addScroll(sync);
+            sync();
+        }
+
+        /* 点击：平滑滚到评论区并聚焦输入框（桌面只滚动不抢焦点）。
+           once 防 PJAX 重复绑定；quickbar 与点赞头像堆叠共用该行为 */
+        once(document, 'quickbar', 'click', function (e) {
+            var btn = e.target.closest ? e.target.closest('[data-ecod-quickbar], [data-ecod-likers]') : null;
+            if (!btn) return;
+            e.preventDefault();
+            var target = document.getElementById('comments');
+            if (!target) return;
+            target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            setTimeout(function () {
+                if (window.innerWidth > 768) return;
+                var ta = document.getElementById('textarea');
+                if (ta) ta.focus({ preventScroll: true });
+            }, 480);
+        });
     };
 
     /* ---------- 分享图：小红书式分享卡片（canvas 生成，扫码读原文） ---------- */
@@ -3012,20 +3087,261 @@
     };
 
     /* ---------- 快捷键：Cmd/Ctrl + K ---------- */
+    /* ESearchPanel=on 时唤起居中搜索面板；off 时退回旧行为：聚焦导航搜索框 */
     Ecod.initHotkey = function () {
         once(document, 'hotkey', 'keydown', function (e) {
             if ((e.metaKey || e.ctrlKey) && (e.key === 'k' || e.key === 'K')) {
-                var input = document.querySelector('[data-ecod-search-input]');
-                if (input) {
-                    e.preventDefault();
-                    input.focus();
+                e.preventDefault();
+                if (Ecod.searchPanelOpen) {
+                    Ecod.searchPanelOpen();
+                    return;
                 }
+                var input = document.querySelector('[data-ecod-search-input]');
+                if (input) input.focus();
             }
         });
     };
 
+    /* ---------- 居中搜索面板：热词 / 标签 / 实时结果 / 键盘导航 ---------- */
+    Ecod.initSearchPanel = function () {
+        var panel = document.querySelector('[data-ecod-spanel]');
+        if (!panel || panel.dataset.ecodPanel) return;
+        panel.dataset.ecodPanel = '1';
+
+        var input = panel.querySelector('[data-ecod-spanel-input]');
+        var body = panel.querySelector('[data-ecod-spanel-body]');
+        var all = panel.querySelector('[data-ecod-spanel-all]');
+        if (!input || !body) return;
+
+        var searchTpl = CFG.searchUrl || '/?s={q}';
+        /* 搜索地址：路由模板（/search/{q}/）优先，退化为 ?s= 查询串 */
+        function searchHref(q) {
+            var enc = encodeURIComponent(q);
+            if (searchTpl.indexOf('{q}') > -1) return searchTpl.replace('{q}', enc);
+            return searchTpl + (searchTpl.indexOf('?') > -1 ? '&' : '?') + 's=' + enc;
+        }
+        var hotwords = Array.isArray(CFG.hotwords) ? CFG.hotwords : [];
+        var tags = [];
+        try { tags = JSON.parse(panel.getAttribute('data-tags') || '[]'); } catch (e) {}
+        if (!Array.isArray(tags)) tags = [];
+
+        function isOpen() { return panel.classList.contains('is-open'); }
+
+        function open(prefill) {
+            /* 已经打开时只补焦点，不要把用户正在输入的内容重置回空态 */
+            if (isOpen()) {
+                input.focus();
+                return;
+            }
+            panel.classList.add('is-open');
+            panel.removeAttribute('aria-hidden');
+            renderIdle(prefill || '');
+            if (prefill) {
+                input.value = prefill;
+                onInput();
+            }
+            setTimeout(function () { input.focus(); }, 60);
+        }
+
+        function close() {
+            panel.classList.remove('is-open');
+            panel.setAttribute('aria-hidden', 'true');
+            input.blur();
+        }
+
+        Ecod.searchPanelOpen = open;
+        Ecod.searchPanelClose = close;
+
+        panel.querySelectorAll('[data-ecod-spanel-close]').forEach(function (el) {
+            once(el, 'spanelClose', 'click', close);
+        });
+
+        /* 导航搜索框点击 → 打开面板（capture 拦截，原表单不再聚焦弹下拉） */
+        document.addEventListener('click', function (e) {
+            var box = e.target.closest ? e.target.closest('.ecod_nav__search') : null;
+            if (!box) return;
+            e.preventDefault();
+            open();
+        }, true);
+
+        /* 移动端 dock 搜索按钮 → 打开面板；面板关闭（ESearchPanel=off）时保留抽屉 */
+        document.addEventListener('click', function (e) {
+            var btn = e.target.closest ? e.target.closest('[data-ecod-dock-search]') : null;
+            if (!btn) return;
+            e.preventDefault();
+            e.stopImmediatePropagation();
+            open();
+        }, true);
+
+        /* 遮罩外的点击落在面板外也关闭（只拦一次点击，避免误伤） */
+        document.addEventListener('keydown', function (e) {
+            if (!isOpen()) return;
+            if (e.key === 'Escape') {
+                e.preventDefault();
+                close();
+            }
+        });
+
+        /* ---- 空态：最近搜索 + 热词 + 标签 ---- */
+        function chipRow(label, cls, items, withIcon) {
+            if (!items.length) return '';
+            var html = '<div class="ecod_spanel__row ' + cls + '"><div class="ecod_spanel__rowlabel">' + label + '</div><div class="ecod_spanel__chips">';
+            items.forEach(function (it) {
+                var text = typeof it === 'string' ? it : it.name;
+                var href = typeof it === 'string' ? searchHref(it) : it.url;
+                html += '<a class="ecod_spanel__chip ecod_spanel__item" href="' + esc(href) + '" data-ecod-spanel-q="' + esc(typeof it === 'string' ? it : it.name) + '">'
+                    + (withIcon ? Ecod.icon('zap', 12) : '')
+                    + '<span>' + esc(text) + '</span></a>';
+            });
+            return html + '</div></div>';
+        }
+
+        function renderIdle() {
+            var html = '';
+            var hist = readHist();
+            if (hist.length) {
+                html += '<div class="ecod_spanel__row"><div class="ecod_spanel__rowlabel">最近搜索</div><div class="ecod_spanel__chips">';
+                hist.forEach(function (h) {
+                    html += '<a class="ecod_spanel__chip ecod_spanel__item is-hist" href="' + esc(searchHref(h)) + '" data-ecod-spanel-q="' + esc(h) + '">'
+                        + Ecod.icon('clock', 12) + '<span>' + esc(h) + '</span></a>';
+                });
+                html += '</div></div>';
+            }
+            html += chipRow('热词', 'is-hot', hotwords, false);
+            html += chipRow('标签', 'is-tags', tags, false);
+            if (!html) html = '<div class="ecod_spanel__hint">输入关键词，回车全站搜索</div>';
+            body.innerHTML = html;
+            body.classList.remove('is-results');
+        }
+
+        /* ---- 实时结果 ---- */
+        var timer = 0;
+        function onInput() {
+            var q = input.value.trim();
+            clearTimeout(timer);
+            if (!q) {
+                renderIdle();
+                return;
+            }
+            timer = setTimeout(function () { fetchResults(q); }, 180);
+        }
+
+        function fetchResults(q) {
+            fetch((CFG.api || '') + '?action=search_suggest&q=' + encodeURIComponent(q), {
+                credentials: 'same-origin'
+            }).then(function (r) { return r.json(); }).then(function (data) {
+                if (input.value.trim() !== q) return;
+                if (!data || !data.ok) return;
+                renderResults(data.list || [], q);
+            }).catch(function () {});
+        }
+
+        function renderResults(items, q) {
+            var html = '<div class="ecod_spanel__rowlabel">搜索结果 · 回车全站搜索</div>';
+            if (items.length) {
+                html += '<div class="ecod_spanel__results">';
+                items.forEach(function (it) {
+                    html += '<a class="ecod_spanel__result ecod_spanel__item" href="' + esc(postUrl(it.cid)) + '" data-ecod-spanel-q="' + esc(q) + '">'
+                        + '<span class="ecod_spanel__result-t">' + highlightTitle(it.title, q) + '</span>'
+                        + (it.date ? '<time>' + esc(it.date) + '</time>' : '')
+                        + '</a>';
+                });
+                html += '</div>';
+            } else {
+                html += '<div class="ecod_spanel__empty">没有匹配「' + esc(q) + '」的文章，回车全站搜索</div>';
+            }
+            body.innerHTML = html;
+            body.classList.add('is-results');
+        }
+
+        input.addEventListener('input', onInput);
+
+        /* ---- 键盘：↑↓ 移动高亮，Enter 打开， Esc 已由全局接管 ---- */
+        var activeIdx = -1;
+        function items() {
+            return Array.prototype.slice.call(body.querySelectorAll('.ecod_spanel__item'));
+        }
+        function setActive(i) {
+            var list = items();
+            if (!list.length) return;
+            activeIdx = (i + list.length) % list.length;
+            list.forEach(function (el, k) { el.classList.toggle('is-hl', k === activeIdx); });
+            var cur = list[activeIdx];
+            if (cur && cur.scrollIntoView) cur.scrollIntoView({ block: 'nearest' });
+        }
+        input.addEventListener('keydown', function (e) {
+            var list = items();
+            if (e.key === 'ArrowDown') { e.preventDefault(); setActive(activeIdx + 1); return; }
+            if (e.key === 'ArrowUp') { e.preventDefault(); setActive(activeIdx - 1); return; }
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                var q = input.value.trim();
+                if (activeIdx > -1 && list[activeIdx]) {
+                    var a = list[activeIdx];
+                    if (a.getAttribute('data-ecod-spanel-q')) pushHist(a.getAttribute('data-ecod-spanel-q'));
+                    window.location.href = a.href;
+                    return;
+                }
+                if (q) {
+                    pushHist(q);
+                    window.location.href = searchHref(q);
+                }
+            }
+        });
+
+        /* 点击热词 / 标签 / 最近搜索 → 回填并即时搜索；点结果记历史 */
+        body.addEventListener('click', function (e) {
+            var chip = e.target.closest ? e.target.closest('.ecod_spanel__chip') : null;
+            if (chip) {
+                e.preventDefault();
+                input.value = chip.getAttribute('data-ecod-spanel-q') || chip.textContent.trim();
+                activeIdx = -1;
+                onInput();
+                return;
+            }
+            var result = e.target.closest ? e.target.closest('.ecod_spanel__result') : null;
+            if (result) {
+                var q = result.getAttribute('data-ecod-spanel-q');
+                if (q) pushHist(q);
+            }
+        });
+
+        if (all) {
+            all.addEventListener('click', function () {
+                var q = input.value.trim();
+                if (q) pushHist(q);
+            });
+        }
+    };
+
     /* ---------- 搜索下拉：最近搜索 + 标题联想 ---------- */
     var SKEY = 'ecod-search-history';
+
+    /* 最近搜索：导航下拉与搜索面板共用一份 localStorage */
+    function readHist() {
+        try {
+            var list = JSON.parse(localStorage.getItem(SKEY) || '[]');
+            return Array.isArray(list) ? list.filter(function (q) { return typeof q === 'string' && q; }) : [];
+        } catch (e) {
+            return [];
+        }
+    }
+
+    function pushHist(q) {
+        var list = readHist().filter(function (x) { return x !== q; });
+        list.unshift(q);
+        try { localStorage.setItem(SKEY, JSON.stringify(list.slice(0, 8))); } catch (e) {}
+    }
+
+    function highlightTitle(title, q) {
+        var t = esc(title);
+        if (!q) return t;
+        try {
+            var re = new RegExp('(' + q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + ')', 'i');
+            t = t.replace(re, '<mark>$1</mark>');
+        } catch (e) {}
+        return t;
+    }
 
     Ecod.initSearchSuggest = function () {
         document.querySelectorAll('[data-ecod-search-input]').forEach(function (input) {
@@ -3040,32 +3356,12 @@
             drop.hidden = true;
             form.appendChild(drop);
 
-            function readHist() {
-                try {
-                    var list = JSON.parse(localStorage.getItem(SKEY) || '[]');
-                    return Array.isArray(list) ? list.filter(function (q) { return typeof q === 'string' && q; }) : [];
-                } catch (e) {
-                    return [];
-                }
-            }
-
-            function pushHist(q) {
-                var list = readHist().filter(function (x) { return x !== q; });
-                list.unshift(q);
-                try { localStorage.setItem(SKEY, JSON.stringify(list.slice(0, 8))); } catch (e) {}
-            }
-
             function renderList(items, q) {
                 var html = '';
                 if (q && items.length) {
                     html += '<div class="ecod_suggest__label">搜索结果</div>';
                     items.forEach(function (it) {
-                        var t = esc(it.title);
-                        try {
-                            var re = new RegExp('(' + q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + ')', 'i');
-                            t = t.replace(re, '<mark>$1</mark>');
-                        } catch (e) {}
-                        html += '<a class="ecod_suggest__item" href="' + esc(postUrl(it.cid)) + '">' + t + '</a>';
+                        html += '<a class="ecod_suggest__item" href="' + esc(postUrl(it.cid)) + '">' + highlightTitle(it.title, q) + '</a>';
                     });
                 }
                 if (!q) {
@@ -3259,16 +3555,34 @@
                 Array.prototype.forEach.call(doc.querySelectorAll('noscript'), function (n) {
                     n.remove();
                 });
-                /* 换整个主内容区而非仅文章流：首页的轮播/热门等块在 #ecod-stream
-                   外面，只换流的话从分类页点「最新」回来时这些块会丢失 */
-                var next = doc.getElementById('ecod-main');
-                var cur = document.getElementById('ecod-main');
-                if (!next || !cur) {
+                /* 换多少由两侧骨架决定（分类 tab 只是筛选文章流，不能连页面骨架一起换走）：
+                   ① 首页 → 分类：只换 #ecod-stream，首页横幅与流后面的块保持原位；
+                   ② 分类 → 分类：页头跟着换（标题/统计要变）+ 只换文章流；
+                   ③ 分类 → 首页：换整个主区，首页横幅与流后面的块才回得来 */
+                var nextStream = doc.getElementById('ecod-stream');
+                var curStream = document.getElementById('ecod-stream');
+                if (!nextStream || !curStream) {
                     location.href = url;
                     return;
                 }
+                var nextHead = doc.querySelector('.ecod_chead');
+                var curHead = document.querySelector('.ecod_chead');
+
+                if (curHead && !nextHead) {
+                    var nextMain = doc.getElementById('ecod-main');
+                    var curMain = document.getElementById('ecod-main');
+                    if (!nextMain || !curMain) {
+                        location.href = url;
+                        return;
+                    }
+                    curMain.replaceWith(nextMain);
+                } else {
+                    if (curHead && nextHead) {
+                        curHead.replaceWith(nextHead);
+                    }
+                    curStream.replaceWith(nextStream);
+                }
                 if (doc.title) document.title = doc.title;
-                cur.replaceWith(next);
                 if (push) history.pushState({ ecodStream: 1 }, '', url);
 
                 Ecod.refresh();
@@ -4242,28 +4556,165 @@
             var avatarInput = root.querySelector('[data-ecod-avatar-input]');
             var avatarImg = root.querySelector('[data-ecod-avatar-img]');
             var removeBtn = root.querySelector('[data-ecod-avatar-remove]');
+
+            var avatarUpload = function (file, name) {
+                var body = new FormData();
+                body.append('avatar', file, name);
+                body.append('token', token);
+                accMsg('avatar', '上传中…', true);
+                accPost('avatar_upload', body).then(function (data) {
+                    if (data && data.ok) {
+                        accMsg('avatar', '头像已更新，刷新页面…', true);
+                        if (avatarImg) avatarImg.src = data.url + '?t=' + Date.now();
+                        setTimeout(function () { location.reload(); }, 600);
+                    } else {
+                        accMsg('avatar', (data && data.error) || '上传失败', false);
+                    }
+                }).catch(function () {
+                    accMsg('avatar', '网络异常，请重试', false);
+                });
+            };
+
+            /* 头像裁剪弹窗：选图 → 拖动/缩放取景 → canvas 裁成正方形再上传（服务端零改动） */
+            var avatarCrop = (function () {
+                var el = null, img = null, stage = null, zoomSlider = null;
+                var cover = 1;                  /* 图像恰好铺满取景框的基准缩放 */
+                var state = { s: 1, tx: 0, ty: 0 };
+                var drag = null;
+                var onDone = null;
+
+                function ensure() {
+                    if (el) return;
+                    el = document.createElement('div');
+                    el.className = 'ecod_fmodal';
+                    el.hidden = true;
+                    el.innerHTML = '<div class="ecod_fmodal__mask" data-ecod-crop-close></div>'
+                        + '<div class="ecod_fmodal__panel ecod_cmodal__panel" role="dialog" aria-modal="true" aria-label="裁剪头像">'
+                        + '<button type="button" class="ecod_fmodal__close" data-ecod-crop-close aria-label="关闭裁剪弹窗">' + Ecod.icon('x', 17) + '</button>'
+                        + '<header class="ecod_fmodal__head"><h2>裁剪头像</h2><p>拖动图片调整位置，滚轮或滑杆缩放。</p></header>'
+                        + '<div class="ecod_cmodal__stage" data-ecod-crop-stage>'
+                        + '<img data-ecod-crop-img alt="裁剪预览" draggable="false">'
+                        + '<span class="ecod_cmodal__ring" aria-hidden="true"></span></div>'
+                        + '<input class="ecod_cmodal__zoom" data-ecod-crop-zoom type="range" min="1" max="4" step="0.01" value="1" aria-label="缩放">'
+                        + '<div class="ecod_cmodal__ops">'
+                        + '<button type="button" class="ecod-btn ecod-btn--ghost" data-ecod-crop-close>取消</button>'
+                        + '<button type="button" class="ecod-btn" data-ecod-crop-ok>使用这张</button></div></div>';
+                    document.body.appendChild(el);
+                    img = el.querySelector('[data-ecod-crop-img]');
+                    stage = el.querySelector('[data-ecod-crop-stage]');
+                    zoomSlider = el.querySelector('[data-ecod-crop-zoom]');
+                    bind();
+                }
+
+                function clampPos() {
+                    var V = stage.clientWidth;
+                    var w = img.naturalWidth * cover * state.s;
+                    var h = img.naturalHeight * cover * state.s;
+                    var limX = Math.max(0, (w - V) / 2);
+                    var limY = Math.max(0, (h - V) / 2);
+                    state.tx = Math.min(limX, Math.max(-limX, state.tx));
+                    state.ty = Math.min(limY, Math.max(-limY, state.ty));
+                }
+
+                function apply() {
+                    clampPos();
+                    img.style.transform = 'translate(-50%, -50%) translate(' + state.tx + 'px, ' + state.ty + 'px) scale(' + (cover * state.s) + ')';
+                }
+
+                function setScale(s) {
+                    state.s = Math.min(4, Math.max(1, s));
+                    zoomSlider.value = String(state.s);
+                    apply();
+                }
+
+                function close() {
+                    el.hidden = true;
+                    document.documentElement.classList.remove('ecod-modal-lock');
+                }
+
+                function open(file, done) {
+                    ensure();
+                    onDone = done || null;
+                    img.dataset.cropType = file.type || '';
+                    var url = URL.createObjectURL(file);
+                    img.onload = function () {
+                        URL.revokeObjectURL(url);
+                        cover = stage.clientWidth / Math.min(img.naturalWidth, img.naturalHeight);
+                        state.s = 1; state.tx = 0; state.ty = 0;
+                        zoomSlider.value = '1';
+                        apply();
+                    };
+                    img.onerror = close;
+                    img.src = url;
+                    el.hidden = false;
+                    document.documentElement.classList.add('ecod-modal-lock');
+                }
+
+                /* 按当前取景把可见区域裁成正方形，短边最大 512px，PNG 保留透明通道 */
+                function cropBlob(cb) {
+                    var V = stage.clientWidth;
+                    var ratio = cover * state.s;
+                    var c = V / ratio;
+                    var sx = img.naturalWidth / 2 - state.tx / ratio - c / 2;
+                    var sy = img.naturalHeight / 2 - state.ty / ratio - c / 2;
+                    var out = Math.max(1, Math.min(512, Math.round(c)));
+                    var canvas = document.createElement('canvas');
+                    canvas.width = out;
+                    canvas.height = out;
+                    canvas.getContext('2d').drawImage(img, sx, sy, c, c, 0, 0, out, out);
+                    canvas.toBlob(cb, img.dataset.cropType === 'image/png' ? 'image/png' : 'image/jpeg', 0.92);
+                }
+
+                function bind() {
+                    stage.addEventListener('pointerdown', function (e) {
+                        if (e.pointerType === 'mouse' && e.button !== 0) return;
+                        drag = { x: e.clientX, y: e.clientY, tx: state.tx, ty: state.ty };
+                        stage.classList.add('is-dragging');
+                        try { stage.setPointerCapture(e.pointerId); } catch (err) {}
+                    });
+                    stage.addEventListener('pointermove', function (e) {
+                        if (!drag) return;
+                        state.tx = drag.tx + (e.clientX - drag.x);
+                        state.ty = drag.ty + (e.clientY - drag.y);
+                        apply();
+                    });
+                    stage.addEventListener('pointerup', function () { drag = null; stage.classList.remove('is-dragging'); });
+                    stage.addEventListener('pointercancel', function () { drag = null; stage.classList.remove('is-dragging'); });
+                    stage.addEventListener('wheel', function (e) {
+                        e.preventDefault();
+                        setScale(state.s * Math.exp(-e.deltaY * 0.0015));
+                    }, { passive: false });
+                    zoomSlider.addEventListener('input', function () {
+                        setScale(parseFloat(zoomSlider.value) || 1);
+                    });
+                    document.addEventListener('keydown', function (e) {
+                        if (e.key === 'Escape' && !el.hidden) close();
+                    });
+                    el.addEventListener('click', function (e) {
+                        if (e.target.closest('[data-ecod-crop-close]')) { close(); return; }
+                        if (e.target.closest('[data-ecod-crop-ok]')) {
+                            cropBlob(function (blob) {
+                                close();
+                                if (blob && onDone) onDone(blob);
+                            });
+                        }
+                    });
+                }
+
+                return { open: open };
+            })();
+
             if (avatarInput && !avatarInput.dataset.ecodBound) {
                 avatarInput.dataset.ecodBound = '1';
                 avatarInput.addEventListener('change', function () {
                     var file = avatarInput.files && avatarInput.files[0];
+                    avatarInput.value = '';
                     if (!file) return;
                     if (file.size > 4 * 1024 * 1024) { accMsg('avatar', '图片不能超过 4MB', false); return; }
-                    var body = new FormData();
-                    body.append('avatar', file);
-                    body.append('token', token);
-                    accMsg('avatar', '上传中…', true);
-                    accPost('avatar_upload', body).then(function (data) {
-                        if (data && data.ok) {
-                            accMsg('avatar', '头像已更新，刷新页面…', true);
-                            if (avatarImg) avatarImg.src = data.url + '?t=' + Date.now();
-                            setTimeout(function () { location.reload(); }, 600);
-                        } else {
-                            accMsg('avatar', (data && data.error) || '上传失败', false);
-                        }
-                        avatarInput.value = '';
-                    }).catch(function () {
-                        accMsg('avatar', '网络异常，请重试', false);
-                        avatarInput.value = '';
+                    /* GIF 裁剪会丢动画，保持原样直传 */
+                    if (file.type === 'image/gif') { avatarUpload(file, file.name || 'avatar.gif'); return; }
+                    avatarCrop.open(file, function (blob) {
+                        avatarUpload(blob, blob.type === 'image/png' ? 'avatar.png' : 'avatar.jpg');
                     });
                 });
             }
@@ -5058,6 +5509,51 @@
         }
     };
 
+    /* ---------- 列表排序：浮层展开 / 收起 ----------
+     * 选项本身是链接，关掉 JS 也能跳转；这里只做展开与关闭。
+     * 外部点击与 Esc 用一次注册的委托监听，PJAX 换页不会重复绑定。 */
+    Ecod.initSort = function () {
+        var boxes = document.querySelectorAll('[data-ecod-sort]');
+        Array.prototype.forEach.call(boxes, function (box) {
+            if (box._ecodSort) return;
+            box._ecodSort = 1;
+
+            var btn = box.querySelector('[data-ecod-sort-btn]');
+            if (!btn) return;
+
+            btn.addEventListener('click', function (e) {
+                e.stopPropagation();
+                var open = !box.classList.contains('is-open');
+                box.classList.toggle('is-open', open);
+                btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+            });
+        });
+
+        if (Ecod._sortDoc) return;
+        Ecod._sortDoc = 1;
+
+        function closeAll(except) {
+            Array.prototype.forEach.call(document.querySelectorAll('[data-ecod-sort].is-open'), function (box) {
+                if (box === except) return;
+                box.classList.remove('is-open');
+                var b = box.querySelector('[data-ecod-sort-btn]');
+                if (b) b.setAttribute('aria-expanded', 'false');
+            });
+        }
+
+        document.addEventListener('click', function (e) {
+            closeAll(e.target.closest ? e.target.closest('[data-ecod-sort]') : null);
+        });
+        document.addEventListener('keydown', function (e) {
+            if (e.key !== 'Escape') return;
+            var open = document.querySelector('[data-ecod-sort].is-open');
+            if (!open) return;
+            closeAll(null);
+            var b = open.querySelector('[data-ecod-sort-btn]');
+            if (b) b.focus();
+        });
+    };
+
     Ecod.refresh = function () {
         /* 换页时先停掉上一页的朗读，避免声音延续到新页面 */
         Ecod.stopTts();
@@ -5079,6 +5575,7 @@
             Ecod.initLightbox();
         }
         Ecod.initPostAct();
+        Ecod.initQuickBar();
         Ecod.initShareCard();
         Ecod.initTts();
         Ecod.initComment();
@@ -5088,6 +5585,7 @@
         Ecod.initEmoji();
         Ecod.initTabs();
         Ecod.initCatbar();
+        Ecod.initSort();
         Ecod.initRank();
         Ecod.initExtras();
         Ecod.initDock();
@@ -5095,6 +5593,7 @@
         Ecod.initAccount();
         Ecod.initFriendApply();
         Ecod.initSearchSuggest();
+        Ecod.initSearchPanel();
         Ecod.initSlider();
         Ecod.initCardAct();
         Ecod.initLikeState();

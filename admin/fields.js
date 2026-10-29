@@ -1,8 +1,8 @@
 /**
  * Ecod Theme · 主题字段可视化面板
  *
- * 接管 themeFields() 声明的全部六个字段：
- * thumb / mode / side / pin / series / excerpt，
+ * 接管 themeFields() 声明的全部七个字段：
+ * thumb / mode / side / pin / series / topic / excerpt，
  * 原控件保留在 DOM 中（display:none）作为提交载体，本脚本只负责读写它们的值，
  * 因此保存逻辑与 Typecho 原生完全一致。
  */
@@ -304,6 +304,51 @@
     }
 
     /* ------------------------------------------------------------------ *
+     * 专题
+     * ------------------------------------------------------------------ */
+
+    function paintTopics() {
+        if (!els.topicBox) {
+            return;
+        }
+
+        var topics = (CFG.topics || []).slice();
+        var current = String(els.topic ? els.topic.value || '' : '').trim();
+
+        /* 当前值不在列表里（专题被停用 / 删除）时补一个，保证状态可见可清除 */
+        var known = topics.some(function (t) {
+            return t.slug === current;
+        });
+        if (current !== '' && !known) {
+            topics.push({ slug: current, name: current, on: false });
+        }
+
+        els.topicBox.innerHTML = '';
+
+        var none = make('button', 'ecod-topic' + (current === '' ? ' is-on' : ''));
+        none.type = 'button';
+        none.textContent = '不归入专题';
+        none.addEventListener('click', function () {
+            els.topic.value = '';
+            els.topic.dispatchEvent(new Event('change', { bubbles: true }));
+            paintTopics();
+        });
+        els.topicBox.appendChild(none);
+
+        topics.forEach(function (topic) {
+            var btn = make('button', 'ecod-topic' + (current === topic.slug ? ' is-on' : ''));
+            btn.type = 'button';
+            btn.textContent = topic.name + (topic.on ? '' : '（已停用）');
+            btn.addEventListener('click', function () {
+                els.topic.value = topic.slug;
+                els.topic.dispatchEvent(new Event('change', { bubbles: true }));
+                paintTopics();
+            });
+            els.topicBox.appendChild(btn);
+        });
+    }
+
+    /* ------------------------------------------------------------------ *
      * 构建
      * ------------------------------------------------------------------ */
 
@@ -317,6 +362,7 @@
         els.series = fields.series.input;
         els.side = fields.side ? fields.side.input : null;
         els.excerpt = fields.excerpt ? fields.excerpt.input : null;
+        els.topic = fields.topic ? fields.topic.input : null;
 
         /* 原控件全部隐藏，只留值参与提交 */
         Object.keys(fields).forEach(function (key) {
@@ -385,6 +431,16 @@
         secSeries.appendChild(els.seriesTags);
         body.appendChild(secSeries);
 
+        /* 专题（单选 chips：来自「设置 → 专题」，与列表卡片角标、专题页共用） */
+        if (els.topic && (CFG.topics || []).length) {
+            var secTopic = make('div', 'ecod-fields__sec');
+            secTopic.appendChild(make('div', 'ecod-fields__label',
+                '专题<span class="ecod-fields__hint">单选；也可在「设置 → 专题」里挑稿加入</span>'));
+            els.topicBox = make('div', 'ecod-topics');
+            secTopic.appendChild(els.topicBox);
+            body.appendChild(secTopic);
+        }
+
         /* 自定义摘要（excerpt：列表 / 搜索 / SEO 描述优先使用） */
         if (els.excerpt) {
             var secEx = make('div', 'ecod-fields__sec');
@@ -413,6 +469,7 @@
         paintSide();
         paintPin();
         paintSeries();
+        paintTopics();
     }
 
     function init() {

@@ -95,16 +95,34 @@ function ecod_seo_title($archive = null): string
     $prefix = '';
     if ($archive) {
         try {
-            ob_start();
-            $archive->archiveTitle([
-                'category' => _t('分类 %s 下的文章'),
-                'search'   => _t('包含关键字 %s 的文章'),
-                'tag'      => _t('标签 %s 下的文章'),
-                'author'   => _t('%s 发布的文章'),
-            ], '', ' - ');
-            $prefix = trim((string) ob_get_clean());
-            /* archiveTitle 在末页会多一个空连接符，收一下 */
-            $prefix = rtrim($prefix, "-–— \t");
+            /* 分类 / 标签增强：独立 SEO 标题最优先（规格 §32），空则回退默认格式 */
+            $metaTitle = '';
+            if (function_exists('ecod_meta_meta_for_archive')) {
+                $metaTitle = trim((string) (ecod_meta_meta_for_archive($archive)['seo_title'] ?? ''));
+            }
+
+            if ($metaTitle !== '') {
+                $prefix = $metaTitle;
+            } else {
+                ob_start();
+                $archive->archiveTitle([
+                    'category' => _t('分类 %s 下的文章'),
+                    'search'   => _t('包含关键字 %s 的文章'),
+                    'tag'      => _t('标签 %s 下的文章'),
+                    'author'   => _t('%s 发布的文章'),
+                ], '', ' - ');
+                $prefix = trim((string) ob_get_clean());
+                /* archiveTitle 在末页会多一个空连接符，收一下 */
+                $prefix = rtrim($prefix, "-–— \t");
+            }
+
+            /* 专题详情：标题用「专题名 · 专题」，否则每个专题都是同一个页面标题 */
+            if (function_exists('ecod_topic_current')) {
+                $topicNow = ecod_topic_current();
+                if ($topicNow !== null) {
+                    $prefix = (string) $topicNow['topic']['name'] . ' · ' . _t('专题');
+                }
+            }
         } catch (\Throwable $e) {
             $prefix = '';
         }
@@ -124,7 +142,16 @@ function ecod_seo_canonical($archive = null): string
     if ($archive) {
         try {
             if (($archive->is('post') || $archive->is('page')) && !empty($archive->permalink)) {
-                return (string) $archive->permalink;
+                $url = (string) $archive->permalink;
+                /* 专题详情：同一页面下的不同专题是不同内容，canonical 必须带上 ?t= */
+                if (function_exists('ecod_topic_current')) {
+                    $topicNow = ecod_topic_current();
+                    if ($topicNow !== null) {
+                        $sep = strpos($url, '?') === false ? '?' : '&';
+                        return $url . $sep . 't=' . rawurlencode((string) $topicNow['topic']['slug']);
+                    }
+                }
+                return $url;
             }
         } catch (\Throwable $e) {
         }
@@ -163,6 +190,22 @@ function ecod_seo_canonical($archive = null): string
  */
 function ecod_seo_description($archive = null): string
 {
+    /* 分类 / 标签增强：独立 SEO 描述最优先（规格 §32） */
+    if (function_exists('ecod_meta_meta_for_archive')) {
+        $metaDesc = trim((string) (ecod_meta_meta_for_archive($archive)['seo_desc'] ?? ''));
+        if ($metaDesc !== '') {
+            return $metaDesc;
+        }
+    }
+
+    /* 专题详情：用专题自己的描述，比页面正文更贴题 */
+    if (function_exists('ecod_topic_current')) {
+        $topicNow = ecod_topic_current();
+        if ($topicNow !== null && trim((string) $topicNow['topic']['desc']) !== '') {
+            return trim((string) $topicNow['topic']['desc']);
+        }
+    }
+
     if ($archive) {
         try {
             if ($archive->is('post') || $archive->is('page')) {
@@ -218,6 +261,13 @@ function ecod_seo_image($archive = null): string
 {
     if ($archive) {
         try {
+            /* 分类 / 标签增强：自定义封面最优先（规格 §32） */
+            if (function_exists('ecod_meta_meta_for_archive')) {
+                $metaCover = trim((string) (ecod_meta_meta_for_archive($archive)['cover'] ?? ''));
+                if ($metaCover !== '') {
+                    return ecod_seo_abs($metaCover);
+                }
+            }
             if ($archive->is('post') || $archive->is('page')) {
                 $images = ecod_thumbnails($archive, 1);
                 if (!empty($images[0])) {
@@ -266,9 +316,19 @@ function ecod_seo_head($archive = null, bool $hasSocial = false): void
 
     $isSingle = false;
     $isNoIndex = false;
+    $metaKeywords = '';
     try {
         $isSingle = $archive && ($archive->is('post') || $archive->is('page'));
         $isNoIndex = $archive && ($archive->is('search') || $archive->is('404'));
+
+        /* 分类 / 标签增强：noindex 开关与独立关键词（规格 §32） */
+        if (function_exists('ecod_meta_meta_for_archive')) {
+            $metaData = ecod_meta_meta_for_archive($archive);
+            if (($metaData['noindex'] ?? '') === '1') {
+                $isNoIndex = true;
+            }
+            $metaKeywords = trim((string) ($metaData['seo_keywords'] ?? ''));
+        }
     } catch (\Throwable $e) {
     }
 
@@ -283,6 +343,10 @@ function ecod_seo_head($archive = null, bool $hasSocial = false): void
     }
 
     echo '<meta name="robots" content="' . ($isNoIndex ? 'noindex,follow' : 'index,follow,max-image-preview:large') . '">' . "\n";
+
+    if ($metaKeywords !== '') {
+        echo '<meta name="keywords" content="' . $e($metaKeywords) . '">' . "\n";
+    }
 
     /* Typecho 1.3 的 $this->header() 已输出一组社交标签，避免重复 */
     if (!$hasSocial) {

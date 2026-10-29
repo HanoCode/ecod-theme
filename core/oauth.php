@@ -198,9 +198,15 @@ function ecod_oauth_callback(string $platform): string
                 break;
             }
         }
-        /* 没有已验证的主邮箱就退而求其次 */
-        if ($email === '' && !empty($emails[0]['email'])) {
-            $email = (string) $emails[0]['email'];
+        /* 兜底也只信已验证的邮箱：GitHub 允许添加任意未验证邮箱，
+         * 若拿未验证邮箱做站内匹配，攻击者可借此登录他人账号 */
+        if ($email === '') {
+            foreach ($emails as $em) {
+                if (!empty($em['verified']) && !empty($em['email'])) {
+                    $email = (string) $em['email'];
+                    break;
+                }
+            }
         }
     }
     if ($email === '') {

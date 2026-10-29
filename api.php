@@ -115,10 +115,14 @@ function ecod_api_visitor(): string
             $vid = substr(md5(uniqid('ecod', true)), 0, 24);
         }
         if (!headers_sent()) {
+            /* HTTPS 站点给 cookie 补 secure 标志（判定方式与引导段一致） */
+            $ecodHttps = (!empty($_SERVER['HTTPS']) && strtolower((string) $_SERVER['HTTPS']) !== 'off')
+                || (int) ($_SERVER['SERVER_PORT'] ?? 80) === 443;
             setcookie('ecod_vid', $vid, [
                 'expires'  => time() + 31536000,
                 'path'     => '/',
                 'httponly' => true,
+                'secure'   => $ecodHttps,
                 'samesite' => 'Lax',
             ]);
         }
@@ -220,7 +224,7 @@ function ecod_api_admin_token(): string
     return ecod_tool_token();
 }
 
-$ecodToolActions = ['snapshot_list', 'snapshot_save', 'snapshot_restore', 'snapshot_delete', 'build_sitemap', 'build_robots', 'push_baidu', 'page_list', 'page_create'];
+$ecodToolActions = ['snapshot_list', 'snapshot_save', 'snapshot_restore', 'snapshot_delete', 'build_sitemap', 'build_robots', 'push_baidu', 'page_list', 'page_create', 'topic_posts'];
 
 if (in_array($action, $ecodToolActions, true)) {
     if (!ecod_api_is_admin()) {
@@ -245,7 +249,11 @@ if (in_array($action, $ecodToolActions, true)) {
 
             case 'snapshot_restore':
                 $name = isset($_POST['name']) ? (string) $_POST['name'] : '';
-                ecod_api_out(ecod_snapshot_restore($name));
+                $ecodSnapRes = ecod_snapshot_restore($name);
+                if (!empty($ecodSnapRes['ok'])) {
+                    ecod_audit_log('snapshot_restore', ['name' => $name]);
+                }
+                ecod_api_out($ecodSnapRes);
 
             case 'snapshot_delete':
                 $name = isset($_POST['name']) ? (string) $_POST['name'] : '';
@@ -266,6 +274,41 @@ if (in_array($action, $ecodToolActions, true)) {
             case 'page_create':
                 $key = isset($_POST['key']) ? (string) $_POST['key'] : '';
                 ecod_api_out(ecod_pages_create($key));
+
+            /* 专题构建器的挑稿器：按标题搜文章，或按 cid 批量取回已选中的标题 */
+            case 'topic_posts':
+                $kw = trim((string) ($_POST['q'] ?? ''));
+                $ids = trim((string) ($_POST['ids'] ?? ''));
+                $list = [];
+                try {
+                    $db = \Typecho\Db::get();
+                    $select = $db->select('cid', 'title', 'created')
+                        ->from('table.contents')
+                        ->where('type = ?', 'post')
+                        ->where('status = ?', 'publish')
+                        ->order('created', \Typecho\Db::SORT_DESC);
+
+                    if ($kw !== '') {
+                        $like = '%' . str_replace(['%', '_'], ['\\%', '\\_'], mb_substr($kw, 0, 50, 'UTF-8')) . '%';
+                        $select->where('title LIKE ?', $like)->limit(20);
+                    } else {
+                        $cids = array_values(array_unique(array_filter(array_map('intval', explode(',', $ids)))));
+                        if (!$cids) {
+                            ecod_api_out(['ok' => true, 'list' => []]);
+                        }
+                        $select->where('cid IN (' . implode(',', array_slice($cids, 0, 200)) . ')')->limit(200);
+                    }
+
+                    foreach ($db->fetchAll($select) as $row) {
+                        $list[] = [
+                            'cid'   => (int) $row['cid'],
+                            'title' => (string) $row['title'],
+                            'date'  => date('Y-m-d', (int) $row['created']),
+                        ];
+                    }
+                } catch (\Throwable $e) {
+                }
+                ecod_api_out(['ok' => true, 'list' => $list]);
         }
     } catch (\Throwable $e) {
         ecod_api_out(['ok' => false, 'error' => 'Server error'], 500);
@@ -289,14 +332,26 @@ if ($action === 'ai') {
     if (!ecod_ai_enabled()) {
         ecod_api_out(['ok' => false, 'error' => 'AI 摘要未开启'], 404);
     }
+
+    /* 模型调用按次计费：命中缓存的请求不限，真正触发生成的才计一次 */
+    $ecodAiBucket = 'ai:' . ecod_api_fingerprint();
+    $ecodAiWait = ecod_throttle_guard($ecodAiBucket);
+    if ($ecodAiWait > 0) {
+        ecod_api_out(['ok' => false, 'error' => ecod_throttle_error($ecodAiWait)], 403);
+    }
+
     try {
-        ecod_api_out(ecod_ai_summary($cid));
+        $ecodAiRes = ecod_ai_summary($cid);
     } catch (\Throwable $e) {
         ecod_api_out(['ok' => false, 'error' => '生成失败，请稍后重试'], 500);
     }
+    if (empty($ecodAiRes['cached'])) {
+        ecod_throttle_fail($ecodAiBucket);
+    }
+    ecod_api_out($ecodAiRes);
 }
 
-/* 搜索联想：标题匹配前 5 条，头部/首页搜索框下拉用 */
+/* 搜索联想：标题匹配前 8 条，导航下拉 / 搜索面板实时结果共用 */
 if ($action === 'search_suggest') {
     if ((string) ($_SERVER['REQUEST_METHOD'] ?? 'GET') !== 'GET') {
         ecod_api_out(['ok' => false, 'error' => 'Method not allowed'], 405);
@@ -311,12 +366,12 @@ if ($action === 'search_suggest') {
         $db = \Typecho\Db::get();
         $like = '%' . str_replace(['%', '_'], ['\\%', '\\_'], $q) . '%';
         $rows = $db->fetchAll(
-            $db->select('cid', 'title')->from('table.contents')
+            $db->select('cid', 'title', 'created')->from('table.contents')
                 ->where('type = ?', 'post')
                 ->where('status = ?', 'publish')
                 ->where('title LIKE ?', $like)
                 ->order('created', \Typecho\Db::SORT_DESC)
-                ->limit(5)
+                ->limit(8)
         );
 
         $list = [];
@@ -324,6 +379,7 @@ if ($action === 'search_suggest') {
             $list[] = [
                 'cid'   => (int) $row['cid'],
                 'title' => (string) $row['title'],
+                'date'  => date('Y-m-d', (int) $row['created']),
             ];
         }
         ecod_api_out(['ok' => true, 'list' => $list]);
@@ -388,6 +444,24 @@ function ecod_api_safe_referer(string $referer): string
     return $referer;
 }
 
+/**
+ * 密码强度：8-64 位，拒绝常见弱密码（注册 / 改密 / 找回共用）
+ */
+function ecod_api_password_ok(string $password): bool
+{
+    $len = strlen($password);
+    if ($len < 8 || $len > 64) {
+        return false;
+    }
+    $weak = [
+        '12345678', '123456789', '1234567890', 'password', 'password1',
+        'qwerty123', 'qwertyui', '11111111', '00000000', '88888888',
+        '66666666', '12341234', '11223344', 'abc12345', 'abcd1234',
+        'iloveyou', 'admin123', 'qq123456', '1qaz2wsx', 'asdfghjk',
+    ];
+    return !in_array(strtolower($password), $weak, true);
+}
+
 /* 登录图形验证码（独立出口：返回 PNG，不走 JSON） */
 if ($action === 'captcha') {
     /* 图片流不能被任何警告 / BOM 污染 */
@@ -424,8 +498,9 @@ if ($action === 'login') {
         ecod_api_out(['ok' => false, 'error' => ecod_throttle_error($ecodWait)], 403);
     }
 
-    /* 图形验证码：一次性消费，先于密码校验 */
+    /* 图形验证码：一次性消费，先于密码校验；试错同样计入限流，防止无成本猜码 */
     if (!ecod_captcha_verify((string) ($_POST['captcha'] ?? ''))) {
+        ecod_throttle_fail($ecodBucket);
         ecod_api_out(['ok' => false, 'error' => '验证码不正确，请重新输入'], 400);
     }
 
@@ -641,8 +716,8 @@ if ($action === 'register') {
     if (!filter_var($mail, FILTER_VALIDATE_EMAIL)) {
         ecod_api_out(['ok' => false, 'error' => '请输入正确的邮箱地址'], 400);
     }
-    if (strlen($password) < 6 || strlen($password) > 64) {
-        ecod_api_out(['ok' => false, 'error' => '密码需为 6-64 位'], 400);
+    if (!ecod_api_password_ok($password)) {
+        ecod_api_out(['ok' => false, 'error' => '密码需为 8-64 位且不能是常见弱密码'], 400);
     }
     if ($password !== $confirm) {
         ecod_api_out(['ok' => false, 'error' => '两次输入的密码不一致'], 400);
@@ -737,8 +812,8 @@ if ($action === 'reset_password') {
     }
     $uid = (int) $row['uid'];
 
-    if (strlen($password) < 6 || strlen($password) > 64) {
-        ecod_api_out(['ok' => false, 'error' => '新密码需为 6-64 位'], 400);
+    if (!ecod_api_password_ok($password)) {
+        ecod_api_out(['ok' => false, 'error' => '新密码需为 8-64 位且不能是常见弱密码'], 400);
     }
     if ($password !== $confirm) {
         ecod_api_out(['ok' => false, 'error' => '两次输入的密码不一致'], 400);
@@ -841,8 +916,8 @@ if (in_array($action, $ecodAccountActions, true)) {
         $current = (string) ($_POST['current'] ?? '');
         $new = (string) ($_POST['new'] ?? '');
 
-        if (strlen($new) < 6 || strlen($new) > 64) {
-            ecod_api_out(['ok' => false, 'error' => '新密码需为 6-64 位'], 400);
+        if (!ecod_api_password_ok($new)) {
+            ecod_api_out(['ok' => false, 'error' => '新密码需为 8-64 位且不能是常见弱密码'], 400);
         }
 
         try {
@@ -927,7 +1002,7 @@ if (in_array($action, $ecodAccountActions, true)) {
         ecod_api_out(['ok' => true, 'url' => $rel]);
     }
 
-    /* 恢复默认头像（删除自定义，回落到 Gravatar） */
+    /* 恢复默认头像（删除自定义，回落到本地随机头像池） */
     if ($action === 'avatar_remove') {
         ecod_api_out(['ok' => ecod_account_del_avatar($ecodUid)]);
     }
@@ -1180,6 +1255,13 @@ if ($action === 'pay_notify') {
         'epay',
         (int) ($verified['amount'] ?? -1)
     );
+    if (!empty($result['ok'])) {
+        ecod_audit_log('pay_settle', [
+            'order' => (string) $verified['order_no'],
+            'trade' => (string) ($verified['trade_no'] ?? ''),
+            'cents' => (int) ($verified['amount'] ?? -1),
+        ]);
+    }
     echo !empty($result['ok']) ? 'success' : 'fail';
     exit;
 }
@@ -1192,7 +1274,10 @@ if ($action === 'pay_return') {
 
     $orderNo = (string) ($verified['order_no'] ?? '');
     if (!empty($verified['ok'])) {
-        ecod_pay_settle($orderNo, (string) ($verified['trade_no'] ?? ''), 'epay', (int) ($verified['amount'] ?? -1));
+        $ecodSettle = ecod_pay_settle($orderNo, (string) ($verified['trade_no'] ?? ''), 'epay', (int) ($verified['amount'] ?? -1));
+        if (!empty($ecodSettle['ok'])) {
+            ecod_audit_log('pay_settle', ['order' => $orderNo, 'via' => 'return']);
+        }
     }
 
     $cashier = ecod_pay_cashier_url($orderNo !== '' ? ['order_no' => $orderNo] : []);
@@ -1532,30 +1617,52 @@ try {
     }
 
     $fp = ecod_api_fingerprint();
+    $me = ecod_api_user();
+    $uid = $me ? (int) $me->uid : 0;
 
-    $result = ecod_api_with_table($db, function (string $table) use ($db, $cid, $fp) {
+    $result = ecod_api_with_table($db, function (string $table) use ($db, $cid, $fp, $uid) {
         $liked = false;
 
         if ((string) ($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
-            try {
-                $db->query(
-                    $db->insert($table)->rows([
+            /* 登录用户跨设备幂等：该 uid 已有行（旧设备落的）就不再插，避免多计一票 */
+            $uidHit = $uid > 0 ? (bool) $db->fetchRow(
+                $db->select('cid')->from($table)
+                    ->where('cid = ?', $cid)->where('uid = ?', $uid)->limit(1)
+            ) : false;
+
+            if (!$uidHit) {
+                try {
+                    $row = [
                         'cid'     => $cid,
                         'ip'      => $fp,
                         'created' => time(),
-                    ])
-                );
-                $liked = true;
-            } catch (\Throwable $e) {
-                /* 唯一索引冲突 = 已经赞过，幂等处理 */
+                    ];
+                    /* v9 起登录用户行补记 uid，头像堆叠据此取人 */
+                    if ($uid > 0) {
+                        $row['uid'] = $uid;
+                    }
+                    $db->query($db->insert($table)->rows($row));
+                    $liked = true;
+                } catch (\Throwable $e) {
+                    /* 唯一索引冲突 = 已经赞过，幂等处理 */
+                }
             }
         }
 
-        /* 以库里的记录为准，前端据此点亮按钮 */
-        $mine = (bool) $db->fetchRow(
-            $db->select('cid')->from($table)
-                ->where('cid = ?', $cid)->where('ip = ?', $fp)->limit(1)
-        );
+        /* 以库里的记录为准，前端据此点亮按钮：指纹行或 uid 行任一命中 */
+        if ($uid > 0) {
+            $mine = (bool) $db->fetchRow(
+                $db->select('cid')->from($table)
+                    ->where('cid = ?', $cid)
+                    ->where('ip = ? OR uid = ?', $fp, $uid)
+                    ->limit(1)
+            );
+        } else {
+            $mine = (bool) $db->fetchRow(
+                $db->select('cid')->from($table)
+                    ->where('cid = ?', $cid)->where('ip = ?', $fp)->limit(1)
+            );
+        }
 
         return [
             'liked' => $liked,

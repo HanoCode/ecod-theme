@@ -78,12 +78,24 @@ function ecod_mail_ready(): bool
 function ecod_mail_smtp(array $c, string $subject, string $html): bool
 {
     $remote = ($c['secure'] === 'ssl' ? 'ssl://' : '') . $c['host'] . ':' . $c['port'];
+    /* 证书校验默认开启，防中间人截获授权码；个别邮箱中继证书链不全、
+     * 连不上时可在后台「邮件通知 → 校验 SMTP 证书」关闭（ECommentMailVerify） */
+    $verify = null;
+    if (function_exists('ecod_option')) {
+        $verify = ecod_option('ECommentMailVerify', 'on') === 'on';
+    } elseif (class_exists('\Utils\Helper')) {
+        try {
+            $opt = \Utils\Helper::options();
+            $verify = !isset($opt->ECommentMailVerify) || (string) $opt->ECommentMailVerify !== 'off';
+        } catch (\Throwable $e) {
+            $verify = true;
+        }
+    }
     $context = stream_context_create([
         'ssl' => [
-            /* 部分邮箱的中继证书链不完整，这里只关心加密通道本身 */
-            'verify_peer'       => false,
-            'verify_peer_name'  => false,
-            'allow_self_signed' => true,
+            'verify_peer'       => $verify !== false,
+            'verify_peer_name'  => $verify !== false,
+            'allow_self_signed' => $verify === false,
         ],
     ]);
 

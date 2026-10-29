@@ -3,9 +3,24 @@
  * 站点头部：导航 + 抽屉 + 布局开始
  *
  * @package Ecod Theme
+ * @author  Ecod
+ * @since   2026-10-29
+ * @version 2.0.0
+ * @link    https://ecod.cc
  */
 if (!defined('__TYPECHO_ROOT_DIR__')) {
     exit;
+}
+
+/* 安全响应头：须在任何输出之前发送
+ * - nosniff 防 MIME 嗅探；X-Frame-Options 防点击劫持（本站自身 iframe 不受影响）
+ * - Referrer-Policy 只带源不出全 URL；Permissions-Policy 收敛敏感能力
+ * （HSTS / CSP 属服务器层配置，见 README「服务器加固」一节） */
+if (!headers_sent()) {
+    header('X-Content-Type-Options: nosniff');
+    header('X-Frame-Options: SAMEORIGIN');
+    header('Referrer-Policy: strict-origin-when-cross-origin');
+    header('Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=()');
 }
 
 /* 外链中转拦截：命中 /go/<token> 直接输出加载页并终止（须在输出前） */
@@ -20,14 +35,15 @@ if (ecod_is_pjax()) {
     echo '<!DOCTYPE html><html><head><meta charset="'
         . htmlspecialchars((string) $this->options->charset, ENT_QUOTES, 'UTF-8') . '">'
         . '<title>' . htmlspecialchars(ecod_seo_title($this), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') . '</title></head><body>'
-        . '<div class="ecod_container" id="ecod-shell"'
+        .
+        '<div class="ecod_container" id="ecod-shell"'
         . ($ecodNavActive !== '' ? ' data-ecod-nav-active="' . htmlspecialchars($ecodNavActive, ENT_QUOTES, 'UTF-8') . '"' : '')
         . '><div class="ecod_layout" data-aside="'
-        . htmlspecialchars((string) ecod_option('EAside', 'right'), ENT_QUOTES, 'UTF-8') . '">';
+        . htmlspecialchars(ecod_aside_pos($this), ENT_QUOTES, 'UTF-8') . '">';
     return;
 }
 
-$ecodAside = ecod_option('EAside', 'right');
+$ecodAside = ecod_aside_pos($this);
 $ecodLogo = ecod_option('ELogo', $this->options->title);
 $ecodLogoImage = trim((string) ecod_option('ELogoImage', ''));
 /* 站内 logo 按 28px 显示高换算宽度占位；取不到尺寸（SVG/站外）退回只给高度 */
@@ -326,5 +342,44 @@ if ($ecodNavMax > 0 && count($ecodNav) > $ecodNavMax) {
 </div>
 <?php endif; ?>
 
+<?php if (ecod_option('ESearchPanel', 'on') === 'on'):
+/* C4 居中搜索面板：导航搜索框 / dock 搜索按钮 / ⌘K 三入口唤起。
+   热词来自设置项 ESearchHot（前端 CFG.hotwords），
+   标签按 ESearchTagCount 截取，序列化给前端渲染空态。 */
+$ecodSpanelTagLimit = max(0, min(12, (int) ecod_option('ESearchTagCount', 10)));
+$ecodSpanelTags = [];
+if ($ecodSpanelTagLimit > 0):
+    try {
+        $ecodSpanelTagWidget = $this->widget('Widget_Metas_Tag_Cloud@spanel', 'sort=count&ignoreZeroCount=1&desc=1');
+        while ($ecodSpanelTagWidget->next() && count($ecodSpanelTags) < $ecodSpanelTagLimit) {
+            $ecodSpanelTags[] = [
+                'name' => (string) $ecodSpanelTagWidget->name,
+                'url'  => (string) $ecodSpanelTagWidget->permalink,
+            ];
+        }
+    } catch (\Throwable $e) {
+        $ecodSpanelTags = [];
+    }
+endif;
+?>
+<div class="ecod_spanel" data-ecod-spanel aria-hidden="true"
+     data-tags="<?php echo htmlspecialchars(json_encode($ecodSpanelTags, JSON_UNESCAPED_UNICODE), ENT_QUOTES, 'UTF-8'); ?>">
+    <div class="ecod_spanel__mask" data-ecod-spanel-close></div>
+    <div class="ecod_spanel__box" role="dialog" aria-modal="true" aria-label="搜索">
+        <div class="ecod_spanel__bar">
+            <?php echo ecod_icon('search', 17); ?>
+            <input type="search" class="ecod_spanel__input" data-ecod-spanel-input
+                   placeholder="搜索文章…" aria-label="搜索文章" autocomplete="off">
+            <kbd class="ecod_spanel__esc" aria-hidden="true">Esc</kbd>
+        </div>
+        <div class="ecod_spanel__body" data-ecod-spanel-body></div>
+        <footer class="ecod_spanel__foot">
+            <span class="ecod_spanel__keys"><kbd>↑</kbd><kbd>↓</kbd> 选择 <kbd>↵</kbd> 打开</span>
+        </footer>
+    </div>
+</div>
+<?php endif; ?>
 <div class="ecod_container" id="ecod-shell"<?php echo $ecodNavActive !== '' ? ' data-ecod-nav-active="' . htmlspecialchars($ecodNavActive, ENT_QUOTES, 'UTF-8') . '"' : ''; ?>>
+    <?php ecod_widgets_zone('top_fluid', $this); ?>
     <div class="ecod_layout" data-aside="<?php echo $ecodAside; ?>">
+

@@ -92,6 +92,9 @@ if ($ecodAction !== '') {
     } elseif ($ecodAction === 'settle') {
         $orderNo = trim((string) ($_POST['order_no'] ?? ''));
         $result = ecod_pay_settle($orderNo, 'admin-' . (int) $ecodUser->uid, 'manual');
+        if (!empty($result['ok'])) {
+            ecod_audit_log('pay_settle', ['order' => $orderNo, 'via' => 'admin']);
+        }
         $ecodFlash = !empty($result['ok'])
             ? '已确认收款：' . $orderNo . '（权益已发放）'
             : '结算失败：' . ($result['message'] ?? '未知错误');
@@ -132,6 +135,7 @@ if ($ecodAction !== '') {
         ])) {
             $ecodFlash = '已授予：uid=' . $uid . ' / ' . ($kind === 'vip' ? '会员 Lv.' . $level : '文章 #' . $target)
                 . ($days > 0 ? ' / ' . $days . ' 天' : ' / 永久');
+            ecod_audit_log('pay_grant', ['to' => $uid, 'kind' => $kind, 'target' => $target, 'level' => $level, 'days' => $days]);
         } else {
             $ecodFlash = '授予失败';
             $ecodFlashBad = true;
@@ -141,6 +145,9 @@ if ($ecodAction !== '') {
         $kind = (string) ($_POST['kind'] ?? 'vip') === 'post' ? 'post' : 'vip';
         $target = (int) ($_POST['target'] ?? 0);
         $ecodRevoked = ecod_pay_revoke($uid, $kind, $target);
+        if ($ecodRevoked) {
+            ecod_audit_log('pay_revoke', ['from' => $uid, 'kind' => $kind, 'target' => $target]);
+        }
         $ecodFlash = $ecodRevoked ? '已撤销' : '撤销失败';
         $ecodFlashBad = !$ecodRevoked;
     } elseif ($ecodAction === 'cards') {
@@ -155,6 +162,7 @@ if ($ecodAction !== '') {
         if (!empty($result['ok'])) {
             $ecodGenerated = $result['codes'];
             $ecodFlash = '已生成 ' . count($result['codes']) . ' 张卡密（批次 ' . $result['batch'] . '），请立即复制保存';
+            ecod_audit_log('card_batch', ['n' => count($result['codes']), 'kind' => $result['kind'] ?? '', 'batch' => $result['batch'] ?? '']);
         } else {
             $ecodFlash = '生成失败：' . ($result['error'] ?? '未知错误');
             $ecodFlashBad = true;

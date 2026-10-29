@@ -45,6 +45,21 @@ foreach (preg_split('/\r\n|\r|\n/', (string) ecod_p('links', '')) as $ecodAuLine
 }
 
 $ecodAuOv = $ecodAuStats ? ecod_site_overview() : [];
+
+/* D7 在线点 + 博主徽章：块开关 × 全站开关；uid 留空自动取管理员组最早的账号 */
+$ecodAuOnlineOn = (int) ecod_p('online', 1) === 1 && ecod_option('EAuthorOnline', 'on') === 'on';
+$ecodAuOnline = false;
+$ecodAuBadge = false;
+if ($ecodAuOnlineOn) {
+    $ecodAuUid = (int) trim((string) ecod_p('uid', ''));
+    if ($ecodAuUid <= 0) {
+        $ecodAuUid = ecod_site_author_id();
+    }
+    if ($ecodAuUid > 0) {
+        $ecodAuOnline = ecod_user_online($ecodAuUid);
+        $ecodAuBadge = true;
+    }
+}
 ?>
 <section class="ecod_widget ecod_authorcard">
     <div class="ecod_authorcard__head">
@@ -56,12 +71,16 @@ $ecodAuOv = $ecodAuStats ? ecod_site_overview() : [];
             <?php else: ?>
                 <i aria-hidden="true"><?php echo htmlspecialchars(mb_substr($ecodAuName, 0, 1, 'UTF-8'), ENT_QUOTES, 'UTF-8'); ?></i>
             <?php endif; ?>
+            <?php if ($ecodAuOnline): ?><i class="ecod_authorcard__dot" aria-hidden="true" title="在线"></i><?php endif; ?>
         </span>
         <div class="ecod_authorcard__id">
             <?php if ($ecodAuGreet): ?>
                 <div class="ecod_authorcard__greet"><?php echo $ecodAuHello; ?>，很高兴见到你</div>
             <?php endif; ?>
-            <div class="ecod_authorcard__name"><?php echo htmlspecialchars($ecodAuName, ENT_QUOTES, 'UTF-8'); ?></div>
+            <div class="ecod_authorcard__name">
+                <?php echo htmlspecialchars($ecodAuName, ENT_QUOTES, 'UTF-8'); ?>
+                <?php if ($ecodAuBadge): ?><b class="ecod_authorcard__badge">博主</b><?php endif; ?>
+            </div>
         </div>
     </div>
 

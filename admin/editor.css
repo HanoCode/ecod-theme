@@ -860,6 +860,36 @@
     border-color: #9fb0f0;
 }
 
+/* 专题（单选 chips，同封面位置一套视觉） */
+.ecod-topics {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.ecod-topic {
+    padding: 6px 12px;
+    color: #6b7389;
+    font-size: 11.5px;
+    background: #fbfbfe;
+    border: 1px solid #e9ecf4;
+    border-radius: 999px;
+    cursor: pointer;
+    transition: border-color .14s, background-color .14s, color .14s;
+}
+
+.ecod-topic:hover {
+    border-color: #c9d2f2;
+    color: #3a56cf;
+}
+
+.ecod-topic.is-on {
+    color: #3a56cf;
+    font-weight: 600;
+    background: #eef1fe;
+    border-color: #9fb0f0;
+}
+
 /* 自定义摘要 */
 .ecod-textarea {
     height: auto;

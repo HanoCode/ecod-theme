@@ -33,6 +33,24 @@ try {
 } catch (\Throwable $e) {
     $ecodPostUrl = '';
 }
+
+/* 搜索地址模板：同理把 keywords 段换成 {q}。拿不到路由时退回 ?s=，
+   前端两种形态都认（见 ecod.global.js 的 searchHref）。 */
+$ecodSearchUrl = '';
+try {
+    $ecodSearchPattern = (string) ($ecodRouting['search']['url'] ?? '');
+    if ($ecodSearchPattern !== '' && strpos($ecodSearchPattern, '[keywords') !== false) {
+        $ecodSearchPattern = preg_replace('/\[keywords[^\]]*\]/', '{q}', $ecodSearchPattern);
+        $ecodSearchPattern = preg_replace('/\[[^\]]*\]/', '', $ecodSearchPattern);
+        $ecodSearchPattern = preg_replace('#(?<!:)/{2,}#', '/', $ecodSearchPattern);
+        $ecodSearchUrl = (string) \Typecho\Common::url($ecodSearchPattern, (string) $this->options->index);
+    }
+} catch (\Throwable $e) {
+    $ecodSearchUrl = '';
+}
+if ($ecodSearchUrl === '') {
+    $ecodSearchUrl = rtrim((string) $this->options->siteUrl, '/') . '/?s={q}';
+}
 ?>
 <meta charset="<?php $this->options->charset(); ?>">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -85,6 +103,10 @@ window.ECOD = {
     lightbox: <?php echo $ecodLightbox ? 'true' : 'false'; ?>,
     prism: <?php echo $ecodCode ? 'true' : 'false'; ?>,
     ctxmenu: <?php echo ecod_option('ECtxMenu', 'on') === 'on' ? 'true' : 'false'; ?>,
+    tocProgress: <?php echo ecod_option('ETocProgress', 'on') === 'on' ? 'true' : 'false'; ?>,
+    searchPanel: <?php echo ecod_option('ESearchPanel', 'on') === 'on' ? 'true' : 'false'; ?>,
+    hotwords: <?php echo json_encode(ecod_search_hotwords(), JSON_UNESCAPED_UNICODE); ?>,
+    searchUrl: <?php echo json_encode($ecodSearchUrl, JSON_UNESCAPED_SLASHES); ?>,
     comments: <?php echo json_encode(ecod_comments_config(), JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>
 };
 </script>
@@ -159,6 +181,10 @@ if (!is_file(__DIR__ . '/../assets/vendor/prism/themes/' . $ecodCodeFile)) {
 ob_start();
 $this->header();
 $ecodHeadHtml = (string) ob_get_clean();
+/* Typecho 1.3 自带一条 canonical，与下方 ecod_seo_head 的输出重复；
+   专题详情页的 canonical 还带 ?t=，重复会让搜索引擎看到两个互相矛盾的地址。
+   统一由主题输出唯一一条。 */
+$ecodHeadHtml = (string) preg_replace('#<link\s+rel="canonical"[^>]*>\s*#i', '', $ecodHeadHtml);
 echo $ecodHeadHtml;
 ecod_seo_head($this, strpos($ecodHeadHtml, 'og:type') !== false);
 ?>

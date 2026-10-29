@@ -3,6 +3,10 @@
  * 随机文章：访问即 302 跳到一篇随机文章
  *
  * @package custom
+ * @author  Ecod
+ * @since   2026-10-29
+ * @version 2.0.0
+ * @link    https://ecod.cc
  *
  * 在后台「页面 → 新建页面 → 自定义模板」里选择「随机文章」即可，例如建一个
  * 标题为「随便看看」、地址为 random 的页面，访问 /index.php/random.html 就会
@@ -88,6 +92,7 @@ if ($ecodPick) {
 $this->need('public/header.php');
 ?>
 <main class="ecod_main" id="ecod-main">
+    <?php /* 模块 · 内容区上方（模块管理台） */ ecod_widgets_render("top_content", $this); ?>
 
     <nav class="ecod_crumb" aria-label="面包屑">
         <a href="<?php $this->options->siteUrl(); ?>"><?php echo ecod_icon('home', 12); ?>首页</a>
@@ -104,6 +109,8 @@ $this->need('public/header.php');
         <p><a class="ecod_btn" href="<?php $this->options->siteUrl(); ?>">回到首页</a></p>
     </div>
 
+
+    <?php /* 模块 · 内容区下方（模块管理台） */ ecod_widgets_render("bottom_content", $this); ?>
 </main>
 
 <?php $this->need('public/aside.php'); ?>

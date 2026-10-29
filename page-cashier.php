@@ -3,6 +3,10 @@
  * 收银台
  *
  * @package custom
+ * @author  Ecod
+ * @since   2026-10-29
+ * @version 2.0.0
+ * @link    https://ecod.cc
  *
  * 后台「页面 → 新建页面 → 自定义模板」选「收银台」。
  * 页面本身只读：下单、支付、查状态全部走 api.php，避免 GET 请求产生写操作。
@@ -138,6 +142,7 @@ $ecodCurrency = ecod_pay_currency();
 $ecodMeta = $ecodItem ? '应付 ' . $ecodCurrency . ecod_pay_money((int) $ecodItem['amount']) : '';
 ?>
 <main class="ecod_main" id="ecod-main">
+    <?php /* 模块 · 内容区上方（模块管理台） */ ecod_widgets_render("top_content", $this); ?>
 
     <nav class="ecod_crumb" aria-label="面包屑">
         <a href="<?php $this->options->siteUrl(); ?>"><?php echo ecod_icon('home', 12); ?>首页</a>
@@ -240,6 +245,8 @@ $ecodMeta = $ecodItem ? '应付 ' . $ecodCurrency . ecod_pay_money((int) $ecodIt
         <?php endif; ?>
     </div>
 
+
+    <?php /* 模块 · 内容区下方（模块管理台） */ ecod_widgets_render("bottom_content", $this); ?>
 </main>
 
 <?php $this->need('public/aside.php'); ?>

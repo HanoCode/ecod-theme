@@ -3,6 +3,10 @@
  * 404
  *
  * @package Ecod Theme
+ * @author  Ecod
+ * @since   2026-10-29
+ * @version 2.0.0
+ * @link    https://ecod.cc
  */
 if (!defined('__TYPECHO_ROOT_DIR__')) {
     exit;
@@ -10,6 +14,7 @@ if (!defined('__TYPECHO_ROOT_DIR__')) {
 $this->need('public/header.php');
 ?>
 <main class="ecod_main" id="ecod-main">
+    <?php /* 模块 · 内容区上方（模块管理台） */ ecod_widgets_render("top_content", $this); ?>
     <div class="ecod_panel ecod_empty" style="padding:72px 24px">
         <div style="font-size:56px;font-weight:800;letter-spacing:4px;color:var(--ecod-border-strong);line-height:1.1">404</div>
         <h3 style="font-size:16px;margin:8px 0 4px">页面走丢了</h3>
@@ -23,6 +28,8 @@ $this->need('public/header.php');
             </form>
         </div>
     </div>
+
+    <?php /* 模块 · 内容区下方（模块管理台） */ ecod_widgets_render("bottom_content", $this); ?>
 </main>
 
 <?php $this->need('public/aside.php'); ?>

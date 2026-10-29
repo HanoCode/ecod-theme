@@ -3,6 +3,10 @@
  * 数据统计
  *
  * @package custom
+ * @author  Ecod
+ * @since   2026-10-29
+ * @version 2.0.0
+ * @link    https://ecod.cc
  */
 if (!defined('__TYPECHO_ROOT_DIR__')) {
     exit;
@@ -56,6 +60,7 @@ $ecodCards = [
 ];
 ?>
 <main class="ecod_main" id="ecod-main">
+    <?php /* 模块 · 内容区上方（模块管理台） */ ecod_widgets_render("top_content", $this); ?>
 
     <nav class="ecod_crumb" aria-label="面包屑">
         <a href="<?php $this->options->siteUrl(); ?>"><?php echo ecod_icon('home', 12); ?>首页</a>
@@ -133,7 +138,7 @@ $ecodCards = [
                 <ul class="ecod_rlist">
                     <?php while ($ecodRecent->next()): ?>
                         <li>
-                            <span class="ecod_rlist__avatar"><?php $ecodRecent->gravatar(30); ?></span>
+                            <span class="ecod_rlist__avatar"><img src="<?php echo htmlspecialchars(ecod_comment_avatar_url((string) $ecodRecent->mail), ENT_QUOTES, 'UTF-8'); ?>" alt="" width="30" height="30" loading="lazy"></span>
                             <div>
                                 <a class="ecod_rlist__title" href="<?php echo htmlspecialchars((string) $ecodRecent->permalink, ENT_QUOTES, 'UTF-8'); ?>">
                                     <?php echo htmlspecialchars((string) $ecodRecent->author, ENT_QUOTES, 'UTF-8'); ?>
@@ -181,6 +186,8 @@ $ecodCards = [
         </article>
     <?php endif; ?>
 
+
+    <?php /* 模块 · 内容区下方（模块管理台） */ ecod_widgets_render("bottom_content", $this); ?>
 </main>
 
 <?php $this->need('public/aside.php'); ?>

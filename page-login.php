@@ -3,6 +3,10 @@
  * 前台登录页：登录 / 注册 / 找回密码 三合一
  *
  * @package custom
+ * @author  Ecod
+ * @since   2026-10-29
+ * @version 2.0.0
+ * @link    https://ecod.cc
  *
  * 在后台「页面 → 新建页面 → 自定义模板」里选择「登录」即可。
  * 登录与后台共用同一套校验（Widget\User::login）；
@@ -64,6 +68,7 @@ $ecodOauthStart = $ecodOAuthGithub
 $ecodLoginBg = trim((string) ecod_option('ELoginBg', ''));
 ?>
 <main class="ecod_main ecod_main--login" id="ecod-main">
+    <?php /* 模块 · 内容区上方（模块管理台） */ ecod_widgets_render("top_content", $this); ?>
 
     <?php if ($ecodLoginBg !== ''): ?>
         <div class="ecod_login__bg" style="background-image:url('<?php echo htmlspecialchars($ecodLoginBg, ENT_QUOTES, 'UTF-8'); ?>');" aria-hidden="true"></div>
@@ -170,12 +175,12 @@ $ecodLoginBg = trim((string) ecod_option('ELoginBg', ''));
                     <label class="ecod_login__field">
                         <span>密码</span>
                         <input type="password" name="password" required autocomplete="new-password"
-                               minlength="6" maxlength="64" placeholder="6-64 位">
+                               minlength="8" maxlength="64" placeholder="8-64 位">
                     </label>
                     <label class="ecod_login__field">
                         <span>确认密码</span>
                         <input type="password" name="confirm" required autocomplete="new-password"
-                               minlength="6" maxlength="64" placeholder="再输入一次">
+                               minlength="8" maxlength="64" placeholder="再输入一次">
                     </label>
                     <p class="ecod_login__msg" data-ecod-auth-msg="register" hidden></p>
                     <button type="submit" class="ecod-btn ecod_login__submit">注 册</button>
@@ -207,12 +212,12 @@ $ecodLoginBg = trim((string) ecod_option('ELoginBg', ''));
                         <label class="ecod_login__field">
                             <span>新密码</span>
                             <input type="password" name="password" required autocomplete="new-password"
-                                   minlength="6" maxlength="64" placeholder="6-64 位">
+                                   minlength="8" maxlength="64" placeholder="8-64 位">
                         </label>
                         <label class="ecod_login__field">
                             <span>确认新密码</span>
                             <input type="password" name="confirm" required autocomplete="new-password"
-                                   minlength="6" maxlength="64" placeholder="再输入一次">
+                                   minlength="8" maxlength="64" placeholder="再输入一次">
                         </label>
                         <p class="ecod_login__msg" data-ecod-auth-msg="forgot_reset" hidden></p>
                         <button type="submit" class="ecod-btn ecod_login__submit">重置密码</button>
@@ -238,6 +243,8 @@ $ecodLoginBg = trim((string) ecod_option('ELoginBg', ''));
         <?php endif; ?>
     </div>
 
+
+    <?php /* 模块 · 内容区下方（模块管理台） */ ecod_widgets_render("bottom_content", $this); ?>
 </main>
 
 <?php $this->need('public/footer.php'); ?>

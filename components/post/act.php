@@ -43,6 +43,30 @@ if ($ecodActDate === '' && !empty($this->created)) {
             <?php echo ecod_icon('heart', 15); ?>
             <span data-ecod-like-num="full"><?php echo $ecodLikeNum > 0 ? (int) $ecodLikeNum . ' 赞' : '点赞'; ?></span>
         </button>
+        <?php
+        /* D2 点赞头像堆叠：取 uid 落库的最近 5 条；无 uid 记录时整块不输出（降级纯数字） */
+        if (ecod_option('ELikers', 'on') === 'on'):
+            $ecodLikers = ecod_post_likers((int) $this->cid, 5);
+            if ($ecodLikers):
+                $ecodLikersFirst = $ecodLikers[0];
+                /* 名字是用户可控字段必须转义；数字段加粗（参考站文案口径） */
+                $ecodLikersText = count($ecodLikers) > 1
+                    ? '@' . htmlspecialchars($ecodLikersFirst['name'], ENT_QUOTES, 'UTF-8') . ' 等 <b>' . (int) $ecodLikeNum . '</b> 人觉得不错'
+                    : '@' . htmlspecialchars($ecodLikersFirst['name'], ENT_QUOTES, 'UTF-8') . ' 觉得不错';
+        ?>
+        <button type="button" class="ecod_likers" data-ecod-likers aria-label="跳到评论区">
+            <span class="ecod_likers__av" aria-hidden="true">
+                <?php foreach ($ecodLikers as $ecodLiker): ?>
+                    <?php if ($ecodLiker['avatar'] !== ''): ?>
+                        <img src="<?php echo htmlspecialchars($ecodLiker['avatar'], ENT_QUOTES, 'UTF-8'); ?>" alt="" width="24" height="24" loading="lazy" decoding="async">
+                    <?php else: ?>
+                        <i><?php echo htmlspecialchars(mb_substr($ecodLiker['name'], 0, 1, 'UTF-8'), ENT_QUOTES, 'UTF-8'); ?></i>
+                    <?php endif; ?>
+                <?php endforeach; ?>
+            </span>
+            <span class="ecod_likers__text"><?php echo $ecodLikersText; ?></span>
+        </button>
+        <?php endif; endif; ?>
     <?php endif; ?>
     <?php if ($ecodActFav): ?>
         <button type="button" class="ecod_actbtn" data-ecod-act="fav" aria-pressed="false">

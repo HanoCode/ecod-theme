@@ -4,11 +4,12 @@
  *
  * 主题依赖以下额外数据：
  *   1. contents.views          阅读量（与 core 表同列，列表页随查询一次取出）
- *   2. {prefix}ecod_likes      点赞明细（每访客每篇一行，唯一索引兜底去重）
+ *   2. {prefix}ecod_likes      点赞明细（每访客每篇一行；v9 起登录用户行补记 uid）
  *   3. {prefix}ecod_user_avatar  用户自定义头像（uid 主键，url 为站点相对路径）
  *   4. {prefix}ecod_orders     付费流水（金额 / 状态，永不删除）
  *   5. {prefix}ecod_entitlements 访问权益（uid+kind+target 唯一）
  *   6. {prefix}ecod_pay_cards  卡密（只存 SHA-256）
+ *   7. {prefix}ecod_meta_meta  分类 / 标签增强字段（封面 / 独立 SEO，KV）
  *
  * 这里只在“版本号落后”时执行一次 DDL/迁移，正常请求零额外查询。
  * 文件不依赖主题其他函数，可被 api.php 单独引入。
@@ -21,7 +22,7 @@ if (!defined('__TYPECHO_ROOT_DIR__')) {
 }
 
 /** 当前数据结构版本，改动表结构时 +1 */
-define('ECOD_SCHEMA_VERSION', 6);
+define('ECOD_SCHEMA_VERSION', 9);
 
 /**
  * 数据库类型：mysql / pgsql / sqlite
@@ -200,6 +201,7 @@ function ecod_schema_ensure_likes(\Typecho\Db $db): bool
                 . ' "id" INTEGER PRIMARY KEY AUTOINCREMENT,'
                 . ' "cid" INTEGER NOT NULL,'
                 . ' "ip" VARCHAR(40) NOT NULL,'
+                . ' "uid" INTEGER NOT NULL DEFAULT 0,'
                 . ' "created" INTEGER NOT NULL)'
             );
             $db->query(
@@ -212,6 +214,7 @@ function ecod_schema_ensure_likes(\Typecho\Db $db): bool
                 . ' "id" SERIAL PRIMARY KEY,'
                 . ' "cid" INTEGER NOT NULL,'
                 . ' "ip" VARCHAR(40) NOT NULL,'
+                . ' "uid" INTEGER NOT NULL DEFAULT 0,'
                 . ' "created" INTEGER NOT NULL)'
             );
             $db->query(
@@ -224,9 +227,11 @@ function ecod_schema_ensure_likes(\Typecho\Db $db): bool
                 . ' `id` INT(10) UNSIGNED NOT NULL AUTO_INCREMENT,'
                 . ' `cid` INT(10) UNSIGNED NOT NULL,'
                 . ' `ip` CHAR(40) NOT NULL,'
+                . ' `uid` INT(10) UNSIGNED NOT NULL DEFAULT 0,'
                 . ' `created` INT(10) UNSIGNED NOT NULL,'
                 . ' PRIMARY KEY (`id`),'
-                . ' UNIQUE KEY `cid_ip` (`cid`, `ip`)'
+                . ' UNIQUE KEY `cid_ip` (`cid`, `ip`),'
+                . ' KEY `cid_uid` (`cid`, `uid`)'
                 . ') ENGINE=InnoDB DEFAULT CHARSET=utf8mb4'
             );
         }
@@ -236,6 +241,34 @@ function ecod_schema_ensure_likes(\Typecho\Db $db): bool
     }
 
     return $ok;
+}
+
+/**
+ * 点赞表补 uid 列（v9）：登录用户点赞落库到 uid 级，头像堆叠据此取人
+ *
+ * 老表走 ALTER ADD COLUMN；ecod_schema_has_column 幂等，已加过的直接跳过。
+ */
+function ecod_schema_migrate_likes_uid(\Typecho\Db $db, string $table): bool
+{
+    try {
+        if (ecod_schema_has_column($db, $table, 'uid')) {
+            return true;
+        }
+        $adapter = ecod_schema_adapter($db);
+        if ($adapter === 'mysql') {
+            $db->query('ALTER TABLE `' . $table . '` ADD COLUMN `uid` INT(10) UNSIGNED NOT NULL DEFAULT 0');
+            $db->query('ALTER TABLE `' . $table . '` ADD INDEX `cid_uid` (`cid`, `uid`)');
+        } elseif ($adapter === 'pgsql') {
+            $db->query('ALTER TABLE "' . $table . '" ADD COLUMN "uid" INTEGER NOT NULL DEFAULT 0');
+            $db->query('CREATE INDEX IF NOT EXISTS "' . $table . '_cid_uid" ON "' . $table . '" ("cid", "uid")');
+        } else {
+            $db->query('ALTER TABLE "' . $table . '" ADD COLUMN "uid" INTEGER NOT NULL DEFAULT 0');
+            $db->query('CREATE INDEX IF NOT EXISTS "' . $table . '_cid_uid" ON "' . $table . '" ("cid", "uid")');
+        }
+        return true;
+    } catch (\Throwable $e) {
+        return false;
+    }
 }
 
 /**
@@ -582,6 +615,117 @@ function ecod_schema_ensure_oauth(\Typecho\Db $db): bool
 }
 
 /**
+ * 限流记账表名（跨 session 的持久化防爆破计数）
+ */
+function ecod_throttle_table(): string
+{
+    try {
+        return \Typecho\Db::get()->getPrefix() . 'ecod_throttle';
+    } catch (\Throwable $e) {
+        return 'typecho_ecod_throttle';
+    }
+}
+
+/**
+ * 确保限流记账表存在
+ *
+ * thkey 为 sha256(动作桶 + IP)，主键即哈希键，无增长需求。
+ */
+function ecod_schema_ensure_throttle(\Typecho\Db $db): bool
+{
+    static $ok = null;
+    if ($ok !== null) {
+        return $ok;
+    }
+
+    $table = $db->getPrefix() . 'ecod_throttle';
+    $adapter = ecod_schema_adapter($db);
+
+    try {
+        if ($adapter === 'sqlite') {
+            $db->query(
+                'CREATE TABLE IF NOT EXISTS "' . $table . '" ('
+                . ' "thkey" VARCHAR(64) PRIMARY KEY,'
+                . ' "n" INTEGER NOT NULL DEFAULT 0,'
+                . ' "last" INTEGER NOT NULL DEFAULT 0)'
+            );
+        } elseif ($adapter === 'pgsql') {
+            $db->query(
+                'CREATE TABLE IF NOT EXISTS "' . $table . '" ('
+                . ' "thkey" VARCHAR(64) PRIMARY KEY,'
+                . ' "n" INTEGER NOT NULL DEFAULT 0,'
+                . ' "last" INTEGER NOT NULL DEFAULT 0)'
+            );
+        } else {
+            $db->query(
+                'CREATE TABLE IF NOT EXISTS `' . $table . '` ('
+                . ' `thkey` CHAR(64) NOT NULL,'
+                . ' `n` INT(10) UNSIGNED NOT NULL DEFAULT 0,'
+                . ' `last` INT(10) UNSIGNED NOT NULL DEFAULT 0,'
+                . ' PRIMARY KEY (`thkey`)'
+                . ') ENGINE=InnoDB DEFAULT CHARSET=utf8mb4'
+            );
+        }
+        $ok = true;
+    } catch (\Throwable $e) {
+        $ok = false;
+    }
+
+    return $ok;
+}
+
+/**
+ * 确保分类 / 标签增强字段表存在（规格：design-proposal.html §32）
+ *
+ * mid + mkey 复合主键：metas.mid 全站唯一，无需 type 列；
+ * 保存语义 = 先删后插，管理员操作低频，不值得 upsert 兼容层。
+ */
+function ecod_schema_ensure_metameta(\Typecho\Db $db): bool
+{
+    static $ok = null;
+    if ($ok !== null) {
+        return $ok;
+    }
+
+    $table = $db->getPrefix() . 'ecod_meta_meta';
+    $adapter = ecod_schema_adapter($db);
+
+    try {
+        if ($adapter === 'sqlite') {
+            $db->query(
+                'CREATE TABLE IF NOT EXISTS "' . $table . '" ('
+                . ' "mid" INTEGER NOT NULL,'
+                . ' "mkey" VARCHAR(32) NOT NULL,'
+                . ' "mvalue" TEXT NULL,'
+                . ' PRIMARY KEY ("mid", "mkey"))'
+            );
+        } elseif ($adapter === 'pgsql') {
+            $db->query(
+                'CREATE TABLE IF NOT EXISTS "' . $table . '" ('
+                . ' "mid" INTEGER NOT NULL,'
+                . ' "mkey" VARCHAR(32) NOT NULL,'
+                . ' "mvalue" TEXT NULL,'
+                . ' PRIMARY KEY ("mid", "mkey"))'
+            );
+        } else {
+            $db->query(
+                'CREATE TABLE IF NOT EXISTS `' . $table . '` ('
+                . ' `mid` INT(10) UNSIGNED NOT NULL,'
+                . ' `mkey` VARCHAR(32) NOT NULL,'
+                . ' `mvalue` TEXT NULL,'
+                . ' PRIMARY KEY (`mid`, `mkey`)'
+                . ') ENGINE=InnoDB DEFAULT CHARSET=utf8mb4'
+            );
+        }
+        $ok = true;
+    } catch (\Throwable $e) {
+        $ok = false;
+    }
+
+    return $ok;
+}
+
+/**
  * 付费相关表名（订单 / 权益 / 卡密）
  *
  * api.php、pay-admin.php 在无主题上下文时也会用到，统一在这里取。
@@ -846,9 +990,12 @@ function ecod_schema_upgrade(): void
     $favs = ecod_schema_ensure_favs($db);
     $oauth = ecod_schema_ensure_oauth($db);
     $pay = ecod_schema_ensure_pay($db);
+    $metameta = ecod_schema_ensure_metameta($db);
+    $throttle = ecod_schema_ensure_throttle($db);
+    $likesUid = $likes ? ecod_schema_migrate_likes_uid($db, $db->getPrefix() . 'ecod_likes') : false;
 
     /* 全部成功才记版本，否则下次请求重试 */
-    if ($likes && $views && $avatars && $mailcode && $favs && $oauth && $pay) {
+    if ($likes && $likesUid && $views && $avatars && $mailcode && $favs && $oauth && $pay && $metameta && $throttle) {
         ecod_schema_mark($db, ECOD_SCHEMA_VERSION);
     }
 }

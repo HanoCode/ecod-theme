@@ -37,6 +37,36 @@ function ecod_account_token_ok(string $token): bool
 }
 
 /**
+ * 敏感操作审计日志
+ *
+ * 支付结算、快照恢复、卡密生成、权益手工授予这类动作写一行
+ * error_log（action + 操作者 uid + 来源 IP + 关键参数），出问题时
+ * 可在服务器日志里回溯。fail-silent：日志不可用不影响业务。
+ */
+function ecod_audit_log(string $action, array $ctx = []): void
+{
+    $uid = 0;
+    try {
+        $user = \Widget\User::alloc();
+        if ($user->hasLogin()) {
+            $uid = (int) $user->uid;
+        }
+    } catch (\Throwable $e) {
+    }
+    $parts = [];
+    foreach ($ctx as $k => $v) {
+        $parts[] = $k . '=' . str_replace(["\n", "\r", ' '], '_', (string) $v);
+    }
+    error_log(sprintf(
+        '[ecod-audit] action=%s uid=%d ip=%s%s',
+        $action,
+        $uid,
+        (string) ($_SERVER['REMOTE_ADDR'] ?? ''),
+        $parts ? ' ' . implode(' ', $parts) : ''
+    ));
+}
+
+/**
  * 自定义头像表名
  */
 function ecod_account_avatar_table(): string
@@ -146,7 +176,7 @@ function ecod_account_set_avatar(int $uid, string $url): bool
 }
 
 /**
- * 删除自定义头像（记录 + 文件），恢复 Gravatar 默认
+ * 删除自定义头像（记录 + 文件），回落到本地随机头像池
  */
 function ecod_account_del_avatar(int $uid): bool
 {
@@ -195,8 +225,13 @@ function ecod_account_opt(string $name, $default = '')
  *
  * 前几名免费，越错越慢：1-5 次不限 → 6-10 次每次要隔 30 秒
  * → 11 次起每次要隔 180 秒；动作成功后计数清零。
- * 用 session 记账，无需额外表。
+ * 记账双写：session（同一访客的即时反馈）+ 数据库（键含 IP）。
+ * 只靠 session 会被「每次不带 Cookie 的请求」绕过——每次都是新
+ * 会话，计数永远从 0 开始；落库这张账不依赖 cookie，任一超限都拦截。
  * ---------------------------------------------------------------- */
+
+/** 持久化计数的自然衰减：每 300 秒返还一次尝试机会，老计数不会永久封死正常访客 */
+define('ECOD_THROTTLE_DECAY', 300);
 
 /**
  * 开启 session（api.php 独立入口与模板两侧都要用）
@@ -214,22 +249,34 @@ function ecod_throttle_session(): void
 function ecod_throttle_guard(string $bucket): int
 {
     ecod_throttle_session();
+
+    $now = time();
+    $wait = 0;
+
+    /* 第一本账：session */
     $log = $_SESSION['ecod_throttle'][$bucket] ?? null;
-    if (!is_array($log)) {
-        return 0;
+    if (is_array($log)) {
+        $n = max(0, (int) ($log['n'] ?? 0));
+        if ($n >= 5) {
+            $gap = $n >= 10 ? 180 : 30;
+            $w = $gap - ($now - (int) ($log['last'] ?? 0));
+            $wait = max($wait, $w > 0 ? $w : 0);
+        }
     }
 
-    $n = max(0, (int) ($log['n'] ?? 0));
-    if ($n < 5) {
-        return 0;
+    /* 第二本账：数据库（键含 IP，跨 session 生效） */
+    $state = ecod_throttle_persistent_state(ecod_throttle_pkey($bucket), $now);
+    if ($state !== null && (int) $state['n'] >= 5) {
+        $gap = (int) $state['n'] >= 10 ? 180 : 30;
+        $w = $gap - ($now - (int) $state['last']);
+        $wait = max($wait, $w > 0 ? $w : 0);
     }
-    $gap = $n >= 10 ? 180 : 30;
-    $wait = $gap - (time() - (int) ($log['last'] ?? 0));
-    return $wait > 0 ? $wait : 0;
+
+    return $wait;
 }
 
 /**
- * 动作失败：记账一次
+ * 动作失败：记账一次（session + 数据库各记一笔）
  */
 function ecod_throttle_fail(string $bucket): void
 {
@@ -238,15 +285,46 @@ function ecod_throttle_fail(string $bucket): void
     $log['n'] = (int) $log['n'] + 1;
     $log['last'] = time();
     $_SESSION['ecod_throttle'][$bucket] = $log;
+
+    if (ecod_throttle_persistent_ready()) {
+        try {
+            $db = \Typecho\Db::get();
+            $table = ecod_throttle_table();
+            $key = ecod_throttle_pkey($bucket);
+            $now = time();
+            $state = ecod_throttle_persistent_state($key, $now);
+            $n = ($state ? (int) $state['n'] : 0) + 1;
+
+            $exists = $db->fetchRow($db->select('thkey')->from($table)->where('thkey = ?', $key)->limit(1));
+            if ($exists) {
+                $db->query($db->update($table)->rows(['n' => $n, 'last' => $now])->where('thkey = ?', $key));
+            } else {
+                $db->query($db->insert($table)->rows(['thkey' => $key, 'n' => $n, 'last' => $now]));
+            }
+        } catch (\Throwable $e) {
+            /* 落库失败退回纯 session 限流 */
+        }
+    }
 }
 
 /**
- * 动作成功：清零
+ * 动作成功：两本账都清零
  */
 function ecod_throttle_clear(string $bucket): void
 {
     ecod_throttle_session();
     unset($_SESSION['ecod_throttle'][$bucket]);
+
+    if (ecod_throttle_persistent_ready()) {
+        try {
+            \Typecho\Db::get()->query(
+                \Typecho\Db::get()->delete(ecod_throttle_table())
+                    ->where('thkey = ?', ecod_throttle_pkey($bucket))
+            );
+        } catch (\Throwable $e) {
+            /* 清理失败只影响计数衰减速度 */
+        }
+    }
 }
 
 /**
@@ -257,6 +335,61 @@ function ecod_throttle_error(int $wait): string
     return $wait >= 60
         ? '尝试过于频繁，请 ' . ceil($wait / 60) . ' 分钟后再试'
         : '尝试过于频繁，请 ' . max(1, $wait) . ' 秒后再试';
+}
+
+/* ---------- 持久化账本（内部实现） ---------- */
+
+/**
+ * 持久化账本键：动作桶 + 来源 IP（REMOTE_ADDR 不可伪造，XFF 可被客户端随意填写）
+ */
+function ecod_throttle_pkey(string $bucket): string
+{
+    return hash('sha256', $bucket . '|' . (string) ($_SERVER['REMOTE_ADDR'] ?? ''));
+}
+
+/**
+ * 限流表是否可用（首次调用时自愈建表；不可用时退回纯 session 限流）
+ */
+function ecod_throttle_persistent_ready(): bool
+{
+    static $ok = null;
+    if ($ok !== null) {
+        return $ok;
+    }
+    if (!function_exists('ecod_schema_ensure_throttle')) {
+        require_once __DIR__ . '/schema.php';
+    }
+    try {
+        $ok = ecod_schema_ensure_throttle(\Typecho\Db::get());
+    } catch (\Throwable $e) {
+        $ok = false;
+    }
+    return $ok;
+}
+
+/**
+ * 读取衰减后的持久化计数；表不可用时返回 null（调用方跳过这本账）
+ *
+ * @return array{n:int,last:int}|null
+ */
+function ecod_throttle_persistent_state(string $key, int $now): ?array
+{
+    if (!ecod_throttle_persistent_ready()) {
+        return null;
+    }
+    try {
+        $row = \Typecho\Db::get()->fetchRow(
+            \Typecho\Db::get()->select('n', 'last')->from(ecod_throttle_table())
+                ->where('thkey = ?', $key)->limit(1)
+        );
+        if (!$row) {
+            return ['n' => 0, 'last' => 0];
+        }
+        $refund = intdiv(max(0, $now - (int) $row['last']), ECOD_THROTTLE_DECAY);
+        return ['n' => max(0, (int) $row['n'] - $refund), 'last' => (int) $row['last']];
+    } catch (\Throwable $e) {
+        return null;
+    }
 }
 
 /* ------------------------------------------------------------------
@@ -455,13 +588,16 @@ function ecod_captcha_issue(): string
  */
 function ecod_captcha_verify(string $input): bool
 {
-    /* 兜底：服务端没有 GD 或 session 起不来时放行，避免把登录彻底锁死 */
+    /* 兜底：服务端没有 GD 时根本出不了图，只能放行（持久化限流仍在兜底） */
     if (!function_exists('imagecreatetruecolor')) {
         return true;
     }
     ecod_throttle_session();
+    /* GD 在而 session 起不来属于站点故障：验证码没有可比对的答案，
+     * 一律拒绝并留下日志，防止静默退化为「验证码形同虚设」 */
     if (session_status() !== PHP_SESSION_ACTIVE) {
-        return true;
+        error_log('[ecod-captcha] session unavailable, captcha check refused');
+        return false;
     }
     $row = $_SESSION['ecod_captcha'] ?? null;
     unset($_SESSION['ecod_captcha']);

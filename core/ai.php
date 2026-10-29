@@ -86,16 +86,49 @@ function ecod_ai_summary(int $cid): array
 
     $hash = md5($source);
     $cacheKey = 'theme:ecod_ai_' . $cid;
-    $cacheRaw = '';
-    try {
-        $cacheRaw = (string) \Utils\Helper::options()->{$cacheKey};
-    } catch (\Throwable $e) {
-        $cacheRaw = '';
+
+    /* 缓存命中判断要跑两次：进锁前一次、进锁后一次（防并发重复调 API） */
+    $readCache = static function () use ($cacheKey, $hash): ?array {
+        try {
+            $cacheRaw = (string) \Utils\Helper::options()->{$cacheKey};
+        } catch (\Throwable $e) {
+            return null;
+        }
+        $cache = is_string($cacheRaw) && $cacheRaw !== '' ? json_decode($cacheRaw, true) : null;
+        if (is_array($cache) && ($cache['hash'] ?? '') === $hash && ($cache['summary'] ?? '') !== '') {
+            return ['ok' => true, 'summary' => (string) $cache['summary'], 'cached' => true];
+        }
+        return null;
+    };
+
+    $hit = $readCache();
+    if ($hit !== null) {
+        return $hit;
     }
-    $cache = is_string($cacheRaw) && $cacheRaw !== '' ? json_decode($cacheRaw, true) : null;
-    if (is_array($cache) && ($cache['hash'] ?? '') === $hash && ($cache['summary'] ?? '') !== '') {
-        return ['ok' => true, 'summary' => (string) $cache['summary'], 'cached' => true];
+
+    /* 生成锁：同一篇的并发 miss 只放一个请求去调模型，其余直接返回，
+     * 前端本次隐藏区块，下一次页面加载自然命中缓存 */
+    $lockFh = @fopen(sys_get_temp_dir() . '/ecod-ai-' . md5($cacheKey) . '.lock', 'c');
+    $gotLock = false;
+    if ($lockFh) {
+        $gotLock = @flock($lockFh, LOCK_EX | LOCK_NB);
+        if (!$gotLock) {
+            fclose($lockFh);
+            return ['ok' => false, 'error' => '正在生成，请稍后刷新重试'];
+        }
+        $hit = $readCache();
+        if ($hit !== null) {
+            flock($lockFh, LOCK_UN);
+            fclose($lockFh);
+            return $hit;
+        }
     }
+    $unlock = static function () use ($lockFh): void {
+        if ($lockFh) {
+            @flock($lockFh, LOCK_UN);
+            @fclose($lockFh);
+        }
+    };
 
     $endpoint = ecod_ai_endpoint();
     $key = trim((string) ecod_option('EAIKey', ''));
@@ -119,6 +152,7 @@ function ecod_ai_summary(int $cid): array
     ], JSON_UNESCAPED_UNICODE);
 
     if (!function_exists('curl_init')) {
+        $unlock();
         return ['ok' => false, 'error' => '服务器缺少 curl 扩展'];
     }
 
@@ -138,12 +172,14 @@ function ecod_ai_summary(int $cid): array
     curl_close($ch);
 
     if ($errno || !is_string($body)) {
+        $unlock();
         return ['ok' => false, 'error' => '接口请求失败'];
     }
 
     $data = json_decode($body, true);
     $summary = trim((string) ($data['choices'][0]['message']['content'] ?? ''));
     if ($summary === '') {
+        $unlock();
         return ['ok' => false, 'error' => '接口未返回摘要'];
     }
 
@@ -162,5 +198,6 @@ function ecod_ai_summary(int $cid): array
         /* 缓存失败不影响本次返回 */
     }
 
+    $unlock();
     return ['ok' => true, 'summary' => $summary, 'cached' => false];
 }

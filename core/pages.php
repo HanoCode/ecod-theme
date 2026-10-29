@@ -31,6 +31,14 @@ function ecod_pages_blueprint(): array
             'desc'     => '按年 / 月折叠的时间轴，一次查询取全量文章',
             'icon'     => 'calendar',
         ],
+        'topics' => [
+            'title'    => '专题',
+            'slug'     => 'topics',
+            'template' => 'page-topics.php',
+            'text'     => '专题墙：按主题策展的合集，正文内容不会显示；专题本身在「设置 → 专题」里维护。',
+            'desc'     => '专题墙 + 专题详情，把散落的文章串成一条线',
+            'icon'     => 'layers',
+        ],
         'readers' => [
             'title'    => '读者墙',
             'slug'     => 'readers',

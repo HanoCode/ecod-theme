@@ -1,0 +1,13 @@
+# Ecod Theme · Git 忽略清单
+
+# 构建工具链依赖（build/package.json + build.mjs 入库，依赖不进库）
+build/node_modules/
+build/package-lock.json
+
+# macOS
+.DS_Store
+
+# 编辑器 / 临时文件
+*.swp
+.DS_Store?
+._*

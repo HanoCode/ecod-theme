@@ -3,6 +3,10 @@
  * 壁纸集
  *
  * @package custom
+ * @author  Ecod
+ * @since   2026-10-29
+ * @version 2.0.0
+ * @link    https://ecod.cc
  */
 if (!defined('__TYPECHO_ROOT_DIR__')) {
     exit;
@@ -16,6 +20,7 @@ $ecodWalls = ecod_extract_images($ecodWallHtml, 60);
 $ecodWallMeta = '<span>' . ecod_icon('image', 13) . count($ecodWalls) . ' 张图片</span>';
 ?>
 <main class="ecod_main" id="ecod-main">
+    <?php /* 模块 · 内容区上方（模块管理台） */ ecod_widgets_render("top_content", $this); ?>
 
     <nav class="ecod_crumb" aria-label="面包屑">
         <a href="<?php $this->options->siteUrl(); ?>"><?php echo ecod_icon('home', 12); ?>首页</a>
@@ -66,6 +71,8 @@ $ecodWallMeta = '<span>' . ecod_icon('image', 13) . count($ecodWalls) . ' 张图
         </article>
     <?php endif; ?>
 
+
+    <?php /* 模块 · 内容区下方（模块管理台） */ ecod_widgets_render("bottom_content", $this); ?>
 </main>
 
 <?php $this->need('public/aside.php'); ?>

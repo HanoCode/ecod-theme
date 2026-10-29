@@ -7,6 +7,10 @@
  * 由 assets/admin/config.js 搬运到对应面板，保存逻辑仍走 Typecho 原生表单。
  *
  * @package Ecod Theme
+ * @author  Ecod
+ * @since   2026-10-29
+ * @version 2.0.0
+ * @link    https://ecod.cc
  */
 
 if (!defined('__TYPECHO_ROOT_DIR__')) {
@@ -19,6 +23,7 @@ if (!defined('__TYPECHO_ROOT_DIR__')) {
 $ecodPanes = [
     'site'       => ['站点', '标识、图标、配色与备案'],
     'nav'        => ['导航', '一级与二级菜单：拖拽排序、缩进成二级'],
+    'topics'     => ['专题', '跨分类的策展合集：列表、封面与挑稿'],
     'appearance' => ['外观', '深色模式、导航、背景与动效'],
     'home'       => ['首页', 'Banner、标语与模块布局'],
     'layout'     => ['版式', '侧栏位置、卡片样式与摘要'],
@@ -30,12 +35,18 @@ $ecodPanes = [
     'comments'   => ['评论', '嵌套折叠、第三方评论、人机验证与反垃圾'],
     'ai'         => ['AI 助手', '智能摘要：OpenAI 兼容接口，按文章生成摘要'],
     'seo'        => ['收录与性能', '搜索收录、懒加载与自定义代码'],
+    'search'     => ['搜索', '快捷搜索面板：热词、标签与实时联想'],
     'tools'      => ['工具', '配置备份、导入与恢复'],
 ];
 
 
-/* 由块系统接管的分组 */
+/* 由块系统接管的分组（模块已迁到独立管理台，这里只剩常规字段与入口卡） */
 $ecodBlockPanes = ['home', 'aside', 'post', 'footer'];
+
+/* 模块管理台入口（独立页面，不在后台菜单里）
+   注意：basename(__DIR__ . '/..') 会得到 ".."，必须用 dirname() 取主题目录名 */
+$ecodWidgetUrl = rtrim((string) \Widget\Options::alloc()->siteUrl, '/')
+    . '/usr/themes/' . basename(dirname(__DIR__)) . '/widget.php';
 
 /* 分组级条件：整组因外部开关失效时，顶部出现提示条
    结构：[条件表达式, 提示文案, 跳转目标「分组:字段」] */
@@ -100,6 +111,7 @@ if (!function_exists('ecod_admin_media')) {
 <link rel="stylesheet" href="<?php echo ecod_asset('assets/admin/config.css'); ?>">
 <link rel="stylesheet" href="<?php echo ecod_asset('assets/admin/media.css'); ?>">
 <link rel="stylesheet" href="<?php echo ecod_asset('assets/admin/nav.css'); ?>">
+<link rel="stylesheet" href="<?php echo ecod_asset('assets/admin/topics.css'); ?>">
 
 <?php /* JS 被禁用或加载失败时，自绘面板无法搬运字段，隐藏外壳让 Typecho 原生表单直接可用 */ ?>
 <noscript>
@@ -133,9 +145,6 @@ if (!function_exists('ecod_admin_media')) {
                 <button type="button" class="ecod-admin__navitem<?php echo $key === $ecodFirstPane ? ' is-active' : ''; ?>"
                         data-pane="<?php echo $key; ?>">
                     <?php echo htmlspecialchars($pane[0]); ?>
-                    <?php if (in_array($key, $ecodBlockPanes, true)): ?>
-                        <em data-count="<?php echo $key; ?>">0</em>
-                    <?php endif; ?>
                 </button>
             <?php endforeach; ?>
         </nav>
@@ -164,12 +173,16 @@ if (!function_exists('ecod_admin_media')) {
                 <?php $ecodPaneCond = $ecodPaneConds[$key] ?? null; ?>
                 <section class="ecod-pane<?php echo $key === $ecodFirstPane ? ' is-active' : ''; ?>" data-pane-panel="<?php echo $key; ?>"<?php if ($ecodPaneCond): ?> data-ecod-pane-when="<?php echo htmlspecialchars($ecodPaneCond[0], ENT_QUOTES, 'UTF-8'); ?>" data-ecod-pane-note="<?php echo htmlspecialchars($ecodPaneCond[1], ENT_QUOTES, 'UTF-8'); ?>" data-ecod-pane-jump="<?php echo htmlspecialchars($ecodPaneCond[2], ENT_QUOTES, 'UTF-8'); ?>"<?php endif; ?>>
                     <?php if (in_array($key, $ecodBlockPanes, true)): ?>
-                        <div class="ecod-pane__bar">
-                            <span class="ecod-pane__hint">拖动手柄调整顺序，开关控制启用，齿轮编辑参数</span>
-                            <button type="button" class="ecod-admin__ghost" data-ecod-reset="<?php echo $key; ?>">恢复默认</button>
-                        </div>
+                        <?php /* 块管理已迁到独立模块管理台，这里只留常规字段与入口卡 */ ?>
+                        <a class="ecod-wgt-entry" href="<?php echo htmlspecialchars($ecodWidgetUrl, ENT_QUOTES, 'UTF-8'); ?>" target="_blank" rel="noopener">
+                            <span class="ecod-wgt-entry__ic"><?php echo ecod_icon('layers', 16); ?></span>
+                            <span class="ecod-wgt-entry__text">
+                                <b>本分组的模块在「模块管理台」里摆放</b>
+                                <small>拖拽排序、开关、改参数，改完即存，不再占用设置页</small>
+                            </span>
+                            <span class="ecod-wgt-entry__go">打开 →</span>
+                        </a>
                         <div class="ecod-fields" data-fields="<?php echo $key; ?>"></div>
-                        <div class="ecod-blocks" data-blocks="<?php echo $key; ?>"></div>
                     <?php elseif ($key === 'nav'): ?>
                         <div class="ecod-navb__bar" data-navb-bar>
                             <label class="ecod-navb__pick">
@@ -237,6 +250,22 @@ if (!function_exists('ecod_admin_media')) {
                                 </div>
                                 <p class="ecod-navb__empty" data-navb-empty>这套导航还没有菜单项。左侧挑一个加进来；整套为空时前台沿用「全部独立页面 + 自定义链接」的自动导航。</p>
                             </div>
+                        </div>
+                        <div class="ecod-fields" data-fields="<?php echo $key; ?>"></div>
+                    <?php elseif ($key === 'topics'): ?>
+                        <div class="ecod-tpb__bar" data-tpb-bar>
+                            <button type="button" class="ecod-btn ecod-btn--sm" data-tpb-new>＋ 新建专题</button>
+                            <button type="button" class="ecod-admin__ghost" data-tpb-page>创建专题页</button>
+                            <span class="ecod-tpb__hint" data-tpb-pagehint>专题页：/topics</span>
+                            <span class="ecod-tpb__count" data-tpb-count>0 / 30</span>
+                        </div>
+                        <p class="ecod-tpb__tip">
+                            专题是「编辑挑出来的一组文章」：一篇文章通过自定义字段「专题」归入一个专题，
+                            也可以直接在这里挑稿加入。改完点右下角「保存设置」。
+                        </p>
+                        <div class="ecod-tpb" data-tpb>
+                            <div class="ecod-tpb__list" data-tpb-list></div>
+                            <p class="ecod-tpb__empty" data-tpb-empty>还没有专题。点「＋ 新建专题」开始，建好后到文章里选它即可归档。</p>
                         </div>
                         <div class="ecod-fields" data-fields="<?php echo $key; ?>"></div>
                     <?php else: ?>
@@ -357,10 +386,10 @@ if (!function_exists('ecod_admin_media')) {
 
                 <div class="ecod-tool">
                     <div class="ecod-tool__text">
-                        <b>当前存储</b>
-                        <p>模块状态以 JSON 保存在主题选项 <code>EBlocks</code> 中；旧版配置（首页顺序、热搜词、广告图等）会自动迁移，不会丢失。</p>
+                        <b>模块管理台</b>
+                        <p>模块的位置、开关与参数已迁到独立管理台（数据存于 <code>EWidgets</code>，旧的 <code>EBlocks</code> 只作升级迁移来源）。侧栏的按页面显示也在管理台里调。</p>
                     </div>
-                    <span class="ecod-tool__tag" data-blocks-total>0 个模块</span>
+                    <a class="ecod-btn ecod-btn--sm" href="<?php echo htmlspecialchars($ecodWidgetUrl, ENT_QUOTES, 'UTF-8'); ?>" target="_blank" rel="noopener">打开管理台</a>
                 </div>
 
                 <p class="ecod-tool__status" data-ecod-tool-status hidden></p>
@@ -412,7 +441,7 @@ ecod_admin_field($form, 'text', 'EPolice', '', '公安备案号', '例如「京�
 ecod_admin_media($form, 'text', 'ELoginBg', '', '登录页背景图', '从媒体库选图或粘贴图片 URL；设置后登录页整页铺满该图并加深色遮罩，留空则用默认浅色背景', 'appearance');
 
 /* 版式（侧栏位置、卡片、缩略图、摘要） */
-ecod_admin_field($form, 'select', 'EAside', 'right', '侧栏位置', '侧栏整体位置，也可在「侧栏」分组里关闭全部模块', [
+ecod_admin_field($form, 'select', 'EAside', 'right', '侧栏位置（全站默认）', '所有页面类型的默认值；在「模块管理台」里可以按页面类型单独覆盖，文章 / 页面还能用自定义字段 aside 单独覆盖', [
     'right' => '右侧栏',
     'left'  => '左侧栏',
     'none'  => '无侧栏',
@@ -439,6 +468,18 @@ ecod_admin_field($form, 'select', 'EFloatToc', 'on', '浮动目录', '文章页�
     'on'  => '开启（默认）',
     'off' => '关闭',
 ], 'post');
+ecod_admin_field($form, 'select', 'ETocProgress', 'on', '目录进度条', '浮动目录按钮套阅读进度环，弹层头部显示进度条与「x / n 节」，当前节之前的项目标已读；关闭后回到纯按钮形态。页面顶部进度条不受此开关影响', [
+    'on'  => '开启（默认）',
+    'off' => '关闭',
+], 'post');
+ecod_admin_field($form, 'select', 'ELikers', 'on', '点赞头像堆叠', '互动条点赞按钮下方展示最近点赞的注册用户头像（最多 5 个，超出并入「等 N 人」）；还没有注册用户点赞时自动不输出，只保留数字', [
+    'on'  => '开启（默认）',
+    'off' => '关闭',
+], 'post');
+ecod_admin_field($form, 'select', 'EQuickBar', 'on', '快速评论条', '移动端滚过一屏正文且评论区还在下方时，视口底部淡入胶囊条；点击平滑滚到评论区并聚焦输入框。桌面不显示', [
+    'on'  => '开启（默认）',
+    'off' => '关闭',
+], 'post');
 ecod_admin_field($form, 'select', 'EDark', 'auto', '深色模式', '关闭后不加载切换按钮与首帧脚本', [
     'auto' => '跟随系统',
     'on'   => '允许手动切换',
@@ -452,6 +493,10 @@ ecod_admin_field($form, 'select', 'EThumbServer', 'on', '服务端缩略图裁�
 ecod_admin_field($form, 'select', 'ELike', 'on', '列表卡片点赞', '首页 / 归档卡片右上角的点赞按钮；文章页互动条在「文章页 → 互动按钮」里单独控制', [
     'on'  => '显示',
     'off' => '隐藏',
+], 'interact');
+ecod_admin_field($form, 'select', 'EAuthorOnline', 'on', '作者卡在线点', '侧栏作者卡头像右下显示在线呼吸点（博主 5 分钟内登录过即判定在线）与「博主」徽章；博主 uid 在模块管理台的作者卡片参数里配置，留空自动识别', [
+    'on'  => '开启（默认）',
+    'off' => '关闭',
 ], 'interact');
 ecod_admin_field($form, 'select', 'EFriendApply', 'on', '友链一键申请', '友链页显示「一键申请」按钮与弹窗，访客填完即入库待审；审核通过后自动写入友链页正文。关闭后只保留页面里的说明文字', [
     'on'  => '开启',
@@ -503,7 +548,6 @@ ecod_admin_field($form, 'select', 'EComment', 'on', '全站评论', '关闭后�
     'on'  => '开启',
     'off' => '关闭',
 ], 'interact');
-ecod_admin_field($form, 'text', 'EAvatar', '', '头像源', '默认走 cravatar.cn 镜像（gravatar.com 国内无法直连）。可填其他镜像前缀，例如 https://weavatar.com/avatar/', [], 'interact');
 ecod_admin_field($form, 'textarea', 'ESensitive', '', '敏感词', '命中任意一个就把评论转为「待审核」。一行一个，也支持用 || 分隔', [], 'interact', ['data-ecod-show-when' => 'EComment:on']);
 ecod_admin_field($form, 'select', 'ECnOnly', 'off', '必须包含中文', '不含中文的评论转待审，用来挡纯英文机器人广告', [
     'off' => '不限制',
@@ -521,6 +565,10 @@ ecod_admin_field($form, 'select', 'ECommentMailSecure', 'ssl', '加密方式', '
     'ssl'  => 'SSL',
     'tls'  => 'STARTTLS',
     'none' => '不加密',
+], 'interact', $ecodMailWhen);
+ecod_admin_field($form, 'select', 'ECommentMailVerify', 'on', '校验 SMTP 证书', '开启后验证邮件服务器的 TLS 证书（防中间人窃取授权码）；个别邮箱中继证书链不全、连不上时再关', [
+    'on'  => '校验（推荐）',
+    'off' => '不校验',
 ], 'interact', $ecodMailWhen);
 ecod_admin_field($form, 'text', 'ECommentMailAccount', '', '发件邮箱', '例如 yourname@qq.com', [], 'interact', $ecodMailWhen);
 ecod_admin_field($form, 'text', 'ECommentMailPassword', '', '邮箱授权码', '注意是授权码，不是邮箱登录密码', [], 'interact', $ecodMailWhen);
@@ -604,13 +652,6 @@ ecod_admin_field($form, 'select', 'EAkismet', 'off', '反垃圾 Akismet', '提�
     'on'  => '开启',
 ], 'comments', ['data-ecod-show-when' => 'ECommentProvider:native']);
 ecod_admin_field($form, 'text', 'EAkismetKey', '', 'Akismet API Key', '在 akismet.com 获取；填错或网络不通时放行，不影响正常评论', [], 'comments', ['data-ecod-show-when' => 'EAkismet:on']);
-ecod_admin_field($form, 'select', 'EAvatarPreset', 'auto', '头像服务', '评论头像 CDN。选「自动」时优先用上面「互动」里填的自定义头像源，没填则走 Cravatar', [
-    'auto'     => '自动',
-    'cravatar' => 'Cravatar（国内，默认）',
-    'weavatar' => 'WeAvatar',
-    'gravatar' => 'Gravatar（官方）',
-    'custom'   => '自定义（用「互动」里的头像源）',
-], 'comments');
 ecod_admin_field($form, 'select', 'EEmojiStyle', 'unicode', '评论表情', 'Emoji 是字符，全平台显示最稳；图片表情包用的是主题内置的 31 个表情，可在下面换成外部 CDN', [
     'unicode' => '系统 Emoji（推荐）',
     'smiley'  => '图片表情包',
@@ -735,13 +776,75 @@ ecod_admin_field($form, 'text', 'EVip2Forever', '', '超级会员 · 永久价�
 ecod_admin_field($form, 'hidden', 'EBlocks', '', '', '', [], 'tools');
 /* 隐藏：多套导航 JSON（由「导航」分组的构建器写入，core/nav.php 读取） */
 ecod_admin_field($form, 'hidden', 'ENavSets', '', '', '', [], 'nav');
+
+/* ---- 专题：构建器写入的 JSON + 展示项 ---- */
+/* 隐藏：专题 JSON（由「专题」分组的构建器写入，core/topics.php 读取） */
+ecod_admin_field($form, 'hidden', 'ETopics', '', '', '', [], 'topics');
+ecod_admin_field($form, 'select', 'ETopicWallStyle', 'cover', '专题墙卡片形态', '封面卡信息量大；文字卡更紧凑，适合专题较多的站', [
+    'cover' => '封面卡（上图下文）',
+    'plain' => '文字卡（紧凑）',
+], 'topics');
+ecod_admin_field($form, 'select', 'ETopicWallCols', '3', '专题墙列数', '窄屏（≤720px）自动降为单列', [
+    '2' => '2 列',
+    '3' => '3 列',
+    '4' => '4 列',
+], 'topics');
+ecod_admin_field($form, 'select', 'ETopicPerPage', '12', '专题内每页篇数', '专题详情页一次列多少篇；篇数多时翻页更少，但首屏更重', [
+    '6'  => '6 篇',
+    '12' => '12 篇',
+    '18' => '18 篇',
+    '24' => '24 篇',
+], 'topics');
+ecod_admin_field($form, 'select', 'ETopicMoreCount', '8', '详情页「其它专题」', '专题内容读完后的横向 chips，把读者留在专题层；选 0 整行隐藏（面包屑仍有专题入口）', [
+    '0'  => '不显示',
+    '4'  => '4 个',
+    '8'  => '8 个',
+    '12' => '12 个',
+], 'topics');
+ecod_admin_field($form, 'select', 'ETopicCardChip', 'on', '文章卡片显示专题', '在分类、日期旁加一枚专题标签；已做批量预取，不影响列表性能', [
+    'on'  => '显示',
+    'off' => '不显示',
+], 'topics');
+
+/* 分类页头（E1） */
+$ecodCatHeadWhen = ['data-ecod-show-when' => 'ECatHead:on'];
+ecod_admin_field($form, 'select', 'ECatHead', 'on', '分类页页头', '分类页顶部显示名称、描述、统计与相关专题；关闭后回到一行标题', [
+    'on'  => '显示',
+    'off' => '不显示',
+], 'topics');
+ecod_admin_field($form, 'select', 'ECatHeadBg', 'cover', '页头背景', '封面取该分类最新一篇文章的首图，取不到时用主题色柔光', [
+    'cover' => '最新文章封面',
+    'soft'  => '主题色柔光',
+], 'topics', $ecodCatHeadWhen);
+ecod_admin_field($form, 'select', 'ECatHeadStats', 'on', '页头数据', '篇数 / 累计阅读 / 最近更新，一条聚合查询取全', [
+    'on'  => '显示',
+    'off' => '不显示',
+], 'topics', $ecodCatHeadWhen);
+ecod_admin_field($form, 'select', 'ECatHeadTopics', 'on', '相关专题', '分类下文章命中的专题，按命中篇数排序，最多 5 个', [
+    'on'  => '显示',
+    'off' => '不显示',
+], 'topics', $ecodCatHeadWhen);
+
+/* ---------------- 搜索（C4 快捷搜索面板） ---------------- */
+ecod_admin_field($form, 'select', 'ESearchPanel', 'on', '快捷搜索面板', '⌘K / 点击导航搜索框 / 移动端 dock 搜索按钮唤起居中面板：热词、标签、实时联想与键盘导航；关闭后保留原地的搜索下拉与 ⌘K 聚焦', [
+    'on'  => '开启（默认）',
+    'off' => '关闭',
+], 'search');
+ecod_admin_field($form, 'text', 'ESearchHot', '', '热词', '逗号 / 顿号分隔，最多 8 个；留空则面板只显示标签区。热词是编辑推荐，标签是全站概览', [], 'search', ['data-ecod-show-when' => 'ESearchPanel:on', 'placeholder' => 'Typecho, 主题开发, PHP 8.5']);
+ecod_admin_field($form, 'select', 'ESearchTagCount', '10', '标签个数', '面板标签区展示的热门标签数量（按引用篇数排序）', [
+    '6'  => '6 个',
+    '8'  => '8 个',
+    '10' => '10 个（默认）',
+    '12' => '12 个',
+], 'search', ['data-ecod-show-when' => 'ESearchPanel:on']);
+
 /* 隐藏：不进导航的页面 slug（由「工具 → 特色页」的开关写入，逗号分隔） */
 ecod_admin_field($form, 'hidden', 'ENavHide', '', '', '', [], 'tools');
 
 /* ------------------------------------------------------------------
  * 传给前端的数据
  * ---------------------------------------------------------------- */
-$ecodAdminData = ecod_blocks_admin_data();
+$ecodAdminData = ecod_widgets_admin_data();
 
 $ecodIconMap = [];
 foreach ($ecodAdminData['defs'] as $def) {
@@ -772,6 +875,14 @@ window.ECOD_NAV = <?php echo json_encode([
     'active'  => ecod_nav_sets()['active'],
     'home'    => ecod_nav_home_url(),
 ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_HEX_TAG | JSON_HEX_AMP); ?>;
+window.ECOD_TOPICS = <?php echo json_encode([
+    'items' => ecod_topics(false),
+    'index' => ecod_topic_index(),
+    'page'  => ecod_topics_page(),
+    'max'   => ECOD_TOPICS_MAX,
+    'api'   => ecod_asset('api.php'),
+    'token' => ecod_tool_token(),
+], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_HEX_TAG | JSON_HEX_AMP); ?>;
 window.ECOD_MEDIA = {
     api: <?php echo json_encode(ecod_asset('media.php'), JSON_UNESCAPED_SLASHES); ?>,
     upload: <?php echo json_encode($ecodUploadIndex, JSON_UNESCAPED_SLASHES); ?>
@@ -783,5 +894,6 @@ window.ECOD_TOOL = {
 </script>
 <script src="<?php echo ecod_asset('assets/admin/media.js'); ?>" defer></script>
 <script src="<?php echo ecod_asset('assets/admin/nav.js'); ?>" defer></script>
+<script src="<?php echo ecod_asset('assets/admin/topics.js'); ?>" defer></script>
 <script src="<?php echo ecod_asset('assets/admin/config.js'); ?>" defer></script>
 <script src="<?php echo ecod_asset('assets/admin/tools.js'); ?>" defer></script>

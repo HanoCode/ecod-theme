@@ -1,0 +1,39 @@
+# Ecod Theme · 目录加固（Apache）
+#
+# 主题内只有 4 个独立入口需要被浏览器直接访问：
+#   api.php      前台接口（登录 / 点赞 / 支付回调 / 缩略图…）
+#   media.php    后台选图器数据源
+#   pay-admin.php 付费管理台
+#   manifest.php PWA manifest
+# 其余 PHP 都是模板或类库，由 Typecho include 执行；直连要么 fatal
+# 要么把内部结构暴露给扫描器，一律 403。
+# nginx 不读 .htaccess，等效配置见 README「服务器加固」一节。
+
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteRule ^(api|media|pay-admin|manifest)\.php$ - [L]
+  RewriteRule ^.+\.php$ - [F,L]
+</IfModule>
+
+# 设计稿 / 审计报告等开发文档不对外暴露
+<FilesMatch "\.(md|markdown|lock)$">
+  <IfModule mod_authz_core.c>
+    Require all denied
+  </IfModule>
+  <IfModule !mod_authz_core.c>
+    Order allow,deny
+    Deny from all
+  </IfModule>
+</FilesMatch>
+<FilesMatch "^(MIRAI-REFERENCE(-ANALYSIS)?|REFERENCE-TEARDOWN|design-proposal)\.html$">
+  <IfModule mod_authz_core.c>
+    Require all denied
+  </IfModule>
+  <IfModule !mod_authz_core.c>
+    Order allow,deny
+    Deny from all
+  </IfModule>
+</FilesMatch>
+
+# 不列目录
+Options -Indexes

@@ -12,18 +12,42 @@
 - 坑：`Router::url` 必须传 prefix（`options->index`），否则未开伪静态的站拼出 /tag/css/ 直接 404。
 - 后台 `.ecod-admin__ghost` 基础样式 `width:100%`，在工具条里要 `flex:none;width:auto` 覆盖。
 
+## 区域与模块管理器（widget v2）
+- 真源 design-proposal.html **§31**；实现 `core/blocks.php`（区域注册表/迁移/渲染）、`widget.php`（独立管理台，三栏工作台）、`assets/admin/widget.{css,js}`。
+- 存储 `EWidgets` 独立 option 行（JSON，user=0），**不写 `theme:ecod-theme` 行**；旧 `EBlocks` 只作一次性迁移源，`ecod_widgets_raw()` 在无 EWidgets 时内存迁移、首次保存才落盘 → 删掉 EWidgets 即回滚。
+- 区域 id = `{page}_{slot}`（page: home/single/page/cat/tag/search/author/custom；slot: top_fluid/top_content/bottom_content/bottom_fluid/sidebar）+ 全局区 `all_top_fluid/all_sidebar_top/all_sidebar_bottom/all_bottom_fluid` + 定点区 `pinned`。
+- 每区上限 `ECOD_WIDGET_LIMIT=20`（旧配置首页就有 14 条，12 会静默截断迁移）；uid 规则 `[a-z0-9-]{1,40}`，同区同类型递增。
+- 乐观锁 `ecod_widgets_rev()` = md5(doc) 前 12 位；写入后必须 `ecod_widgets_flush()` 清 `$GLOBALS` 缓存，否则 rev 拿旧值。
+- 全宽区必须在 `#ecod-shell` 内（PJAX 只换 shell），出血靠 `width:100vw; margin-inline:calc(50% - 50vw)`；反过来**常驻 UI（搜索面板、登录弹层）必须放在 shell 外**，否则 PJAX 换页后被一起替换掉。
+- 独立入口脚本（widget.php / pay-admin.php 型）三件套：定位站点根 → `Cookie::setPrefix()` 校正前缀 → `Widget\User::alloc()->pass('administrator', true)`；状态码要走 `\Typecho\Response::getInstance()->setStatus()`，`http_response_code()` 会被覆盖回 200。
+
 ## 工程约定
-- 文档先行：design-proposal.html 为真源，先补规格再改代码；§03.5=导航菜单管理器，§10.5=正文 oEmbed。
+- 文档先行：design-proposal.html 为真源，先补规格再改代码；§03.5=导航菜单管理器，§10.5=正文 oEmbed，§30=参考站八项决议（第 2 轮专题、第 3 轮 C3 目录进度条 + C4 搜索面板，均含验收记录），§31=区域与模块管理台，§32=分类/标签增强。
 - 后台构建器交互验证可用「headless Chrome + file:// harness + 模拟点击 + dump-dom 断言」法（agent-browser 在本机 eval 上下文不稳定）。
 - agent-browser：JS click 触发导航后 eval 上下文会丢，需 close --all 重开；PJAX 换页后 eval 上下文失联。
 - 本站路由只认 `http://ecod.cc/index.php/archives/N/` 形式；`?p=N` 会落到首页；自定义页 query 不能用 `?cid=`（Archive 优先认它导致 404），用 `?post=`。
 - 后台设置页测试数据一律走「seed 脚本 + 备份」，测完恢复。
+- 前端地址模板：`public/include.php` 把 `routingTable` 里的 post/search 模式换成占位符注入 `window.ECOD`（`postUrl` 用 `{cid}`、`searchUrl` 用 `{q}`）；独立入口（api.php）拿不到 Router，必须靠前端按 cid/q 拼，不要在后端拼 permalink。
+- 临时探针 `__*.php` 会被 IDE 自动 `git add`：用完 `rm` 后还要 `git rm --cached`，否则 `php -l` 遍历 `git ls-files` 时报 "Could not open input file" 假失败。
+
+## 前台交互落点（C3/C4）
+- C3 目录进度条：`assets/js/ecod.global.js` 的 `initToc` → `syncProgress(next)`（**必须放在 `if (next === activeIndex) return;` 之前**，否则同节内滚动进度不更新）；`Ecod.readProgress()` 是唯一 pct 口径，顶部进度条与目录环共用。
+- C4 搜索面板：DOM 在 `public/header.php` 末尾（`.ecod_spanel`，**必须在 `#ecod-shell` 外**，PJAX 不替换）；JS `initSearchPanel`；三入口靠 capture 监听（导航框直接 preventDefault，dock 按钮 `stopImmediatePropagation` 抢在 drawer 之前）；热词 `ESearchHot`、标签数 `ESearchTagCount`、总开关 `ESearchPanel`。
+
+## 运行环境与验收工具
+- 站点跑 **PHP 8.5**（nginx `phpwebstudy-php-cgi-85.sock`），本机 CLI 只有 8.1 → `php -l` 只是粗筛；8.4+ 弃用告警（隐式可空参数等）会直接混进 HTML 输出，去 `~/Library/FlyEnv/server/vhost/logs/1793099469421.error.log` 看。
+- 后台样式表**没有全局 `box-sizing` reset**：任何 `width:100%` + padding/border 的输入框都会顶出容器，组件要自带 `box-sizing:border-box`。
+- 真实窄屏验收不能用 `--window-size=390`（视口有偏差、截图裁切）：写临时量测页把目标页塞进 390px iframe，读 `scrollWidth` 并列出 `right > innerWidth` 的元素。用完即删。
+- headless Chrome 三大限制（2026-10-30 实测）：①文章页含 11 个外部播放器 iframe（YouTube/B站/Vimeo/优酷/腾讯/网易云/Spotify/SoundCloud）必然 OOM 被杀（exit 137），要用 `--host-resolver-rules="MAP *.youtube.com 127.0.0.1, ..."` 黑洞；②`--virtual-time-budget` 下 iframe 内 `scrollTo` 不生效（scrollY 恒 0）、`requestAnimationFrame` 不推进（`Ecod.addScroll` 回调不跑）、CSS `transition` 不推进（读到初始值）——诊断页要 `w.requestAnimationFrame = cb => cb(0)` 并注入 `transition:none!important`；③`--dump-dom` 不启动合成器，滚动/动画类断言必须用截图模式。
+- 页面 500 排查：临时在 config.inc.php `define('__TYPECHO_EXCEPTION_FILE__', ...)` 挂自己的异常页，`Common::error()` 里 require 时的变量名是 **`$exception`**（不是 `$e`），能拿到 message + stack trace；用完立刻还原并 diff 校验。
+- 主题设置页 fatal 的常见原因：`core/config.php` 调用的函数在 `core/blocks.php`（widget v2）里被改名，如 `ecod_blocks_admin_data()` → `ecod_widgets_admin_data()`。
 
 ## Typecho 1.3 框架坑（付费模块实测沉淀）
 - **Query 表名必须 `table.` 前缀**（`$db->from('table.x')`），裸表名不加 prefix 报 1146。
 - **`Db::affectedRows()` 不存在**：`Db::query()` 对 UPDATE/DELETE 直接返回影响行数，INSERT 返回 lastInsertId；错误写法抛 Error 且常被 catch 吞成静默故障。
 - **`singleHandle()` 在 `require functions.php` 之前执行**（Archive.php:669）：文章页的 content/plainExcerpt/archiveDescription 在主题钩子注册前就算好，`contentEx`/`excerptEx` 拦不住文章页；meta 描述要在 `themeInit()` 里用 `setArchiveDescription()` 覆盖。
-- 登录 cookie 名 = `md5(rootUrl) + '__typecho_uid/__typecho_authCode'`（rootUrl 不带尾斜杠时 md5 值不同）；authCode 被测试脚本改写可从 binlog 前镜像恢复。
+- 登录 cookie 名 = `md5(rootUrl) + '__typecho_uid/__typecho_authCode'`（rootUrl 不带尾斜杠时 md5 值不同）；**cookie 里的 authCode 是 `Common::hash(库里明文)`，不是库里的明文**（User.php:210 存哈希、:105 `hashValidate` 校验）；authCode 被测试脚本改写可从 binlog 前镜像恢复。
+- 脚本化后台请求时，zsh 拼 Cookie 头必须写 `${P}__typecho_uid`：`"$P__typecho_uid"` 会被当成变量 `P__typecho_uid` 展开成空串，表现为「cookie 没发出去」，极易误判成鉴权代码坏。
 - 主题登录走 api.php（图形验证码存 `/var/tmp/sess_<PHPSESSID>`，可直接读明文做自动化测试）。
 
 ## 付费阅读（paywall）

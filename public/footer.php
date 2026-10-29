@@ -5,6 +5,10 @@
  * 版权 / 链接 / 浮动控件均由后台「页脚」区块管理（块系统）。
  *
  * @package Ecod Theme
+ * @author  Ecod
+ * @since   2026-10-29
+ * @version 2.0.0
+ * @link    https://ecod.cc
  */
 if (!defined('__TYPECHO_ROOT_DIR__')) {
     exit;
@@ -12,13 +16,17 @@ if (!defined('__TYPECHO_ROOT_DIR__')) {
 
 /* PJAX 局部渲染：与 header.php 的局部分支配对，只补 shell 的收尾标签 */
 if (ecod_is_pjax()) {
-    echo '</div><!-- .ecod_layout --></div><!-- #ecod-shell --></body></html>';
+    ob_start();
+    ecod_widgets_zone('bottom_fluid', $this);
+    $ecodBottomZone = ob_get_clean();
+    echo '</div><!-- .ecod_layout -->' . $ecodBottomZone . '</div><!-- #ecod-shell --></body></html>';
     return;
 }
 
-$ecodShowFooterBar = ecod_block_on('credits') || ecod_block_on('links');
+$ecodShowFooterBar = ecod_block_on('credits') || ecod_block_on('links') || ecod_block_on('siteage');
 ?>
     </div><!-- .ecod_layout -->
+    <?php ecod_widgets_zone('bottom_fluid', $this); ?>
 </div><!-- .ecod_container -->
 
 <?php if ($ecodShowFooterBar): ?>
@@ -28,6 +36,7 @@ $ecodShowFooterBar = ecod_block_on('credits') || ecod_block_on('links');
                 <?php ecod_block_render('credits', $this); ?>
                 <?php ecod_block_render('links', $this); ?>
             </div>
+            <?php ecod_block_render('siteage', $this); ?>
         </div>
     </footer>
 <?php endif; ?>

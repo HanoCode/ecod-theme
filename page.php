@@ -3,6 +3,10 @@
  * 独立页面
  *
  * @package Ecod Theme
+ * @author  Ecod
+ * @since   2026-10-29
+ * @version 2.0.0
+ * @link    https://ecod.cc
  */
 if (!defined('__TYPECHO_ROOT_DIR__')) {
     exit;
@@ -10,6 +14,7 @@ if (!defined('__TYPECHO_ROOT_DIR__')) {
 $this->need('public/header.php');
 ?>
 <main class="ecod_main" id="ecod-main">
+    <?php /* 模块 · 内容区上方（模块管理台） */ ecod_widgets_render("top_content", $this); ?>
     <nav class="ecod_crumb" aria-label="面包屑">
         <a href="<?php $this->options->siteUrl(); ?>">首页</a>
         <span aria-hidden="true">/</span>
@@ -30,6 +35,8 @@ $this->need('public/header.php');
     <?php if ($this->allow('comment')): ?>
         <?php $this->need('comments.php'); ?>
     <?php endif; ?>
+
+    <?php /* 模块 · 内容区下方（模块管理台） */ ecod_widgets_render("bottom_content", $this); ?>
 </main>
 
 <?php $this->need('public/aside.php'); ?>

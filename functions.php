@@ -4,13 +4,17 @@
  *
  * @package Ecod Theme
  * @author  Ecod
- * @version 1.0.0
- * @link    https://example.com
+ * @since   2026-10-29
+ * @version 2.0.0
+ * @link    https://ecod.cc
  */
 
 if (!defined('__TYPECHO_ROOT_DIR__')) {
     exit;
 }
+
+/* 构建产物解析（dist 哈希文件优先，见 build/ 与 core/asset.php） */
+require_once __DIR__ . '/core/asset.php';
 
 /* 表结构定义（点赞表 / contents.views），模板与接口共用 */
 require_once __DIR__ . '/core/schema.php';
@@ -50,6 +54,18 @@ require_once __DIR__ . '/core/go.php';
 
 /* 导航菜单（后台配置的一级 / 二级菜单，含旧版自动导航回退） */
 require_once __DIR__ . '/core/nav.php';
+
+/* 列表排序（?sort=views|hot，接管归档主查询的 ORDER BY） */
+require_once __DIR__ . '/core/sort.php';
+
+/* 专题（后台策展的文章分组，成员 = 字段 topic ∪ 手动 cids） */
+require_once __DIR__ . '/core/topics.php';
+
+/* 分类统计（分类页头的篇数 / 阅读 / 最近更新） */
+require_once __DIR__ . '/core/catstats.php';
+
+/* 分类 / 标签增强：封面与独立 SEO（规格 design-proposal.html §32） */
+require_once __DIR__ . '/core/meta-meta.php';
 
 /* 付费与会员可见：门槛 / 权益 / 交易三层分离（见 docs/paywall-design.md） */
 require_once __DIR__ . '/core/pay.php';
@@ -112,6 +128,23 @@ function themeFields($layout)
     );
     $layout->addItem($pin);
 
+    /* 专题：下拉选择，选项来自「设置 → 专题」；一篇文章只归一个专题 */
+    $topicOptions = ['' => _t('不归入专题')];
+    foreach (ecod_topics(false) as $ecodTopicRow) {
+        $topicOptions[$ecodTopicRow['slug']] = strip_tags((string) $ecodTopicRow['name'])
+            . ($ecodTopicRow['on'] ? '' : _t('（已停用）'));
+    }
+    $topic = new \Typecho\Widget\Helper\Form\Element\Select(
+        'topic',
+        $topicOptions,
+        '',
+        _t('专题'),
+        $topicOptions === ['' => _t('不归入专题')]
+            ? _t('还没有专题：到「设置 → 专题」新建后，这里会出现可选列表')
+            : _t('专题是跨分类的策展合集。只放一个：专题内按发布时间倒序，读者读的是一条线')
+    );
+    $layout->addItem($topic);
+
     $series = new \Typecho\Widget\Helper\Form\Element\Text(
         'series',
         null,
@@ -133,6 +166,21 @@ function themeFields($layout)
         _t('仅「列表」「大图」两种卡片模式生效；跟随主题设置时使用主题选项里的默认值')
     );
     $layout->addItem($side);
+
+    /* ---- 侧栏覆盖（模块管理台 · 按页面类型开关之上的单篇控制） ---- */
+    $asideField = new \Typecho\Widget\Helper\Form\Element\Select(
+        'aside',
+        [
+            ''      => _t('跟随主题设置'),
+            'right' => _t('右侧栏'),
+            'left'  => _t('左侧栏'),
+            'none'  => _t('无侧栏'),
+        ],
+        '',
+        _t('侧栏位置'),
+        _t('只影响这一篇 / 这一个页面；跟随主题设置时按「模块管理台 → 侧栏显示」与全站默认判定')
+    );
+    $layout->addItem($asideField);
 
     /* ---- 付费 / 会员可见 ---- */
     $payMode = new \Typecho\Widget\Helper\Form\Element\Select(
@@ -215,6 +263,10 @@ function themeInit($archive = null)
     ecod_schema_upgrade();
     ecod_sitemap_maybe_output();
 
+    /* 列表排序：钩子在主查询 order/page 之后、取数之前触发，
+       只对归档主查询生效（core/sort.php 内按 type 判定） */
+    \Typecho\Plugin::factory('Widget\Archive')->query = 'ecod_sort_query';
+
     /* 付费内容的 Feed / 第三方消费方兜底。
        文章页正文与描述在 themeInit 之前已被 singleHandle 算好，钩子对文章页无效，
        真正的门禁在 post.php（见 docs/paywall-design.md §2.2），描述用 ecod_pay_describe 覆盖。 */
@@ -222,6 +274,21 @@ function themeInit($archive = null)
         \Typecho\Plugin::factory('Widget\Base\Contents')->contentEx = 'ecod_pay_feed_guard';
         \Typecho\Plugin::factory('Widget\Base\Contents')->excerptEx = 'ecod_pay_excerpt_guard';
         ecod_pay_describe($archive);
+    }
+
+    /* 分类 / 标签增强：独立 SEO 描述（规格 design-proposal.html §32）。
+       header() 的 description / og:description 取 archiveDescription，
+       这里用 setArchiveDescription 覆盖（同 paywall 先例），空值回退原生行为。 */
+    if ($archive !== null && function_exists('ecod_meta_meta_for_archive')) {
+        try {
+            if ($archive->is('category') || $archive->is('tag')) {
+                $ecodMetaDesc = trim((string) (ecod_meta_meta_for_archive($archive)['seo_desc'] ?? ''));
+                if ($ecodMetaDesc !== '' && method_exists($archive, 'setArchiveDescription')) {
+                    $archive->setArchiveDescription($ecodMetaDesc);
+                }
+            }
+        } catch (\Throwable $e) {
+        }
     }
 }
 
@@ -296,49 +363,48 @@ function ecod_primary_deep(): string
 }
 
 /**
- * 头像源前缀
+ * 本地随机头像：按 key（邮箱 / uid）从主题内置头像池确定性选一张
  *
- * Typecho 支持 __TYPECHO_GRAVATAR_PREFIX__ 常量覆盖内置 gravatar 域名。
- * 优先级：自定义头像源（互动 → 头像源） > 评论 → 头像服务预设 > 默认 cravatar.cn。
- * gravatar.com 国内无法直连，挂起的头像请求会让浏览器标签页一直转圈。
+ * 头像池素材在 assets/avatar/，增删图片后无需改代码；
+ * 同一 key 永远返回同一张，评论上下文头像保持一致。
+ * 不再请求外部 Gravatar 服务，避免第三方不可用导致头像裂图或请求挂起。
  */
-function ecod_avatar_prefix(): string
+function ecod_local_avatar_url(string $key): string
 {
-    $custom = trim((string) ecod_option('EAvatar', ''));
-    $preset = (string) ecod_option('EAvatarPreset', 'auto');
-
-    $presets = [
-        'cravatar' => 'https://cravatar.cn/avatar/',
-        'weavatar' => 'https://weavatar.com/avatar/',
-        'gravatar' => 'https://s.gravatar.com/avatar/',
-    ];
-
-    if ($preset === 'custom') {
-        $prefix = $custom;
-    } elseif (isset($presets[$preset])) {
-        $prefix = $presets[$preset];
-    } else {
-        /* auto：填了自定义源就用自定义，否则 Cravatar */
-        $prefix = $custom !== '' ? $custom : $presets['cravatar'];
+    static $pool = null;
+    if ($pool === null) {
+        $pool = glob(__DIR__ . '/assets/avatar/*.png');
+        if (!is_array($pool) || !$pool) {
+            $pool = [];
+        } else {
+            sort($pool);
+        }
     }
-
-    if ($prefix === '') {
-        $prefix = 'https://cravatar.cn/avatar/';
+    if (!$pool) {
+        return '';
     }
-    if (!preg_match('#^https?://#i', $prefix)) {
-        $prefix = 'https://' . ltrim($prefix, '/');
-    }
-    if (substr($prefix, -1) !== '/') {
-        $prefix .= '/';
-    }
-    return $prefix;
+    return ecod_asset('assets/avatar/' . basename($pool[abs(crc32($key)) % count($pool)]));
 }
 
-if (!defined('__TYPECHO_GRAVATAR_PREFIX__')) {
-    $ecodAvatarPrefix = ecod_avatar_prefix();
-    if ($ecodAvatarPrefix !== '') {
-        define('__TYPECHO_GRAVATAR_PREFIX__', $ecodAvatarPrefix);
-    }
+/**
+ * 评论者头像地址：按邮箱从本地头像池确定性取图
+ */
+function ecod_comment_avatar_url(string $mail): string
+{
+    $mail = trim((string) $mail);
+    return ecod_local_avatar_url($mail !== '' ? $mail : 'anonymous');
+}
+
+/**
+ * 访客填写的链接地址输出前清洗：只放行 http(s)
+ *
+ * 评论者 URL 等访客可控字段若不校验协议，javascript: / data: 会被
+ * 原样写进 href（HTML 转义挡不住带内协议），点击即执行。
+ */
+function ecod_safe_url(string $url): string
+{
+    $url = trim($url);
+    return preg_match('#^https?://#i', $url) ? $url : '';
 }
 
 /**
@@ -369,7 +435,7 @@ function ecod_user_center_url(): string
 }
 
 /**
- * 当前登录用户头像地址：自定义头像优先，未设置走后台配置的头像源（Gravatar）
+ * 当前登录用户头像地址：自定义头像优先，未设置按 uid 从本地头像池取随机头像
  */
 function ecod_user_avatar(object $user, int $size = 80): string
 {
@@ -378,17 +444,7 @@ function ecod_user_avatar(object $user, int $size = 80): string
     if ($custom !== '') {
         return $custom;
     }
-    try {
-        return \Typecho\Common::gravatarUrl(
-            (string) $user->mail,
-            $size,
-            'X',
-            null,
-            \Typecho\Request::getInstance()->isSecure()
-        );
-    } catch (\Throwable $e) {
-        return '';
-    }
+    return ecod_local_avatar_url('uid:' . (int) $user->uid);
 }
 
 /**
@@ -588,13 +644,27 @@ function ecod_nav_active($archive = null, array $items = []): string
 /**
  * 主题内静态资源地址
  *
- * 自动附带文件修改时间作为版本号，避免改样式后浏览器仍读缓存。
+ * 构建优先：build/ 管线产出的 dist 哈希文件（core/asset.php 查 manifest）
+ * 命中时直接发哈希 URL，服务端可发一年期 immutable 长缓存；
+ * 未构建时回退源文件，并自动附带文件修改时间作为版本号，
+ * 避免改样式后浏览器仍读缓存。
+ * 动态 PHP（api.php / media.php / manifest.php）不参与版本化：
+ * 它们的 URL 会被 JS 用「?action=…」拼接，带 ?v= 会变成两个问号，
+ * action 丢失导致接口全部返回 Unknown action（§32 挑稿搜索 bug 的根因）。
  */
 function ecod_asset(string $path): string
 {
     $path = ltrim($path, '/');
+    $isDynamic = str_ends_with($path, '.php');
+
+    /* dist 哈希产物：文件名即版本，不再拼 ?v= */
+    $dist = $isDynamic ? null : ecod_dist_resolve($path);
+    if ($dist !== null) {
+        $path = $dist;
+    }
+
     $file = __DIR__ . '/' . $path;
-    $ver = is_file($file) ? (string) filemtime($file) : '';
+    $ver = !$isDynamic && $dist === null && is_file($file) ? (string) filemtime($file) : '';
     $suffix = $ver !== '' ? '?v=' . $ver : '';
 
     $cdn = trim((string) ecod_option('ECdn', ''));
@@ -1008,10 +1078,13 @@ function ecod_views_mark_seen(int $cid): void
     $_COOKIE['ecod_seen'] = $value;
 
     if (!headers_sent()) {
+        $ecodHttps = (!empty($_SERVER['HTTPS']) && strtolower((string) $_SERVER['HTTPS']) !== 'off')
+            || (int) ($_SERVER['SERVER_PORT'] ?? 80) === 443;
         setcookie('ecod_seen', $value, [
             'expires'  => time() + 30 * 86400,
             'path'     => '/',
             'httponly' => true,
+            'secure'   => $ecodHttps,
             'samesite' => 'Lax',
         ]);
     }
@@ -1307,6 +1380,119 @@ function ecod_likes(int $cid): int
 }
 
 /**
+ * 文章点赞者头像堆叠数据（v9：取 uid 落库的最近 5 条，游客指纹行不参与）
+ *
+ * @return array<int, array{name: string, avatar: string}>
+ */
+function ecod_post_likers(int $cid, int $limit = 5): array
+{
+    if ($cid <= 0) {
+        return [];
+    }
+    $limit = max(1, min(10, $limit));
+    try {
+        $db = \Typecho\Db::get();
+        $table = ecod_likes_table();
+        /* 同一人可能留多行（换设备），GROUP BY uid 取最近一次时间排序；
+           不用 JOIN：Typecho Query 对表别名的转义不可控，两步查询更稳 */
+        $rows = $db->fetchAll(
+            $db->select('uid', 'MAX(created) AS last')->from($table)
+                ->where('cid = ?', $cid)
+                ->where('uid > 0')
+                ->group('uid')
+                ->order('last', \Typecho\Db::SORT_DESC)
+                ->limit($limit)
+        );
+        if (!$rows) {
+            return [];
+        }
+
+        /* 二段：批量取昵称 */
+        $uids = [];
+        foreach ($rows as $row) {
+            $uid = (int) ($row['uid'] ?? 0);
+            if ($uid > 0) {
+                $uids[$uid] = $uid;
+            }
+        }
+        if (!$uids) {
+            return [];
+        }
+        $names = [];
+        $in = implode(',', array_values($uids));
+        foreach ($db->fetchAll(
+            $db->select('uid', 'screenName', 'name')->from('table.users')
+                ->where('uid IN (' . $in . ')')
+        ) as $u) {
+            /* screenName 可能未设置，回落登录名 */
+            $names[(int) $u['uid']] = trim((string) ($u['screenName'] ?: $u['name']));
+        }
+
+        require_once __DIR__ . '/core/account.php';
+        $out = [];
+        foreach ($rows as $row) {
+            $uid = (int) ($row['uid'] ?? 0);
+            $name = $names[$uid] ?? '';
+            if ($uid <= 0 || $name === '') {
+                continue;
+            }
+            /* 头像：自定义头像优先，回落本地头像池 */
+            $avatar = ecod_account_avatar_url($uid);
+            if ($avatar === '') {
+                $avatar = ecod_local_avatar_url('uid:' . $uid);
+            }
+            $out[] = ['name' => $name, 'avatar' => $avatar];
+        }
+        return $out;
+    } catch (\Throwable $e) {
+        return [];
+    }
+}
+
+/**
+ * 站点主博主 uid（group=administrator 里最小 uid，请求内静态缓存）
+ */
+function ecod_site_author_id(): int
+{
+    static $uid = null;
+    if ($uid !== null) {
+        return $uid;
+    }
+    $uid = 0;
+    try {
+        $db = \Typecho\Db::get();
+        $row = $db->fetchRow(
+            $db->select('uid')->from('table.users')
+                ->where('group = ?', 'administrator')
+                ->order('uid', \Typecho\Db::SORT_ASC)
+                ->limit(1)
+        );
+        $uid = $row ? (int) $row['uid'] : 0;
+    } catch (\Throwable $e) {
+    }
+    return $uid;
+}
+
+/**
+ * 用户是否在线：users.logged 距今 5 分钟内（Typecho 登录时自动盖章）
+ */
+function ecod_user_online(int $uid, int $window = 300): bool
+{
+    if ($uid <= 0) {
+        return false;
+    }
+    try {
+        $db = \Typecho\Db::get();
+        $row = $db->fetchRow(
+            $db->select('logged')->from('table.users')->where('uid = ?', $uid)->limit(1)
+        );
+        return $row && (int) $row['logged'] > 0 && (time() - (int) $row['logged']) <= $window;
+    } catch (\Throwable $e) {
+        return false;
+    }
+}
+
+/**
  * 点赞缓存引用（批量预取与单篇读取共用）
  */
 function &ecod_likes_cache(): array
@@ -1401,21 +1587,23 @@ function ecod_cards_preload($archive): void
         return;
     }
 
+    $id = spl_object_id($archive);
+    $cids = ecod_archive_cids($archive);
+
+    /* 专题角标：一条 IN 查询把整页的归属取回来，避免每张卡查一次字段表 */
+    if ($cids && ecod_option('ETopicCardChip', 'on') !== 'off') {
+        ecod_topic_preload($cids);
+    }
+
     /* 关闭卡片点赞时不必查点赞表 */
-    if (ecod_option('ELike', 'on') === 'off') {
+    if (ecod_option('ELike', 'on') === 'off' || !$cids) {
         return;
     }
 
-    $id = spl_object_id($archive);
     if (!empty($GLOBALS['ecodPreloaded'][$id])) {
         return;
     }
     $GLOBALS['ecodPreloaded'][$id] = true;
-
-    $cids = ecod_archive_cids($archive);
-    if (!$cids) {
-        return;
-    }
 
     ecod_likes_preload($cids);
 }
@@ -2155,7 +2343,7 @@ if (!function_exists('threadedComments')) {
         <li id="<?php $comments->theId(); ?>" class="<?php echo implode(' ', $classes); ?>"
             itemscope itemtype="http://schema.org/UserComments">
             <div class="ecod_cmt__aside" itemprop="creator" itemscope itemtype="http://schema.org/Person">
-                <span itemprop="image"><?php $comments->gravatar(40); ?></span>
+                <span itemprop="image"><img class="avatar" src="<?php echo htmlspecialchars(ecod_comment_avatar_url((string) $comments->mail), ENT_QUOTES, 'UTF-8'); ?>" alt="" width="40" height="40" loading="lazy"></span>
             </div>
             <div class="ecod_cmt__main">
                 <div class="ecod_cmt__head">

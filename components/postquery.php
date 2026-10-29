@@ -27,6 +27,7 @@ class EcodPostQuery extends \Widget\Base\Contents
             'exclude'  => 0,
             'related'  => 0,
             'days'     => 0,
+            'offset'   => 0,
         ]);
 
         /* 相关文章：相关度由 core/related.php 计算，行已按相关度排好序，
@@ -126,6 +127,11 @@ class EcodPostQuery extends \Widget\Base\Contents
         }
 
         $select->limit((int) $this->parameter->pageSize);
+
+        /* 偏移：专题详情等「固定 cids 集合 + 分页」的场景用，其余调用不受影响 */
+        if ((int) $this->parameter->offset > 0) {
+            $select->offset((int) $this->parameter->offset);
+        }
 
         $this->db->fetchAll($select, [$this, 'push']);
     }

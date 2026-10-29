@@ -36,7 +36,10 @@ $ecodListClass = ecod_list_class($ecodLayoutMode);
         <?php else: ?>
             <span class="ecod_streambar__note">最新文章</span>
         <?php endif; ?>
-        <span class="ecod_streambar__note">共 <?php echo (int) $this->getTotal(); ?> 篇</span>
+        <div class="ecod_streambar__tools">
+            <?php $this->need('components/home/sort.php'); ?>
+            <span class="ecod_streambar__note">共 <?php echo (int) $this->getTotal(); ?> 篇</span>
+        </div>
     </div>
 
     <div class="<?php echo $ecodListClass; ?>" data-ecod-infinite>
@@ -53,11 +56,11 @@ $ecodListClass = ecod_list_class($ecodLayoutMode);
         <?php endif; ?>
     </div>
 
-    <?php $this->pageNav('‹', '›', 2, '…', [
+    <?php ob_start(); $this->pageNav('‹', '›', 2, '…', [
         'wrapTag'      => 'div',
         'wrapClass'    => 'ecod_pager',
         'itemTag'      => '',
         'textTag'      => 'span',
         'currentClass' => 'is-current',
-    ]); ?>
+    ]); echo ecod_sort_pager((string) ob_get_clean()); ?>
 </section>

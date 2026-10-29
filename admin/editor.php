@@ -43,7 +43,36 @@ foreach ($ecodEmojiMap as $ecodCode => $ecodItem) {
         'src'   => $ecodSmiley . (string) ($ecodItem[0] ?? ''),
     ];
 }
-unset($ecodEmojiFile, $ecodEmojiMap, $ecodItem, $ecodCode);
+unset($ecodEmojiFile, $ecodEmojiMap, $ecodItem, $ecodCode, $ecodCode);
+
+/* 专题列表（写作页字段面板的「专题」选择区用）。
+   admin 上下文不加载主题 functions.php，给 core/topics.php 依赖的
+   ecod_option 一个最小实现（function_exists 守卫，避免与主题冲突）。 */
+if (!function_exists('ecod_option')) {
+    function ecod_option(string $key, $default = '')
+    {
+        try {
+            $value = \Utils\Helper::options()->{$key};
+            return ($value === null || $value === '') ? $default : $value;
+        } catch (\Throwable $e) {
+            return $default;
+        }
+    }
+}
+
+$ecodTopicList = [];
+$ecodTopicsFile = dirname(__DIR__) . '/core/topics.php';
+if ($ecodType === 'post' && is_file($ecodTopicsFile)) {
+    require_once $ecodTopicsFile;
+    foreach (ecod_topics(false) as $ecodTopicRow) {
+        $ecodTopicList[] = [
+            'slug' => (string) $ecodTopicRow['slug'],
+            'name' => (string) $ecodTopicRow['name'],
+            'on'   => !empty($ecodTopicRow['on']),
+        ];
+    }
+}
+unset($ecodTopicsFile);
 
 $ecodConfig = [
     'mode'    => $ecodIsMarkdown ? 'markdown' : 'html',
@@ -56,6 +85,7 @@ $ecodConfig = [
     'title'   => $ecodType === 'post' ? '文章' : '页面',
     'thumb'   => '',
     'emojis'  => $ecodEmojis,
+    'topics'  => $ecodTopicList,
 ];
 ?>
 <link rel="stylesheet" href="<?php echo htmlspecialchars($ecodAssetUrl('admin/editor.css') . $ecodVer('admin/editor.css')); ?>">

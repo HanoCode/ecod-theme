@@ -3,6 +3,10 @@
  * 个人中心：资料 / 收藏 / 点赞 / 历史 / 订单
  *
  * @package custom
+ * @author  Ecod
+ * @since   2026-10-29
+ * @version 2.0.0
+ * @link    https://ecod.cc
  *
  * 在后台「页面 → 新建页面 → 自定义模板」里选择「个人中心」即可。
  * 左侧菜单 + 右侧内容：个人信息（登录态，支持直接修改资料 / 头像 / 密码）、
@@ -58,6 +62,7 @@ $ecodTabs = [
 ];
 ?>
 <main class="ecod_main" id="ecod-main">
+    <?php /* 模块 · 内容区上方（模块管理台） */ ecod_widgets_render("top_content", $this); ?>
 
     <nav class="ecod_crumb" aria-label="面包屑">
         <a href="<?php $this->options->siteUrl(); ?>"><?php echo ecod_icon('home', 12); ?>首页</a>
@@ -277,6 +282,8 @@ $ecodTabs = [
         </section>
     </div>
 
+
+    <?php /* 模块 · 内容区下方（模块管理台） */ ecod_widgets_render("bottom_content", $this); ?>
 </main>
 
 <?php $this->need('public/aside.php'); ?>

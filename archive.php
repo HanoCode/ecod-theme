@@ -3,6 +3,10 @@
  * 归档：分类 / 标签 / 作者 / 搜索 / 日期
  *
  * @package Ecod Theme
+ * @author  Ecod
+ * @since   2026-10-29
+ * @version 2.0.0
+ * @link    https://ecod.cc
  */
 if (!defined('__TYPECHO_ROOT_DIR__')) {
     exit;
@@ -21,10 +25,15 @@ if ($this->is('search')) {
 }
 ?>
 <main class="ecod_main" id="ecod-main">
+    <?php /* 模块 · 内容区上方（模块管理台） */ ecod_widgets_render("top_content", $this); ?>
 
 <?php if ($this->is('category')): ?>
+    <?php /* 分类页头（E1）：名称 / 描述 / 三个统计 / 相关专题；关掉或取不到分类时退回屏幕阅读器标题 */ ?>
+    <?php $this->need('components/archive/head.php'); ?>
+    <?php if (empty($GLOBALS['ecodCatHeadDone'])): ?>
+        <h1 class="ecod_sr"><?php $this->archiveTitle(['category' => _t('分类：%s')], '', ''); ?></h1>
+    <?php endif; ?>
     <?php /* 分类归档复用首页文章流：tab 条 + 列表 + 分页，支持无刷新切换 */ ?>
-    <h1 class="ecod_sr"><?php $this->archiveTitle(['category' => _t('分类：%s')], '', ''); ?></h1>
     <?php $this->need('components/home/list.php'); ?>
 <?php else: ?>
     <header class="ecod_pagehead">
@@ -67,15 +76,17 @@ if ($this->is('search')) {
         <?php endif; ?>
     </div>
 
-    <?php $this->pageNav('‹', '›', 2, '…', [
+    <?php ob_start(); $this->pageNav('‹', '›', 2, '…', [
         'wrapTag'      => 'div',
         'wrapClass'    => 'ecod_pager',
         'itemTag'      => '',
         'textTag'      => 'span',
         'currentClass' => 'is-current',
-    ]); ?>
+    ]); echo ecod_sort_pager((string) ob_get_clean()); ?>
 <?php endif; ?>
 
+
+    <?php /* 模块 · 内容区下方（模块管理台） */ ecod_widgets_render("bottom_content", $this); ?>
 </main>
 
 <?php $this->need('public/aside.php'); ?>

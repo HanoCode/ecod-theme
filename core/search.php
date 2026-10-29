@@ -270,3 +270,41 @@ if (!function_exists('ecod_search_empty')) {
         <?php
     }
 }
+
+if (!function_exists('ecod_search_hotwords')) {
+    /**
+     * 搜索面板热词
+     *
+     * 真源是设置项 ESearchHot（逗号 / 顿号分隔）；解析后最多取 8 个。
+     * 为空时前端自行回退到热门标签，这里只负责把配置解析成数组。
+     *
+     * @return string[] 热词列表
+     */
+    function ecod_search_hotwords(): array
+    {
+        static $cache = null;
+        if (is_array($cache)) {
+            return $cache;
+        }
+
+        $raw = trim((string) ecod_option('ESearchHot', ''));
+        $cache = [];
+        if ($raw !== '') {
+            /* 中西文分隔符都认：，、；| 以及 ASCII 逗号分号 */
+            $raw = str_replace(['，', '、', '；'], ',', $raw);
+            $raw = str_replace([';', '|'], ',', $raw);
+            foreach (explode(',', $raw) as $word) {
+                $word = trim($word);
+                if ($word === '' || in_array($word, $cache, true)) {
+                    continue;
+                }
+                $cache[] = mb_substr($word, 0, 20, 'UTF-8');
+                if (count($cache) >= 8) {
+                    break;
+                }
+            }
+        }
+
+        return $cache;
+    }
+}

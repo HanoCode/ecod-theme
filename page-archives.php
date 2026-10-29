@@ -3,6 +3,10 @@
  * 归档时间轴：按年 / 月折叠的全站文章时间轴
  *
  * @package custom
+ * @author  Ecod
+ * @since   2026-10-29
+ * @version 2.0.0
+ * @link    https://ecod.cc
  *
  * 在后台「页面 → 新建页面 → 自定义模板」里选择「归档时间轴」即可。
  * 一次 SQL 取全部已发布文章，按年 / 月分组折叠，不依赖 Widget 分页。
@@ -73,6 +77,7 @@ if ($ecodMinYear > 0) {
 }
 ?>
 <main class="ecod_main" id="ecod-main">
+    <?php /* 模块 · 内容区上方（模块管理台） */ ecod_widgets_render("top_content", $this); ?>
 
     <nav class="ecod_crumb" aria-label="面包屑">
         <a href="<?php $this->options->siteUrl(); ?>"><?php echo ecod_icon('home', 12); ?>首页</a>
@@ -133,6 +138,8 @@ if ($ecodMinYear > 0) {
         </div>
     <?php endif; ?>
 
+
+    <?php /* 模块 · 内容区下方（模块管理台） */ ecod_widgets_render("bottom_content", $this); ?>
 </main>
 
 <?php $this->need('public/aside.php'); ?>

@@ -144,7 +144,7 @@ ecod-theme/
 | 长讨论的展开方式 | `逐条展开`（每条折叠各自有按钮）/ `顶部总按钮`（列表上方给一个「展开全部回复」，一次铺开所有折叠，再点变「收起全部回复」）/ `全部展开`（不折叠）。没有折叠节点时总按钮自动隐藏 |
 | 人机验证 Turnstile | Cloudflare 免费方案，前端渲染挂件、服务端 `siteverify` 校验；只作用于原生评论 |
 | 反垃圾 Akismet | 提交时送 Akismet 检测，判定为垃圾直接标记 spam（前台与后台默认列表都不显示）；接口异常时放行 |
-| 头像服务 | Cravatar（默认）/ WeAvatar / Gravatar / 自定义。「自动」优先用「互动 → 头像源」里填的自定义前缀 |
+| 头像 | 本地随机头像池（`assets/avatar/`）：按邮箱 / uid 确定性分配，同一人永远是同一张；登录用户可在个人中心上传自定义头像（带裁剪），不请求任何外部头像服务 |
 | 评论表情 | 系统 Emoji（40 个字符表情）或图片表情包（主题内置 31 个，配合正文 `:smile:` 短代码） |
 | 表情包 CDN 前缀 | 填了就从外部 CDN 取图，例如 `https://cdn.example.com/smiley/`；留空用主题本地 `assets/img/smiley/` |
 
@@ -258,6 +258,31 @@ A：设置存在 `options` 表的 `theme:ecod-theme` 里，跟主题文件分离
 
 ---
 
-## 十、许可
+## 十、服务器加固
+
+主题内的 PHP 只需要 4 个入口能被浏览器直接访问：`api.php`、`media.php`、`pay-admin.php`、`manifest.php`，其余一律 403（Apache 由主题目录的 `.htaccess` 处理）。**nginx 不读 .htaccess**，请在 server 块里加等效配置：
+
+```nginx
+# 主题目录：只放行 4 个独立入口，其余 PHP 直连拒绝
+location ~* ^/usr/themes/ecod-theme/(?!api\.php$|media\.php$|pay-admin\.php$|manifest\.php$).+\.php$ {
+    deny all;
+}
+```
+
+再按需叠加（均建议配置在站点层）：
+
+```nginx
+# HSTS（全站 HTTPS 且确认不再回退 http 后再开）
+add_header Strict-Transport-Security "max-age=31536000" always;
+
+# 上传目录禁止执行任何 PHP（优先级最高的加固之一）
+location ~* ^/usr/uploads/.+\.php$ { deny all; }
+```
+
+主题自身已在 `public/header.php` 输出 `X-Content-Type-Options` / `X-Frame-Options` / `Referrer-Policy` / `Permissions-Policy`；CSP 建议先用 `Content-Security-Policy-Report-Only` 观察、收集到违反报告后再收紧为正式策略。
+
+---
+
+## 十一、许可
 
 主题代码可自由修改与二次分发，请保留原始署名。

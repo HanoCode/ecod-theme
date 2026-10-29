@@ -2,9 +2,13 @@
 /**
  * 首页
  *
- * 模块顺序、开关与参数由后台「首页」区块统一管理（块系统）。
+ * 模块顺序、开关与参数在「模块管理台」里按位置摆放（见 design-proposal.html §31）。
  *
  * @package Ecod Theme
+ * @author  Ecod
+ * @since   2026-10-29
+ * @version 2.0.0
+ * @link    https://ecod.cc
  */
 if (!defined('__TYPECHO_ROOT_DIR__')) {
     exit;
@@ -28,7 +32,7 @@ $ecodSlogan = ecod_option('ESlogan', $this->options->description);
         </section>
     <?php endif; ?>
 
-    <?php ecod_blocks_render('home', $this); ?>
+    <?php ecod_widgets_render('top_content', $this); ?>
 
 </main>
 

@@ -353,6 +353,50 @@ details .in{padding-bottom:12px}
 .navb-act button{border:1px solid var(--border);background:var(--surface);border-radius:5px;width:20px;height:20px;line-height:1;color:var(--text-2);cursor:default;font-size:11px}
 .navb-empty{margin-top:8px;padding:10px;border:1px dashed var(--border);border-radius:7px;text-align:center;color:var(--text-3);font-size:11px}
 @media(max-width:640px){.navb{grid-template-columns:1fr}.navb-col--main{border-left:0;border-top:1px solid var(--border)}}
+
+/* 区域与模块管理台示意（§31 · WP 式两栏） */
+.wgt{display:grid;grid-template-columns:212px 1fr;gap:0;border:1px solid var(--border);border-radius:var(--r-sm);overflow:hidden;font-size:12px}
+.wgt-col{background:var(--surface);padding:11px}
+.wgt-col+.wgt-col{border-left:1px solid var(--border)}
+.wgt-col--mid{background:var(--surface-2)}
+.wgt-hd{font-size:10.5px;letter-spacing:.6px;text-transform:uppercase;color:var(--text-3);font-weight:600;margin-bottom:8px;display:flex;align-items:center;gap:6px}
+.wgt-hd em{font-style:normal;color:var(--text-3);font-weight:400;letter-spacing:0;text-transform:none}
+.wgt-hd em{color:var(--primary)}
+.wgt-find{height:24px;border:1px solid var(--border);border-radius:6px;background:var(--surface-2);margin-bottom:8px;display:flex;align-items:center;padding:0 7px;color:var(--text-3);font-size:10.5px}
+.wgt-lib{display:flex;flex-direction:column;gap:4px}
+.wgt-target{display:flex;align-items:center;justify-content:space-between;padding:4px 8px;border:1px dashed var(--border);border-radius:6px;margin:3px 0 3px 14px;color:var(--text-2)}
+.wgt-target span{font-size:10px;color:var(--text-3)}
+.wgt-target.on{border-color:var(--primary);color:var(--primary)}
+.wgt-target.off{opacity:.45}
+.wgt-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;align-items:start}
+.wgt-area{border:1px solid var(--border);border-radius:8px;background:var(--surface);overflow:hidden}
+.wgt-area.is-wide{grid-column:1/-1}
+.wgt-area.is-drop{border-color:var(--primary);box-shadow:0 0 0 2px rgba(79,110,242,.12)}
+.wgt-area__hd{display:flex;align-items:center;justify-content:space-between;gap:6px;padding:7px 10px;font-weight:600;background:var(--surface-2);font-size:11.5px;cursor:pointer}
+.wgt-area__hd::before{content:"▾";font-size:9px;color:var(--text-3);font-weight:400}
+.wgt-area.is-fold .wgt-area__hd::before{content:"▸"}
+.wgt-area__hd span{color:var(--text-3);font-weight:400;font-size:10px;margin-left:auto}
+.wgt-area__hd.on{color:var(--primary)}
+.wgt-area__hd.on{color:var(--primary)}
+.wgt-item{display:flex;align-items:center;gap:7px;border-top:1px solid var(--border);padding:7px 10px;flex-wrap:wrap}
+.wgt-item.is-open{background:var(--surface-2)}
+.wgt-item b{font-weight:600;font-size:12px}
+.wgt-item__body{width:100%;padding:4px 2px 2px 14px}
+.wgt-ops{font-size:10.5px;color:var(--text-3);margin-top:7px}
+.wgt-grip{width:7px;height:13px;flex-shrink:0;background:radial-gradient(circle,var(--text-3) 1px,transparent 1.2px) 0 0/4px 4px;opacity:.5}
+.wgt-card{display:flex;align-items:center;gap:7px;border:1px solid var(--border);background:var(--surface);border-radius:7px;padding:7px 8px;cursor:grab}
+.wgt-card.is-open{border-color:var(--primary)}
+.wgt-card b{font-weight:600;font-size:12px}
+.wgt-card small{margin-left:auto;color:var(--text-3);font-size:10px}
+.wgt-sw{width:22px;height:12px;border-radius:999px;background:var(--primary);position:relative;flex-shrink:0;margin-left:auto}
+.wgt-sw::after{content:"";position:absolute;right:2px;top:2px;width:8px;height:8px;border-radius:50%;background:#fff}
+.wgt-sw.off{background:#dfe4ec}
+.wgt-sw.off::after{right:12px}
+.wgt-field{margin-bottom:8px}
+.wgt-field label{display:block;font-size:10.5px;color:var(--text-3);margin-bottom:3px}
+.wgt-field i{display:block;height:22px;border:1px solid var(--border);border-radius:5px;background:var(--surface)}
+.wgt-empty{margin:6px;padding:14px 10px;border:1px dashed var(--border);border-radius:7px;text-align:center;color:var(--text-3);font-size:11px;line-height:1.6}
+@media(max-width:760px){.wgt{grid-template-columns:1fr}.wgt-col+.wgt-col{border-left:0;border-top:1px solid var(--border)}}
 </style>
 </head>
 <body>
@@ -402,6 +446,9 @@ details .in{padding-bottom:12px}
     <a href="#s5">27 命名与目录</a>
     <a href="#s6">28 实施计划</a>
     <a href="#n6">29 设置项条件联动</a>
+    <a href="#s7">30 参考站组件落地</a>
+    <a href="#s8">31 区域与模块管理台</a>
+    <a href="#s9">32 分类与标签增强</a>
   </nav>
 
   <div class="main">
@@ -891,6 +938,19 @@ details .in{padding-bottom:12px}
         <p style="margin-bottom:10px">正文 15px / 行高 1.9 / 段落间距 18px；引用块左侧 3px 主色条 + 浅底；列表使用自定义圆点。</p>
         <blockquote style="border-left:3px solid var(--primary);background:var(--primary-soft);padding:10px 14px;border-radius:0 8px 8px 0;font-size:13px;color:var(--text-2)">好的排版不是装饰，而是让读者忘记排版的存在。</blockquote>
         <p style="margin-top:10px">图片：圆角 8px，居中，超出宽度的表格横向滚动；h2/h3 自带锚点，hover 显示 # 复制链接。</p>
+        <p style="margin-top:10px"><b>章节标题三级</b>（h2 不做通栏分隔线——长文里割裂感太强；三级都用「标题左侧竖条 / 圆点」标识，靠粗细与长度递减）：</p>
+        <table style="width:100%;border-collapse:collapse;font-size:12.5px;margin-top:6px">
+          <tr><td style="padding:4px 8px 4px 0;color:var(--text-3);white-space:nowrap">h2 · 通高竖条</td><td>左侧 5×1.02em 主色圆角竖条（<code>top:.16em</code>），<code>padding-left:16px</code>；22px</td></tr>
+          <tr><td style="padding:4px 8px 4px 0;color:var(--text-3);white-space:nowrap">h3 · 短竖条</td><td>左侧 3×.78em 主色圆角竖条（<code>top:.34em</code>），<code>padding-left:14px</code>；18px</td></tr>
+          <tr><td style="padding:4px 8px 4px 0;color:var(--text-3);white-space:nowrap">h4 · 琥珀圆点</td><td>文字取 <code>--primary-deep</code>，前置 5px 琥珀圆点（<code>top:.48em</code>），<code>padding-left:13px</code>；15px</td></tr>
+        </table>
+        <p style="margin-top:6px;font-size:12.5px;color:var(--text-3)"><b>纯 CSS 命中</b>：只挂 <code>.ecod_content h2/h3/h4</code>，与标题文字内容无关——正文里有没有手写「第 N 节」都同样生效，不跑 JS、不改 DOM、不加类名。三条竖条的左边缘都在 <code>left:0</code> 对齐；装饰走 <code>::before</code> 伪元素，TOC 抽取（<code>textContent</code>）不受影响。</p>
+        <p style="margin-top:6px;font-size:12.5px;color:var(--text-3)">暗色下 h4 文字提亮为 <code>#9db0ff</code>，竖条随 <code>--primary</code> 自动适配。</p>
+        <div style="margin-top:14px">
+          <div style="position:relative;padding-left:16px"><span style="position:absolute;left:0;top:.16em;width:5px;height:1.02em;border-radius:3px;background:var(--primary)"></span><b style="font-size:22px;line-height:1.4">功能说明与使用方式</b></div>
+          <div style="position:relative;padding-left:14px;margin-top:16px"><span style="position:absolute;left:0;top:.34em;width:3px;height:.78em;border-radius:2px;background:var(--primary)"></span><b style="font-size:18px;line-height:1.4">安装步骤</b></div>
+          <div style="position:relative;padding-left:13px;margin-top:12px"><span style="position:absolute;left:2px;top:.48em;width:5px;height:5px;border-radius:50%;background:var(--accent)"></span><b style="font-size:15px;line-height:1.4;color:var(--primary-deep)">前置条件</b></div>
+        </div>
       </div>
     </div>
     <div class="card pad">
@@ -1212,6 +1272,17 @@ details .in{padding-bottom:12px}
         <div style="font-size:11.5px;color:var(--text-3)">换个分类看看，或返回首页</div>
       </div>
     </div>
+  </div>
+
+  <div class="card pad" style="margin-top:16px">
+    <b style="font-size:13.5px">分类 tab = 文章流筛选，不是换页</b>
+    <p style="font-size:12.5px;color:var(--text-2);margin-top:8px;line-height:1.9">点 <code>.ecod_tabs</code> 里的分类只替换 <code>#ecod-stream</code>（tab 高亮 + 排序条 + 卡片 + 分页一起换），页面其余骨架原地保留。替换粒度按两侧骨架判定：</p>
+    <table style="width:100%;border-collapse:collapse;font-size:12.5px;margin-top:6px">
+      <tr><td style="padding:6px 10px 6px 0;color:var(--text-3);white-space:nowrap">首页 → 分类</td><td>只换文章流：首页横幅（搜索 / 统计）与其后所有首页块（分类导航、推荐、热门、动态…）全部保留</td></tr>
+      <tr><td style="padding:6px 10px 6px 0;color:var(--text-3);white-space:nowrap">分类 → 分类</td><td>换分类页头（<code>.ecod_chead</code> 标题 / 统计 / 专题）+ 文章流，其余不动</td></tr>
+      <tr><td style="padding:6px 10px 6px 0;color:var(--text-3);white-space:nowrap">分类 → 首页</td><td>换整个 <code>#ecod-main</code>，首页横幅与首页块才能回来</td></tr>
+    </table>
+    <p style="font-size:12px;color:var(--text-3);margin-top:10px;line-height:1.9">URL 用 <code>pushState</code> 同步（可复制、可刷新）；链接保留 <code>href</code>，中键 / 新窗口 / 禁用 JS 仍是普通跳转。滚动位置不变。</p>
   </div>
 </section>
 
@@ -1809,6 +1880,488 @@ details .in{padding-bottom:12px}
     <tr><td><code>assets/admin/config.css</code></td><td><code>.ecod-condnote</code> / <code>.ecod-condbar</code> 两处样式（含暗色与窄屏）</td></tr>
     <tr><td><code>core/blocks-def.php</code></td><td>块参数 <code>when</code> 声明</td></tr>
   </table>
+</section>
+
+<!-- 30 -->
+<section id="s7">
+  <span class="sec-tag">30 · 参考站组件落地</span>
+  <h2>八项决议与实施规格</h2>
+  <p class="sec-desc">参考站拆解（mirai / sukuy / 风记星辰 / Once / Alright / B2，见 <code>REFERENCE-TEARDOWN.html</code>）逐项拍板后的落地记录。形态一旦确定就写进本节，后续改代码前先回来对一遍。</p>
+
+  <div class="card pad">
+    <table>
+      <tr><th style="width:8%">#</th><th style="width:26%">决议</th><th>含义</th><th style="width:14%">状态</th></tr>
+      <tr><td>1</td><td>首屏 C5 Hero 480 左对齐</td><td>沉浸式深色首屏，480px 高，内容左对齐，底部玻璃数据带</td><td>已落地</td></tr>
+      <tr><td>2</td><td>排序入口 = 浮层</td><td>正文流右上角一枚胶囊，点开是下拉，不并列铺开</td><td>已落地</td></tr>
+      <tr><td>3</td><td>C2b + E1 + E2 全上</td><td>分类专题卡、分类页头、专题墙三件都做，分类变成「目的地」</td><td>已落地（第 2 轮）</td></tr>
+      <tr><td>4</td><td>反馈层 D1–D3</td><td>阅读时长、点赞头像堆叠、快速评论条</td><td>D1 已有 / D2·D3 待做</td></tr>
+      <tr><td>5</td><td>情感组件 D5 + D6</td><td>运行天数与里程碑进度，放页脚</td><td>已落地</td></tr>
+      <tr><td>6</td><td>按 5 轮推进</td><td>每轮可独立上线验收，不一次性改完</td><td>进行中</td></tr>
+      <tr><td>7</td><td>E2 落 <code>/topics</code> 独立页</td><td>专题是一个独立子系统：后台专题管理 + 文章专题标记 + 前台专题页</td><td>已落地（第 2 轮）</td></tr>
+      <tr><td>8</td><td>付费标识：封面左上 · 琥珀底白字</td><td>角标复用 <code>.ecod_card__badges</code>，色值 <code>#b45309</code></td><td>已落地</td></tr>
+    </table>
+  </div>
+
+  <h3>C1 · 列表排序</h3>
+  <p class="sec-desc">URL 契约 <code>?sort=recent|views|hot</code>，缺省 <code>recent</code>。选项本身是链接，关掉 JS 也能用；JS 只负责展开与关闭。</p>
+  <div class="card pad">
+    <table>
+      <tr><th style="width:30%">项</th><th>规格</th></tr>
+      <tr><td>生效范围</td><td><code>index</code> / <code>category</code> / <code>tag</code> / <code>author</code> / <code>search</code> 五种归档主查询</td></tr>
+      <tr><td>排序字段</td><td><code>views</code> → <code>contents.views DESC</code>；<code>hot</code> → <code>commentsNum DESC</code>；两者都以 <code>created DESC</code> 兜底</td></tr>
+      <tr><td>不做点赞排序</td><td>点赞按行存储（<code>ecod_likes</code> 一人一行），排序要子查询或冗余计数列，为一个排序项改表不值</td></tr>
+      <tr><td>落点</td><td><code>core/sort.php</code>（钩子）、<code>components/home/sort.php</code>（浮层）、<code>components/home/list.php</code>（挂载）</td></tr>
+    </table>
+  </div>
+  <p class="sec-desc" style="margin-top:10px"><b>框架坑（必须记住）：</b><code>Widget\Archive</code> 上只要挂了 <code>query</code> 钩子，<code>Archive::query()</code> 就<b>不再自己取数</b>（<code>var/Widget/Archive.php:1421</code>）。钩子里必须自己 <code>fetchAll</code> 再逐行 <code>push</code>，否则列表恒为空——哪怕这个钩子什么都不改。排序改写用 <code>Query::cleanAttribute('order')</code>，不能直接 <code>order()</code>，否则变成 <code>created DESC, views DESC</code> 的次级排序。</p>
+
+  <h3>C5 · 首屏</h3>
+  <div class="card pad">
+    <table>
+      <tr><th style="width:24%">块参数</th><th>默认</th><th>说明</th></tr>
+      <tr><td><code>style</code></td><td>immersive</td><td>沉浸式（480px）/ 浅色卡片（紧凑）</td></tr>
+      <tr><td><code>height</code></td><td>480</td><td>320–720，仅沉浸式生效</td></tr>
+      <tr><td><code>align</code></td><td>left</td><td>左对齐 / 居中</td></tr>
+      <tr><td><code>band</code></td><td>1</td><td>三格玻璃数据带；关掉回退成一行文字</td></tr>
+      <tr><td><code>bg</code></td><td>空</td><td>留空用主题色深渐变（两团柔光），填图则铺满</td></tr>
+    </table>
+  </div>
+  <p class="sec-desc" style="margin-top:10px">眉标题与副标题分离：原实现两者都回落到 <code>ESlogan</code>，开启数据带后同一句话会写两遍。现在眉标题固定为「写作 · 记录 · 分享」，副标题取站点描述。</p>
+
+  <h3>D5 + D6 · 站点年龄与里程碑</h3>
+  <p class="sec-desc">新块 <code>siteage</code>（页脚，order 15）。数字全部来自 <code>ecod_site_overview()</code>，一次查询、请求内缓存；进度条百分比在前端算，不额外查库。</p>
+
+  <h3>第 2 轮：专题子系统</h3>
+  <p class="sec-desc">分类与专题是两层东西：分类是「文章属于哪里」，专题是「编辑挑出来的一组文章」。专题不进 <code>metas</code> 表（Typecho 没有自定义分类法），沿用主题自己的 JSON 选项，和导航菜单同一套做法。</p>
+  <div class="card pad">
+    <table>
+      <tr><th style="width:22%">层</th><th>设计</th></tr>
+      <tr><td>数据</td><td>主题选项 <code>ETopics</code>：<code>{items:[{id, name, slug, desc, cover, cids:[], on}]}</code>，上限 30 个；<code>slug</code> 唯一（<code>[a-z0-9-]</code>），用作 <code>?t=</code> 的值</td></tr>
+      <tr><td>文章标记</td><td>自定义字段 <code>topic</code>（单个 slug，后台写作页为下拉选择，选项来自专题列表）。一篇文章只归一个专题——多归属会让「专题内排序」「上一专题 / 下一专题」都失去唯一答案。<b>写作页字段面板（admin/fields.js）接管为单选 chips</b>：数据由 admin/editor.php 注入 <code>ECOD_EDITOR.topics</code>，原生 select 隐藏作提交载体，保存链路与 Typecho 自定义字段完全一致</td></tr>
+      <tr><td>成员来源</td><td>成员 = 字段 <code>topic</code> 命中的文章 ∪ 专题自身的 <code>cids</code>（后台手挑）。两路合并去重，故「不改文章也能往专题里加稿」；<code>cids</code> 只决定成员，不决定顺序</td></tr>
+      <tr><td>排序</td><td>专题内一律 <code>created DESC</code>，不提供按阅读量 / 评论数排序——专题是编辑策展，读者要的是叙事顺序</td></tr>
+      <tr><td>前台</td><td>独立页面 <code>slug=topics</code> → <code>page-topics.php</code>：无参数是专题墙（E2），<code>?t=slug</code> 是专题详情（页头 + 文章流，<code>&amp;tp=N</code> 翻页）。页面 slug 由「特色页」一键创建，读取时按模板反查，改名不影响</td></tr>
+      <tr><td>后台</td><td>主题设置「专题」分组：列表式构建器（增删、拖动排序、名称 / 别名 / 描述 / 封面 / 启用）+ 文章挑选器（按标题搜索、加/移、排序），写入隐藏字段 <code>ETopics</code></td></tr>
+      <tr><td>与分类的关系</td><td>E1 是分类页的运行页头（不是专题）；E2 只展示专题。分类页挂一行「相关专题」chips（该分类下文章命中的专题），不混入文章流</td></tr>
+      <tr><td>数据成本</td><td>全站专题索引一次算完：字段表一条 <code>JOIN</code> 取 <code>slug → cid, created, title</code>，再与 <code>cids</code> 合并；封面按「最新一篇的首图」批量 <code>IN</code> 取。列表页专题角标走 <code>ecod_cards_preload</code> 批量预取，不产生 N+1</td></tr>
+      <tr><td>落点</td><td><code>core/topics.php</code>（数据）、<code>core/catstats.php</code>（分类统计）、<code>page-topics.php</code>、<code>components/topic/*</code>、<code>components/archive/head.php</code>（E1）、<code>assets/admin/topics.js</code></td></tr>
+    </table>
+  </div>
+
+  <h3>专题相关设置项</h3>
+  <div class="card pad">
+    <table>
+      <tr><th style="width:22%">设置项</th><th style="width:18%">默认</th><th>作用</th></tr>
+      <tr><td><code>ETopics</code></td><td>空</td><td>专题 JSON（隐藏字段，由构建器写入）</td></tr>
+      <tr><td><code>ETopicWallStyle</code></td><td>cover</td><td>专题墙形态：封面卡 / 纯文字卡（无封面时的降级形态同样适用）</td></tr>
+      <tr><td><code>ETopicWallCols</code></td><td>3</td><td>专题墙列数 2 / 3 / 4，窄屏自动降为单列</td></tr>
+      <tr><td><code>ETopicPerPage</code></td><td>12</td><td>专题详情每页篇数 6 / 12 / 18 / 24（夹在 6–48，防脏值）</td></tr>
+      <tr><td><code>ETopicMoreCount</code></td><td>8</td><td>详情页底部「其它专题」chips 个数 0 / 4 / 8 / 12；0 = 整行隐藏</td></tr>
+      <tr><td><code>ETopicCardChip</code></td><td>on</td><td>文章卡片显示所属专题角标（批量预取，不影响性能）</td></tr>
+      <tr><td><code>ECatHead</code></td><td>on</td><td>分类页运行页头 E1 总开关</td></tr>
+      <tr><td><code>ECatHeadBg</code></td><td>cover</td><td>页头背景：最新文章封面 / 主题色柔光</td></tr>
+      <tr><td><code>ECatHeadStats</code></td><td>on</td><td>页头三格数据：篇数 / 累计阅读 / 最近更新</td></tr>
+      <tr><td><code>ECatHeadTopics</code></td><td>on</td><td>页头「相关专题」chips</td></tr>
+    </table>
+  </div>
+
+  <h3>第 2 轮 · 验收记录</h3>
+  <div class="card pad">
+    <table>
+      <tr><th style="width:22%">项</th><th>结论</th></tr>
+      <tr><td>后台构建器</td><td>列表式：摘要行 65px、展开行 417px，每行仅一个 <code>.ecod-tpb__panel</code>。1200 / 800 / 520 三档实截无重叠、无溢出</td></tr>
+      <tr><td>后台踩坑 1</td><td>主题后台样式<b>没有全局 <code>box-sizing</code> reset</b>。<code>width:100%</code> + padding + border 的输入框会顶出卡片右边缘，并盖住两列之间的 <code>gap</code>。面板内统一 <code>border-box</code> 后归位</td></tr>
+      <tr><td>后台踩坑 2</td><td>窄屏不要改 <code>.ecod-tpb__cover</code> 的列数：四格里有两格是 <code>auto</code> 按钮，一旦压成两列，「清除」会被 1fr 拉伸成通栏。只把按钮组整体换行即可（≤640 落第二行右对齐；≤720 表单转单列）</td></tr>
+      <tr><td>前台</td><td>专题墙 / 专题详情 / 分类页 / 首页卡片 meta 四页均通过；390px 下 <code>docScrollWidth = 390</code>，零横向溢出（分类 chip 横向滚动条属设计内）</td></tr>
+      <tr><td>设置联动</td><td>实测改动四项后前台同步：<code>ETopicWallCols=4</code> → <code>.ecod_twall--c4</code>；<code>ETopicWallStyle=plain</code> → 三张 <code>.ecod_tcard--plain</code>；<code>ETopicCardChip=off</code> → 卡片无 <code>.ecod_card__meta-topic</code>；<code>ECatHeadTopics=off</code> → 页头无 <code>.ecod_chead__chip</code>。测完按字节还原（md5 一致）</td></tr>
+      <tr><td>运行环境</td><td>站点跑的是 <b>PHP 8.5</b>（nginx → <code>phpwebstudy-php-cgi-85.sock</code>），本机 CLI 是 8.1。<code>php -l</code> 只能当粗筛，8.4+ 的「隐式可空参数」弃用告警必须看 <code>vhost/logs/*.error.log</code>——它会直接混进 HTML 输出在 <code>&lt;!DOCTYPE&gt;</code> 之前</td></tr>
+    </table>
+  </div>
+
+  <h3>轮次</h3>
+  <div class="card pad">
+    <table>
+      <tr><th style="width:12%">轮</th><th>内容</th><th style="width:22%">状态</th></tr>
+      <tr><td>第 1 轮</td><td>C1 排序浮层 · C5 首屏 · D5 / D6 · F1 琥珀角标</td><td>已完成</td></tr>
+      <tr><td>第 2 轮</td><td>专题子系统：ETopics + 后台管理 + 文章标记 + <code>/topics</code> + E2 专题墙 + C2b 专题卡 + E1 分类页头</td><td>已完成（2026-10-30）</td></tr>
+      <tr><td>第 3 轮</td><td>C3 目录进度条 · C4 搜索面板（热词 / 标签 / ⌘K）</td><td>已完成（2026-10-30）</td></tr>
+      <tr><td>第 4 轮</td><td>D2 点赞头像堆叠 · D3 底部快速评论条 · D7 作者卡</td><td>待开始</td></tr>
+      <tr><td>第 5 轮</td><td>F3 分类工具条 · 收尾与回归</td><td>待开始</td></tr>
+    </table>
+  </div>
+  <h3>第 3 轮 · C3 目录进度条 + C4 搜索面板（规格）</h3>
+  <div class="card pad">
+    <table>
+      <tr><th style="width:20%">项</th><th>设计</th></tr>
+      <tr><td>C3 · 进度环</td><td>浮动目录按钮外套 SVG 进度环：轨道用边框色，弧线用主色，随阅读进度扫过；100% 时环满 + 主色微光。进度条（顶部 3px）不变，环是「目录侧」的镜像</td></tr>
+      <tr><td>C3 · 弹层进度</td><td>目录弹层头部加一条细进度条 +「x / n 节 · x%」；当前节之前的项目标 <code>is-read</code>（淡化 + 勾），读者一眼看到「读到哪了、还剩多少」</td></tr>
+      <tr><td>C3 · 范围</td><td>只做浮动目录（侧栏静态卡不 sticky，进度无意义）；<code>ETocProgress=off</code> 时回到纯按钮形态。顶部进度条不受此开关控制</td></tr>
+      <tr><td>C4 · 面板</td><td><code>ESearchPanel=on</code> 时输出居中搜索面板（桌面 560px 卡、移动端近全屏）：大号输入框 + 键盘提示（↑↓ / ↵ / Esc）→ 实时结果 → 热词 → 标签。导航搜索框点击、dock 搜索按钮、⌘K / Ctrl+K 三入口唤起</td></tr>
+      <tr><td>C4 · 热词</td><td>真源是设置项 <code>ESearchHot</code>（逗号 / 顿号分隔）；为空时回退到站内热门标签。点热词 = 填入输入框并即时搜索</td></tr>
+      <tr><td>C4 · 标签</td><td><code>Widget_Metas_Tag_Cloud</code> 按 <code>ESearchTagCount</code> 截取；点击 = 填入搜索。与热词区互为补充：热词是编辑推荐，标签是全站概览</td></tr>
+      <tr><td>C4 · 实时结果</td><td>复用 <code>api.php?action=search_suggest</code>（limit 5→8），防抖 180ms，标题高亮，链接由前端 <code>CFG.postUrl</code> 模板按 cid 拼（与现有下拉一致，不依赖独立入口的 Router）</td></tr>
+      <tr><td>C4 · 键盘</td><td>↑↓ 在结果 / 热词 / 标签间移动高亮，Enter 打开，Esc 关闭；<code>ESearchPanel=off</code> 时一切维持现状（原地下拉 + ⌘K 聚焦输入框）</td></tr>
+      <tr><td>最近搜索</td><td>沿用 <code>localStorage('ecod-search-history')</code>，面板空态显示最近 8 条，与导航下拉共用一份</td></tr>
+      <tr><td>落点</td><td><code>public/header.php</code>（面板 DOM）、<code>assets/js/ecod.global.js</code>（initSearchPanel / initToc 增强）、<code>assets/css/ecod.css §28</code>、<code>api.php</code>（suggest limit）、<code>core/config.php</code>（ETocProgress + 搜索分组）</td></tr>
+    </table>
+  </div>
+
+  <h3>第 3 轮 · 设置项</h3>
+  <div class="card pad">
+    <table>
+      <tr><th style="width:22%">设置项</th><th style="width:16%">默认</th><th>作用</th></tr>
+      <tr><td><code>ETocProgress</code></td><td>on</td><td>浮动目录的进度环 + 弹层进度条 + 已读态（文章页分组，跟在「浮动目录」后面）</td></tr>
+      <tr><td><code>ESearchPanel</code></td><td>on</td><td>居中搜索面板总开关；off 时保留原地下拉与 ⌘K 聚焦</td></tr>
+      <tr><td><code>ESearchHot</code></td><td>空</td><td>热词（逗号 / 顿号分隔）；空则回退热门标签</td></tr>
+      <tr><td><code>ESearchTagCount</code></td><td>10</td><td>面板标签区个数 6 / 8 / 10 / 12</td></tr>
+    </table>
+  </div>
+
+  <h3>第 3 轮 · 验收记录</h3>
+  <div class="card pad">
+    <table>
+      <tr><th style="width:22%">项</th><th>结论</th></tr>
+      <tr><td>C3 链路实测</td><td>把 <code>Ecod.readProgress</code> 伪造成 42 并派发 scroll：<code>stat = 1 / 6 节 · 42%</code>、环 <code>stroke-dashoffset = 58px</code>（100−42）、弹层进度条 <code>98.27px</code>（内容宽 234 × 42%）。三者与顶部进度条同源，无第二套口径</td></tr>
+      <tr><td>C3 开发期 bug</td><td><code>spy()</code> 原本 <code>if (next === activeIndex) return;</code> 在进度同步之前——同一节内滚动 pct 一直在变但被提前 return 挡住，进度只在跨章节时跳变。抽 <code>syncProgress(next)</code> 后放在 return 前调用</td></tr>
+      <tr><td>C4 三入口</td><td>导航搜索框（capture 拦截，原表单不再弹下拉）、移动端 dock 搜索按钮（capture + <code>stopImmediatePropagation</code>，不再同时开抽屉）、⌘K / Ctrl+K。面板关闭时三者全部退回旧行为</td></tr>
+      <tr><td>C4 设置联动</td><td><code>ESearchPanel=off</code> → 面板 DOM 计数 0、<code>CFG.searchPanel=false</code>；<code>ESearchHot="Typecho, 主题开发、PHP 8.5"</code> → 解析 3 项（逗号与顿号混用）；<code>ESearchTagCount=6</code> → <code>data-tags</code> 6 条</td></tr>
+      <tr><td>验收工具坑 1</td><td>文章页有 11 个外部播放器 iframe（YouTube / B 站 / Vimeo / 优酷 / 腾讯 / 网易云 / Spotify / SoundCloud），headless Chrome 必然 OOM 被杀（SIGTERM 137）。用 <code>--host-resolver-rules</code> 把这些域名黑洞到 127.0.0.1 才能截图</td></tr>
+      <tr><td>验收工具坑 2</td><td>headless 虚拟时间下：iframe 内 <code>scrollTo</code> 不生效（scrollY 恒 0）、<code>requestAnimationFrame</code> 不推进（addScroll 回调不跑）、CSS 过渡不推进（读到的仍是初始值）。诊断必须把 <code>rAF</code> 换成同步执行并临时禁掉 <code>transition</code></td></tr>
+      <tr><td>顺带修复</td><td><code>core/schema.php</code> 里 <code>ecod_pay_table()</code> 的文档注释头被并行改动吃掉，留下孤儿 <code> *</code> 行 → 全站文章页 500。补回 <code>/** 付费相关表名 */</code> 头后恢复</td></tr>
+      <tr><td>细节修正</td><td>搜索框原生清除按钮是系统蓝（<code>::-webkit-search-cancel-button</code>），与主色冲突，已隐藏；热词胶囊原本挂 <code>zap</code> 图标但 JS 图标表无此名，留下空隙，改为纯文字与标签区保持一致</td></tr>
+    </table>
+  </div>
+
+  <h3>第 4 轮 · D2 点赞头像堆叠 + D3 快速评论条 + D7 作者卡（规格）</h3>
+  <div class="card pad">
+    <table>
+      <tr><th style="width:12%">项</th><th>设计</th></tr>
+      <tr><td>D2 数据前置</td><td>拆解时前置条件是「点赞记录是否落库到 uid 级」，原表 <code>ecod_likes</code> 只有 <code>cid + ip(指纹)</code>。<b>选择升级而不是降级</b>：数据结构 v8→v9，表加 <code>uid INT UNSIGNED NOT NULL DEFAULT 0</code>（三种 adapter 同步，老表走 <code>ALTER TABLE ADD COLUMN</code> 迁移，有 <code>ecod_schema_has_column</code> 幂等保护）。游客点赞行 uid=0 完全不受影响</td></tr>
+      <tr><td>D2 去重口径</td><td>登录用户点赞仍按 <code>(cid, ip)</code> 唯一索引落行，行里补写 uid；POST 前先查「该 uid 在该文章是否已有行」，有则跨设备幂等（不再插新行），避免换设备多计一票；GET <code>mine</code> 同时匹配指纹行与 uid 行</td></tr>
+      <tr><td>D2 展示</td><td><code>ecod_post_likers(cid, 5)</code>：取 <code>uid &gt; 0</code> 的最近 5 条（按 MAX(created) 降序、GROUP BY uid 去重）JOIN users 拿昵称。头像优先 <code>ecod_account_avatar_url(uid)</code> 自定义头像，回落本地头像池 <code>ecod_local_avatar_url('uid:N')</code>。头像 24px、<code>margin-left:-7px</code> 重叠、2px 白描边（Alright 参数）；文案「@昵称 等 N 人觉得不错」，只有 1 人时不带「等」。<b>没有任何 uid 记录时整块不输出</b>（纯数字保持现状）。挂互动条点赞按钮下方，点击滚到评论区</td></tr>
+      <tr><td>D3 行为</td><td>移动端专用（≤768px 显示，桌面隐藏）：胶囊条固定视口底部、上移避开 dock；滚动过一屏正文且评论区还在视口之下时淡入，评论区进入视口即隐藏；点击不做弹窗，平滑滚到 <code>#comments</code> 并聚焦 <code>#textarea</code>。密码未解锁、付费锁、评论关闭的文章不输出 DOM。走 <code>Ecod.addScroll</code> 统一滚动队列，PJAX 换页随 <code>#ecod-shell</code> 重建</td></tr>
+      <tr><td>D7 判定</td><td>在线点 = 博主 uid 在 users 表的 <code>logged</code> 距今 ≤ 300 秒（Typecho 登录时自动盖章），不做长连接。博主 uid：<code>author</code> 侧栏块加 <code>uid</code> 参数，留空自动取 <code>group=administrator</code> 最小 uid（<code>ecod_site_author_id()</code>，请求内静态缓存）</td></tr>
+      <tr><td>D7 展示</td><td>头像右下呼吸绿点 + 名称旁「博主」徽章；不做 IP 属地（拆解已否决：隐私争议 + 需第三方库）。离线时绿点隐藏、徽章保留</td></tr>
+      <tr><td>降级</td><td>三件全部独立开关，关掉即回到第 3 轮形态；D2 无 uid 数据时自动降级为纯数字</td></tr>
+    </table>
+  </div>
+
+  <h3>第 4 轮 · 新设置项</h3>
+  <div class="card pad">
+    <table>
+      <tr><th style="width:22%">设置项</th><th style="width:10%">默认</th><th>作用</th></tr>
+      <tr><td><code>ELikers</code></td><td>on</td><td>文章页点赞头像堆叠总开关（互动条点赞按钮下方，无 uid 数据时自动不输出）</td></tr>
+      <tr><td><code>EQuickBar</code></td><td>on</td><td>移动端底部快速评论条总开关；关闭后移动端回到无快速入口形态</td></tr>
+      <tr><td><code>EAuthorOnline</code></td><td>on</td><td>侧栏作者卡在线点 + 博主徽章总开关</td></tr>
+    </table>
+  </div>
+</section>
+
+<!-- 31 -->
+<section id="s8">
+  <span class="sec-tag">31 · 后台</span>
+  <h2>区域与模块管理台</h2>
+  <p class="sec-desc">把「哪块内容显示在哪」从主题设置的长页里拆出来，做成独立管理台：<b>左栏是全部可用模块，右栏是各区域位置，模块从左拖到右、点了就改参数，改完即存</b>。心智完全照 WordPress「外观 → 小工具」的经典布局（可用组件 ⇄ 侧栏盒子），位置命名对齐 Zibll（<code>top_fluid / top_content / bottom_content / bottom_fluid / sidebar</code>）；区别是<b>一个模块可以放多个实例，每个实例配置各自独立</b>。后台文案仍叫「模块」，代码内部仍叫 <code>block</code>，不引入 widget 这个词。</p>
+
+  <h3>为什么要改</h3>
+  <div class="card pad">
+    <table>
+      <tr><th style="width:21%">现状问题</th><th>证据</th><th style="width:23%">新模型</th></tr>
+      <tr><td>管理界面寄生在设置页</td><td>41 个块 + 102 个参数与上百个常规字段挤在同一张表单里；改一个参数要整页 POST，还得防其它分组未保存的内容被一起提交（<code>core/config.php</code> 850 行 + <code>assets/admin/config.js</code> 2516 行）</td><td>独立管理台，实例级保存</td></tr>
+      <tr><td>同一块在同一位置只能用一次</td><td>区域里存的是 <code>id</code>，<code>id</code> 全局唯一：放不了两个广告位、两个自定义 HTML</td><td>实例化（<code>uid</code>）</td></tr>
+      <tr><td>「参数共用」是假承诺</td><td><code>config.js:1188</code> 放置时 <code>copyParams</code> 深拷贝，<code>config.js:1242</code> 的弹层文案却写「参数共用」——改一处另一处不变</td><td>取消 place，一实例一配置</td></tr>
+      <tr><td>位置只有 4 个页面级桶</td><td>home / aside / post / footer，没有「顶部全宽」「内容区上方 / 下方」</td><td>页面类型 × 5 位置 + 全局区</td></tr>
+      <tr><td>侧栏只有全站一个开关</td><td><code>EAside</code> 单值，判断散在 <code>header.php:26</code>、<code>header.php:330</code>、<code>aside.php:13</code> 三处</td><td>按页面类型 + 单篇覆盖</td></tr>
+    </table>
+  </div>
+
+  <h3>页面类型</h3>
+  <div class="card pad">
+    <table>
+      <tr><th style="width:14%">key</th><th style="width:26%">含义</th><th>模板</th></tr>
+      <tr><td><code>home</code></td><td>首页</td><td><code>index.php</code></td></tr>
+      <tr><td><code>single</code></td><td>文章页</td><td><code>post.php</code></td></tr>
+      <tr><td><code>page</code></td><td>独立页面</td><td><code>page.php</code></td></tr>
+      <tr><td><code>cat</code> / <code>tag</code> / <code>search</code> / <code>author</code></td><td>归档四种</td><td><code>archive.php</code>（<code>$this-&gt;is()</code> 分支）</td></tr>
+      <tr><td><code>custom</code></td><td>个性页：归档 / 排行 / 专题 / 用户 / 会员 / 收银台 / 随机 / 登录 / 友链 / 视频 / 壁纸 / 直播 / 统计 / 留言板</td><td><code>page-*.php</code>、<code>friends.php</code>、<code>live.php</code>、<code>video.php</code>、<code>wallpaper.php</code>、<code>census.php</code>、<code>leaving.php</code>（共 14 个，均含 <code>.ecod_main</code>）</td></tr>
+    </table>
+  </div>
+
+  <h3>位置与区域 id</h3>
+  <p class="sec-desc">区域 id = <code>{页面类型}_{位置}</code>；全局区的页面类型段写成 <code>all</code>，先渲染全局、再渲染页面类型自己的区，与 Zibll 的顺序一致。</p>
+  <div class="card pad">
+    <table>
+      <tr><th style="width:16%">位置</th><th style="width:22%">落点</th><th style="width:14%">宽度</th><th>说明</th></tr>
+      <tr><td><code>top_fluid</code></td><td>导航之下、正文之前</td><td>全宽</td><td>通栏横幅 / 公告条 / 大图广告</td></tr>
+      <tr><td><code>top_content</code></td><td><code>.ecod_main</code> 首行</td><td>内容宽</td><td>面包屑、分类页头下方提示、文章顶部工具条</td></tr>
+      <tr><td><code>bottom_content</code></td><td><code>.ecod_main</code> 末行</td><td>内容宽</td><td>相关推荐、上/下篇、订阅卡</td></tr>
+      <tr><td><code>bottom_fluid</code></td><td><code>.ecod_layout</code> 之后、页脚之前</td><td>全宽</td><td>通栏 CTA、友情链接墙</td></tr>
+      <tr><td><code>sidebar</code></td><td><code>public/aside.php</code></td><td>栏内</td><td>侧栏模块；随滚动吸附与普通流由现有 CSS 决定</td></tr>
+    </table>
+    <p class="sec-desc" style="margin:12px 0 0">全局区固定四个：<code>all_top_fluid</code>、<code>all_bottom_fluid</code>、<code>all_sidebar_top</code>、<code>all_sidebar_bottom</code>。侧栏最终顺序 = <code>all_sidebar_top</code> → <code>{页面}_sidebar</code> → <code>all_sidebar_bottom</code>。</p>
+  </div>
+
+  <h3>侧栏可见性</h3>
+  <p class="sec-desc">沿用 Zibll 的两层判定：<b>按页面类型给默认值，单篇 / 单页可覆盖</b>。全站统一收敛成一个函数，<code>data-aside</code> 只在这一处产出。</p>
+  <div class="grid-2" style="margin-top:14px">
+    <div class="card pad">
+      <b style="font-size:13.5px">判定顺序</b>
+      <table style="margin-top:8px">
+        <tr><th style="width:26%">层</th><th>规则</th></tr>
+        <tr><td>① 单篇覆盖</td><td>文章 / 页面自定义字段 <code>aside</code>：跟随默认 / 无 / 左 / 右。非空即胜出</td></tr>
+        <tr><td>② 页面类型</td><td><code>EAsidePages</code> JSON，键为页面类型，值 right / left / none</td></tr>
+        <tr><td>③ 全站默认</td><td>沿用现有 <code>EAside</code>（默认 right），老站升级零感知</td></tr>
+      </table>
+    </div>
+    <div class="card pad">
+      <b style="font-size:13.5px">落点</b>
+      <table style="margin-top:8px">
+        <tr><th style="width:34%">位置</th><th>改动</th></tr>
+        <tr><td><code>core/blocks.php</code></td><td>新增 <code>ecod_aside_pos()</code>，返回 right / left / none</td></tr>
+        <tr><td><code>public/header.php:26,330</code></td><td>两处 <code>ecod_option('EAside')</code> 换成 <code>ecod_aside_pos()</code></td></tr>
+        <tr><td><code>public/aside.php:13</code></td><td>同上；返回 none 时整个 <code>&lt;aside&gt;</code> 不输出（连 DOM 一起省）</td></tr>
+        <tr><td><code>functions.php</code> themeFields</td><td>新增 <code>aside</code> 下拉，字段名避开框架保留字</td></tr>
+      </table>
+    </div>
+  </div>
+
+  <h3>数据结构 v2</h3>
+  <p class="sec-desc">新表存进 <code>options</code> 表 <code>user=0</code> 的独立行 <code>EWidgets</code>（复用 <code>ecod_cache_get/set</code>），<b>不再整行重写主题配置</b>；旧的 <code>EBlocks</code> 只作迁移来源，保留只读一个版本周期。</p>
+<pre style="background:#0f1420;color:#cdd6e8;padding:16px;border-radius:10px;overflow:auto;font-size:12px;line-height:1.7"><code>{
+  "v": 2,
+  "areas": {
+    "all_sidebar_top":    [{"uid":"toc-1","type":"toc","on":true,"params":{}}],
+    "home_top_content":   [{"uid":"slider-1","type":"slider","on":true,"params":{"count":5}}],
+    "single_bottom_content":[{"uid":"related-1","type":"related","on":true,"params":{"limit":6}}]
+  },
+  "aside": {"home":"right","single":"right","cat":"none","tag":"none","search":"none","page":"none","author":"right","custom":"none"}
+}</code></pre>
+  <div class="card pad" style="margin-top:16px">
+    <table>
+      <tr><th style="width:16%">字段</th><th style="width:20%">类型</th><th>说明</th></tr>
+      <tr><td><code>uid</code></td><td>string</td><td>实例 id，<code>{type}-{n}</code>，规范 <code>[a-z0-9-]</code>、≤40 字符；同一区域唯一。复制实例即新建 uid</td></tr>
+      <tr><td><code>type</code></td><td>string</td><td>指向 <code>blocks-def.php</code> 的块声明；决定的模板文件与参数 schema</td></tr>
+      <tr><td><code>on</code></td><td>bool</td><td>开关；<code>fixed</code> 块忽略此值（恒为 on）</td></tr>
+      <tr><td><code>params</code></td><td>object</td><td>只存该实例的差异值；缺省键回落块声明里的 <code>default</code> / <code>legacy</code></td></tr>
+    </table>
+    <p class="sec-desc" style="margin:12px 0 0">每区实例上限 20 个（含隐藏），超出时「添加模块」置灰并提示先删；不做全局上限，因为区域数本身有限。上限取 20 而非更小的值，是因为旧 <code>EBlocks</code> 首页一区就有 14 条（含 3 条隐藏），迁移必须原样带过来、不能被上限静默截断。</p>
+  </div>
+
+  <h3>v1 → v2 迁移</h3>
+  <p class="sec-desc">迁移只在<b>首次保存</b>时落盘；之前一直双读。判定顺序：<code>EWidgets</code> 有值就用它，否则读 <code>EBlocks</code> 现算，内存里转 v2 —— 老站升级前后前台输出必须逐字节一致。</p>
+  <div class="card pad">
+    <table>
+      <tr><th style="width:26%">旧区域</th><th style="width:30%">新区域</th><th>规则</th></tr>
+      <tr><td><code>home</code>（15 块）</td><td><code>home_top_content</code></td><td>顺序按旧存储顺序，<code>order</code> 只在不存过顺序时兜底</td></tr>
+      <tr><td><code>aside</code>（13 块）</td><td><code>all_sidebar_top</code></td><td>旧侧栏在所有含 <code>aside.php</code> 的页面都出现，等价于全局侧栏区</td></tr>
+      <tr><td><code>post</code> 锚点 <code>top</code>（5 块中的 top 项）</td><td><code>single_top_content</code></td><td><code>anchor</code> 机制在 v2 废弃，位置由区域表达</td></tr>
+      <tr><td><code>post</code> 其余</td><td><code>single_bottom_content</code></td><td>对应原 <code>post.php:171</code> 正文之后</td></tr>
+      <tr><td><code>footer</code>（8 块）</td><td>不迁移</td><td>其中 5 个是 <code>fixed</code> 单点渲染的浮动控件（progress / totop / dock / theme-toggle / notice），继续用 <code>ecod_block_render()</code> 定点输出；credits / links / siteage 仍由 <code>footer.php</code> 定点输出</td></tr>
+      <tr><td><code>place</code> 表</td><td>丢弃</td><td>一块多区 → 每区各生成一个独立实例，参数复制一份，之后各自独立</td></tr>
+      <tr><td>新块（v2 之后新增）</td><td>默认关闭</td><td>不再自动出现在任何区域，需在管理台手动添加</td></tr>
+    </table>
+  </div>
+
+  <h3>管理台</h3>
+  <p class="sec-desc">45 个区域全展开会拉成一条长卷，所以右栏改成<b>一行多列 + 逐区折叠</b>：有实例的区域默认展开、空区域默认收起（手动状态记在本地），同一组内 2–3 列并排，只有正在编辑参数的那个盒子横跨整行。下面示意里「全局 · 侧栏顶部」是展开且带表单的状态，「分类 / 标签」是折叠态。</p>
+  <div class="frame">
+    <div class="frame-bar"><i></i><i></i><i></i><span>独立入口 · /usr/themes/ecod-theme/widget.php</span></div>
+    <div class="frame-body" style="padding:14px">
+      <div class="wgt">
+        <div class="wgt-col">
+          <div class="wgt-hd">可用模块</div>
+          <div class="wgt-find">搜索模块…</div>
+          <div class="wgt-lib">
+            <div class="wgt-card"><i class="wgt-grip"></i><b>轮播</b><small>幻灯</small></div>
+            <div class="wgt-card"><i class="wgt-grip"></i><b>广告位</b><small>图片 + 链接</small></div>
+            <div class="wgt-card is-open"><i class="wgt-grip"></i><b>热门文章</b><small>点击展开 ↓</small></div>
+            <div class="wgt-target on">首页 · 侧栏<span>+</span></div>
+            <div class="wgt-target">文章 · 侧栏<span>+</span></div>
+            <div class="wgt-target off">页脚定点<span>不允许</span></div>
+            <div class="wgt-card"><i class="wgt-grip"></i><b>分类导航</b><small>全站分类</small></div>
+          </div>
+        </div>
+        <div class="wgt-col wgt-col--mid">
+          <div class="wgt-hd">区域 <em>拖模块进来</em></div>
+          <div class="wgt-grid">
+            <div class="wgt-area is-wide">
+              <div class="wgt-area__hd on">全局 · 侧栏顶部<span>4</span></div>
+              <div class="wgt-item"><i class="wgt-grip"></i><b>关于本站</b><i class="wgt-sw"></i></div>
+              <div class="wgt-item"><i class="wgt-grip"></i><b>最新文章</b><i class="wgt-sw"></i></div>
+              <div class="wgt-item is-open">
+                <i class="wgt-grip"></i><b>标签云</b><i class="wgt-sw off"></i>
+                <div class="wgt-item__body">
+                  <div class="wgt-field"><label>显示数量</label><i></i></div>
+                  <div class="wgt-field"><label>最小字号</label><i></i></div>
+                  <div class="wgt-ops">复制 · 重置 · 删除</div>
+                </div>
+              </div>
+            </div>
+            <div class="wgt-area is-drop">
+              <div class="wgt-area__hd">首页 · 内容区上方<span>3</span></div>
+              <div class="wgt-empty">放到这里 = 添加 / 移到末尾</div>
+            </div>
+            <div class="wgt-area">
+              <div class="wgt-area__hd">文章 · 内容区下方<span>3</span></div>
+              <div class="wgt-item"><i class="wgt-grip"></i><b>版权声明</b><i class="wgt-sw"></i></div>
+            </div>
+            <div class="wgt-area is-fold">
+              <div class="wgt-area__hd">分类 · 内容区上方<span>0</span></div>
+            </div>
+            <div class="wgt-area is-fold">
+              <div class="wgt-area__hd">标签 · 侧栏<span>0</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card pad" style="margin-top:16px">
+    <table>
+      <tr><th style="width:16%">区域</th><th>行为</th></tr>
+      <tr><td>左栏 · 可用模块</td><td>主题提供的全部模块（按声明顺序），带搜索过滤。<b>拖到右栏任一区域</b> = 添加实例（参数用默认值）；<b>单击卡片</b>展开目标位置列表（只列 <code>areas</code> 白名单允许的区域，已到上限的置灰），点选即添加 —— 与 WordPress 可用组件的行为一致</td></tr>
+      <tr><td>右栏 · 区域盒子</td><td>全部区域按「全局 / 页脚定点 / 首页 / 文章 / 页面 / 分类 / 标签 / 搜索 / 作者 / 个性页」分组；同一组内<b>一行多列</b>排布（<code>grid</code> 自适应 <code>minmax(300px, 1fr)</code>，1400px 宽下 2–3 列），区域头常显实例数，区域体是投放目标（拖拽高亮）；空区域显示投放提示线</td></tr>
+      <tr><td>折叠</td><td>区域头即折叠开关（左侧 ▸ / ▾）。<b>默认规则：有实例 → 展开；空区域 → 折叠</b>，避免 45 个区域把页面拉成一条长卷；用户手动折叠 / 展开后写入 <code>localStorage</code>（<code>ecod-wgt-fold</code>），此后以手动状态为准。右栏头部提供「全部展开 / 全部折叠」两个动作</td></tr>
+      <tr><td>折叠区投放</td><td>折叠状态下区域头仍是有效投放目标（拖到头上 = 追加到末尾）；悬停 500ms 自动展开，方便精确落位。折叠只影响显示，不改变实例与保存逻辑</td></tr>
+      <tr><td>展开区跨度</td><td>某个区域里有实例表单展开时，该盒<b>横跨整行</b>（<code>grid-column: 1 / -1</code>），让参数表单拿到足够宽度；收起表单后回到单列宽度。避免窄格里塞 <code>slides</code> 这类宽控件</td></tr>
+      <tr><td>实例行</td><td>一行 = 拖柄 + 名称 + 启用开关；<b>点击行头内联展开参数表单</b>（同区域手风琴，一次只展开一行）；表单底部操作行：复制 · 移到 · 重置参数 · 删除；行可跨区域拖拽排序 / 移动（同一 <code>uid</code> 换区域保留参数）</td></tr>
+      <tr><td>侧栏显示</td><td>「按页面类型开关侧栏」不占区域，固定为右栏顶部的折叠卡片，展开后 8 行下拉（右侧栏 / 左侧栏 / 无侧栏）</td></tr>
+      <tr><td>保存</td><td><b>显式保存</b>：改动先暂存在本地（状态点变「未保存」，顶部「保存改动」按钮点亮），点按钮或 <code>Ctrl/Cmd+S</code> 一次性按顺序提交全部脏区域；任一失败即停并提示重试，全部成功回「已保存」。离开页面前有 <code>beforeunload</code> 拦截。「侧栏显示」的下拉改动走同一条保存队列（伪区域 <code>__aside</code>）</td></tr>
+      <tr><td>拒绝投放</td><td>模块不在区域白名单（<code>areas</code>）时：拖拽悬停该区域显示<b>红色禁用态</b>（<code>is-nodrop</code>），松手 toast 提示「模块名」不能放在「区域名」，不产生任何请求。页脚定点类模块（版权信息 / 站点年龄等）只允许放「页脚与浮动控件」</td></tr>
+      <tr><td>清空</td><td>区域为空时前台不输出任何包裹 DOM —— 不产生空 <code>&lt;div&gt;</code> 与多余间距</td></tr>
+    </table>
+  </div>
+
+  <h3>保存接口</h3>
+  <div class="card pad">
+    <table>
+      <tr><th style="width:20%">项</th><th>规格</th></tr>
+      <tr><td>入口</td><td><code>widget.php?action=save</code>，POST JSON；鉴权照 <code>pay-admin.php</code>：后台登录 cookie + <code>\Typecho\Cookie::setPrefix()</code> 校正</td></tr>
+      <tr><td>CSRF</td><td>Typecho security token，页面渲染时注入 <code>window.ECOD_WGT.token</code>；缺失或过期返回 403，前端提示刷新</td></tr>
+      <tr><td>写入</td><td><code>ecod_cache_set('EWidgets', $data)</code>，只动 <code>user=0</code> 的那一行；不触碰 <code>theme:{slug}</code> 主题配置行</td></tr>
+      <tr><td>并发</td><td>读时带 <code>rev</code>（受影响的区域数组哈希），写时比对；不一致返回 409 + 最新数据，前端提示「已被其他标签页修改」并重绘</td></tr>
+      <tr><td>校验</td><td><code>area</code> 必须在注册表内；<code>uid</code> 匹配 <code>[a-z0-9-]{1,40}</code>；<code>type</code> 必须在 <code>blocks-def.php</code> 声明过且允许放该区域；<code>params</code> 按 schema 白名单裁剪，未知键丢弃</td></tr>
+      <tr><td>返回</td><td><code>{ok:true, rev:"…", area:"…"}</code>；失败给 <code>{ok:false, error:"…"}</code>，不返回堆栈</td></tr>
+    </table>
+  </div>
+
+  <h3>渲染接口</h3>
+  <div class="card pad">
+    <table>
+      <tr><th style="width:32%">函数</th><th>用途</th></tr>
+      <tr><td><code>ecod_widgets_render(string $area)</code></td><td>渲染一个区域（含全局区叠加由模板显式调用，不隐式拼接）</td></tr>
+      <tr><td><code>ecod_widget_instances(string $area)</code></td><td>解析后的实例数组，供计数、预览、调试</td></tr>
+      <tr><td><code>ecod_widget_render(string $uid)</code></td><td>定点渲染单个实例（页脚浮动控件这类）</td></tr>
+      <tr><td><code>ecod_blocks_render()</code> / <code>ecod_block_render()</code></td><td>保留为兼容别名，把旧区域名映射到新区域，渲染管线完全一致；一个版本周期后删除</td></tr>
+    </table>
+    <p class="sec-desc" style="margin:12px 0 0">渲染层不改：<code>ecod_render_block()</code> 的包裹结构、<code>$this</code> 绑定、<code>params</code> 注入方式都保持现状，41 个模板文件不用动一行。</p>
+  </div>
+
+  <h3>埋点清单</h3>
+  <div class="card pad">
+    <table>
+      <tr><th style="width:28%">文件</th><th style="width:24%">位置</th><th>插入</th></tr>
+      <tr><td><code>public/header.php</code></td><td>329 行 <code>#ecod-shell</code> 内首行</td><td><code>all_top_fluid</code> + <code>{页面}_top_fluid</code></td></tr>
+      <tr><td><code>index.php</code> / <code>archive.php</code> / <code>post.php</code> / <code>page.php</code> / 14 个个性页</td><td><code>.ecod_main</code> 首行与末行</td><td><code>{页面}_top_content</code> / <code>{页面}_bottom_content</code></td></tr>
+      <tr><td><code>public/aside.php</code></td><td>18 行</td><td><code>all_sidebar_top</code> → <code>{页面}_sidebar</code> → <code>all_sidebar_bottom</code></td></tr>
+      <tr><td><code>public/footer.php</code></td><td><code>.ecod_layout</code> 收尾之后</td><td><code>all_bottom_fluid</code> + <code>{页面}_bottom_fluid</code></td></tr>
+      <tr><td><code>core/config.php</code></td><td>4 个块 pane</td><td>删掉块列表，换成「去模块管理台」入口卡 + 侧栏按页面类型开关</td></tr>
+      <tr><td><code>assets/admin/config.js</code></td><td>块管理器整段（约 1000 行）</td><td>移到 <code>assets/admin/widget.js</code>，随管理台加载；设置页不再加载</td></tr>
+    </table>
+  </div>
+
+  <h3>全宽区与 PJAX</h3>
+  <div class="card pad">
+    <table>
+      <tr><th style="width:22%">约束</th><th>处理</th></tr>
+      <tr><td>交换边界</td><td>PJAX 只替换 <code>#ecod-shell</code>（<code>ecod.global.js:3445</code>），shell 从 <code>header.php:329</code> 开。全宽区<b>必须放 shell 内</b>，否则换页后内容不更新</td></tr>
+      <tr><td>出血</td><td><code>width:100vw; margin-inline:calc(50% - 50vw)</code> + 父级 <code>overflow-x:clip</code>（不能用 <code>hidden</code>，会切断 sticky）</td></tr>
+      <tr><td>布局插入</td><td><code>#ecod-shell</code> 内改为纵向栈：<code>[top_fluid]</code> → <code>.ecod_layout</code>（main + aside）→ <code>[bottom_fluid]</code>；全宽块不参与 main/aside 的栅格</td></tr>
+      <tr><td>滚动条</td><td><code>100vw</code> 含滚动条宽度，桌面端会多出 1–2px 横向溢出，用 <code>body{overflow-x:clip}</code> 兜住，不加 <code>max-width:100%</code>（会被父容器裁切）</td></tr>
+    </table>
+  </div>
+
+  <h3>验收</h3>
+  <div class="card pad">
+    <table>
+      <tr><th style="width:6%">#</th><th style="width:34%">项</th><th>判定</th></tr>
+      <tr><td>1</td><td>升级零丢失</td><td>迁移前后前台 HTML 逐字节比对一致（41 块的位置、开关、参数全等）</td></tr>
+      <tr><td>2</td><td>实例化</td><td>同一区域放两个广告位，改其中一个的图片，另一个不变</td></tr>
+      <tr><td>3</td><td>跨区移动</td><td>把侧栏的「最新文章」拖到文章页内容区下方，参数保留</td></tr>
+      <tr><td>4</td><td>侧栏开关</td><td>关闭分类页侧栏后，<code>&lt;aside&gt;</code> 完全不输出；单篇覆盖为「左」时该篇侧栏在左</td></tr>
+      <tr><td>5</td><td>PJAX</td><td>首页 → 文章页切换后，<code>all_top_fluid</code> 内容随之更新，无残留</td></tr>
+      <tr><td>6</td><td>空区域</td><td>区域无实例时 DOM 里没有任何包裹节点</td></tr>
+      <tr><td>7</td><td>并发</td><td>两个标签页同时改同一区域，后者收到 409 而非静默覆盖</td></tr>
+      <tr><td>8</td><td>回滚</td><td>删掉 <code>EWidgets</code> 行，前台立刻回到 <code>EBlocks</code> 的旧布局</td></tr>
+    </table>
+  </div>
+
+  <h3>非目标</h3>
+  <div class="card pad">
+    <table>
+      <tr><th style="width:30%">不做</th><th>原因</th></tr>
+      <tr><td>单篇文章 / 单个页面单独建容器</td><td>Zibll 自己限定「页面别超 10 个，否则影响性能」；我们这个主题页面类型已经够用，层级再多收益递减</td></tr>
+      <tr><td>页脚拆三列</td><td>现有 8 个页脚块里 5 个是浮动控件不是列，硬拆会让 <code>fixed</code> 语义和列布局互相打架</td></tr>
+      <tr><td>可拖拽的 iframe 实时预览</td><td>要复制一套前台渲染管线；用「打开对应页面」链接 + 管理台内的位置示意足够</td></tr>
+      <tr><td>引入 sortable / 拖拽库</td><td>原生 HTML5 DnD 够用，主题不引第三方依赖</td></tr>
+      <tr><td>把块名 / 字段名改成 widget</td><td>41 个块声明、19 个模板、管理台 JS 全要跟着改，纯改名不产生价值</td></tr>
+    </table>
+  </div>
+</section>
+
+<section id="s9">
+  <span class="sec-tag">32 · 后台</span>
+  <h2>分类与标签增强</h2>
+  <p class="sec-desc">Typecho 的分类 / 标签共用 <code>metas</code> 表，原生只有名称、缩略名、描述（父级），<b>没有封面、没有独立 SEO 字段、也没有 metas 级自定义字段机制</b>。本节给分类 / 标签补齐：封面图、独立 SEO（标题 / 描述 / 关键词）、noindex 开关——存进主题自己的 KV 表，编辑入口直接注入 Typecho 原生后台「分类 / 标签」编辑表单，不另建管理页。</p>
+
+  <h3>需求与结论</h3>
+  <div class="card pad">
+    <table>
+      <tr><th style="width:20%">事项</th><th>结论</th></tr>
+      <tr><td>存储</td><td>新表 <code>{prefix}ecod_meta_meta</code>（KV，主键 <code>(mid, mkey)</code>）。不走 <code>description</code> 混装——描述还要参与前台展示与 <code>archiveDescription</code>，约定格式易脏。</td></tr>
+      <tr><td>编辑入口</td><td>注入原生编辑页（<code>admin/category.php</code>、<code>admin/manage-tags.php</code> 右栏表单）。标签无独立编辑页，原生就是在管理列表页右栏表单里编辑。不新建「增强管理器」页面。</td></tr>
+      <tr><td>保存链路</td><td>补丁 <code>var/Widget/Metas/Category/Edit.php</code> 与 <code>Tag/Edit.php</code> 的 insert / update / delete 三处，服务端同步保存，不依赖 JS 时序。</td></tr>
+      <tr><td>标签支持</td><td>同步支持；标签场景主要用 <code>seo_desc</code> / <code>noindex</code>，封面可留空。</td></tr>
+      <tr><td>降级</td><td>所有补丁带 <code>function_exists / is_file</code> 守卫：主题被删或未打补丁时，原生后台照常工作，只是没有增强字段；前台无值时全部回退现有逻辑。</td></tr>
+    </table>
+  </div>
+
+  <h3>数据表</h3>
+  <div class="card pad">
+    <table>
+      <tr><th style="width:22%">列</th><th style="width:24%">类型</th><th>说明</th></tr>
+      <tr><td><code>mid</code></td><td>INT UNSIGNED</td><td><code>metas.mid</code>，全站唯一，无需 type 列</td></tr>
+      <tr><td><code>mkey</code></td><td>VARCHAR(32)</td><td><code>cover / seo_title / seo_desc / seo_keywords / noindex</code></td></tr>
+      <tr><td><code>mvalue</code></td><td>TEXT</td><td>值；noindex 存 <code>1</code></td></tr>
+    </table>
+    <p style="margin-top:8px">主键 <code>(mid, mkey)</code>；保存语义 = delete+insert 或 upsert。建表走 <code>core/schema.php</code> 现有三适配流程，<code>ECOD_SCHEMA_VERSION</code> 6 → 7。</p>
+  </div>
+
+  <h3>注入点（4 个核心文件补丁）</h3>
+  <div class="card pad">
+    <table>
+      <tr><th style="width:38%">文件</th><th>改动</th></tr>
+      <tr><td><code>admin/category.php</code></td><td>渲染侧：<code>Edit::alloc()-&gt;form()</code> 后、<code>render()</code> 前调用主题 <code>ecod_meta_extend_form($form)</code> 追加字段；仅编辑模式（<code>?mid=</code> 存在）渲染</td></tr>
+      <tr><td><code>admin/manage-tags.php</code></td><td>同上（第 65 行右栏表单）</td></tr>
+      <tr><td><code>var/Widget/Metas/Category/Edit.php</code></td><td><code>insertCategory / updateCategory</code> 写库后调用 <code>ecod_meta_save_from_request()</code>；<code>deleteCategory</code> 顺带清理 KV 行</td></tr>
+      <tr><td><code>var/Widget/Metas/Tag/Edit.php</code></td><td>同上三处</td></tr>
+    </table>
+    <p style="margin-top:8px">注意：admin action 请求<b>不加载主题 functions.php</b>（仅 <code>Widget\Archive</code> 加载），所以补丁里保存调用前需 <code>require_once</code> 主题 <code>core/meta-meta.php</code>（<code>is_file</code> 守卫），再 <code>function_exists</code> 判断调用。追加字段用 Form API 原生元素，POST 字段随原生表单直达 action，无需自建接口。</p>
+  </div>
+
+  <h3>前台消费</h3>
+  <div class="card pad">
+    <table>
+      <tr><th style="width:26%">字段</th><th>消费点</th></tr>
+      <tr><td><code>cover</code></td><td>分类页头 E1（<code>components/archive/head.php</code>）：自定义封面优先，其次保持现状（最新文章封面 → 柔光）；<code>ecod_seo_image()</code> 与 JSON-LD 同步取用</td></tr>
+      <tr><td><code>seo_title</code></td><td><code>ecod_seo_title()</code> 最优先，空则回退 <code>archiveTitle</code></td></tr>
+      <tr><td><code>seo_desc</code></td><td><code>ecod_seo_description()</code> 最优先，空则回退分类描述 / 现有链</td></tr>
+      <tr><td><code>seo_keywords</code></td><td>分类 / 标签归档页 keywords</td></tr>
+      <tr><td><code>noindex</code></td><td>归档页输出 <code>&lt;meta name="robots" content="noindex"&gt;</code>，治稀疏标签的重复内容</td></tr>
+    </table>
+    <p style="margin-top:8px">mid 解析沿用 <code>ecod_cat_meta()</code> 的 slug 反查模式（Archive 不暴露 mid）；查询单请求静态缓存，无新增每请求常驻开销。</p>
+  </div>
 </section>
 
 <div class="foot-note">Ecod Theme · Design Spec v2 · 11 个模板 / 24 个组件 / 5 种卡片模式 · 2026-10-28</div>  </div>

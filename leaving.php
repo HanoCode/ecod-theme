@@ -3,6 +3,10 @@
  * 留言板
  *
  * @package custom
+ * @author  Ecod
+ * @since   2026-10-29
+ * @version 2.0.0
+ * @link    https://ecod.cc
  */
 if (!defined('__TYPECHO_ROOT_DIR__')) {
     exit;
@@ -14,6 +18,7 @@ $ecodLeaveMeta = '<span>' . ecod_icon('comment', 13) . $ecodLeaveNum . ' 条留�
     . '<span>' . ecod_icon('calendar', 13) . '更新于 ' . date('Y-m-d', (int) $this->created) . '</span>';
 ?>
 <main class="ecod_main" id="ecod-main">
+    <?php /* 模块 · 内容区上方（模块管理台） */ ecod_widgets_render("top_content", $this); ?>
 
     <nav class="ecod_crumb" aria-label="面包屑">
         <a href="<?php $this->options->siteUrl(); ?>"><?php echo ecod_icon('home', 12); ?>首页</a>
@@ -53,6 +58,8 @@ $ecodLeaveMeta = '<span>' . ecod_icon('comment', 13) . $ecodLeaveNum . ' 条留�
         <?php $this->need('comments.php'); ?>
     <?php endif; ?>
 
+
+    <?php /* 模块 · 内容区下方（模块管理台） */ ecod_widgets_render("bottom_content", $this); ?>
 </main>
 
 <?php $this->need('public/aside.php'); ?>

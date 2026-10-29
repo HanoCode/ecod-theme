@@ -1,0 +1,14 @@
+{
+    "name": "ecod-theme-build",
+    "version": "2.3.0",
+    "private": true,
+    "type": "module",
+    "description": "Ecod Theme 前端构建：minify CSS/JS 并生成带内容哈希的 dist 产物与 PHP manifest",
+    "scripts": {
+        "build": "node build.mjs",
+        "watch": "node build.mjs --watch"
+    },
+    "devDependencies": {
+        "esbuild": "^0.25.0"
+    }
+}
