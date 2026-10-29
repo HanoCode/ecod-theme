@@ -56,6 +56,13 @@ $ecodShowFooterBar = ecod_block_on('credits') || ecod_block_on('links') || ecod_
 <?php endif; ?>
 <script src="<?php echo ecod_asset('assets/vendor/ecod-qr.js'); ?>" defer></script>
 <script src="<?php echo ecod_asset('assets/js/ecod.global.js'); ?>" defer></script>
+<?php if ($this->is('post') || $this->is('page')):
+/* 内容页增强包：目录 / 评论 / 朗读 / 收银台等模块只在 post 与独立页用到，
+   首页与列表页不输出这个标签，减少首屏 JS。
+   PJAX 从列表页进入内容页时由 global 的 ensurePostBundle() 动态注入。 */
+?>
+<script src="<?php echo ecod_asset('assets/js/ecod.post.js'); ?>" defer></script>
+<?php endif; ?>
 <?php $this->footer(); ?>
 <?php
 /* 后台「代码 → body 末尾代码」：统计、客服挂件等，原样输出 */

@@ -102,6 +102,8 @@ $ecodSvg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">'
 window.ECOD = {
     api: <?php echo json_encode(ecod_api_url(), JSON_UNESCAPED_SLASHES); ?>,
     postUrl: <?php echo json_encode($ecodPostUrl, JSON_UNESCAPED_SLASHES); ?>,
+    /* 内容页增强包（ecod.post.js）：页脚按模板条件输出，PJAX 换页时 JS 据此动态注入 */
+    post: <?php echo json_encode(ecod_asset('assets/js/ecod.post.js'), JSON_UNESCAPED_SLASHES); ?>,
     pjax: <?php echo ecod_option('EPjax', 'on') === 'on' ? 'true' : 'false'; ?>,
     lightbox: <?php echo $ecodLightbox ? 'true' : 'false'; ?>,
     prism: <?php echo $ecodCode ? 'true' : 'false'; ?>,

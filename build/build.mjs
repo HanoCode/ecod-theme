@@ -37,9 +37,10 @@ const BANNER =
  * 前台走 assets/…，后台编辑器走 admin/…，与 PHP 调用点一字不差。
  */
 const ENTRIES = [
-    // 前台
+    // 前台（ecod.post.js 是内容页增强包，见 JS 内文件头说明）
     'assets/css/ecod.css',
     'assets/js/ecod.global.js',
+    'assets/js/ecod.post.js',
     // 后台设置页 / 模块管理台 / 选图器
     'assets/admin/config.css',
     'assets/admin/config.js',

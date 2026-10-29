@@ -31,6 +31,12 @@ ecod_go_intercept();
 /* PJAX 局部渲染：主题自身的无刷新跳转只回传 shell 段，跳过整页 chrome
    （head 资源 / 导航 / 抽屉 / 页脚块）；高亮地址随 shell 的
    data-ecod-nav-active 输出，JS 换页后据此同步导航高亮 */
+/* 内容页标记：post / 独立页模板需要加载 ecod.post.js 内容增强包。
+   shell 上的 data-ecod-bundle 同时服务两条链路——页脚据此决定输出
+   <script> 标签，PJAX 换页后 JS 据此动态注入增强包。 */
+$ecodContentPage = $this->is('post') || $this->is('page');
+$ecodBundleAttr = $ecodContentPage ? ' data-ecod-bundle="post"' : '';
+
 if (ecod_is_pjax()) {
     $this->widget('\Widget\Contents\Page\Rows')->to($ecodPjaxPages);
     $ecodNavActive = ecod_nav_active($this, ecod_nav_items($ecodPjaxPages));
@@ -40,6 +46,7 @@ if (ecod_is_pjax()) {
         .
         '<div class="ecod_container" id="ecod-shell"'
         . ($ecodNavActive !== '' ? ' data-ecod-nav-active="' . htmlspecialchars($ecodNavActive, ENT_QUOTES, 'UTF-8') . '"' : '')
+        . $ecodBundleAttr
         . '><div class="ecod_layout" data-aside="'
         . htmlspecialchars(ecod_aside_pos($this), ENT_QUOTES, 'UTF-8') . '">';
     return;
@@ -381,7 +388,7 @@ endif;
     </div>
 </div>
 <?php endif; ?>
-<div class="ecod_container" id="ecod-shell"<?php echo $ecodNavActive !== '' ? ' data-ecod-nav-active="' . htmlspecialchars($ecodNavActive, ENT_QUOTES, 'UTF-8') . '"' : ''; ?>>
+<div class="ecod_container" id="ecod-shell"<?php echo $ecodNavActive !== '' ? ' data-ecod-nav-active="' . htmlspecialchars($ecodNavActive, ENT_QUOTES, 'UTF-8') . '"' : ''; ?><?php echo $ecodBundleAttr; ?>>
     <?php ecod_widgets_zone('top_fluid', $this); ?>
     <div class="ecod_layout" data-aside="<?php echo $ecodAside; ?>">
 
