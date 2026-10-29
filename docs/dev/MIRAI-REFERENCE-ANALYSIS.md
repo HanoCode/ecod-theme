@@ -19,7 +19,7 @@
 | 侧栏 | 6 块固定（user / 文章榜 ×2 / 标签 / 评论 / 时间线） | 3 块 |
 
 **结论：值得学的不是"某个组件"，而是让同一套组件在 hero 开/关、网格/单列、排序 tab 之间自由组合的能力。**
-本项目已有块系统（`core/blocks-def.php`），骨架比它更灵活，差距集中在**首屏整合度**与**小区块形态**。
+本项目已有块系统（`core/admin/blocks-def.php`），骨架比它更灵活，差距集中在**首屏整合度**与**小区块形态**。
 
 ---
 
@@ -57,7 +57,7 @@
 ### 2. 分类推荐卡
 - **Mirai** `gt-cms-card` 一个卡内包含：分类封面图 + 浏览数角标 → 分类名 + 「更多文章」+ 分类描述 + `N 篇文章` → 该分类最近 4 篇（标题 / 日期 / 阅读数）。数据一次查完，是完整的"栏目单元"。
 - **Ecod 现状**：`catnav`（图标 + 计数，无内容）与 `cat-post`（按分类输出文章）割裂。
-- **落点**：新增 `components/home/catgrid.php` + `ecod_block_define('catgrid', …)`（`core/blocks-def.php`）。数据：`\Widget\Metas\Category\Rows` 取分类（含 `count`、`description`）+ `EcodPostQuery category=X pageSize=4`。封面图走现有 `ecod_option` 自定义字段或分类缩略图池。
+- **落点**：新增 `components/home/catgrid.php` + `ecod_block_define('catgrid', …)`（`core/admin/blocks-def.php`）。数据：`\Widget\Metas\Category\Rows` 取分类（含 `count`、`description`）+ `EcodPostQuery category=X pageSize=4`。封面图走现有 `ecod_option` 自定义字段或分类缩略图池。
 
 ### 3. TOC 阅读进度 + 高亮 + 移动抽屉
 - **Mirai**：三处联动 —— 桌面 `gt-toc-aside`（独立右栏，sticky）底部 `gt-toc-progress-bar`；移动端 `gt-toc-mobile-fab`（悬浮按钮）+ `gt-toc-mobile-overlay` + `gt-toc-mobile-drawer`（含同一进度条）。
@@ -98,11 +98,11 @@
 
 | # | 组件 | Mirai 做法 | Ecod 落点 | 成本 |
 |---|---|---|---|---|
-| 6 | 登录弹窗 | `login-tab-header` 三 tab（登录/注册/找回）+ `login-oauth-buttons` + 左侧配图 + 短信验证码 | `public/header.php:287` 的 `ecod_authmodal` → 加 tab 容器；`core/oauth.php` 已支持 GitHub，只在弹窗里没入口 | 中 |
+| 6 | 登录弹窗 | `login-tab-header` 三 tab（登录/注册/找回）+ `login-oauth-buttons` + 左侧配图 + 短信验证码 | `public/header.php:287` 的 `ecod_authmodal` → 加 tab 容器；`core/user/oauth.php` 已支持 GitHub，只在弹窗里没入口 | 中 |
 | 7 | 相关文章网格 | `gt-related-grid` + `gt-related-card`（缩略图 + 标题，3×2） | `components/post/related.php` 加 `layout=grid` 参数 | 低 |
 | 8 | 分享海报 | `share-options` 6 项，含 `icon-poster` 生成整图 | `components/post/act.php` 的 `ecod_share__pop` 加一项；canvas 拼装可复用 `assets/vendor/ecod-qr.js` | 中 |
 | 9 | 页脚二维码 | `gt-footer-qrcodes` 双码（公众号 / 客服） | `components/footer/credits.php` 或新增块 | 低 |
-| 10 | 导航二级面板 | `nav-dropdown-menu` + `nav-dropdown-item`（图标 + 标题 + 描述，分组标题） | `core/nav.php` items 增加 `icon`/`desc` 字段；`public/header.php:150` 二级渲染改面板 | 中 |
+| 10 | 导航二级面板 | `nav-dropdown-menu` + `nav-dropdown-item`（图标 + 标题 + 描述，分组标题） | `core/site/nav.php` items 增加 `icon`/`desc` 字段；`public/header.php:150` 二级渲染改面板 | 中 |
 | 11 | 广告位 | `gt-ad-slot` + `gt-ad-images`（多图轮播）+ `gt-ad-badge`（"广告"角标）+ `gt-ad-layout-content/sidebar` | `components/home/ad.php`、`components/aside/ad.php` 扩参数：多图、标识、插入第 N 条 | 中 |
 | 12 | 图片交付 | 每图 `width/height` + `sizes` + 前 4 张 `fetchpriority="high"` + `<noscript>` 回退 + `onerror` 兜底 | `components/card.php` / `components/media.php` 统一补 | 低 |
 

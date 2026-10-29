@@ -21,7 +21,7 @@
 
 if (!defined('ECOD_THEME_DIR')) {
     /* 主题根目录。本文件位于 core/ 下；独立入口直接 require 时同样成立 */
-    define('ECOD_THEME_DIR', dirname(__DIR__));
+    define('ECOD_THEME_DIR', dirname(dirname(__DIR__)));
 }
 
 /**

@@ -105,8 +105,8 @@ if (!$ecodIsAdmin) {
     exit;
 }
 
-require_once __DIR__ . '/core/schema.php';
-require_once __DIR__ . '/core/blocks.php';
+require_once __DIR__ . '/core/lib/schema.php';
+require_once __DIR__ . '/core/admin/blocks.php';
 require_once __DIR__ . '/components/icons.php';
 
 /**
@@ -399,7 +399,7 @@ $ecodBase = $ecodSite . '/usr/themes/' . basename(__DIR__);
 $ecodAdminUrl = rtrim((string) \Widget\Options::alloc()->adminUrl, '/');
 /* 资源地址：dist 哈希产物优先（文件名即版本，不再拼 ?v=），
    未构建时回退源文件 + filemtime 版本号（与 ecod_asset 同一解析器） */
-require_once __DIR__ . '/core/asset.php';
+require_once __DIR__ . '/core/lib/asset.php';
 $ecodWgtAsset = static function (string $path) use ($ecodBase): string {
     $dist = ecod_dist_resolve($path);
     return $ecodBase . '/' . ($dist ?? $path);

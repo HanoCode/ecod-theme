@@ -11,7 +11,7 @@
  *   [reply]…[/reply]                           评论可见
  *   [download url="…" name="…" size="…"]说明[/download]
  *
- * 其余扩展短代码见 core/shortcode-extra.php（alert / callout / cloud / card /
+ * 其余扩展短代码见 core/content/shortcode-extra.php（alert / callout / cloud / card /
  * grid / bilibili / music / 表情等 20 余个）。
  *
  * 全部在 HTML 层面替换，因此必须避开 <pre> / <code> 里的内容。
@@ -78,7 +78,7 @@ function ecod_shortcode_apply(string $content, $archive = null): string
     $content = ecod_sc_hide($content, $archive);
     $content = ecod_sc_download($content);
 
-    /* 2.1 扩展短代码（core/shortcode-extra.php） */
+    /* 2.1 扩展短代码（core/content/shortcode-extra.php） */
     if (function_exists('ecod_sc_extra_block')) {
         /* posts 等列表短代码需要当前文章上下文（排除自身 / 取分类做相关阅读） */
         $GLOBALS['ecod_sc_archive'] = $archive;

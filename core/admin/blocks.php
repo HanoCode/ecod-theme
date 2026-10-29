@@ -793,7 +793,7 @@ function ecod_block_file(array $block): string
     $candidates[] = 'components/' . ($block['area'] ?? $def['area']) . '/' . $type . '.php';
 
     foreach (array_unique($candidates) as $rel) {
-        $path = dirname(__DIR__) . '/' . ltrim($rel, '/');
+        $path = dirname(dirname(__DIR__)) . '/' . ltrim($rel, '/');
         if (is_file($path)) {
             return $path;
         }

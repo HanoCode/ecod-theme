@@ -1,7 +1,7 @@
 # Ecod 主题 · 短代码体系审计报告
 
 > 日期：2026-10-29
-> 方法：源码走读（core/shortcode.php 559 行 + core/shortcode-extra.php 914 行）+ 线上演示页实测（ecod.cc）+ PHP 沙箱用例复现 + agent-browser 桌面/移动/暗色三端截图 + 与 Zibll 源码（/Users/bws/code/theme/zibll）对照。
+> 方法：源码走读（core/content/shortcode.php 559 行 + core/content/shortcode-extra.php 914 行）+ 线上演示页实测（ecod.cc）+ PHP 沙箱用例复现 + agent-browser 桌面/移动/暗色三端截图 + 与 Zibll 源码（/Users/bws/code/theme/zibll）对照。
 > 分级：P1 = 功能错误/明显缺口，P2 = 边界缺陷/设计不一致，P3 = 体验打磨。
 > **修复状态（2026-10-29 当日）：P1-1 ~ P1-4、P2-1 ~ P2-5 已全部修复**，另顺带修复 cloud 多行拆行 / 磁力行被丢弃 / `[reply ]` `[timeline ]` 带空格标签不命中，详见文末「修复记录」。
 > **能力扩展（同日第二轮）：P2-6 已落地 4 项** —— `posts` 文章列表、`hide type="password"` 密码可见、`video` 平台解析（YouTube/腾讯/优酷/Vimeo）、`mp3` 网易云外链；并修复 `[article]` 封面字段列名错误与 `[hide]`/`[reply]` 内容进摘要的泄漏。
@@ -33,12 +33,12 @@
 ### P1（功能错误）
 
 **P1-1 纯表情正文不渲染表情**
-- 位置：`core/shortcode.php:31` 早退守卫 `strpos($content, '[') === false`。
+- 位置：`core/content/shortcode.php:31` 早退守卫 `strpos($content, '[') === false`。
 - 复现：`ecod_shortcode_apply('<p>a :smile: b</p>')` 原样返回（已用 PHP 沙箱确认）；正文只要不含 `[`，`:smile:` 永远不解析。演示页因含其他短代码而“看起来正常”。
 - 修复：守卫改为 `strpos($content,'[') === false && strpos($content,':') === false`（或把 emoji 独立于守卫）。
 
 **P1-2 进度条数字被 rtrim 吃掉**
-- 位置：`core/shortcode-extra.php:308` `rtrim(rtrim((string)$percent,'0'),'.')`。
+- 位置：`core/content/shortcode-extra.php:308` `rtrim(rtrim((string)$percent,'0'),'.')`。
 - 实测：`[progress 60]` → 显示 **6%**；`percentage="100"` → **1%**；`[progress 0]` → 光秃 **%**（沙箱复现）。
 - 附带：裸值与属性混用 `[progress 60 label="整体进度"]` → **0%**（`ecod_sc_attrs` 只在整串无 `=` 时才认裸值，shortcode.php:136-141）。
 - 修复：数字格式化改 `(int)` 输出；属性解析支持「首段裸值 + 具名属性」并存。
@@ -129,18 +129,18 @@
 
 | 项 | 修复内容 | 位置 |
 | --- | --- | --- |
-| P1-1 | 入口守卫支持无方括号的纯表情正文（含 `<pre>` 保护），表情替换独立分支 | `core/shortcode.php` `ecod_shortcode_apply()` |
-| P1-2 | 进度条数字改 `number_format` 方案（60/100/0/12.5 全对）；属性解析支持「首段裸值 + 具名属性」并存 | `core/shortcode-extra.php` `ecod_sc_progress()`；`core/shortcode.php` `ecod_sc_attrs()` |
+| P1-1 | 入口守卫支持无方括号的纯表情正文（含 `<pre>` 保护），表情替换独立分支 | `core/content/shortcode.php` `ecod_shortcode_apply()` |
+| P1-2 | 进度条数字改 `number_format` 方案（60/100/0/12.5 全对）；属性解析支持「首段裸值 + 具名属性」并存 | `core/content/shortcode-extra.php` `ecod_sc_progress()`；`core/content/shortcode.php` `ecod_sc_attrs()` |
 | P1-3 | 编辑器新增「登录 / 等级可见」按钮 + 锁定块预览（与 PHP 同口径的 type/level/tip 解析）；`scAttrs` 同步支持裸值+具名混用 | `admin/editor.js` |
 | P1-4 | 新增 `docs/shortcodes.md` 全量手册（32 标签 + 31 表情）；README §五改为速查索引 + 链接 | `docs/shortcodes.md`、`README.md` |
-| P2-1 | 新增 `ecod_sc_url()` 白名单校验（http/https/mailto/tel/ftp/magnet/thunder + 相对路径），abtn/icard/anote/video/mp3/cloud/music 全部接入，非法协议降级 | `core/shortcode.php`、`core/shortcode-extra.php` |
+| P2-1 | 新增 `ecod_sc_url()` 白名单校验（http/https/mailto/tel/ftp/magnet/thunder + 相对路径），abtn/icard/anote/video/mp3/cloud/music 全部接入，非法协议降级 | `core/content/shortcode.php`、`core/content/shortcode-extra.php` |
 | P2-2 | 属性值统一先 `html_entity_decode` 再输出转义，`&amp;` 双重转义消除 | `ecod_sc_attrs()` + 各输出点 |
-| P2-3 | 新增 `ecod_sc_clean_inner()` 与组件间 `</p><p>` 清理，grid/cards 逐行书写不再残留段落标记 | `core/shortcode-extra.php` |
+| P2-3 | 新增 `ecod_sc_clean_inner()` 与组件间 `</p><p>` 清理，grid/cards 逐行书写不再残留段落标记 | `core/content/shortcode-extra.php` |
 | P2-4 | `.ecod_mtitle__bar` 渐变尾改 `color-mix(in srgb, var(--ecod-primary) 45%, #fff)` | `assets/css/ecod.css` |
-| P2-5 | `--ecod-cover:url("…")` 加引号（article/mp3/music 三处，组件模板本就用单引号） | `core/shortcode-extra.php` |
+| P2-5 | `--ecod-cover:url("…")` 加引号（article/mp3/music 三处，组件模板本就用单引号） | `core/content/shortcode-extra.php` |
 | 附带 | cloud/music/timeline 多行正文兼容 `</p><p>` 拆行（`ecod_sc_lines()`）；cloud 识别磁力/迅雷行；`[reply ]`、`[timeline ]` 带空格可命中 | 同上 |
-| P2-6a | 新增 `[posts]` 文章列表：分类/标签/同分类相关（related）、date/hot/comment/random 排序、list/grid/title 三种模式、limit/column/desc/thumb/title/exclude/self 属性；默认排除当前文章；随机排序 PHP 侧洗牌；缩略图一次批量查询 | `core/shortcode-extra.php` `ecod_sc_posts()`；CSS §23.21 |
-| P2-6b | `hide` 新增 `type="password"`：同页 POST + `hash_equals` 校验，密码错误时正文不进 HTML（与 Zibll 同思路，强于前端校验）；漏写 `pw` 时自动降级 login；摘要/搜索同步剥除 | `core/shortcode.php` `ecod_sc_hide()`；CSS §23.22 |
+| P2-6a | 新增 `[posts]` 文章列表：分类/标签/同分类相关（related）、date/hot/comment/random 排序、list/grid/title 三种模式、limit/column/desc/thumb/title/exclude/self 属性；默认排除当前文章；随机排序 PHP 侧洗牌；缩略图一次批量查询 | `core/content/shortcode-extra.php` `ecod_sc_posts()`；CSS §23.21 |
+| P2-6b | `hide` 新增 `type="password"`：同页 POST + `hash_equals` 校验，密码错误时正文不进 HTML（与 Zibll 同思路，强于前端校验）；漏写 `pw` 时自动降级 login；摘要/搜索同步剥除 | `core/content/shortcode.php` `ecod_sc_hide()`；CSS §23.22 |
 | P2-6c | `video` 平台解析：YouTube（watch/youtu.be/shorts/live）、Vimeo、腾讯视频、优酷 → iframe 播放器，直链仍走原生 `<video>` | `ecod_sc_video_embed()` |
 | P2-6d | `mp3` 网易云外链：song/album/playlist 自动转官方 outchain 播放器（歌单 430px 高） | `ecod_sc_music_embed()` |
 | 连带 | `[article]` 自定义字段列名 `value` → `str_value`（Typecho 1.3 schema，此前永远读不到）；`ecod_shortcode_strip()` 对 hide/reply 整段剥除（摘要与搜索不再泄漏隐藏内容）；`ecod_sc_archive` 上下文注入；编辑器新增 posts 按钮+预览、hide 密码预览；`.ecod_titem` 正文隔离；移动端网格降单列 | 多处 |
@@ -151,11 +151,11 @@
 
 | 项 | 修复内容 | 位置 |
 | --- | --- | --- |
-| P3-相册 | 新增 `[gallery]` 相册图集：逐行「地址 \| 说明」或正文已有 `<img>`（Markdown 语法兼容），`column`(1–6)/`gap`/`ratio`(1/1、4/3、3/4、16/9、auto)/`mode=grid\|masonry`/`caption=hover\|always\|off`/`title`/`zoom`；每张图接入灯箱并按 `data-lb-group` 分组（同相册内翻页，与壁纸等互不串组）；地址走 `ecod_sc_image_src()` 白名单（防止把说明文字当图片）；空相册输出空串；摘要/搜索整段剥除 | `core/shortcode-extra.php` `ecod_sc_gallery()`；JS 灯箱分组；CSS §23.23 |
+| P3-相册 | 新增 `[gallery]` 相册图集：逐行「地址 \| 说明」或正文已有 `<img>`（Markdown 语法兼容），`column`(1–6)/`gap`/`ratio`(1/1、4/3、3/4、16/9、auto)/`mode=grid\|masonry`/`caption=hover\|always\|off`/`title`/`zoom`；每张图接入灯箱并按 `data-lb-group` 分组（同相册内翻页，与壁纸等互不串组）；地址走 `ecod_sc_image_src()` 白名单（防止把说明文字当图片）；空相册输出空串；摘要/搜索整段剥除 | `core/content/shortcode-extra.php` `ecod_sc_gallery()`；JS 灯箱分组；CSS §23.23 |
 | P3-tooltip | `[tooltip text="…" place="top\|bottom"]`：纯 CSS 悬停/聚焦气泡，贴视口边缘时 JS 计算 `--shift` 横向回弹（箭头跟随） | `ecod_sc_tooltip()`；CSS §23.24；`Ecod.initInline()` |
 | P3-badge | `[badge 颜色]` / `[badge text= color= style=soft\|solid\|outline]`：行内胶囊，颜色复用 `ecod_color_value()`（含主题色跟随） | `ecod_sc_badge()`；CSS §23.24 |
 | P3-spoiler | `[spoiler tip="…"]`：模糊遮罩，点击/回车/空格展开再收起（`aria-expanded` 同步），悬停半透预览 | `ecod_sc_spoiler()`；CSS §23.24；`Ecod.initInline()` |
 | P3-表情入口 | 后台编辑器工具栏新增表情按钮 → 弹出 8 列表情面板（31 个），点击把 `:code:` 插入光标处，面板可连续插入，Esc/滚轮/点外部关闭；表情表抽到 `core/data/emoji.php` 单一数据源（前台解析与后台选择器共用） | `admin/editor.js`、`admin/editor.php`、`admin/editor.css`、`core/data/emoji.php` |
-| 连带 | 新增 `ecod_sc_inline()` 行内替换器（不吃前后空格与 `<p>`，区别于块级 `ecod_sc_block`）；灯箱分组选择器；`prefers-reduced-motion` 降级 | `core/shortcode-extra.php`、`assets/js/ecod.global.js` |
+| 连带 | 新增 `ecod_sc_inline()` 行内替换器（不吃前后空格与 `<p>`，区别于块级 `ecod_sc_block`）；灯箱分组选择器；`prefers-reduced-motion` 降级 | `core/content/shortcode-extra.php`、`assets/js/ecod.global.js` |
 
 第三轮验证：PHP 沙箱 12 例（三种相册写法/空相册/非法地址、tooltip、badge 三态、spoiler、emoji 回归、摘要剥除）+ 临时文章线上实测（`/archives/68`，已删）：桌面 1280px 网格三列/两列 4:3 常显说明/瀑布流三列渲染正确，390px 移动端相册降两列无横向溢出，暗色对比度正常；agent-browser 实测灯箱按相册分组（1/6 与 1/2 互不串组）、剧透点击展开收起、悬停气泡显示；后台编辑器实测表情面板开合/插入（31 项，图片 31/31 命中）、四个新按钮插入、相册按钮拉起媒体库多选并生成代码；测试文章、测试图片、临时管理员均已清理。

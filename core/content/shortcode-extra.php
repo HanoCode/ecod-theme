@@ -2,7 +2,7 @@
 /**
  * Ecod Theme · 扩展短代码
  *
- * 在 core/shortcode.php 的基础上补齐 Joe / Puock 主题的短代码能力，
+ * 在 core/content/shortcode.php 的基础上补齐 Joe / Puock 主题的短代码能力，
  * 统一使用方括号语法（不兼容 Joe 的 {} 语法）。
  *
  * 内容类
@@ -1405,7 +1405,7 @@ function ecod_emoji_map(): array
 {
     static $map = null;
     if ($map === null) {
-        $file = __DIR__ . '/data/emoji.php';
+        $file = __DIR__ . '/../data/emoji.php';
         $data = is_file($file) ? require $file : [];
         $map = is_array($data) ? $data : [];
     }

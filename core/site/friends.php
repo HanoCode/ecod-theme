@@ -20,7 +20,7 @@ if (!defined('__TYPECHO_ROOT_DIR__')) {
 }
 
 /* 令牌与验证码来自账户层（friends.php 模板要用 ecod_account_token） */
-require_once __DIR__ . '/account.php';
+require_once __DIR__ . '/../user/account.php';
 
 /**
  * 读主题选项（模板侧有 functions.php 的 ecod_option，api.php 侧没有）

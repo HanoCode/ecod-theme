@@ -21,7 +21,7 @@
 if (!defined('__TYPECHO_ROOT_DIR__')) {
     exit;
 }
-require_once __DIR__ . '/core/account.php';
+require_once __DIR__ . '/core/user/account.php';
 
 $this->need('public/header.php');
 

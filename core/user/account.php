@@ -99,7 +99,7 @@ function ecod_account_avatars_ready(): bool
         return $ok;
     }
     if (!function_exists('ecod_schema_ensure_avatars')) {
-        require_once __DIR__ . '/schema.php';
+        require_once __DIR__ . '/../lib/schema.php';
     }
     try {
         $ok = ecod_schema_ensure_avatars(\Typecho\Db::get());
@@ -360,7 +360,7 @@ function ecod_throttle_persistent_ready(): bool
         return $ok;
     }
     if (!function_exists('ecod_schema_ensure_throttle')) {
-        require_once __DIR__ . '/schema.php';
+        require_once __DIR__ . '/../lib/schema.php';
     }
     try {
         $ok = ecod_schema_ensure_throttle(\Typecho\Db::get());
@@ -423,7 +423,7 @@ function ecod_account_mailcode_ready(): bool
         return $ok;
     }
     if (!function_exists('ecod_schema_ensure_mailcode')) {
-        require_once __DIR__ . '/schema.php';
+        require_once __DIR__ . '/../lib/schema.php';
     }
     try {
         $ok = ecod_schema_ensure_mailcode(\Typecho\Db::get());
@@ -518,7 +518,7 @@ function ecod_account_mailcode_verify(string $mail, string $purpose, string $cod
 function ecod_account_mailcode_send(string $mail, string $code, string $purpose): bool
 {
     if (!function_exists('ecod_mail_smtp')) {
-        require_once __DIR__ . '/mail.php';
+        require_once __DIR__ . '/../site/mail.php';
     }
 
     $site = (string) ecod_account_opt('siteUrl', '');

@@ -2,7 +2,7 @@
 /**
  * Ecod Theme · 表情代码表（唯一数据源）
  *
- * 前台 core/shortcode-extra.php 的 ecod_sc_emoji() 与后台 admin/editor.php 的
+ * 前台 core/content/shortcode-extra.php 的 ecod_sc_emoji() 与后台 admin/editor.php 的
  * 表情选择器共用这份表，新增表情只改这里一处。
  *
  * 结构：代码 => [文件名（assets/img/smiley/ 下）, 中文名]

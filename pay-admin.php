@@ -29,11 +29,11 @@ if (!is_file($ecodRoot . '/config.inc.php')) {
     exit;
 }
 require_once $ecodRoot . '/config.inc.php';
-require_once __DIR__ . '/core/schema.php';
-require_once __DIR__ . '/core/seo.php';
-require_once __DIR__ . '/core/account.php';
-require_once __DIR__ . '/core/pay.php';
-require_once __DIR__ . '/core/pay-channel.php';
+require_once __DIR__ . '/core/lib/schema.php';
+require_once __DIR__ . '/core/site/seo.php';
+require_once __DIR__ . '/core/user/account.php';
+require_once __DIR__ . '/core/pay/pay.php';
+require_once __DIR__ . '/core/pay/pay-channel.php';
 
 /* cookie 前缀：脚本在 /usr/themes/<主题>/ 下，必须按前台根目录重算 */
 try {

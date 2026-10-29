@@ -14,9 +14,9 @@
 | 整篇付费 | 文章自定义字段 `pay_mode` + 模板层硬门禁 | `themeFields`、`post.php` |
 | 片段付费 / 会员 | `[hide type="pay"]`、`[hide type="vip" level="N"]` | `ecod_sc_block()` |
 | 定价 | 文章价格 + 会员价覆盖，**金额一律整数分** | 自定义字段 |
-| 交易 | `ecod_orders`（钱）+ `ecod_entitlements`（权）分离 | `core/schema.php` 自愈建表 |
+| 交易 | `ecod_orders`（钱）+ `ecod_entitlements`（权）分离 | `core/lib/schema.php` 自愈建表 |
 | 支付 | `manual` / `card` / `epay` 三个适配器 | 无 jQuery，纯 PHP + 原生 JS |
-| 收银台 | 独立页面模板 `page-cashier.php`，支持刷新、回跳、轮询 | 「特色页」一键创建（`core/pages.php`） |
+| 收银台 | 独立页面模板 `page-cashier.php`，支持刷新、回跳、轮询 | 「特色页」一键创建（`core/site/pages.php`） |
 | 订单中心 | 个人中心「订单」由 localStorage 改为服务端列表 | `page-user.php`、`api.php` |
 | 防泄漏 | 模板层 + 摘要层 + Feed 层，三处独立兜底 | `ecod_excerpt()`、`contentEx` |
 
@@ -67,7 +67,7 @@
 
 - 主题自包含：不新增必装插件；`EcodAuth` 这类可选插件不承载付费逻辑。
 - 前端零框架：原生 JS 模块（`Ecod.initX`），CSS 变量 + `color-mix()`。
-- 所有新表走 `core/schema.php` 的「版本号 + 幂等 DDL」自愈流程。
+- 所有新表走 `core/lib/schema.php` 的「版本号 + 幂等 DDL」自愈流程。
 - 后台字段走 `ecod_admin_field()`，归入左侧分组；不引入新的样式体系。
 
 ### 2.2 事实 A：单篇正文在 `themeInit` 之前就被缓存
@@ -155,7 +155,7 @@ Widget\Archive->singleHandle     ← Archive.php:1705，为 meta description 取
 
 ### 4.1 新表（D-PAY-02）
 
-`core/schema.php` 增加 `ecod_schema_ensure_pay()`，版本号 `ECOD_SCHEMA_VERSION` 由 5 → 6；沿用三适配（MySQL / PostgreSQL / SQLite）。
+`core/lib/schema.php` 增加 `ecod_schema_ensure_pay()`，版本号 `ECOD_SCHEMA_VERSION` 由 5 → 6；沿用三适配（MySQL / PostgreSQL / SQLite）。
 
 ```sql
 -- 交易流水
@@ -294,7 +294,7 @@ if ($state['allow']) {
 - 密码文章（`$this->hidden`）优先走密码流程，解锁后再判付费，两个门槛不叠加展示。
 - 付费卡位置由 `EPayBox` 决定：`top` 在正文前、`bottom` 在正文后、`both` 两处（文末卡不带封面）。
 
-### 5.3 片段级门槛（`core/shortcode.php`）
+### 5.3 片段级门槛（`core/content/shortcode.php`）
 
 ```text
 [hide type="pay"]…[/hide]              未购买 → 行内解锁条
@@ -496,11 +496,11 @@ ecod_pay_grant($order);   // 同一事务内写权益
 
 | 文件 | 改动 |
 | --- | --- |
-| `core/pay.php` | 新建：`ecod_pay_access()`、`ecod_pay_price()`、`ecod_pay_vip()`、`ecod_pay_grant()`、`ecod_pay_box()`、`ecod_pay_teaser_html()` |
-| `core/schema.php` | 两张表 + 版本号 6 |
-| `functions.php` | `require core/pay.php`；`themeFields` 增 6 字段；`ecod_badges()` 增角标；`ecod_excerpt()` 增付费分支 |
-| `core/config.php` | 新增 `pay` 分组与字段 |
-| `core/shortcode.php` | `hide` 支持 `pay` / `vip`；`[vip1]` `[vip2]` 糖 |
+| `core/pay/pay.php` | 新建：`ecod_pay_access()`、`ecod_pay_price()`、`ecod_pay_vip()`、`ecod_pay_grant()`、`ecod_pay_box()`、`ecod_pay_teaser_html()` |
+| `core/lib/schema.php` | 两张表 + 版本号 6 |
+| `functions.php` | `require core/pay/pay.php`；`themeFields` 增 6 字段；`ecod_badges()` 增角标；`ecod_excerpt()` 增付费分支 |
+| `core/admin/config.php` | 新增 `pay` 分组与字段 |
+| `core/content/shortcode.php` | `hide` 支持 `pay` / `vip`；`[vip1]` `[vip2]` 糖 |
 | `post.php` | 门禁分支 + 付费卡插入 |
 | `page-user.php` + `assets/js/ecod.global.js` | 订单 tab 改服务端列表（先只读） |
 | `assets/css/ecod.css` | §23.25 付费卡 / 角标 / 收银台 |
@@ -557,7 +557,7 @@ ecod_pay_grant($order);   // 同一事务内写权益
 
 实施拆分（按此顺序提交）：
 
-1. **P0** 地基：两张表 + `core/pay.php` + 文章字段 + 付费卡 + `[hide type=pay|vip]` + `[vip1] [vip2]` + 角标 + 配置分组。
+1. **P0** 地基：两张表 + `core/pay/pay.php` + 文章字段 + 付费卡 + `[hide type=pay|vip]` + `[vip1] [vip2]` + 角标 + 配置分组。
 2. **P1a** 手动闭环：`manual` 下单 → 后台「确认收款」→ 结算发权益 → 解锁；后台管理台 `pay-admin.php`。
 3. **P1b** 卡密：批次生成（只存 SHA-256）→ 收银台核销 → 事务内发权益。
 4. **P1c** 易支付：下单跳转 + 验签回调 + 幂等结算。

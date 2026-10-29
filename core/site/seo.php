@@ -689,7 +689,7 @@ function ecod_sitemap_maybe_output(): void
 
     if ($path === '/robots.txt') {
         /* 物理文件优先，避免盖掉站长自己的规则 */
-        $physical = __DIR__ . '/../robots.txt';
+        $physical = __DIR__ . '/../../robots.txt';
         if (is_file($physical)) {
             return;
         }

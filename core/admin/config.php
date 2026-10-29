@@ -48,7 +48,7 @@ $ecodBlockPanes = ['home', 'aside', 'post', 'footer'];
 /* 模块管理台入口（独立页面，不在后台菜单里）
    注意：basename(__DIR__ . '/..') 会得到 ".."，必须用 dirname() 取主题目录名 */
 $ecodWidgetUrl = rtrim((string) \Widget\Options::alloc()->siteUrl, '/')
-    . '/usr/themes/' . basename(dirname(__DIR__)) . '/widget.php';
+    . '/usr/themes/' . basename(dirname(dirname(__DIR__))) . '/widget.php';
 
 /* 分组级条件：整组因外部开关失效时，顶部出现提示条
    结构：[条件表达式, 提示文案, 跳转目标「分组:字段」] */
@@ -642,7 +642,7 @@ ecod_admin_field($form, 'select', 'EEmojiStyle', 'unicode', '评论表情', 'Emo
 ecod_admin_field($form, 'text', 'EEmojiCdn', '', '表情包 CDN 前缀', '填了就走外部 CDN，例如 https://cdn.example.com/smiley/；留空用主题本地 assets/img/smiley/', [], 'comments', ['data-ecod-show-when' => 'EEmojiStyle:smiley']);
 
 /* ============================================================
- * AI 助手（文章页异步生成摘要，结果按正文 hash 缓存；见 core/ai.php）
+ * AI 助手（文章页异步生成摘要，结果按正文 hash 缓存；见 core/content/ai.php）
  * ========================================================== */
 ecod_admin_field($form, 'select', 'EAI', 'off', 'AI 智能摘要', '总开关。开启后文章页顶部会显示 AI 生成的摘要卡片，摘要按正文内容缓存，正文更新后自动重新生成', [
     'on'  => '开启',
@@ -697,7 +697,7 @@ ecod_admin_field($form, 'select', 'EBackdrop', 'none', '站点背景', '纯 CSS 
 ], 'appearance');
 
 /* ============================================================
- * 付费与会员（门槛 / 权益 / 交易三层，见 core/pay.php）
+ * 付费与会员（门槛 / 权益 / 交易三层，见 core/pay/pay.php）
  * ========================================================== */
 ecod_admin_field($form, 'select', 'EPay', 'off', '付费阅读总开关', '关闭时整条链路零查询、零输出；开启后按文章自定义字段里的「付费模式」生效', [
     'off' => '关闭（默认）',
@@ -757,11 +757,11 @@ ecod_admin_field($form, 'text', 'EVip2Forever', '', '超级会员 · 永久价�
 
 /* 隐藏：模块状态 */
 /* （旧 EBlocks 隐藏字段已移除：模块布局存于独立行 EWidgets，由模块管理台读写） */
-/* 隐藏：多套导航 JSON（由「导航」分组的构建器写入，core/nav.php 读取） */
+/* 隐藏：多套导航 JSON（由「导航」分组的构建器写入，core/site/nav.php 读取） */
 ecod_admin_field($form, 'hidden', 'ENavSets', '', '', '', [], 'nav');
 
 /* ---- 专题：构建器写入的 JSON + 展示项 ---- */
-/* 隐藏：专题 JSON（由「专题」分组的构建器写入，core/topics.php 读取） */
+/* 隐藏：专题 JSON（由「专题」分组的构建器写入，core/site/topics.php 读取） */
 ecod_admin_field($form, 'hidden', 'ETopics', '', '', '', [], 'topics');
 ecod_admin_field($form, 'select', 'ETopicWallStyle', 'cover', '专题墙卡片形态', '封面卡信息量大；文字卡更紧凑，适合专题较多的站', [
     'cover' => '封面卡（上图下文）',

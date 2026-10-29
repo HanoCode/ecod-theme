@@ -28,18 +28,18 @@ if (!is_file($ecodRoot . '/config.inc.php')) {
     exit;
 }
 require_once $ecodRoot . '/config.inc.php';
-require_once __DIR__ . '/core/schema.php';
-require_once __DIR__ . '/core/seo.php';
-require_once __DIR__ . '/core/snapshot.php';
-require_once __DIR__ . '/core/pages.php';
-require_once __DIR__ . '/core/account.php';
-require_once __DIR__ . '/core/oauth.php';
-require_once __DIR__ . '/core/thumbs.php';
-require_once __DIR__ . '/core/ai.php';
-require_once __DIR__ . '/core/mail.php';
-require_once __DIR__ . '/core/friends.php';
-require_once __DIR__ . '/core/pay.php';
-require_once __DIR__ . '/core/pay-channel.php';
+require_once __DIR__ . '/core/lib/schema.php';
+require_once __DIR__ . '/core/site/seo.php';
+require_once __DIR__ . '/core/admin/snapshot.php';
+require_once __DIR__ . '/core/site/pages.php';
+require_once __DIR__ . '/core/user/account.php';
+require_once __DIR__ . '/core/user/oauth.php';
+require_once __DIR__ . '/core/content/thumbs.php';
+require_once __DIR__ . '/core/content/ai.php';
+require_once __DIR__ . '/core/site/mail.php';
+require_once __DIR__ . '/core/site/friends.php';
+require_once __DIR__ . '/core/pay/pay.php';
+require_once __DIR__ . '/core/pay/pay-channel.php';
 
 /* 独立入口不经过 Widget\Init 引导，补上 PasswordHash 的类别名
  * （个人中心改密码 / 注册 / 找回密码都依赖它） */

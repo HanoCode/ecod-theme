@@ -30,7 +30,7 @@ if (!is_file($ecodRoot . '/config.inc.php')) {
     exit;
 }
 require_once $ecodRoot . '/config.inc.php';
-require_once __DIR__ . '/core/seo.php';
+require_once __DIR__ . '/core/site/seo.php';
 
 header('Content-Type: application/json; charset=UTF-8');
 header('Cache-Control: no-store, no-cache, must-revalidate');

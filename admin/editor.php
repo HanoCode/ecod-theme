@@ -25,9 +25,9 @@ $ecodIsMarkdown = !empty($options->markdown)
 $ecodCid  = !empty($ecodContent->cid) ? (int) $ecodContent->cid : 0;
 $ecodBase = (string) $options->themeUrl;
 
-/* 资源地址：dist 哈希产物优先（core/asset.php 查构建 manifest，文件名即版本）；
+/* 资源地址：dist 哈希产物优先（core/lib/asset.php 查构建 manifest，文件名即版本）；
    未构建时回退源文件 + filemtime 版本号，与前台 ecod_asset 同一解析器 */
-require_once dirname(__DIR__) . '/core/asset.php';
+require_once dirname(__DIR__) . '/core/lib/asset.php';
 
 $ecodAssetUrl = static function (string $path) use ($ecodBase): string {
     $dist = ecod_dist_resolve(ltrim($path, '/'));
@@ -57,7 +57,7 @@ foreach ($ecodEmojiMap as $ecodCode => $ecodItem) {
 unset($ecodEmojiFile, $ecodEmojiMap, $ecodItem, $ecodCode, $ecodCode);
 
 /* 专题列表（写作页字段面板的「专题」选择区用）。
-   admin 上下文不加载主题 functions.php，给 core/topics.php 依赖的
+   admin 上下文不加载主题 functions.php，给 core/site/topics.php 依赖的
    ecod_option 一个最小实现（function_exists 守卫，避免与主题冲突）。 */
 if (!function_exists('ecod_option')) {
     function ecod_option(string $key, $default = '')
@@ -72,7 +72,7 @@ if (!function_exists('ecod_option')) {
 }
 
 $ecodTopicList = [];
-$ecodTopicsFile = dirname(__DIR__) . '/core/topics.php';
+$ecodTopicsFile = dirname(__DIR__) . '/core/site/topics.php';
 if ($ecodType === 'post' && is_file($ecodTopicsFile)) {
     require_once $ecodTopicsFile;
     foreach (ecod_topics(false) as $ecodTopicRow) {

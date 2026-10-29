@@ -23,7 +23,7 @@
  */
 
 if (!defined('__TYPECHO_ROOT_DIR__')) {
-    define('__TYPECHO_ROOT_DIR__', dirname(dirname(dirname(dirname(__DIR__)))));
+    define('__TYPECHO_ROOT_DIR__', dirname(dirname(dirname(dirname(dirname(__DIR__))))));
 }
 
 /**

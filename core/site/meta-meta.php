@@ -8,7 +8,7 @@
  *
  * 本文件被核心补丁（Widget/Metas 下两个 Edit.php）在 admin action 上下文里
  * require，此上下文不加载主题 functions.php，因此这里只依赖
- * core/schema.php 与 Typecho 框架自身，任何失败一律静默降级。
+ * core/lib/schema.php 与 Typecho 框架自身，任何失败一律静默降级。
  *
  * 规格：docs/dev/design-proposal.html §32
  *

@@ -25,8 +25,8 @@
 
 | # | 位置 | 问题 |
 |---|---|---|
-| P0-1 | `core/config.php:367` vs `functions.php:212` | 头像源描述写"默认走 gravatar.com"，代码实际默认 `cravatar.cn`。设置页文案与行为不一致，会误导站长。 |
-| P0-2 | `core/config.php:28` | 「AI 助手」整组为占位（功能未接入）。空壳分组违反"不欺骗用户"原则：用户填好 Key 保存后前台毫无反应。应整组隐藏或加"开发中"禁用态遮罩。 |
+| P0-1 | `core/admin/config.php:367` vs `functions.php:212` | 头像源描述写"默认走 gravatar.com"，代码实际默认 `cravatar.cn`。设置页文案与行为不一致，会误导站长。 |
+| P0-2 | `core/admin/config.php:28` | 「AI 助手」整组为占位（功能未接入）。空壳分组违反"不欺骗用户"原则：用户填好 Key 保存后前台毫无反应。应整组隐藏或加"开发中"禁用态遮罩。 |
 | P0-3 | `assets/admin/config.js` 全量渲染 | 12 个分组字段全靠 JS 从原表单搬运生成，JS 失败 = 设置页空白，且搬运过程中 label/for 关联与原生错误提示可能丢失。需要 `<noscript>` 回退或服务端直出。 |
 | P0-4 | `index.php:20` | Banner 用内联 `style="background-image:url(...)"`，URL 含引号/括号时可 XSS 或破版，且与令牌体系割裂。 |
 | P0-5 | 暗色模式 | 前端暗色靠 `html[data-theme="dark"]` 逐条覆盖（约 150+ 处散落全文件）；后台 `config.css` **完全没有暗色适配**，Typecho 后台切暗色时设置面板仍是纯白刺眼。 |
@@ -186,5 +186,5 @@ image       → 媒体库选图（已有，保留）
 | P2 后台暗色 | ✅ config.css 已有全套 `prefers-color-scheme` 适配；本次补齐保存条与选图器（media.css 令牌化 + 暗色） |
 | P2 无限滚动/加载更多 | ✅ 首页与归档列表均已启用（`data-ecod-infinite` + `.ecod_loadmore` 按钮，无 JS 退回普通分页）；本次补齐首页缺失的容器标记，实测 5→22 张全部追加、末页「已经到底了」 |
 | P2 PWA manifest | ✅ manifest.php 独立入口（站点名/主色/Favicon 自动带入），include.php 已引用 |
-| P2 AI 摘要 / 高亮跟随明暗 | ✅ AI 摘要已接入（core/ai.php）；高亮主题含 auto |
+| P2 AI 摘要 / 高亮跟随明暗 | ✅ AI 摘要已接入（core/content/ai.php）；高亮主题含 auto |
 | P2 设置页迷你预览区 | ✅ 三处预览已实现：站点分组主色迷你卡片、版式分组卡片骨架、外观分组背景渐变；本次修复三处联动监听取错容器（字段已被 layout() 移出 form）导致预览不跟随的 bug，实测全部联动 |

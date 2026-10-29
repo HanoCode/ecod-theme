@@ -516,6 +516,7 @@ details .in{padding-bottom:12px}
       <div style="font-size:12.5px;color:var(--text-2)"><b style="color:var(--text)">圆角</b><br>卡片 12 · 按钮输入 8 · 标签 999<br>图片 8px</div>
       <div style="font-size:12.5px;color:var(--text-2)"><b style="color:var(--text)">阴影</b><br>静态 1 层轻投影<br>hover 上浮 2px + 阴影加深</div>
     </div>
+    <p style="margin-top:16px;font-size:12.5px;color:var(--text-2)"><b style="color:var(--text)">暗色校验记录（2026-10-30 全组件扫描）：</b>规则跟随组件就近放置 <code>html[data-theme="dark"]</code> 覆盖。本次补齐 9 处漏网：热度角标（<code>badge--hot</code>）、热榜 1/2 名序号（#fdeaea / #fff3e0 浅底）、评论等级徽章 lv3–lv6、待审评论标记、收藏删除 hover、热议卡缩略占位、图集卡占位渐变。写法统一为「主题色 12–20% 透明度底 + 提亮 400 号文字」，与既有 dark 规则同构。封面占位渐变（<code>card__media</code> 等）不随主题反相——与封面图同理由。白底 pay/member 角标只出现在彩色封面上，暗色不覆盖（1442 行注释为据）。断点体系按实现收敛为 1100 / 900 / 680（§25 表格同步），<code>?ecod-dark=1</code> 可强制暗色验收。</p>
   </div>
 </section>
 
@@ -1673,11 +1674,12 @@ details .in{padding-bottom:12px}
     </div>
     <table style="margin-top:16px">
       <tr><th style="width:20%">断点</th><th>行为</th></tr>
-      <tr><td>≥ 1200px</td><td>三栏布局可选；侧栏 300px，主栏自适应</td></tr>
-      <tr><td>992 – 1199px</td><td>侧栏 260px；左栏布局自动切回右栏（避免阅读起点偏移）</td></tr>
-      <tr><td>768 – 991px</td><td>单栏；侧栏内容转入底部「更多」折叠区</td></tr>
-      <tr><td>&lt; 768px</td><td>单栏 + 抽屉菜单；卡片切紧凑模式</td></tr>
+      <tr><td>≥ 1101px</td><td>三栏布局可选；侧栏 300px，主栏自适应</td></tr>
+      <tr><td>901 – 1100px</td><td>侧栏 260px（左栏布局仍保留）</td></tr>
+      <tr><td>681 – 900px</td><td>单栏；左栏布局自动切回右栏；侧栏内容转入底部「更多」折叠区</td></tr>
+      <tr><td>≤ 680px</td><td>单栏 + 抽屉菜单；卡片切紧凑模式（720 / 640 / 560 / 520 为组件内二级收窄）</td></tr>
     </table>
+    <p style="margin-top:10px;font-size:12px;color:var(--text-2)">注：早期稿写 1200 / 992 / 768，实现期整体下移一档（1100 / 900 / 680）让平板竖屏仍吃两栏，2026-10-30 与实现对齐。</p>
   </div>
 
   <div class="grid-2" style="margin-top:16px">
@@ -1987,7 +1989,7 @@ details .in{padding-bottom:12px}
       <tr><td>第 2 轮</td><td>专题子系统：ETopics + 后台管理 + 文章标记 + <code>/topics</code> + E2 专题墙 + C2b 专题卡 + E1 分类页头</td><td>已完成（2026-10-30）</td></tr>
       <tr><td>第 3 轮</td><td>C3 目录进度条 · C4 搜索面板（热词 / 标签 / ⌘K）</td><td>已完成（2026-10-30）</td></tr>
       <tr><td>第 4 轮</td><td>D2 点赞头像堆叠 · D3 底部快速评论条 · D7 作者卡</td><td>已完成（2026-10-30）</td></tr>
-      <tr><td>第 5 轮</td><td>F3 分类工具条 · 收尾与回归</td><td>待开始</td></tr>
+      <tr><td>第 5 轮</td><td>F3 分类工具条 · 收尾与回归</td><td>已完成（2026-10-30）</td></tr>
     </table>
   </div>
   <h3>第 3 轮 · C3 目录进度条 + C4 搜索面板（规格）</h3>
@@ -2097,6 +2099,23 @@ details .in{padding-bottom:12px}
 <table>
 <tr><th style="width:22%">设置项</th><th style="width:10%">默认</th><th>作用</th></tr>
 <tr><td><code>ECatTools</code></td><td>on</td><td>分类页工具条总开关（分类内搜索 + 排序按钮）；关闭后分类页回到 catbar tabs 旧形态</td></tr>
+</table>
+</div>
+
+<h3>第 5 轮 · 验收记录</h3>
+<div class="card pad">
+<table>
+<tr><th style="width:22%">项</th><th>结论</th></tr>
+<tr><td>工具条输出</td><td>分类页（<code>/index.php/category/life/</code>）输出 <code>.ecod_cattools</code>：搜索框 placeholder「在「生活随笔」中搜索」+ <kbd>/</kbd> 键帽 + 右侧「最新发布」按钮；<code>ecod_streambar</code> 计数 0（catbar 已隐藏）；首页不受影响（catbar 2 / streambar 3 / cattools 0）</td></tr>
+<tr><td>四种排序</td><td>默认 / <code>?sort=views</code> / <code>?sort=hot</code> / <code>?sort=rand</code> 四种形态的 cid 序列各不相同；<code>sort=views</code> 首条为浏览量最高篇；伪造 <code>?sort=likes</code> 回落最新（<code>ecod_sort_current()</code> 拒绝 soon 键）</td></tr>
+<tr><td>rand 语义</td><td>连续两次请求同序（按日种子稳定）；<code>sort=rand&amp;page=2</code> 与本页 0 重叠；与 <code>recent</code> 顺序不同。即「同一天翻页不重排、跨天换一批」成立。</td></tr>
+<tr><td>分类内搜索</td><td><code>life?q=首页</code> → 仅 cid 29（其余 4 篇不含该词）；<code>frontend?q=PHP</code> → 仅 cid 14；无命中词 → <code>.ecod_empty</code> 空态且输入框回填；<code>q+sort</code> 组合互不干扰</td></tr>
+<tr><td>计数与翻页</td><td>q 过滤同步写进 <code>getCountSql()</code>；<code>ecod_sort_pager()</code> 纯函数实测：<code>page/2/</code> 链接补成 <code>?sort=views&amp;q=…</code>（已含参数的链接不重复追加），「加载更多」取 pager <code>›</code> 的 href 因此自动带上</td></tr>
+<tr><td>设置联动</td><td><code>ECatTools=off</code> → cattools 计数 0、catbar / streambar 恢复、「共 N 篇」回来；配置按字节还原（<code>theme:ecod-theme</code> 与原值 <b>字节一致</b>，md5 <code>b6911d71f197</code> 含尾换行）</td></tr>
+<tr><td>窄屏量测</td><td>390px iframe 实测：<code>innerWidth=390</code> / <code>scrollWidth=390</code>、溢出元素 <b>0</b> 个；cattools 366px、搜索 238px + 排序 98px 同行不溢出，键帽在 ≤680px 隐藏</td></tr>
+<tr><td>回归</td><td>首页 / 文章页 / 分类页（含 <code>?sort=views</code>）/ 标签页 / 搜索页 / <code>archives.html</code> / <code>topics.html</code> 全 200；6 个改动文件 <code>php -l</code> + <code>node --check</code> 干净；错误日志无 8.4+ 弃用告警</td></tr>
+<tr><td>验收坑 1</td><td><code>Widget\Metas::permalink()</code> 是<b>输出型</b>方法（echo、返回 void），<code>(string) $cat->permalink()</code> 拿到空串 → 工具条静默不渲染。要拿返回值必须走 <code>Router::url('category', ['slug' =&gt; $slug], Options::alloc()-&gt;index)</code>（同 <code>core/catstats.php</code> 既有写法）</td></tr>
+<tr><td>验收坑 2</td><td>字节还原校验必须在两边都用 <code>--default-character-set=utf8mb4</code> 读：python <code>subprocess</code> 只传 <code>PATH</code> 不给 <code>LANG</code> 时，mysql 客户端按 latin1 输出，中文全变 <code>?</code>，会假报「还原不一致」</td></tr>
 </table>
 </div>
 </section>

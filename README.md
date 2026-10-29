@@ -331,7 +331,7 @@ npm run build   # 产物写进 assets/dist/，manifest 同步更新
 1. `build/build.mjs` 逐文件 minify（只压缩、不合并、不转译），产物落 `assets/dist/`，
    文件名形如 `ecod.a1b2c3d4.min.js`（内容哈希，内容变 → 文件名变）；
 2. 同时生成 `assets/dist/manifest.php`（源路径 → 产物路径）；
-3. PHP 侧 `core/asset.php` 是唯一查询入口：`ecod_asset()`（前台）、
+3. PHP 侧 `core/lib/asset.php` 是唯一查询入口：`ecod_asset()`（前台）、
    `widget.php`、`admin/editor.php` 都先查 manifest，命中发哈希文件，
    未构建 / manifest 缺失 / 产物被删则自动回退源文件 + `?v=filemtime`；
 4. 产物连同 manifest 一起提交进 git，服务器不需要装任何工具。

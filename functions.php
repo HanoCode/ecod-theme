@@ -15,71 +15,71 @@ if (!defined('__TYPECHO_ROOT_DIR__')) {
     exit;
 }
 
-/* 构建产物解析（dist 哈希文件优先，见 build/ 与 core/asset.php） */
-require_once __DIR__ . '/core/asset.php';
+/* 构建产物解析（dist 哈希文件优先，见 build/ 与 core/lib/asset.php） */
+require_once __DIR__ . '/core/lib/asset.php';
 
 /* 表结构定义（点赞表 / contents.views），模板与接口共用 */
-require_once __DIR__ . '/core/schema.php';
+require_once __DIR__ . '/core/lib/schema.php';
 
 /* SEO 元信息、结构化数据与 sitemap */
-require_once __DIR__ . '/core/seo.php';
+require_once __DIR__ . '/core/site/seo.php';
 
 /* 正文短代码 */
-require_once __DIR__ . '/core/shortcode.php';
+require_once __DIR__ . '/core/content/shortcode.php';
 
 /* 扩展短代码（内容卡 / 网盘 / 媒体 / 表情） */
-require_once __DIR__ . '/core/shortcode-extra.php';
+require_once __DIR__ . '/core/content/shortcode-extra.php';
 
 /* 正文 oEmbed 自动嵌入（YouTube / B 站 / X 等地址自动转嵌入块） */
-require_once __DIR__ . '/core/oembed.php';
+require_once __DIR__ . '/core/content/oembed.php';
 
 /* 主题配置快照 */
-require_once __DIR__ . '/core/snapshot.php';
+require_once __DIR__ . '/core/admin/snapshot.php';
 
 /* 相关文章相关度计算 */
-require_once __DIR__ . '/core/related.php';
+require_once __DIR__ . '/core/content/related.php';
 
 /* 服务端缩略图裁剪 */
-require_once __DIR__ . '/core/thumbs.php';
+require_once __DIR__ . '/core/content/thumbs.php';
 
 /* AI 智能摘要（后台 AI 助手配置接入后生效） */
-require_once __DIR__ . '/core/ai.php';
+require_once __DIR__ . '/core/content/ai.php';
 
 /* 搜索增强（分词 / 命中片段 / 空结果建议） */
-require_once __DIR__ . '/core/search.php';
+require_once __DIR__ . '/core/content/search.php';
 
 /* 特色页一键创建 */
-require_once __DIR__ . '/core/pages.php';
+require_once __DIR__ . '/core/site/pages.php';
 
 /* 外链中转（go 跳转加载页） */
-require_once __DIR__ . '/core/go.php';
+require_once __DIR__ . '/core/site/go.php';
 
 /* 导航菜单（后台配置的一级 / 二级菜单，含旧版自动导航回退） */
-require_once __DIR__ . '/core/nav.php';
+require_once __DIR__ . '/core/site/nav.php';
 
 /* 列表排序（?sort=views|hot，接管归档主查询的 ORDER BY） */
-require_once __DIR__ . '/core/sort.php';
+require_once __DIR__ . '/core/site/sort.php';
 
 /* 专题（后台策展的文章分组，成员 = 字段 topic ∪ 手动 cids） */
-require_once __DIR__ . '/core/topics.php';
+require_once __DIR__ . '/core/site/topics.php';
 
 /* 分类统计（分类页头的篇数 / 阅读 / 最近更新） */
-require_once __DIR__ . '/core/catstats.php';
+require_once __DIR__ . '/core/site/catstats.php';
 
 /* 分类 / 标签增强：封面与独立 SEO（规格 docs/dev/design-proposal.html §32） */
-require_once __DIR__ . '/core/meta-meta.php';
+require_once __DIR__ . '/core/site/meta-meta.php';
 
 /* 付费与会员可见：门槛 / 权益 / 交易三层分离（见 docs/paywall-design.md） */
-require_once __DIR__ . '/core/pay.php';
-require_once __DIR__ . '/core/pay-channel.php';
+require_once __DIR__ . '/core/pay/pay.php';
+require_once __DIR__ . '/core/pay/pay-channel.php';
 
 /* ------------------------------------------------------------------
  * 后台配置项
  * ---------------------------------------------------------------- */
 function themeConfig($form)
 {
-    /* 具体字段与设置页界面在 core/config.php */
-    require_once __DIR__ . '/core/config.php';
+    /* 具体字段与设置页界面在 core/admin/config.php */
+    require_once __DIR__ . '/core/admin/config.php';
 }
 /* ------------------------------------------------------------------
  * 文章自定义字段
@@ -266,7 +266,7 @@ function themeInit($archive = null)
     ecod_sitemap_maybe_output();
 
     /* 列表排序：钩子在主查询 order/page 之后、取数之前触发，
-       只对归档主查询生效（core/sort.php 内按 type 判定） */
+       只对归档主查询生效（core/site/sort.php 内按 type 判定） */
     \Typecho\Plugin::factory('Widget\Archive')->query = 'ecod_sort_query';
 
     /* 付费内容的 Feed / 第三方消费方兜底。
@@ -442,7 +442,7 @@ function ecod_user_center_url(): string
  */
 function ecod_user_avatar(object $user, int $size = 80): string
 {
-    require_once __DIR__ . '/core/account.php';
+    require_once __DIR__ . '/core/user/account.php';
     $custom = ecod_account_avatar_url((int) $user->uid);
     if ($custom !== '') {
         return $custom;
@@ -482,7 +482,7 @@ function ecod_login_url(): string
 /**
  * 导航条目
  *
- * 优先级：后台「导航」分组里配置的菜单（core/nav.php，支持二级）→ 旧逻辑回退
+ * 优先级：后台「导航」分组里配置的菜单（core/site/nav.php，支持二级）→ 旧逻辑回退
  * （全部独立页面 + 自定义链接「标题 || 地址 || 新窗口」）。
  * 返回结构统一，模板只负责渲染，不再关心来源。
  *
@@ -573,7 +573,7 @@ function ecod_nav_items($pages = null): array
  * 导航链接的附加属性
  *
  * 统一输出 target / title / class，模板里只写 echo，不再各自拼串。
- * attr 与 cls 来自后台菜单项编辑面板，已在 core/nav.php 归一化时清理过。
+ * attr 与 cls 来自后台菜单项编辑面板，已在 core/site/nav.php 归一化时清理过。
  *
  * @param array<string, mixed> $item
  */
@@ -647,7 +647,7 @@ function ecod_nav_active($archive = null, array $items = []): string
 /**
  * 主题内静态资源地址
  *
- * 构建优先：build/ 管线产出的 dist 哈希文件（core/asset.php 查 manifest）
+ * 构建优先：build/ 管线产出的 dist 哈希文件（core/lib/asset.php 查 manifest）
  * 命中时直接发哈希 URL，服务端可发一年期 immutable 长缓存；
  * 未构建时回退源文件，并自动附带文件修改时间作为版本号，
  * 避免改样式后浏览器仍读缓存。
@@ -958,7 +958,7 @@ function ecod_views_available(): bool
         return $ok;
     }
 
-    require_once __DIR__ . '/core/schema.php';
+    require_once __DIR__ . '/core/lib/schema.php';
 
     /* 结构版本已升级 => 列一定存在，省掉一次探测查询 */
     if (ecod_schema_version() >= 1) {
@@ -1433,7 +1433,7 @@ function ecod_post_likers(int $cid, int $limit = 5): array
             $names[(int) $u['uid']] = trim((string) ($u['screenName'] ?: $u['name']));
         }
 
-        require_once __DIR__ . '/core/account.php';
+        require_once __DIR__ . '/core/user/account.php';
         $out = [];
         foreach ($rows as $row) {
             $uid = (int) ($row['uid'] ?? 0);
@@ -2163,7 +2163,7 @@ if (class_exists('\Typecho\Plugin')) {
 }
 
 /* 评论邮件提醒（默认关闭，后台开启后才会真正连 SMTP） */
-require_once __DIR__ . '/core/mail.php';
+require_once __DIR__ . '/core/site/mail.php';
 
 if (class_exists('\Typecho\Plugin')) {
     try {
@@ -2175,10 +2175,10 @@ if (class_exists('\Typecho\Plugin')) {
 }
 
 /* 块（插件）系统 */
-require_once __DIR__ . '/core/blocks.php';
+require_once __DIR__ . '/core/admin/blocks.php';
 
 /* 友链申请：落库、审核写回友链页 */
-require_once __DIR__ . '/core/friends.php';
+require_once __DIR__ . '/core/site/friends.php';
 
 /* 特色页组件 */
 require_once __DIR__ . '/components/media.php';

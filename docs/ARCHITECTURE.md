@@ -48,7 +48,7 @@
 | 策略 | **逐文件 minify，1:1 映射**——不合并、不改调用方式，PHP 调用点零改动 |
 | 产物 | `assets/dist/<name>.<hash8>.min.<ext>`，内容哈希命名，内容变 → URL 变 |
 | 清单 | `assets/dist/manifest.php`（PHP 数组，opcache 友好），源路径 → 产物路径 |
-| 接入 | `core/asset.php` 唯一查询入口；`ecod_asset()` / `widget.php` / `admin/editor.php` 三处统一走它，**命中发哈希文件，未构建自动回退源文件 + `?v=filemtime`** |
+| 接入 | `core/lib/asset.php` 唯一查询入口；`ecod_asset()` / `widget.php` / `admin/editor.php` 三处统一走它，**命中发哈希文件，未构建自动回退源文件 + `?v=filemtime`** |
 | 缓存 | `.htaccess`（Apache）+ README nginx 示例：静态资源一年期 `immutable` |
 | 分发 | dist 与 manifest 提交进 git，服务器与用户都不需要 Node |
 
@@ -57,7 +57,7 @@
 叠加 gzip 后前台主包传输体积约 55–60 KB。
 
 **收敛了三套版本号逻辑**：此前 `ecod_asset()`（filemtime）、`widget.php`（内联 filemtime）、
-`admin/editor.php`（内联 filemtime）各自为政；现在统一由 `core/asset.php` 解析。
+`admin/editor.php`（内联 filemtime）各自为政；现在统一由 `core/lib/asset.php` 解析。
 
 ### 2.2 目录清理
 
