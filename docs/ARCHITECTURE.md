@@ -1,7 +1,7 @@
-# Ecod Theme · 架构说明与演进路线
+# Ecod Theme · 架构说明与演进记录
 
-> 本文是 2026-10-30 架构梳理的落点：先讲清现状的分层与约束，再给出已落地的改进
-> （构建管线 / 文档归位 / 版权规范），最后是下一步可选的演进方向与理由。
+> 本文记录主题的分层设计与已落地的架构/性能决策（2026-10-30 梳理并实施）。
+> 与 README「目录结构」「前端构建」「服务器加固」三节保持同步。
 
 ---
 
@@ -13,20 +13,21 @@
 │   独立入口：api.php / media.php / pay-admin.php / manifest.php / widget.php
 │   引导：functions.php（钩子注册 + require 清单 + 视图工具函数）
 │
-├─ 领域层 core/（25 个文件，一个文件一个职责）
-│   内容：shortcode / shortcode-extra / oembed / thumbs / related / search / ai
-│   站点：seo / nav / sort / catstats / topics / meta-meta / go / pages / friends / mail
-│   用户：account / oauth
-│   交易：pay / pay-channel
-│   后台：config / snapshot / blocks / blocks-def
-│   基建：asset（构建产物解析）/ schema（表结构自愈）/ data/emoji（纯数据）
+├─ 领域层 core/（按领域分组，一个文件一个职责）
+│   content/  内容处理：shortcode、shortcode-extra、oembed、thumbs、related、search、ai
+│   site/     站点能力：seo、nav、sort、catstats、topics、meta-meta、go、pages、friends、mail
+│   user/     账户：account、oauth
+│   pay/      交易：pay、pay-channel
+│   admin/    后台：config、snapshot、blocks、blocks-def
+│   lib/      基建：asset（构建产物解析）、schema（表结构自愈）
+│   data/     纯数据：emoji.php（跨组共用，保持平铺）
 │
 ├─ 视图层 components/（卡片、页面头、首页模块、侧栏挂件、页脚块、专题组件）
 │   布局壳 public/（header / footer / aside / include）
 │
 └─ 静态资源 assets/
-    源码：css/ecod.css、js/ecod.global.js、admin/*（构建前的真身）
-    产物：dist/*（构建生成，哈希文件名 + manifest.php）
+    源码：css/ecod.css、js/ecod.global.js（全站）、js/ecod.post.js（内容页增强）
+    产物：dist/*（构建生成：哈希文件名 + manifest.php + .gz/.br 副产物）
     第三方：vendor/prism（MIT，不二次加工）、vendor/ecod-qr（自研）
 ```
 
@@ -34,90 +35,90 @@
 `post.php` / `page.php` / `archive.php` 按命名约定解析，自定义页面模板扫描主题根目录
 `*.php` 的 docblock）。所以「目录架构化」的正确姿势不是把模板挪进子目录，而是：
 
-- 根目录只留「壳」——模板里不写业务，只组装组件（现状已基本如此，index.php 41 行）；
-- 业务下沉 `core/`，视图下沉 `components/`，壳与逻辑分离；
-- 独立入口共用基建（cookie 前缀校正、ecod_option 最小实现、asset 解析）。
+- 根目录只留「壳」——模板里不写业务，只组装组件（index.php 41 行）；
+- 业务下沉 `core/`（已按六域分组），视图下沉 `components/`；
+- 独立入口共用基建（cookie 前缀校正、`ecod_option` 最小实现、`core/lib/asset.php`）。
 
-## 二、本次落地的改进
+## 二、已落地的架构与性能决策
 
-### 2.1 前端构建管线（`build/`）
+### 2.1 前端构建管线（`build/`，esbuild 单依赖）
 
 | 项 | 说明 |
 | --- | --- |
-| 工具 | esbuild 单依赖（`build/package.json`），`npm run build` 一条命令 |
-| 策略 | **逐文件 minify，1:1 映射**——不合并、不改调用方式，PHP 调用点零改动 |
-| 产物 | `assets/dist/<name>.<hash8>.min.<ext>`，内容哈希命名，内容变 → URL 变 |
-| 清单 | `assets/dist/manifest.php`（PHP 数组，opcache 友好），源路径 → 产物路径 |
-| 接入 | `core/lib/asset.php` 唯一查询入口；`ecod_asset()` / `widget.php` / `admin/editor.php` 三处统一走它，**命中发哈希文件，未构建自动回退源文件 + `?v=filemtime`** |
-| 缓存 | `.htaccess`（Apache）+ README nginx 示例：静态资源一年期 `immutable` |
-| 分发 | dist 与 manifest 提交进 git，服务器与用户都不需要 Node |
+| 策略 | 逐文件 minify，1:1 映射——不合并、不改调用方式，PHP 调用点零改动 |
+| 产物 | `assets/dist/<name>.<hash8>.min.<ext>` + `.gz`（gzip -9）+ `.br`（brotli q11） |
+| 清单 | `assets/dist/manifest.php`（PHP 数组，opcache 友好） |
+| 接入 | `core/lib/asset.php` 唯一查询入口；`ecod_asset()` / `widget.php` / `admin/editor.php` 统一走它，**命中发哈希文件，未构建自动回退源文件 + `?v=filemtime`** |
+| 分发 | dist 连同 manifest 提交进 git，服务器与用户都不需要 Node |
 
-实测（2026-10-30，17 个文件）：**1012.9 KB → 623.4 KB（-38.5%）**，
-前台主包 `ecod.css` -23.4%、`ecod.global.js` -50.4%，后台 JS 均在 -40% 上下。
-叠加 gzip 后前台主包传输体积约 55–60 KB。
+### 2.2 JS 按页拆包（首屏 JS -46%）
 
-**收敛了三套版本号逻辑**：此前 `ecod_asset()`（filemtime）、`widget.php`（内联 filemtime）、
-`admin/editor.php`（内联 filemtime）各自为政；现在统一由 `core/lib/asset.php` 解析。
+`ecod.global.js` 5647 行拆为两个文件：
 
-### 2.2 目录清理
+- **global**（3080 行，全站加载）：主题切换、抽屉、导航、进度、PJAX、点赞收藏、
+  搜索、懒加载、轮播、账户登录等；
+- **post**（2638 行，仅 post/page 模板加载）：目录、代码高亮、灯箱、评论体系、
+  朗读、分享图、AI 摘要、oEmbed、选项卡、收银台等 21 个模块。
 
-- 6 个开发文档（design-proposal.html 204KB、REFERENCE-TEARDOWN.html 116KB 等）
-  从主题根目录移入 `docs/dev/`——它们不是模板，混在 26 个 Typecho 模板旁边
-  既干扰阅读也是多余的公开暴露面；
-- 代码内的规格引用同步改为新路径；
-- `.htaccess` 屏蔽规则同步更新（nginx 场景记得在 server 块 deny `docs/dev`）。
+加载机制（三路保险，任一失效都不会白屏）：
 
-### 2.3 版权与注释规范
+1. 页脚按 `$this->is('post') || $this->is('page')` 输出第二个 `<script defer>`；
+2. shell 上的 `data-ecod-bundle="post"`（header.php 双分支输出）供 JS 判断；
+3. PJAX 从列表页进入内容页时，`ensurePostBundle()` 动态注入 post 包后再跑 refresh；
+   `runPost()` 让 refresh/boot 对缺失模块静默跳过。
 
-- 根目录新增 `LICENSE`（MIT，含中文摘要）；README「许可」一节同步改写；
-- 全部 133 个源文件（PHP/JS/CSS，vendor 的 prism 除外）统一文件头：
-  职责描述 + `@package` / `@author` / `@copyright` / `@license`；
-- 补齐了此前完全裸奔的 2 个文件与 20 余处无注释函数
-  （pay-channel 三个通道类的方法、functions.php 工具函数、widget 令牌助手等）；
-- 构建产物统一带版权横幅（`/*! Ecod Theme (c) 2026 Ecod · MIT License */`），
-  minify 不会抹掉署名。
+公共工具经 `Ecod.u` 导出（once / copyText / esc / shortNum / syncFavButtons），
+post 包头部做了空实现兜底。实测：首页/文章直载/PJAX 双向导航均零控制台报错。
 
-## 三、性能现状与下一步路线
+### 2.3 关键 CSS 内联（首屏不被 CSS 阻塞）
 
-已具备：minify + 内容哈希 + immutable 长缓存 + filemtime 版本回退、defer 加载、
-PJAX、首帧主题脚本（防深色闪烁）内联、主色变量内联、prism 按需加载、图片 lazy。
+- 构建时从 `ecod.css` 抽出 §0 令牌 / §1 基础 / §2 布局 / §3 导航抽屉 / §12 暗色
+  （`CRITICAL_SECTIONS` 数组，想调覆盖面改这一处），独立 minify 出
+  `ecod.critical.<hash>.min.css`（17.5KB，gzip 约 4.3KB）；
+- `include.php` 把它内联进 `<head>`，完整样式表转
+  `<link rel="preload" as="style" onload="…rel='stylesheet'">` 异步预加载
+  （`<noscript>` 兜底）；
+- 未构建时回退整包阻塞加载（原行为）。内联块位于 brand 之前，主色覆盖顺序不变。
 
-按收益排序的候选演进（均为增量改动，可独立做）：
+> 设计取舍：CSS 源码保持单文件不拆 `src/`——分节标记已足够构建期切分，
+> 避免为组织性收益重构 9000 行源文件。
 
-1. **JS 按页拆包**（最大头）：`ecod.global.js` 里文章页专属逻辑
-   （TTS、代码块增强、评论表情、打赏/付费墙交互）约占三分之一，
-   拆成 `ecod.post.js` 仅在 `post.php` / `page.php` 输出，
-   首页/列表页首屏 JS 再省约 40 KB（min 后 ~20 KB）。
-   做法：esbuild 多入口 + manifest 加 `pages` 字段 + 模板按 `$this->is()` 选择性输出。
-2. **关键 CSS 内联**：把设计令牌 + 布局骨架（~5 KB）内联进 `<head>`，
-   `ecod.css` 转 `media="print" onload` 异步，消除首屏渲染阻塞。
-   维护成本中等，建议在拆包之后做。
-3. **头像池转 WebP/AVIF**：`assets/avatar/` 2.7 MB（27 张 PNG），
-   转 WebP 预计 -60% 以上；保留 PNG 回退或直接全量替换（现代浏览器无兼容问题）。
-4. **precompress 静态产物**：构建时顺手产出 `.gz`（以及服务器支持时的 `.br`），
-   nginx `gzip_static on;` 直接吐预压缩文件，省在线压缩 CPU。
-5. **CSS 分层治理**：`ecod.css` 8800+ 行单文件，可按 §0-§13 切成源码多文件、
-   构建时合并——源码可维护性与产物体积兼得，运行时无变化。
+### 2.4 静态资源
 
-## 四、后续目录演进（可选，未实施）
+- 头像池 27 张 1000px PNG → 320px WebP（2.7MB → 216KB，-92%），
+  单张约 5KB，`ecod_local_avatar_url()` 的 glob 随之更新，排序序列不变；
+- `.htaccess`（Apache）与 README nginx 示例：静态资源一年期 `immutable`、
+  `gzip_static` / `brotli_static` 直吐预压缩文件；
+- dev 文档（设计稿/审计报告）收进 `docs/dev/`，`.htaccess` 屏蔽，nginx 需手工 deny。
 
-当前 `core/` 25 个文件平铺尚可接受（单一职责、文件头清晰、require 路径全部硬编码，
-移动收益纯属组织性、风险却是全局的）。若文件数继续增长，建议按以下分组一次性迁移：
+### 2.5 版权与注释
 
-```
-core/
-├── content/   shortcode*、oembed、thumbs、related、search、ai
-├── site/      seo、nav、sort、catstats、topics、meta-meta、go、pages、friends、mail
-├── user/      account、oauth
-├── pay/       pay、pay-channel
-├── admin/     config、snapshot、blocks、blocks-def
-└── lib/       asset、schema、data/
-```
+- 根目录 `LICENSE`（MIT，含中文摘要）；
+- 全部源文件统一文件头：职责描述 + `@package` / `@author` / `@copyright` / `@license`；
+  minify 产物带版权横幅，压缩不抹署名；
+- 函数级注释补齐（pay-channel 三个通道类、工具函数、令牌助手等）。
 
-迁移时同步改动点：`functions.php` 与 `api.php` 的 require 清单、各文件互相
-`require_once __DIR__ . '/…'` 的路径、`.htaccess` 不受影响（只拦根目录 PHP 直连）。
-建议放在一个大版本里做，配合 `php -l` 全量校验 + 前台四页回归。
+## 三、性能账本（2026-10-30 实测）
+
+| 指标 | 优化前 | 优化后 |
+| --- | --- | --- |
+| CSS/JS 源码总量 | 1013 KB | min 后 644 KB（-38%） |
+| 首页首屏 JS | 119 KB（min） | **64 KB**（拆包后，-46%）；传输 16.3 KB（brotli） |
+| 文章页额外 JS | （含在上面） | 56.5 KB 按需（传输 ~14 KB） |
+| 首屏 CSS 阻塞 | 312 KB 全包 | 0（17.5 KB 内联 + 异步补全） |
+| 头像池 | 2.7 MB | 216 KB（-92%） |
+| 缓存 | 无策略 | 哈希文件名 + 一年期 immutable + 预压缩 |
+
+## 四、后续可选项（均未实施，按收益排序）
+
+1. **按页变体关键 CSS**：home/post/archive 各配一份 critical（当前一份通用），
+   内联体积可再省 30%，维护成本增加，建议流量上来再做；
+2. **表情图与 smiley 转 WebP**（assets/img/smiley/ 124KB，量小优先级低）；
+3. **PWA 预缓存**：manifest.php 已就绪，可加 Service Worker 预缓存 dist 资源；
+4. **ecod.global.js 进一步拆「列表页 + 内容页 + 全站」三档**：当前两档已覆盖
+   主要收益，三档的边界维护成本开始大于收益。
 
 ---
 
-*维护提示：本文与 README「目录结构」「前端构建」两节保持同步更新。*
+*维护提示：改 JS/CSS 源码后记得 `cd build && npm run build`；不构建也不会坏，
+只是浏览器拿不到压缩产物。*
