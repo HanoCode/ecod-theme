@@ -21,6 +21,7 @@ import { createHash } from 'node:crypto';
 import { mkdir, readFile, readdir, rm, writeFile } from 'node:fs/promises';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { brotliCompressSync, constants as zlibConstants, gzipSync } from 'node:zlib';
 
 const BUILD_DIR = dirname(fileURLToPath(import.meta.url));
 const THEME_DIR = resolve(BUILD_DIR, '..');
@@ -144,6 +145,12 @@ async function main() {
 
         await mkdir(dirname(join(THEME_DIR, outRel)), { recursive: true });
         await writeFile(join(THEME_DIR, outRel), minified);
+        /* 预压缩副产物：服务器配 gzip_static / brotli_static 后直接吐静态文件，
+           免去在线压缩的 CPU；内容哈希文件名保证副产物永不失配 */
+        await writeFile(join(THEME_DIR, outRel) + '.gz', gzipSync(minified, { level: 9 }));
+        await writeFile(join(THEME_DIR, outRel) + '.br', brotliCompressSync(minified, {
+            params: { [zlibConstants.BROTLI_PARAM_QUALITY]: 11 },
+        }));
 
         manifest[rel] = outRel;
         report.push({
@@ -176,6 +183,10 @@ async function main() {
             const criticalRel = `assets/dist/${criticalBase}.${criticalHash}.min.css`;
             await mkdir(dirname(join(THEME_DIR, criticalRel)), { recursive: true });
             await writeFile(join(THEME_DIR, criticalRel), criticalMin);
+            await writeFile(join(THEME_DIR, criticalRel) + '.gz', gzipSync(criticalMin, { level: 9 }));
+            await writeFile(join(THEME_DIR, criticalRel) + '.br', brotliCompressSync(criticalMin, {
+                params: { [zlibConstants.BROTLI_PARAM_QUALITY]: 11 },
+            }));
             /* 伪源路径键：ecod_dist_resolve('assets/css/ecod.critical.css') 可查到 */
             manifest['assets/css/ecod.critical.css'] = criticalRel;
             report.push({
@@ -204,8 +215,11 @@ async function main() {
     ].join('\n');
     await writeFile(MANIFEST, php);
 
-    /* 清理不在本次 manifest 里的旧产物（哈希变了会留下孤儿文件） */
-    const keep = new Set([MANIFEST, ...Object.values(manifest).map((f) => join(THEME_DIR, f))]);
+    /* 清理不在本次 manifest 里的旧产物（含预压缩副产物与哈希变更的孤儿文件） */
+    const keep = new Set([
+        MANIFEST,
+        ...Object.values(manifest).flatMap((f) => [f, f + '.gz', f + '.br'].map((p) => join(THEME_DIR, p))),
+    ]);
     for (const f of await walk(OUT_ROOT)) {
         if (!keep.has(f)) {
             await rm(f);
