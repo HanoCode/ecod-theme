@@ -1,0 +1,747 @@
+/**
+ * Ecod Theme · 后台「导航」分组（菜单构建器）
+ *
+ * 只在 .ecod-navb 内生效；颜色/按钮复用 config.css 的 --ea-* 令牌与 .ecod-btn。
+ * 结构：左列挑项（页面 / 分类 / 标签 / 自定义），右列菜单结构（拖拽 + 缩进）。
+ */
+
+/* ---------------- 顶部：多套导航切换 ---------------- */
+.ecod-navb__bar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    padding: 10px 12px;
+    margin-bottom: 12px;
+    background: #fff;
+    border: 1px solid var(--ea-line);
+    border-radius: 12px;
+}
+
+.ecod-navb__pick {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+    font-size: 12.5px;
+    color: var(--ea-sub);
+}
+
+.ecod-navb__pick select {
+    min-width: 172px;
+    max-width: 240px;
+    height: 30px;
+    padding: 0 10px;
+    border: 1px solid #dfe3ee;
+    border-radius: 8px;
+    background: var(--ea-soft);
+    color: var(--ea-ink);
+    font-size: 12.5px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.ecod-navb__pick select:hover {
+    border-color: var(--ea-brand);
+}
+
+.ecod-navb__pick select:focus-visible {
+    outline: none;
+    border-color: var(--ea-brand);
+    box-shadow: 0 0 0 3px rgba(79, 110, 242, .16);
+}
+
+.ecod-navb__bar .ecod-admin__ghost {
+    flex: none;
+    width: auto;
+    height: 30px;
+    padding: 0 12px;
+    font-size: 12px;
+}
+
+.ecod-navb__bar .ecod-admin__ghost.is-danger {
+    color: #c0392b;
+    border-color: #f0d3ce;
+}
+
+.ecod-navb__bar .ecod-admin__ghost.is-danger:hover {
+    color: #fff;
+    background: #c0392b;
+    border-color: #c0392b;
+}
+
+.ecod-navb__bar-hint {
+    margin-left: auto;
+    font-size: 11px;
+    color: var(--ea-sub);
+}
+
+/* 当前套名：过长时省略，不挤走「N 项」 */
+.ecod-navb__hd [data-navb-set] {
+    max-width: 200px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.ecod-navb {
+    display: grid;
+    grid-template-columns: 288px minmax(0, 1fr);
+    gap: 14px;
+    margin-bottom: 18px;
+    align-items: start;
+}
+
+.ecod-navb__col {
+    min-width: 0;
+    padding: 12px;
+    background: #fff;
+    border: 1px solid var(--ea-line);
+    border-radius: 12px;
+}
+
+.ecod-navb__col--main {
+    background: var(--ea-soft);
+}
+
+.ecod-navb__hd {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 10px;
+    font-size: 12.5px;
+    font-weight: 600;
+    color: var(--ea-ink);
+    white-space: nowrap;
+}
+
+.ecod-navb__hd > span {
+    flex-shrink: 0;
+}
+
+.ecod-navb__hd em {
+    font-style: normal;
+    padding: 1px 8px;
+    border-radius: 999px;
+    background: var(--ea-brand-soft);
+    color: var(--ea-brand);
+    font-size: 11px;
+}
+
+.ecod-navb__hd .ecod-admin__ghost {
+    flex: none;
+    width: auto;
+    margin-left: 8px;
+    height: 26px;
+    padding: 0 10px;
+    font-size: 11.5px;
+}
+
+.ecod-navb__hint {
+    margin-left: auto;
+    font-weight: 400;
+    font-size: 11px;
+    color: var(--ea-sub);
+}
+
+/* ---------------- 左列：挑项 ---------------- */
+.ecod-navb__tabs {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 2px;
+    padding: 3px;
+    margin-bottom: 10px;
+    background: var(--ea-soft);
+    border-radius: 9px;
+}
+
+.ecod-navb__tabs button {
+    padding: 6px 0;
+    border: 0;
+    border-radius: 7px;
+    background: transparent;
+    color: var(--ea-sub);
+    font-size: 11.5px;
+    cursor: pointer;
+    transition: background var(--ecod-dur-fast) ease, color var(--ecod-dur-fast) ease;
+}
+
+.ecod-navb__tabs button.is-on {
+    background: #fff;
+    color: var(--ea-brand);
+    font-weight: 600;
+    box-shadow: 0 1px 3px rgba(23, 32, 63, .1);
+}
+
+.ecod-navb__filter {
+    width: 100%;
+    height: 30px;
+    margin-bottom: 8px;
+    padding: 0 9px;
+    border: 1px solid var(--ea-line);
+    border-radius: 8px;
+    background: #fff;
+    font-size: 12px;
+    color: var(--ea-ink);
+}
+
+.ecod-navb__filter:focus {
+    outline: none;
+    border-color: var(--ea-brand);
+    box-shadow: 0 0 0 3px var(--ea-brand-soft);
+}
+
+.ecod-navb__src {
+    max-height: 300px;
+    overflow: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+
+.ecod-navb__src-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 8px;
+    border: 1px solid transparent;
+    border-radius: 7px;
+    background: #fff;
+    font-size: 12px;
+    color: var(--ea-ink);
+    text-align: left;
+    cursor: pointer;
+}
+
+.ecod-navb__src-item:hover {
+    border-color: var(--ea-line);
+    background: var(--ea-soft);
+}
+
+.ecod-navb__src-item span {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.ecod-navb__src-item i {
+    flex-shrink: 0;
+    width: 18px;
+    height: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 5px;
+    background: var(--ea-brand-soft);
+    color: var(--ea-brand);
+    font-size: 13px;
+    font-style: normal;
+    line-height: 1;
+}
+
+.ecod-navb__src-item.is-added {
+    color: var(--ea-sub);
+    opacity: .55;
+}
+
+.ecod-navb__src-empty {
+    padding: 12px 4px;
+    font-size: 11.5px;
+    color: var(--ea-sub);
+    text-align: center;
+}
+
+.ecod-navb__form {
+    display: grid;
+    gap: 6px;
+}
+
+.ecod-navb__form input[type="text"] {
+    width: 100%;
+    height: 31px;
+    padding: 0 9px;
+    border: 1px solid var(--ea-line);
+    border-radius: 8px;
+    background: #fff;
+    font-size: 12px;
+}
+
+.ecod-navb__form input[type="text"]:focus {
+    outline: none;
+    border-color: var(--ea-brand);
+    box-shadow: 0 0 0 3px var(--ea-brand-soft);
+}
+
+.ecod-navb__check {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11.5px;
+    color: var(--ea-sub);
+}
+
+/* ---------------- 右列：菜单结构 ---------------- */
+.ecod-navb__list {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-height: 48px;
+}
+
+.ecod-navb__row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 7px 8px;
+    background: #fff;
+    border: 1px solid var(--ea-line);
+    border-radius: 8px;
+    cursor: default;
+}
+
+.ecod-navb__row.is-sub {
+    margin-left: 26px;
+    background: var(--ea-soft);
+    border-style: dashed;
+}
+
+.ecod-navb__row.is-open {
+    border-color: var(--ea-brand);
+    box-shadow: 0 0 0 3px var(--ea-brand-soft);
+}
+
+.ecod-navb__row.is-dragging {
+    opacity: .4;
+}
+
+/* 拖动落点指示线：left 随层级偏移，直观显示会落进哪一层 */
+.ecod-navb__marker {
+    position: absolute;
+    right: 8px;
+    height: 2px;
+    border-radius: 2px;
+    background: var(--ea-brand);
+    box-shadow: 0 0 0 3px var(--ea-brand-soft);
+    pointer-events: none;
+    transition: top var(--ecod-dur-fast) ease, left var(--ecod-dur-fast) ease;
+}
+
+.ecod-navb__marker::before {
+    content: "";
+    position: absolute;
+    left: -4px;
+    top: -3px;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--ea-brand);
+}
+
+.ecod-navb__grip {
+    flex-shrink: 0;
+    width: 10px;
+    height: 16px;
+    touch-action: none;
+    cursor: grab;
+    background-image: radial-gradient(circle, #b8bfd0 1.1px, transparent 1.2px);
+    background-size: 5px 5px;
+    background-position: 0 0;
+}
+
+.ecod-navb__row:hover .ecod-navb__grip {
+    background-image: radial-gradient(circle, var(--ea-brand) 1.1px, transparent 1.2px);
+}
+
+.ecod-navb__grip:active {
+    cursor: grabbing;
+}
+
+body.is-navb-dragging {
+    user-select: none;
+    -webkit-user-select: none;
+    cursor: grabbing;
+}
+
+/* 行内名称：点一下展开编辑面板 */
+.ecod-navb__name {
+    flex: 1;
+    min-width: 0;
+    padding: 3px 6px;
+    border: 1px solid transparent;
+    border-radius: 6px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 12.5px;
+    font-weight: 600;
+    color: var(--ea-ink);
+    cursor: text;
+}
+
+.ecod-navb__name:hover {
+    border-color: var(--ea-line);
+    background: var(--ea-soft);
+}
+
+.ecod-navb__kind {
+    flex-shrink: 0;
+    padding: 1px 7px;
+    border-radius: 999px;
+    background: var(--ea-soft);
+    color: var(--ea-sub);
+    font-size: 10.5px;
+    white-space: nowrap;
+}
+
+.ecod-navb__kind--home { background: #eef1fe; color: #4f6ef2; }
+.ecod-navb__kind--page { background: #eaf7f1; color: #15803d; }
+.ecod-navb__kind--cat  { background: #fff5e6; color: #b45309; }
+.ecod-navb__kind--tag  { background: #f3edff; color: #7c3aed; }
+.ecod-navb__kind--link { background: #eef6ff; color: #1d6fb8; }
+
+.ecod-navb__uri {
+    flex-shrink: 0;
+    max-width: 34%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 11px;
+    color: var(--ea-sub);
+    direction: rtl;
+    text-align: left;
+}
+
+.ecod-navb__act {
+    flex-shrink: 0;
+    display: flex;
+    gap: 3px;
+}
+
+.ecod-navb__act button {
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    border: 1px solid var(--ea-line);
+    border-radius: 6px;
+    background: #fff;
+    color: var(--ea-sub);
+    font-size: 12px;
+    line-height: 1;
+    cursor: pointer;
+}
+
+.ecod-navb__act button:hover {
+    border-color: var(--ea-brand);
+    color: var(--ea-brand);
+}
+
+.ecod-navb__act button.is-on {
+    background: var(--ea-brand-soft);
+    border-color: var(--ea-brand);
+    color: var(--ea-brand);
+}
+
+.ecod-navb__act button:disabled {
+    opacity: .35;
+    cursor: not-allowed;
+}
+
+.ecod-navb__act button.is-danger:hover {
+    border-color: #ef4444;
+    color: #ef4444;
+}
+
+.ecod-navb__empty {
+    margin-top: 10px;
+    padding: 14px 12px;
+    border: 1px dashed var(--ea-line);
+    border-radius: 9px;
+    text-align: center;
+    font-size: 11.5px;
+    line-height: 1.7;
+    color: var(--ea-sub);
+}
+
+/* ---------------- 菜单项编辑面板 ---------------- */
+.ecod-navb__edit {
+    margin: 2px 0 6px;
+    padding: 10px 12px;
+    background: #fff;
+    border: 1px solid var(--ea-line);
+    border-radius: 8px;
+    box-shadow: inset 0 1px 0 rgba(23, 32, 63, .03);
+}
+
+.ecod-navb__edit.is-sub {
+    margin-left: 26px;
+}
+
+.ecod-navb__grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px 10px;
+}
+
+.ecod-navb__field {
+    display: grid;
+    gap: 4px;
+    font-size: 11px;
+    color: var(--ea-sub);
+}
+
+.ecod-navb__field.is-wide {
+    grid-column: 1 / -1;
+}
+
+.ecod-navb__field input {
+    width: 100%;
+    height: 28px;
+    padding: 0 8px;
+    border: 1px solid var(--ea-line);
+    border-radius: 7px;
+    background: #fff;
+    font-size: 12px;
+    color: var(--ea-ink);
+}
+
+.ecod-navb__field input:focus {
+    outline: none;
+    border-color: var(--ea-brand);
+    box-shadow: 0 0 0 3px var(--ea-brand-soft);
+}
+
+.ecod-navb__edit .ecod-navb__check {
+    align-self: end;
+    height: 28px;
+}
+
+.ecod-navb__editft {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 9px;
+    padding-top: 8px;
+    border-top: 1px dashed var(--ea-line);
+    font-size: 11px;
+    color: var(--ea-sub);
+}
+
+.ecod-navb__editft > span {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.ecod-navb__mini {
+    flex: none;
+    margin-left: auto;
+    padding: 3px 9px;
+    border: 1px solid var(--ea-line);
+    border-radius: 6px;
+    background: #fff;
+    color: var(--ea-sub);
+    font-size: 11px;
+    cursor: pointer;
+}
+
+.ecod-navb__mini:hover {
+    border-color: var(--ea-brand);
+    color: var(--ea-brand);
+}
+
+/* ---------------- 套信息表单 ---------------- */
+.ecod-navb__setform {
+    display: flex;
+    align-items: flex-end;
+    gap: 8px;
+    flex-wrap: wrap;
+    padding: 10px 12px;
+    margin-bottom: 12px;
+    background: var(--ea-brand-soft);
+    border: 1px solid rgba(79, 110, 242, .22);
+    border-radius: 12px;
+}
+
+.ecod-navb__setform[hidden] {
+    display: none;
+}
+
+.ecod-navb__setfield {
+    display: grid;
+    gap: 4px;
+    font-size: 11px;
+    color: var(--ea-sub);
+}
+
+.ecod-navb__setfield--wide {
+    flex: 1;
+    min-width: 200px;
+}
+
+.ecod-navb__setfield input {
+    width: 100%;
+    min-width: 150px;
+    height: 30px;
+    padding: 0 9px;
+    border: 1px solid #dfe3ee;
+    border-radius: 8px;
+    background: #fff;
+    font-size: 12px;
+    color: var(--ea-ink);
+}
+
+.ecod-navb__setfield input:focus {
+    outline: none;
+    border-color: var(--ea-brand);
+    box-shadow: 0 0 0 3px rgba(79, 110, 242, .16);
+}
+
+.ecod-navb__setform .ecod-admin__ghost {
+    flex: none;
+    width: auto;
+    height: 30px;
+    padding: 0 12px;
+    font-size: 12px;
+    background: transparent;
+}
+
+/* ---------------- 新建/提示弹窗 ---------------- */
+/* 弹窗挂在 body 下，不在 .ecod-admin 内，需自带一份 --ea-* 令牌 */
+.ecod-navb-modal {
+    --ea-ink: #1c2130;
+    --ea-sub: #7b8297;
+    --ea-line: #e6e9f2;
+    --ea-brand: #4f6ef2;
+    --ea-brand-soft: #eef1fe;
+}
+
+.ecod-navb-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    background: rgba(23, 26, 38, .42);
+    animation: ecod-navb-fade .14s ease-out;
+}
+
+.ecod-navb-modal__card {
+    display: grid;
+    gap: 12px;
+    width: min(360px, 100%);
+    padding: 18px 18px 16px;
+    border-radius: 14px;
+    background: #fff;
+    box-shadow: 0 18px 48px rgba(23, 26, 38, .22);
+    animation: ecod-navb-pop .16s ease-out;
+}
+
+.ecod-navb-modal__hd {
+    margin: 0;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--ea-ink);
+}
+
+.ecod-navb-modal__msg {
+    margin: 0;
+    font-size: 12px;
+    line-height: 1.6;
+    color: var(--ea-sub);
+}
+
+.ecod-navb-modal__field {
+    display: grid;
+    gap: 4px;
+    font-size: 11px;
+    color: var(--ea-sub);
+}
+
+.ecod-navb-modal__field input {
+    width: 100%;
+    height: 32px;
+    padding: 0 10px;
+    border: 1px solid #dfe3ee;
+    border-radius: 8px;
+    background: #fff;
+    font-size: 13px;
+    color: var(--ea-ink);
+}
+
+.ecod-navb-modal__field input:focus {
+    outline: none;
+    border-color: var(--ea-brand);
+    box-shadow: 0 0 0 3px rgba(79, 110, 242, .16);
+}
+
+.ecod-navb-modal__ft {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    margin-top: 2px;
+}
+
+.ecod-navb-modal__ft .ecod-admin__ghost {
+    flex: none;
+    width: auto;
+    height: 30px;
+    padding: 0 12px;
+    font-size: 12px;
+    background: transparent;
+}
+
+.ecod-navb-modal__ft .ecod-btn {
+    flex: none;
+    height: 30px;
+    padding: 0 16px;
+    font-size: 12px;
+}
+
+@keyframes ecod-navb-fade {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes ecod-navb-pop {
+    from { opacity: 0; transform: translateY(6px) scale(.98); }
+    to { opacity: 1; transform: none; }
+}
+
+/* ---------------- 窄屏 ---------------- */
+@media (max-width: 900px) {
+    .ecod-navb {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .ecod-navb__src {
+        max-height: 220px;
+    }
+}
+
+@media (max-width: 560px) {
+    .ecod-navb__hint {
+        display: none;
+    }
+
+    .ecod-navb__uri {
+        display: none;
+    }
+
+    .ecod-navb__grid {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .ecod-navb__act button {
+        width: 22px;
+        height: 22px;
+    }
+}

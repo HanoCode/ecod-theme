@@ -1,0 +1,90 @@
+<?php
+/**
+ * 侧栏块 · 作者卡片
+ *
+ * @package Ecod Theme
+ */
+if (!defined('__TYPECHO_ROOT_DIR__')) {
+    exit;
+}
+
+$ecodAuAvatar = trim((string) ecod_p('avatar', ''));
+$ecodAuName = trim((string) ecod_p('name', ''));
+$ecodAuName = $ecodAuName !== '' ? $ecodAuName : (string) $this->options->title;
+$ecodAuDesc = trim((string) ecod_p('desc', ''));
+$ecodAuDesc = $ecodAuDesc !== '' ? $ecodAuDesc : (string) $this->options->description;
+$ecodAuGreet = (int) ecod_p('greet', 1) === 1;
+$ecodAuStats = (int) ecod_p('stats', 1) === 1;
+
+/* 时段问候 */
+$ecodAuHour = (int) date('G');
+if ($ecodAuHour < 5) {
+    $ecodAuHello = '夜深了';
+} elseif ($ecodAuHour < 11) {
+    $ecodAuHello = '早上好';
+} elseif ($ecodAuHour < 14) {
+    $ecodAuHello = '中午好';
+} elseif ($ecodAuHour < 18) {
+    $ecodAuHello = '下午好';
+} else {
+    $ecodAuHello = '晚上好';
+}
+
+/* 社交链接：每行「名称|网址」 */
+$ecodAuLinks = [];
+foreach (preg_split('/\r\n|\r|\n/', (string) ecod_p('links', '')) as $ecodAuLine) {
+    $ecodAuLine = trim($ecodAuLine);
+    if ($ecodAuLine === '' || strpos($ecodAuLine, '|') === false) {
+        continue;
+    }
+    [$ecodAuLabel, $ecodAuHref] = array_map('trim', explode('|', $ecodAuLine, 2));
+    if ($ecodAuLabel === '' || $ecodAuHref === '') {
+        continue;
+    }
+    $ecodAuLinks[] = ['label' => $ecodAuLabel, 'href' => $ecodAuHref];
+}
+
+$ecodAuOv = $ecodAuStats ? ecod_site_overview() : [];
+?>
+<section class="ecod_widget ecod_authorcard">
+    <div class="ecod_authorcard__head">
+        <span class="ecod_authorcard__avatar">
+            <?php if ($ecodAuAvatar !== ''): ?>
+                <img src="<?php echo htmlspecialchars($ecodAuAvatar, ENT_QUOTES, 'UTF-8'); ?>"
+                     alt="<?php echo htmlspecialchars($ecodAuName, ENT_QUOTES, 'UTF-8'); ?>"
+                     width="64" height="64" loading="lazy" decoding="async">
+            <?php else: ?>
+                <i aria-hidden="true"><?php echo htmlspecialchars(mb_substr($ecodAuName, 0, 1, 'UTF-8'), ENT_QUOTES, 'UTF-8'); ?></i>
+            <?php endif; ?>
+        </span>
+        <div class="ecod_authorcard__id">
+            <?php if ($ecodAuGreet): ?>
+                <div class="ecod_authorcard__greet"><?php echo $ecodAuHello; ?>，很高兴见到你</div>
+            <?php endif; ?>
+            <div class="ecod_authorcard__name"><?php echo htmlspecialchars($ecodAuName, ENT_QUOTES, 'UTF-8'); ?></div>
+        </div>
+    </div>
+
+    <?php if ($ecodAuDesc !== ''): ?>
+        <p class="ecod_authorcard__desc"><?php echo htmlspecialchars($ecodAuDesc, ENT_QUOTES, 'UTF-8'); ?></p>
+    <?php endif; ?>
+
+    <?php if ($ecodAuLinks): ?>
+        <div class="ecod_authorcard__links">
+            <?php foreach ($ecodAuLinks as $ecodAuLink): ?>
+                <a href="<?php echo htmlspecialchars($ecodAuLink['href'], ENT_QUOTES, 'UTF-8'); ?>"
+                   target="_blank" rel="noopener nofollow">
+                    <?php echo ecod_icon('link', 12); ?><?php echo htmlspecialchars($ecodAuLink['label'], ENT_QUOTES, 'UTF-8'); ?>
+                </a>
+            <?php endforeach; ?>
+        </div>
+    <?php endif; ?>
+
+    <?php if ($ecodAuStats): ?>
+        <div class="ecod_authorcard__stats">
+            <span><b><?php echo (int) $ecodAuOv['posts']; ?></b>文章</span>
+            <span><b><?php echo (int) $ecodAuOv['comments']; ?></b>评论</span>
+            <span><b><?php echo (int) $ecodAuOv['days']; ?></b>天</span>
+        </div>
+    <?php endif; ?>
+</section>
