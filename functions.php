@@ -368,7 +368,7 @@ function ecod_primary_deep(): string
 /**
  * 本地随机头像：按 key（邮箱 / uid）从主题内置头像池确定性选一张
  *
- * 头像池素材在 assets/avatar/，增删图片后无需改代码；
+ * 头像池素材在 assets/avatar/（320px WebP，约 6KB/张），增删图片后无需改代码；
  * 同一 key 永远返回同一张，评论上下文头像保持一致。
  * 不再请求外部 Gravatar 服务，避免第三方不可用导致头像裂图或请求挂起。
  */
@@ -376,7 +376,7 @@ function ecod_local_avatar_url(string $key): string
 {
     static $pool = null;
     if ($pool === null) {
-        $pool = glob(__DIR__ . '/assets/avatar/*.png');
+        $pool = glob(__DIR__ . '/assets/avatar/*.webp');
         if (!is_array($pool) || !$pool) {
             $pool = [];
         } else {
