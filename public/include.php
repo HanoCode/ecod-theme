@@ -138,7 +138,22 @@ if ($ecodCode) {
     }
 }
 ?>
-<link rel="stylesheet" href="<?php echo ecod_asset('assets/css/ecod.css'); ?>">
+<?php
+/* 关键 CSS 内联：构建产物存在时，首屏必需的节（令牌/基础/布局/导航/暗色）
+   直接进 <head>，完整样式表转异步预加载——首屏渲染不再被整包 CSS 阻塞。
+   未构建（无 dist）时维持整包阻塞加载，行为与旧版一致。
+   内联块在 brand 之前输出，主色等派生变量的覆盖顺序不变。 */
+$ecodFullCssUrl = ecod_asset('assets/css/ecod.css');
+$ecodCriticalFile = ecod_dist_resolve('assets/css/ecod.critical.css');
+if ($ecodCriticalFile !== null) {
+    $ecodCriticalCss = (string) file_get_contents(ECOD_THEME_DIR . '/' . $ecodCriticalFile);
+    echo '<style id="ecod-critical">' . $ecodCriticalCss . '</style>' . "\n";
+?>
+<link rel="preload" href="<?php echo $ecodFullCssUrl; ?>" as="style" onload="this.onload=null;this.rel='stylesheet'">
+<noscript><link rel="stylesheet" href="<?php echo $ecodFullCssUrl; ?>"></noscript>
+<?php } else { ?>
+<link rel="stylesheet" href="<?php echo $ecodFullCssUrl; ?>">
+<?php } ?>
 <style id="ecod-brand">
 :root {
     --ecod-primary: <?php echo $ecodPrimary; ?>;

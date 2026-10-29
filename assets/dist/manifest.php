@@ -11,6 +11,7 @@
 
 return [
     'assets/css/ecod.css' => 'assets/dist/css/ecod.8e50958f.min.css',
+    'assets/css/ecod.critical.css' => 'assets/dist/css/ecod.critical.a5e4acaa.min.css',
     'assets/js/ecod.global.js' => 'assets/dist/js/ecod.global.f8954675.min.js',
     'assets/js/ecod.post.js' => 'assets/dist/js/ecod.post.09afd111.min.js',
     'assets/admin/config.css' => 'assets/dist/admin/config.932a75d5.min.css',

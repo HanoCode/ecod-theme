@@ -61,6 +61,34 @@ const ENTRIES = [
 ];
 
 /**
+ * 关键 CSS 抽取的节编号（源码分节标记 `/* ============ N. 名称 ============ `）。
+ * 0 令牌 / 1 基础 / 2 布局 / 3 导航抽屉 / 12 暗色令牌——
+ * 保证任意页面的头部与配色首帧即正确，内容区随完整样式表（异步预加载）补齐。
+ */
+const CRITICAL_SECTIONS = ['0', '1', '2', '3', '12'];
+
+/** 按分节标记从 CSS 源码中抽取指定编号的节，保持原顺序拼接 */
+function extractCssSections(source, numbers) {
+    const lines = source.split('\n');
+    const marks = [];
+    for (let i = 0; i < lines.length; i++) {
+        const m = lines[i].match(/^\/\* =+ (\d+(?:\.\d+)?)\./);
+        if (m) marks.push({ i, num: m[1] });
+    }
+    const wanted = new Set(numbers);
+    let out = [];
+    for (let k = 0; k < marks.length; k++) {
+        if (!wanted.has(marks[k].num)) continue;
+        const end = k + 1 < marks.length ? marks[k + 1].i : lines.length;
+        out = out.concat(lines.slice(marks[k].i, end));
+    }
+    if (!out.length) {
+        throw new Error('关键 CSS 抽取为空：分节标记与 CRITICAL_SECTIONS 对不上');
+    }
+    return out.join('\n');
+}
+
+/**
  * 内容哈希（sha1 前 8 位）：同名不同内容必然不同 URL，
  * 服务端因此可以放心发一年期 immutable 长缓存。
  */
@@ -123,6 +151,39 @@ async function main() {
             src: Buffer.byteLength(source),
             out: Buffer.byteLength(minified),
         });
+
+        /* 关键 CSS：从主样式表抽出首屏必需的节（令牌/基础/布局/导航/暗色），
+           单独 minify 成 ecod.critical.<hash>.min.css，由 include.php 内联进
+           <head>；完整样式表转异步预加载，首屏不再被 300KB CSS 阻塞。
+           节编号对应源码的 /* ============ N. 名称 ============ 分节标记，
+           想调整首屏覆盖面改这一个数组即可。 */
+        if (rel === 'assets/css/ecod.css') {
+            const criticalSource = extractCssSections(source, CRITICAL_SECTIONS);
+            const criticalMin = (
+                await build({
+                    stdin: { contents: criticalSource, loader: 'css', resolveDir: THEME_DIR },
+                    minify: true,
+                    bundle: false,
+                    write: false,
+                    logLevel: 'silent',
+                })
+            ).outputFiles[0].text;
+            if (criticalMin.includes('</style')) {
+                throw new Error('critical CSS 含 </style，内联会截断 head');
+            }
+            const criticalBase = 'css/ecod.critical';
+            const criticalHash = hashOf(criticalMin);
+            const criticalRel = `assets/dist/${criticalBase}.${criticalHash}.min.css`;
+            await mkdir(dirname(join(THEME_DIR, criticalRel)), { recursive: true });
+            await writeFile(join(THEME_DIR, criticalRel), criticalMin);
+            /* 伪源路径键：ecod_dist_resolve('assets/css/ecod.critical.css') 可查到 */
+            manifest['assets/css/ecod.critical.css'] = criticalRel;
+            report.push({
+                file: 'css/ecod.critical.css (派生)',
+                src: Buffer.byteLength(criticalSource),
+                out: Buffer.byteLength(criticalMin),
+            });
+        }
     }
 
     /* manifest 用 PHP 数组而非 JSON：无需解码步骤，opcache 直接加载 */
