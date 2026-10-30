@@ -484,6 +484,21 @@ ecod_admin_field($form, 'select', 'EFriendApply', 'on', '友链一键申请', '�
     'on'  => '开启',
     'off' => '关闭',
 ], 'interact');
+ecod_admin_field($form, 'select', 'ECLike', 'on', '评论点赞', '每条评论右下角的「赞」按钮，访客按浏览器指纹去重、登录用户跨设备同步；第三方评论系统接管时不显示', [
+    'on'  => '开启（默认）',
+    'off' => '关闭',
+], 'interact');
+ecod_admin_field($form, 'textarea', 'ECopyrightSet', '', '版权模板', '多套版权声明的快捷切换。每行一套：「名称丨声明文本」，文章自定义字段 copyright 填名称即选用对应文本；没填字段的文章仍用「文章页 → 版权声明」模块里的通用说明', [], 'post');
+ecod_admin_field($form, 'select', 'EContribute', 'off', '前端投稿', '登录用户在「投稿」页提交文章，进入后台「待审核」列表，管理员点发布即上线。需先用「工具 → 特色页」创建投稿页并放入导航', [
+    'off' => '关闭',
+    'on'  => '开启',
+], 'interact');
+ecod_admin_field($form, 'select', 'EContributeGroup', 'contributor', '投稿用户组下限', '低于该用户组不能投稿。订阅者=所有登录用户；投稿者=Typecho 后台「投稿者」及以上', [
+    'contributor' => '投稿者及以上（默认）',
+    'subscriber'  => '所有登录用户',
+], 'interact', ['data-ecod-show-when' => 'EContribute:on']);
+ecod_admin_field($form, 'text', 'EContributeCats', '', '可投稿分类', '顶级分类的 mid，逗号分隔；留空表示全部顶级分类都可投稿。mid 可在后台「管理 → 分类」的编辑地址里看到', [], 'interact', ['data-ecod-show-when' => 'EContribute:on']);
+ecod_admin_field($form, 'textarea', 'EContributeNote', "投稿前请先阅读：\n· 内容须为原创或已获授权，严禁抄袭与拼凑；\n· 排版支持 Markdown，代码请放进代码块；\n· 提交后进入待审核，通过后即发布；不通过可在「个人中心 → 我的文章」里修改后重新提交。", '投稿须知', '显示在投稿表单上方的说明文字，支持换行', [], 'interact', ['data-ecod-show-when' => 'EContribute:on']);
 ecod_admin_field($form, 'select', 'ECtxMenu', 'on', '右键菜单', '在文章卡片、文章页与链接上右键时给出「复制链接 / 新标签打开 / 搜索选中文字」等快捷操作；表单与输入框内仍是浏览器原生菜单', [
     'on'  => '开启',
     'off' => '关闭',
@@ -524,6 +539,7 @@ ecod_admin_field($form, 'select', 'EViews', 'on', '阅读量统计', '关闭后�
     'off' => '停止统计',
 ], 'interact');
 ecod_admin_field($form, 'text', 'EBirth', '', '站点成立日期', '例如 2021-01-01；填写后「数据概览」块会显示已运行天数', [], 'site');
+ecod_admin_field($form, 'textarea', 'ESites', '', '网址导航数据', '「网址导航」页的站点数据。空行分隔分组，每组第一行为「组名丨组描述」，之后每行一个站点：「名称丨链接丨一句话描述」，第 4 段可选（站点图标地址）。需先用「工具 → 特色页」创建网址导航页', [], 'site');
 
 /* 互动（评论 / 点赞 / 阅读量） */
 ecod_admin_field($form, 'select', 'EComment', 'on', '全站评论', '关闭后所有文章与页面的评论表单、评论列表都不再输出', [
@@ -886,6 +902,7 @@ window.ECOD_NAV = <?php echo json_encode([
     'sets'    => ecod_nav_sets()['sets'],
     'active'  => ecod_nav_sets()['active'],
     'home'    => ecod_nav_home_url(),
+    'icons'   => ecod_icon_names(),
 ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_HEX_TAG | JSON_HEX_AMP); ?>;
 window.ECOD_TOPICS = <?php echo json_encode([
     'items' => ecod_topics(false),

@@ -120,14 +120,15 @@ if ($ecodNavMax > 0 && count($ecodNav) > $ecodNavMax) {
                         <span><?php echo htmlspecialchars($ecodLogo); ?></span>
                     <?php endif; ?>
                 <?php else: ?>
-                    <?php echo htmlspecialchars($ecodLogo); ?>
+                    <span class="ecod_nav__logo-mark" aria-hidden="true"><?php echo htmlspecialchars(mb_substr($ecodLogo !== '' ? $ecodLogo : (string) $this->options->title, 0, 1), ENT_QUOTES, 'UTF-8'); ?></span>
+                    <span><?php echo htmlspecialchars($ecodLogo); ?></span>
                 <?php endif; ?>
             </a>
 
             <ul class="ecod_nav__links">
                 <?php if (!ecod_nav_has_menu()): ?>
                     <li class="<?php echo $this->is('index') ? 'is-active' : ''; ?>">
-                        <a href="<?php $this->options->siteUrl(); ?>">首页</a>
+                        <a href="<?php $this->options->siteUrl(); ?>"><span class="ecod_nav__licon"><?php echo ecod_icon('home', 15); ?></span>首页</a>
                     </li>
                 <?php endif; ?>
                 <?php foreach ($ecodNavHead as $ecodItem): ?>
@@ -144,10 +145,17 @@ if ($ecodNavMax > 0 && count($ecodNav) > $ecodNavMax) {
                     }
                     /* 二级超过 6 个自动分两列（设计稿 §03.5） */
                     $ecodCols = count($ecodKids) > 6 ? ' is-cols' : '';
+                    /* 一级项可选前置图标与角标（§03.5 icon / badge 字段） */
+                    $ecodIconHtml = isset($ecodItem['icon']) && $ecodItem['icon'] !== ''
+                        ? '<span class="ecod_nav__licon">' . ecod_icon((string) $ecodItem['icon'], 15) . '</span>'
+                        : '';
+                    $ecodBadgeHtml = isset($ecodItem['badge']) && $ecodItem['badge'] !== ''
+                        ? '<i class="ecod_nav__badge">' . htmlspecialchars((string) $ecodItem['badge'], ENT_QUOTES, 'UTF-8') . '</i>'
+                        : '';
                     ?>
                     <li class="<?php echo $ecodOn ? 'is-active' : ''; ?><?php echo $ecodKids ? ' has-sub' : ''; ?>">
                         <a href="<?php echo htmlspecialchars($ecodItem['url'], ENT_QUOTES, 'UTF-8'); ?>"
-                            <?php echo ecod_nav_link_attrs($ecodItem); ?>><?php echo htmlspecialchars($ecodItem['title'], ENT_QUOTES, 'UTF-8'); ?><?php echo $ecodKids ? '<i class="ecod_nav__caret" aria-hidden="true">' . ecod_icon('chevron', 12) . '</i>' : ''; ?></a>
+                            <?php echo ecod_nav_link_attrs($ecodItem); ?>><?php echo $ecodIconHtml; ?><span class="ecod_nav__ltext"><?php echo htmlspecialchars($ecodItem['title'], ENT_QUOTES, 'UTF-8'); ?></span><?php echo $ecodBadgeHtml; ?><?php echo $ecodKids ? '<i class="ecod_nav__caret" aria-hidden="true">' . ecod_icon('chevron', 12) . '</i>' : ''; ?></a>
                         <?php if ($ecodKids): ?>
                             <ul class="ecod_nav__sub<?php echo $ecodCols; ?>">
                                 <?php foreach ($ecodKids as $ecodKid): ?>
@@ -183,14 +191,24 @@ if ($ecodNavMax > 0 && count($ecodNav) > $ecodNavMax) {
                 <?php endif; ?>
             </ul>
 
-            <form class="ecod_nav__search" role="search" method="post" action="<?php $this->options->siteUrl(); ?>">
-                <?php echo ecod_icon('search', 14); ?>
-                <input type="search" name="s" placeholder="搜索文章" aria-label="搜索文章" autocomplete="off" data-ecod-search-input>
-                <kbd>↵</kbd>
-            </form>
+            <?php $ecodSPanelOn = ecod_option('ESearchPanel', 'on') === 'on'; ?>
+            <div class="ecod_nav__actions">
+                <i class="ecod_nav__sep" aria-hidden="true"></i>
+                <?php if ($ecodSPanelOn): ?>
+                    <button type="button" class="ecod_nav__searchbtn" data-ecod-spanel-open aria-label="搜索"
+                            title="搜索（⌘K）"><?php echo ecod_icon('search', 17); ?></button>
+                <?php else: ?>
+                    <form class="ecod_nav__search" role="search" method="post" action="<?php $this->options->siteUrl(); ?>">
+                        <?php echo ecod_icon('search', 14); ?>
+                        <input type="search" name="s" placeholder="搜索文章" aria-label="搜索文章" autocomplete="off" data-ecod-search-input>
+                        <kbd>↵</kbd>
+                    </form>
+                <?php endif; ?>
+                <button type="button" class="ecod_nav__themebtn" data-ecod-theme-toggle
+                        aria-label="切换深浅模式" title="深浅模式"><?php echo ecod_icon('moon', 17); ?></button>
 
-            <?php if ($ecodUserLogged): ?>
-                <details class="ecod_nav__user" data-ecod-user data-ecod-logged="1">
+                <?php if ($ecodUserLogged): ?>
+                    <details class="ecod_nav__user" data-ecod-user data-ecod-logged="1">
                     <summary aria-label="用户中心">
                         <span class="ecod_nav__user-ic"><?php echo ecod_icon('user', 16); ?></span>
                         <img src="<?php echo htmlspecialchars($ecodUserAvatar, ENT_QUOTES, 'UTF-8'); ?>"
@@ -236,6 +254,7 @@ if ($ecodNavMax > 0 && count($ecodNav) > $ecodNavMax) {
                     </div>
                 </details>
             <?php endif; ?>
+            </div><!-- /.ecod_nav__actions -->
 
             <button type="button" class="ecod_nav__burger" data-ecod-drawer-open aria-label="打开菜单" aria-expanded="false"><?php echo ecod_icon('menu', 18); ?></button>
         </nav>

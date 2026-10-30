@@ -79,6 +79,8 @@
             blank: !!(row && row.blank),
             attr: row && row.attr != null ? String(row.attr) : '',
             cls: row && row.cls != null ? String(row.cls) : '',
+            icon: row && row.icon != null ? String(row.icon) : '',
+            badge: row && row.badge != null ? String(row.badge) : '',
             children: []
         };
         if (row && row.children && row.children.length) {
@@ -101,6 +103,8 @@
             blank: !!item.blank,
             attr: item.attr || '',
             cls: item.cls || '',
+            icon: item.icon || '',
+            badge: item.badge || '',
             children: (item.children || []).map(cleanItem)
         };
     }
@@ -571,6 +575,9 @@
             '</label>';
     }
 
+    /* 图标下拉：DATA.icons 来自后端 sprite 键名清单 */
+    var ICONS = Array.isArray(DATA.icons) ? DATA.icons : [];
+
     /* 菜单项编辑面板（等价于 WP 的菜单项折叠面板） */
     function panelHtml(item, isSub) {
         var src = urlMap[item.type + ':' + item.ref] || null;
@@ -580,12 +587,21 @@
             ? '必填，例如 https://github.com/you'
             : (srcUrl || '留空跟随源地址');
 
+        var iconOpts = '<option value="">不使用</option>' + ICONS.map(function (name) {
+            return '<option value="' + esc(name) + '"' + (item.icon === name ? ' selected' : '') + '>' + esc(name) + '</option>';
+        }).join('');
+
         return '<div class="ecod-navb__edit' + (isSub ? ' is-sub' : '') + '" data-edit="' + esc(item._k) + '">' +
             '<div class="ecod-navb__grid">' +
             fieldHtml('名称', 'label', item.label, src ? '默认：' + srcName : '留空用源标题') +
             fieldHtml('标题属性', 'attr', item.attr, '鼠标悬停提示，可留空') +
             fieldHtml('链接地址', 'url', item.url, ph, true) +
             fieldHtml('CSS 类', 'cls', item.cls, '可选，空格分隔，最多 5 个') +
+            '<label class="ecod-navb__field">' +
+            '<span>前置图标</span>' +
+            '<select data-e="icon"' + (isSub ? ' disabled title="仅一级项生效"' : '') + '>' + iconOpts + '</select>' +
+            '</label>' +
+            fieldHtml('角标', 'badge', item.badge, '如「热」「NEW」，最长 6 字') +
             '<label class="ecod-navb__check"><input type="checkbox" data-e="blank"' +
             (item.blank ? ' checked' : '') + '> 新窗口打开</label>' +
             '</div>' +
@@ -726,6 +742,8 @@
             hit.item.label = '';
             hit.item.attr = '';
             hit.item.cls = '';
+            hit.item.icon = '';
+            hit.item.badge = '';
             /* 自定义链接没有源可跟随，地址必须留着，否则保存后这一项会被丢弃 */
             if (hit.item.type !== 'link') {
                 hit.item.url = '';
@@ -787,6 +805,14 @@
 
     listEl.addEventListener('change', function (e) {
         var input = e.target;
+        if (input.matches && input.matches('select[data-e="icon"]')) {
+            var selHit = editTarget(input);
+            if (selHit) {
+                selHit.item.icon = input.value;
+                sync();
+            }
+            return;
+        }
         if (!input.matches || !input.matches('input[data-e="blank"]')) {
             return;
         }

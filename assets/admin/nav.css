@@ -512,7 +512,26 @@ body.is-navb-dragging {
     color: var(--ea-ink);
 }
 
-.ecod-navb__field input:focus {
+/* 前置图标下拉：与文本输入同规格 */
+.ecod-navb__field select {
+    width: 100%;
+    height: 28px;
+    padding: 0 6px;
+    border: 1px solid var(--ea-line);
+    border-radius: var(--ea-radius-sm);
+    background: #fff;
+    font-size: 12px;
+    color: var(--ea-ink);
+}
+
+.ecod-navb__field select:disabled {
+    background: var(--ea-soft, #f5f6f8);
+    color: var(--ea-sub);
+    cursor: not-allowed;
+}
+
+.ecod-navb__field input:focus,
+.ecod-navb__field select:focus {
     outline: none;
     border-color: var(--ea-brand);
     box-shadow: 0 0 0 3px var(--ea-brand-soft);

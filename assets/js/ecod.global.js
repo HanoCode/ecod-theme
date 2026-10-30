@@ -772,6 +772,33 @@
         }
     };
 
+    /* ---------- 浮层：点空白处 / Esc 收起 ----------
+       details 原生弹层只认「再点一次标题」，这里统一补外点关闭；
+       抽屉里的手风琴（.ecod_drawer__group 等）不在名单内，不会被误关。 */
+    Ecod.initPopDismiss = function () {
+        if (Ecod._popDismiss) return;
+        Ecod._popDismiss = 1;
+
+        var SEL = 'details.ecod_nav__user[open], details.ecod_share[open],'
+            + ' details.ecod_reward[open], .ecod_nav__more details[open]';
+
+        function closeAll(except) {
+            document.querySelectorAll(SEL).forEach(function (d) {
+                if (d === except) return;
+                d.removeAttribute('open');
+            });
+        }
+
+        document.addEventListener('click', function (e) {
+            var t = e.target;
+            closeAll(t && t.closest ? t.closest('details') : null);
+        });
+        document.addEventListener('keydown', function (e) {
+            if (e.key !== 'Escape') return;
+            closeAll(null);
+        });
+    };
+
     /* ---------- 头部用户面板：点外部收起 ---------- */
     Ecod.initUserPop = function () {
         /* 下拉面板从触发头像处展开：用 offset 坐标（不受入场 scale 影响），
@@ -785,21 +812,6 @@
                 panel.style.setProperty('--ecod-ox', (summary.offsetLeft + summary.offsetWidth / 2) + 'px');
                 panel.style.setProperty('--ecod-oy', (summary.offsetTop + summary.offsetHeight) + 'px');
             });
-        });
-
-        document.addEventListener('click', function (e) {
-            document.querySelectorAll('details.ecod_nav__user[open]').forEach(function (d) {
-                if (!d.contains(e.target)) {
-                    d.removeAttribute('open');
-                }
-            });
-        });
-        document.addEventListener('keydown', function (e) {
-            if (e.key === 'Escape') {
-                document.querySelectorAll('details.ecod_nav__user[open]').forEach(function (d) {
-                    d.removeAttribute('open');
-                });
-            }
         });
     };
 
@@ -1288,6 +1300,90 @@
         });
     };
 
+    /* ---------- 关注作者：切换 + 粉丝数就地更新（登录态由服务端渲染的按钮形态区分） ---------- */
+    Ecod.initFollow = function () {
+        if (!CFG.api) return;
+
+        once(document, 'follow', 'click', function (e) {
+            var btn = e.target.closest ? e.target.closest('[data-ecod-follow]') : null;
+            if (!btn) return;
+            e.preventDefault();
+            if (btn.dataset.busy === '1') return;
+            btn.dataset.busy = '1';
+
+            var uid = btn.getAttribute('data-ecod-follow');
+            var body = 'uid=' + encodeURIComponent(uid)
+                + '&token=' + encodeURIComponent(btn.getAttribute('data-ecod-token') || '');
+
+            fetch(CFG.api + '?action=follow_toggle', {
+                method: 'POST',
+                credentials: 'same-origin',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: body
+            }).then(function (r) { return r.json(); }).then(function (data) {
+                btn.dataset.busy = '';
+                if (!data || !data.ok) {
+                    if (data && data.error) window.alert(data.error);
+                    return;
+                }
+                var on = !!data.following;
+                btn.classList.toggle('is-on', on);
+                btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+                var label = btn.querySelector('span');
+                if (label) label.textContent = on ? '已关注' : '关注';
+
+                var fans = document.querySelector('[data-ecod-fans="' + uid + '"]');
+                if (fans && typeof data.fans === 'number') fans.textContent = String(data.fans);
+
+                /* 个人中心列表：取关后就地移除 */
+                var row = btn.closest('.ecod_uc__follow-item');
+                if (!on && row) row.remove();
+            }).catch(function () {
+                btn.dataset.busy = '';
+            });
+        });
+    };
+
+    /* ---------- 侧栏热门 Tab 组：显隐切换（版面已在服务端渲染） ---------- */
+    Ecod.initWtabs = function () {
+        document.querySelectorAll('[data-ecod-wtabs]').forEach(function (root) {
+            if (root._ecodWtab) return;
+            root._ecodWtab = 1;
+
+            var tabs = root.querySelectorAll('[data-ecod-wtab]');
+            if (!tabs.length) return;
+
+            function activate(tab) {
+                var key = tab.getAttribute('data-ecod-wtab');
+                Array.prototype.forEach.call(tabs, function (one) {
+                    var on = one === tab;
+                    one.classList.toggle('is-active', on);
+                    one.setAttribute('aria-selected', on ? 'true' : 'false');
+                });
+                Array.prototype.forEach.call(root.querySelectorAll('[data-ecod-wtab-pane]'), function (pane) {
+                    var on = pane.getAttribute('data-ecod-wtab-pane') === key;
+                    pane.classList.toggle('is-active', on);
+                    pane.hidden = !on;
+                });
+            }
+
+            Array.prototype.forEach.call(tabs, function (tab, i) {
+                tab.addEventListener('click', function () { activate(tab); });
+                tab.addEventListener('keydown', function (e) {
+                    var next = -1;
+                    if (e.key === 'ArrowRight' || e.key === 'ArrowDown') next = (i + 1) % tabs.length;
+                    else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') next = (i - 1 + tabs.length) % tabs.length;
+                    else if (e.key === 'Home') next = 0;
+                    else if (e.key === 'End') next = tabs.length - 1;
+                    if (next < 0) return;
+                    e.preventDefault();
+                    tabs[next].focus();
+                    activate(tabs[next]);
+                });
+            });
+        });
+    };
+
     /* ---------- 快捷键：Cmd/Ctrl + K ---------- */
     /* ESearchPanel=on 时唤起居中搜索面板；off 时退回旧行为：聚焦导航搜索框 */
     Ecod.initHotkey = function () {
@@ -1363,7 +1459,26 @@
             var box = e.target.closest ? e.target.closest('.ecod_nav__search') : null;
             if (!box) return;
             e.preventDefault();
+            /* 兜底：若输入框此前已被聚焦（如 Tab），联想下拉可能已显示，一并收起 */
+            var drop = box.querySelector('.ecod_suggest');
+            if (drop) drop.hidden = true;
             open();
+        }, true);
+
+        /* 导航操作簇的搜索图标按钮（§03 修订：常驻搜索框收敛为图标） */
+        document.addEventListener('click', function (e) {
+            var btn = e.target.closest ? e.target.closest('[data-ecod-spanel-open]') : null;
+            if (!btn) return;
+            e.preventDefault();
+            open();
+        }, true);
+
+        /* mousedown 阶段就要拦掉默认行为：浏览器在 mousedown 时聚焦输入框，
+           click 拦不住 → 聚焦会同时弹出主题联想「最近搜索」和浏览器原生搜索历史 */
+        document.addEventListener('mousedown', function (e) {
+            var box = e.target.closest ? e.target.closest('.ecod_nav__search') : null;
+            if (!box) return;
+            e.preventDefault();
         }, true);
 
         /* 移动端 dock 搜索按钮 → 打开面板；面板关闭（ESearchPanel=off）时保留抽屉 */
@@ -2181,7 +2296,12 @@
         return !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
     };
 
+    /* 首屏整页加载不加入场动效：内容已在关键 CSS 下画出第一帧，
+       这时再补 .ecod-reveal（opacity:0）等于「先显示 → 藏起来 → 淡入」，
+       刷新时就是一次整页闪动。只有站内换页 / 加载更多才铺动画：
+       _animArmed 在首屏初始化跑完后置位（见文件末尾 DOMContentLoaded）。 */
     Ecod.initAnimate = function () {
+        if (!Ecod._animArmed) return;
         var run = function () { ecodAnimateRun(); };
         if (document.documentElement.getAttribute('data-ecod-cssready') === '1') {
             run();
@@ -2294,7 +2414,8 @@
         var nav = document.querySelector('.ecod_nav');
         if (!nav) return;
         var links = nav.querySelector('.ecod_nav__links');
-        var search = nav.querySelector('.ecod_nav__search');
+        /* 搜索入口两种形态：常驻表单（ESearchPanel=off）或操作簇图标按钮 */
+        var search = nav.querySelector('.ecod_nav__search, .ecod_nav__searchbtn');
         if (!links || !search) return;
 
         var CHEVRON = '<svg class="ecod_icon" width="12" height="12" viewBox="0 0 24 24" fill="none"'
@@ -2944,21 +3065,58 @@
             btn.disabled = true;
             btn.textContent = '加载中…';
 
+            /* 阅读起点锚点：点击瞬间视口里第一张卡（可能被上边界裁掉一半），
+               记下它的文档坐标。追加完成后只抵消「布局位移」，
+               用户自己在等待期间滚了多少都不碰。 */
+            var anchor = null;
+            var anchorDocTop = 0;
+            var cards = wrap.children;
+            for (var i = 0; i < cards.length; i++) {
+                var rect = cards[i].getBoundingClientRect();
+                if (rect.bottom > 0) {
+                    anchor = cards[i];
+                    anchorDocTop = rect.top + window.pageYOffset;
+                    break;
+                }
+            }
+
             fetch(next.href, { credentials: 'same-origin' })
                 .then(function (res) { return res.text(); })
                 .then(function (html) {
-                    var prevY = window.pageYOffset;
                     var doc = new DOMParser().parseFromString(html, 'text/html');
                     var newWrap = doc.querySelector('[data-ecod-infinite]');
                     var newPager = doc.querySelector('.ecod_pager');
 
                     if (newWrap) {
+                        var yBefore = window.pageYOffset;
                         Array.prototype.forEach.call(newWrap.children, function (card) {
                             wrap.appendChild(document.adoptNode(card));
                         });
-                        /* 浏览器滚动锚定会把视口钉在按钮上，追加后还原滚动位置，
-                           让新卡片停在当前视口下方而不是跑到上面去 */
-                        window.scrollTo(0, prevY);
+
+                        /* 位置锁定（三层，缺一不可）：
+                           ① CSS 给 .ecod_main / 列表关掉 overflow-anchor —— 主修复；
+                           ② 追加这一帧里 scrollY 若被浏览器动过（老引擎不认 ①），
+                              直接还原，此刻不可能是用户滚的；
+                           ③ 再按锚点卡的文档坐标抵消布局位移（若将来在上方插入内容）。
+                           全部走瞬时滚动：全局 html{scroll-behavior:smooth}
+                           会把补偿变成一段动画，反而更晃。 */
+                        var yAfter = window.pageYOffset;
+                        var fixY = null;
+                        if (yAfter !== yBefore) {
+                            fixY = yBefore;
+                        } else if (anchor && anchor.isConnected) {
+                            var shift = (anchor.getBoundingClientRect().top + window.pageYOffset) - anchorDocTop;
+                            if (Math.abs(shift) > 1) {
+                                fixY = yAfter + shift;
+                            }
+                        }
+                        if (fixY !== null) {
+                            var root = document.documentElement;
+                            var prevBehavior = root.style.scrollBehavior;
+                            root.style.scrollBehavior = 'auto';
+                            window.scrollTo(0, fixY);
+                            root.style.scrollBehavior = prevBehavior;
+                        }
                     }
 
                     /* 新页的「下一页」存在则继续，否则到底收摊 */
@@ -3072,6 +3230,11 @@
         Ecod.initCatTools();
         Ecod.initSort();
         Ecod.initRank();
+        Ecod.initWtabs();
+        Ecod.initFollow();
+        Ecod.runPost('initContribute');
+        Ecod.runPost('initUcPosts');
+        Ecod.runPost('initClike');
         Ecod.runPost('initExtras');
         Ecod.initDock();
         Ecod.initNotice();
@@ -3144,10 +3307,13 @@
         Ecod.initDrawer();
         Ecod.initHotkey();
         Ecod.initUserPop();
+        Ecod.initPopDismiss();
         Ecod.initActions();
         Ecod.initCtxMenu();
         Ecod.runPost('initReply');
         Ecod.initPjax();
         Ecod.refresh();
+        /* 首屏初始化完毕：此后的 refresh（PJAX 换页）与加载更多才铺入场动效 */
+        Ecod._animArmed = true;
     });
 })();

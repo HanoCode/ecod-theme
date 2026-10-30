@@ -566,6 +566,19 @@ details .in{padding-bottom:12px}
       <p style="font-size:12px;color:var(--text-3);margin-top:10px">支持历史记录（localStorage）、分类过滤、↑↓ 键盘选择、Esc 关闭。</p>
     </div>
   </div>
+
+  <div class="card pad" style="margin-top:16px">
+    <b style="font-size:13.5px">header 四分区与操作簇 <span class="tag new">2026-10-30 修订</span></b>
+    <p style="font-size:12.5px;color:var(--text-2);margin-top:6px">参考成熟站点的 header 构成，把导航条从「logo + 纯文字导航 + 搜索框 + 头像」升级为<b>四个分区</b>：品牌区 → 主导航 → 操作簇 → 用户区，操作簇与导航之间用 1px 竖分割线（<code>.ecod_nav__sep</code>）分组。不做电商语境的购物车 / 货币选择器。</p>
+    <table style="margin-top:8px">
+      <tr><th style="width:16%">分区</th><th>构成</th></tr>
+      <tr><td style="padding-left:0">① 品牌区</td><td>无 <code>ELogoImage</code> 时输出默认图形块（<code>.ecod_nav__logo-mark</code>，主色圆角方块 + 站名首字）+ 字标；上传 logo 图后按现有逻辑渲染图片（<code>ELogoBoth</code> 仍可追加字标）</td></tr>
+      <tr><td style="padding-left:0">② 主导航</td><td>每项可配 <b>icon / badge</b> 字段（字段定义见 §03.5 表）；有 icon 时在文案前渲染 15px 线性 sprite 图标，透明度 .78；badge 为右上角小胶囊（<code>.ecod_nav__badge</code>，danger 色，白字 10px），配了才渲染。移动抽屉不渲染 icon/badge（保持紧凑列表）</td></tr>
+      <tr><td style="padding-left:0">③ 操作簇</td><td>从左到右：分割线 → <b>搜索按钮</b> → <b>深浅切换</b> → 分割线 → 用户区。<code>ESearchPanel=on</code> 时常驻搜索框收敛为 34px 圆形图标按钮（<code>.ecod_nav__searchbtn</code>），点击走 C4 面板的 capture 唤起，⌘K / dock 入口不变；<code>=off</code> 时保留原搜索表单形态兜底。深浅切换按钮复用 <code>data-ecod-theme-toggle</code> 机制（现有 dock 同款），点击循环 light/dark 并写 localStorage，EDark=auto 时初始按系统偏好</td></tr>
+      <tr><td style="padding-left:0">④ 用户区</td><td>保持现状：登录态头像下拉 / 游客登录弹层入口，不改结构，仅纳入操作簇的间距节奏</td></tr>
+    </table>
+    <p style="font-size:12px;color:var(--text-3);margin-top:8px">兼容：icon / badge 为可选字段，旧 ENavSets 数据无此字段时导航自动退化为纯文字；「更多」下拉与二级菜单不渲染 icon/badge。操作簇全部元素在 <code>#ecod-shell</code> 之外的 header 内，PJAX 换页不受影响。</p>
+  </div>
 </section>
 
 <!-- 3.5 -->
@@ -646,6 +659,8 @@ details .in{padding-bottom:12px}
       <tr><td><code>blank</code></td><td>bool</td><td>新窗口打开，默认 off</td></tr>
       <tr><td><code>attr</code></td><td>string</td><td>链接的 <code>title</code> 属性（悬停提示），可留空；输出时转义</td></tr>
       <tr><td><code>cls</code></td><td>string</td><td>附加到 <code>&lt;a&gt;</code> 的 CSS 类，仅保留 <code>[A-Za-z0-9_-]</code> 片段、最多 5 个；用于单条菜单的特殊样式</td></tr>
+      <tr><td><code>icon</code></td><td>string</td><td><span class="tag new">新增</span> 导航项前置图标，取 sprite 图标名（<code>home</code> / <code>star</code> / <code>zap</code> / <code>folder</code> 等，后台下拉可选）；仅一级项前台渲染，非法名或留空不输出（<code>ecod_icon()</code> 对未知名返回空串，天然安全）</td></tr>
+      <tr><td><code>badge</code></td><td>string</td><td><span class="tag new">新增</span> 导航项右上角标文案（如「热」「NEW」），最长 6 字，danger 色小胶囊；仅一级项前台渲染，留空不输出。后台清空「自定义」时一并清掉</td></tr>
       <tr><td><code>children</code></td><td>array</td><td>仅一级项可有；元素字段同上但不再嵌套，超出部分渲染时忽略</td></tr>
     </table>
   </div>
@@ -891,6 +906,10 @@ details .in{padding-bottom:12px}
     <div class="card pad">
       <b style="font-size:13.5px">分页策略</b>
       <p style="font-size:12.5px;color:var(--text-2);margin-top:8px">首页 / 归档：AJAX「加载更多」；分类页与搜索页：数字分页（可被搜索引擎抓取）；两者共用 <code>.ecod_pager</code>。</p>
+    </div>
+    <div class="card pad">
+      <b style="font-size:13.5px">阅读起点不丢</b>
+      <p style="font-size:12.5px;color:var(--text-2);margin-top:8px">追加新一批卡片时视口<b>必须原地不动</b>：列表容器、按钮、分页条一律 <code>overflow-anchor: none</code>，杜绝浏览器把「按钮被推走的距离」补进 scrollY 导致整屏下跳；脚本再按点击瞬间视口首卡的<b>文档坐标</b>抵消布局位移（只抵消布局，不覆盖用户在等待期间的滚动）。判断标准：点击前视口首卡的 <code>rect.top</code> 与追加后偏差 ≤1px。</p>
     </div>
   </div>
 </section>
@@ -2037,6 +2056,7 @@ details .in{padding-bottom:12px}
       <tr><td>C3 链路实测</td><td>把 <code>Ecod.readProgress</code> 伪造成 42 并派发 scroll：<code>stat = 1 / 6 节 · 42%</code>、环 <code>stroke-dashoffset = 58px</code>（100−42）、弹层进度条 <code>98.27px</code>（内容宽 234 × 42%）。三者与顶部进度条同源，无第二套口径</td></tr>
       <tr><td>C3 开发期 bug</td><td><code>spy()</code> 原本 <code>if (next === activeIndex) return;</code> 在进度同步之前——同一节内滚动 pct 一直在变但被提前 return 挡住，进度只在跨章节时跳变。抽 <code>syncProgress(next)</code> 后放在 return 前调用</td></tr>
       <tr><td>C4 三入口</td><td>导航搜索框（capture 拦截，原表单不再弹下拉）、移动端 dock 搜索按钮（capture + <code>stopImmediatePropagation</code>，不再同时开抽屉）、⌘K / Ctrl+K。面板关闭时三者全部退回旧行为</td></tr>
+      <tr><td>C4 修复 2026-10-30</td><td>导航框只拦 <code>click</code> 不够：浏览器在 <code>mousedown</code> 阶段就聚焦输入框，click 的 <code>preventDefault</code> 拦不住 → 弹面板的同时主题联想「最近搜索」和浏览器原生搜索历史一起冒出来。<code>initSearchPanel</code> 补 <code>mousedown</code> capture <code>preventDefault</code>（阻止默认聚焦，原生历史与联想都不触发）；click 处理器里再兜底隐藏可能已显示的 <code>.ecod_suggest</code>（Tab 聚焦后点击的场景）</td></tr>
       <tr><td>C4 设置联动</td><td><code>ESearchPanel=off</code> → 面板 DOM 计数 0、<code>CFG.searchPanel=false</code>；<code>ESearchHot="Typecho, 主题开发、PHP 8.5"</code> → 解析 3 项（逗号与顿号混用）；<code>ESearchTagCount=6</code> → <code>data-tags</code> 6 条</td></tr>
       <tr><td>验收工具坑 1</td><td>文章页有 11 个外部播放器 iframe（YouTube / B 站 / Vimeo / 优酷 / 腾讯 / 网易云 / Spotify / SoundCloud），headless Chrome 必然 OOM 被杀（SIGTERM 137）。用 <code>--host-resolver-rules</code> 把这些域名黑洞到 127.0.0.1 才能截图</td></tr>
       <tr><td>验收工具坑 2</td><td>headless 虚拟时间下：iframe 内 <code>scrollTo</code> 不生效（scrollY 恒 0）、<code>requestAnimationFrame</code> 不推进（addScroll 回调不跑）、CSS 过渡不推进（读到的仍是初始值）。诊断必须把 <code>rAF</code> 换成同步执行并临时禁掉 <code>transition</code></td></tr>
@@ -2409,6 +2429,16 @@ details .in{padding-bottom:12px}
         <tr><th>后端清洗</th><td><code>ecod_wgt_clean_params()</code> 新增 <code>repeater</code> 分支：JSON 解析 → 只保留声明过的子字段键 → 逐值 <code>mb_substr 500</code> → 行数截到 <code>max</code> → 回写 JSON 字符串。</td></tr>
         <tr><th>存量迁移</th><td>存储 v3 → v4（<code>ECOD_WIDGET_SCHEMA=4</code>）：<code>author</code> 实例的 <code>links</code> 若为旧文本协议（非 <code>[</code> 开头），按行 <code>名称|网址</code> 解析转 JSON；author 模板同步改为直接 <code>json_decode</code>。迁移前照例备份 <code>EWidgetsBackupV3</code>。</td></tr>
         <tr><th>验收</th><td>① 管理台 author 模块显示行编辑器（名称 + 网址两列）；② 增删排序后保存，前台作者卡社交链接按序渲染；③ 旧文本存量迁移后前台渲染不变；④ 非法 JSON / 超限行数被清洗。</td></tr>
+      </table>
+    </div>
+
+    <p class="sec-desc" style="margin:12px 0 0"><b>第 11 轮修订（2026-10-30）· image 字段接媒体库选图</b>：审计最后一项——image 参数此前只是文本框 + 预览，desc 承诺「从媒体库选图」未兑现：</p>
+    <div class="card pad" style="margin:10px 0 0">
+      <table>
+        <tr><th style="width:22%">后端</th><td>新 POST <code>action=media</code>（管理员 + CSRF token 同路径）：查 <code>contents</code> 表 <code>type='attachment'</code>，按 <code>text</code> JSON 的 <code>type</code> 过滤图片类型（jpg/jpeg/gif/png/webp/avif/bmp/tiff），标题关键词筛选（<code>q</code>），按创建时间倒序，24 条/页（<code>page</code>）；URL 用 <code>\Widget\Upload::attachmentHandle()</code> 生成（吃插件接管，与前台同源）。返回 <code>{items:[{cid,title,url}], total, page, pages}</code>。</td></tr>
+        <tr><th>管理台</th><td>image 字段输入框旁加「媒体库」按钮，点击开弹层：搜索框（防抖 300ms）+ 缩略图网格（<code>background-image</code> 复用 <code>wgt-img__pv</code> 的裁切样式）+ 分页（上一页/下一页）。点缩略图 → 回填 URL 并关闭；弹层 ESC / 点遮罩可关。手填 URL 能力保留。</td></tr>
+        <tr><th>样式</th><td><code>widget.css</code> 新增 <code>.wgt-media</code> 系（遮罩、网格、分页），网格图块固定高 90px、cover 裁切、hover 高亮描边。</td></tr>
+        <tr><th>验收</th><td>① 弹层列出站点图片附件并可搜索翻页；② 选中后 URL 回填、预览即时更新、保存后前台生效；③ 非图片附件（zip 等）不出现；④ 无附件时显示空态文案。</td></tr>
       </table>
     </div>
   </div>

@@ -14,6 +14,26 @@ if (!defined('__TYPECHO_ROOT_DIR__')) {
     exit;
 }
 
+/**
+ * 线性图标名清单（stroke 集，不含品牌实心集）
+ *
+ * 供后台导航构建器的「图标」下拉使用：键名即 ecod_icon() 的 $name。
+ *
+ * @return array<int, string>
+ */
+if (!function_exists('ecod_icon_names')) {
+    function ecod_icon_names(): array
+    {
+        return [
+            'home', 'star', 'zap', 'folder', 'tag', 'file', 'link', 'user',
+            'edit', 'smile', 'search', 'clock', 'eye', 'comment', 'calendar',
+            'heart', 'mail', 'inbox', 'layers', 'list', 'hash', 'chart',
+            'medal', 'bulb', 'cloud', 'music', 'video', 'play', 'image',
+            'download', 'share', 'github', 'lock', 'info', 'radio',
+        ];
+    }
+}
+
 if (!function_exists('ecod_icon')) {
     /**
      * @param string $name 图标名

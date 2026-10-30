@@ -96,6 +96,17 @@ function ecod_nav_norm_item($row): ?array
     $label = trim((string) ($row['label'] ?? ''));
     $url   = trim((string) ($row['url'] ?? ''));
 
+    /* 导航项前置图标：只留 sprite 键名字符，未知名在前台由 ecod_icon() 返回空串兜底 */
+    $icon = preg_replace('/[^a-z0-9-]/', '', strtolower(trim((string) ($row['icon'] ?? ''))));
+    if ($icon !== null && strlen($icon) > 24) {
+        $icon = substr($icon, 0, 24);
+    }
+    /* 角标文案：最长 6 字 */
+    $badge = trim((string) ($row['badge'] ?? ''));
+    if (mb_strlen($badge) > 6) {
+        $badge = mb_substr($badge, 0, 6);
+    }
+
     /* link 必须有地址；page / cat / tag 必须有 ref；home 什么都不用 */
     if ($type === 'link' && $url === '') {
         return null;
@@ -112,6 +123,8 @@ function ecod_nav_norm_item($row): ?array
         'blank'    => !empty($row['blank']),
         'attr'     => trim((string) ($row['attr'] ?? '')),
         'cls'      => ecod_nav_clean_cls($row['cls'] ?? ''),
+        'icon'     => (string) $icon,
+        'badge'    => $badge,
         'children' => [],
     ];
 }
@@ -470,6 +483,8 @@ function ecod_nav_resolve_item(array $item, array $pageMap): ?array
         'blank'    => !empty($item['blank']),
         'attr'     => (string) ($item['attr'] ?? ''),
         'cls'      => ecod_nav_clean_cls($item['cls'] ?? ''),
+        'icon'     => (string) ($item['icon'] ?? ''),
+        'badge'    => (string) ($item['badge'] ?? ''),
         'children' => [],
     ];
 }
