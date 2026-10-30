@@ -19,7 +19,7 @@ if (!defined('__TYPECHO_ROOT_DIR__')) {
     exit;
 }
 $this->need('public/header.php');
-require_once __DIR__ . '/core/account.php';
+require_once __DIR__ . '/core/user/account.php';
 
 /* 登录态与用户资料 */
 $ecodUser = null;

@@ -51,12 +51,19 @@ $ecodShowFooterBar = ecod_block_on('credits') || ecod_block_on('links') || ecod_
 <?php if (function_exists('ecod_itemlist_output')) {
     ecod_itemlist_output();
 } ?>
-<?php if (ecod_option('ECode', 'off') === 'on'): ?>
+<?php $ecodIsContentPage = $this->is('post') || $this->is('page'); ?>
+<?php if (ecod_option('ECode', 'off') === 'on' && $ecodIsContentPage):
+/* 代码高亮只在正文出现：首页 / 列表页不加载 prism（约 -20KB + 1 个请求） */
+?>
 <script src="<?php echo ecod_asset('assets/vendor/prism/prism.js'); ?>" defer></script>
 <?php endif; ?>
+<?php if ($ecodIsContentPage):
+/* 二维码库只服务文章页的分享卡（ecod.post.js 唯一调用点） */
+?>
 <script src="<?php echo ecod_asset('assets/vendor/ecod-qr.js'); ?>" defer></script>
+<?php endif; ?>
 <script src="<?php echo ecod_asset('assets/js/ecod.global.js'); ?>" defer></script>
-<?php if ($this->is('post') || $this->is('page')):
+<?php if ($ecodIsContentPage):
 /* 内容页增强包：目录 / 评论 / 朗读 / 收银台等模块只在 post 与独立页用到，
    首页与列表页不输出这个标签，减少首屏 JS。
    PJAX 从列表页进入内容页时由 global 的 ensurePostBundle() 动态注入。 */

@@ -1727,6 +1727,8 @@ body.is-locked { overflow: hidden; }
     overflow: hidden;
     background: linear-gradient(135deg, #dbeafe, #ede9fe);
 }
+html[data-theme="dark"] .ecod_card__gallery a,
+html[data-theme="dark"] .ecod_card__gallery-ph { background: linear-gradient(135deg, #262c3b, #323a52); }
 .ecod_card__gallery img { width: 100%; height: 100%; object-fit: cover; transition: transform var(--ecod-dur-slow); }
 .ecod_card__gallery a:hover img { transform: scale(1.05); }
 
@@ -2101,6 +2103,7 @@ html[data-theme="dark"] .ecod_loadmore.is-end { color: #7b8394; }
     justify-content: center;
 }
 .ecod_rankcard__thumb img { width: 100%; height: 100%; object-fit: cover; }
+html[data-theme="dark"] .ecod_rankcard__thumb { background: linear-gradient(135deg, #262c3b, #323a52); }
 .ecod_rankcard__thumb i {
     font-style: normal;
     font-size: var(--ecod-fs-lg);
@@ -2168,6 +2171,8 @@ html[data-theme="dark"] .ecod_loadmore.is-end { color: #7b8394; }
 }
 .ecod_rank a:nth-child(1) .ecod_rank__no { background: #fdeaea; color: var(--ecod-danger); }
 .ecod_rank a:nth-child(2) .ecod_rank__no { background: #fff3e0; color: #d97706; }
+html[data-theme="dark"] .ecod_rank a:nth-child(1) .ecod_rank__no { background: #3f1d1d; color: #ff9090; }
+html[data-theme="dark"] .ecod_rank a:nth-child(2) .ecod_rank__no { background: #3a2a12; color: #f5b966; }
 .ecod_rank__text { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
 .ecod_cloud { display: flex; flex-wrap: wrap; gap: 7px; }
@@ -3789,6 +3794,10 @@ html[data-theme="dark"] .ecod_actbtn.is-liked { background: #3a2530; }
 .ecod_cmt__badge.lv5 { background: #fffbeb; color: #b45309; border-color: #fde68a; }
 .ecod_cmt__badge.lv6 { background: #fdf2f8; color: #9d174d; border-color: #fbcfe8; }
 .ecod_cmt__badge.lv7 { background: linear-gradient(135deg, #4f6ef2, #8b5cf6); color: #fff; border-color: transparent; }
+html[data-theme="dark"] .ecod_cmt__badge.lv3,
+html[data-theme="dark"] .ecod_cmt__badge.lv4 { background: #12333a; color: #6fd0e0; border-color: #1e4650; }
+html[data-theme="dark"] .ecod_cmt__badge.lv5 { background: #3a2d10; color: #f0c479; border-color: #5c4a24; }
+html[data-theme="dark"] .ecod_cmt__badge.lv6 { background: #3a1d2c; color: #f2a0c0; border-color: #55283f; }
 
 .ecod_cmt__body {
     margin-top: 6px;
@@ -3810,6 +3819,7 @@ html[data-theme="dark"] .ecod_actbtn.is-liked { background: #3a2530; }
     font-size: var(--ecod-fs-2xs);
     font-style: normal;
 }
+html[data-theme="dark"] .ecod_cmt__pending { background: #3a2410; color: #f0a860; }
 
 .ecod_cmt__act { display: flex; align-items: center; gap: 10px; margin-top: 6px; font-size: var(--ecod-fs-xs); }
 .ecod_cmt__act a { color: var(--ecod-text-3); }
@@ -4438,6 +4448,7 @@ html[data-theme="dark"] .ecod_respond textarea { background: var(--ecod-surface-
 html[data-theme="dark"] .ecod_card__badges .ecod_badge--top { background: #4a2c1a; color: #f0a06a; }
 html[data-theme="dark"] .ecod_card__badges .ecod_badge--new { background: #16303f; color: #5fb8e8; }
 html[data-theme="dark"] .ecod_card__badges .ecod_badge--vip { background: #2e3242; color: #f6d789; }
+html[data-theme="dark"] .ecod_card__badges .ecod_badge--hot { background: #3f1d1d; color: #ff9090; }
 html[data-theme="dark"] .ecod_card__badges .ecod_badge--lock { background: #262e4d; color: #9db0ff; }
 html[data-theme="dark"] .ecod_article__locked { background: rgba(79, 110, 242, .18); color: #9db0ff; }
 html[data-theme="dark"] .ecod_article__locktitle { background: rgba(79, 110, 242, .18); color: #9db0ff; }
@@ -4715,6 +4726,7 @@ html[data-theme="dark"] .ecod_card__act button[data-ecod-act="like"].is-on { bac
 .ecod_favs__title { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .ecod_favs__del { display: flex; padding: 2px; border: 0; border-radius: 5px; background: none; color: var(--ecod-text-3); }
 .ecod_favs__del:hover { color: var(--ecod-danger); background: #fdeaea; }
+html[data-theme="dark"] .ecod_favs__del:hover { background: #3f1d1d; }
 .ecod_favs__empty { margin: 0; padding: 6px 2px; font-size: var(--ecod-fs-xs); line-height: 1.6; color: var(--ecod-text-3); }
 
 /* 顶部加载条 */

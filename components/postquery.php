@@ -39,7 +39,7 @@ class EcodPostQuery extends \Widget\Base\Contents
             'offset'   => 0,
         ]);
 
-        /* 相关文章：相关度由 core/related.php 计算，行已按相关度排好序，
+        /* 相关文章：相关度由 core/content/related.php 计算，行已按相关度排好序，
            这里按顺序 push 就能保持顺序（Widget 栈的顺序即 push 顺序） */
         if ((int) $this->parameter->related > 0) {
             $relatedRows = ecod_related_rows(

@@ -1,0 +1,2475 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ecod Theme · 全站 UI 与功能设计稿 v2</title>
+<style>
+/* ============================================================
+   设计稿自身样式（非主题产物）
+   ============================================================ */
+:root{
+  --bg:#f5f6f9; --surface:#fff; --surface-2:#fafbfc; --border:#e4e7ee;
+  --text:#1e2430; --text-2:#5b6472; --text-3:#98a1ad;
+  --primary:#4f6ef2; --primary-soft:#eef1fe; --primary-deep:#3d5be0;
+  --accent:#f59e0b; --success:#10b981; --danger:#ef4444;
+  --r:12px; --r-sm:8px;
+  --sh:0 1px 3px rgba(31,36,48,.06),0 4px 16px rgba(31,36,48,.05);
+  --sh-hover:0 4px 12px rgba(31,36,48,.09),0 12px 32px rgba(31,36,48,.08);
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+  background:var(--bg);color:var(--text);font-size:15px;line-height:1.7;-webkit-font-smoothing:antialiased}
+a{color:inherit;text-decoration:none}
+mark{background:#fff3c4;color:inherit;padding:0 2px;border-radius:2px}
+
+/* 布局：左侧目录 + 内容 */
+.layout{display:flex;max-width:1400px;margin:0 auto;gap:40px;padding:0 32px 120px}
+.sidenav{width:220px;flex-shrink:0;position:sticky;top:0;align-self:flex-start;height:100vh;overflow-y:auto;padding:28px 0}
+.sidenav h6{font-size:11px;letter-spacing:1.5px;color:var(--text-3);margin:22px 0 8px;font-weight:600}
+.sidenav a{display:block;font-size:13px;color:var(--text-2);padding:5px 12px;border-radius:6px;border-left:2px solid transparent}
+.sidenav a:hover{background:var(--primary-soft);color:var(--primary)}
+.main{flex:1;min-width:0;padding-top:28px}
+@media(max-width:1000px){.sidenav{display:none}.layout{padding:0 18px 80px}}
+
+/* 封面 */
+.hero{background:linear-gradient(135deg,#4f6ef2,#7c5cf0 62%,#9d5cf0);color:#fff;padding:64px 24px;text-align:center;position:relative;overflow:hidden}
+.hero::before{content:"";position:absolute;inset:0;
+  background:radial-gradient(circle at 18% 20%,rgba(255,255,255,.22),transparent 42%),radial-gradient(circle at 82% 78%,rgba(255,255,255,.16),transparent 40%)}
+.hero .in{position:relative}
+.hero .kicker{display:inline-block;background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.28);border-radius:999px;padding:4px 16px;font-size:12px;letter-spacing:2px}
+.hero h1{font-size:38px;margin:16px 0 8px;letter-spacing:.5px}
+.hero p{opacity:.9;font-size:14px}
+.hero .meta{margin-top:18px;font-size:12.5px;opacity:.72}
+
+/* 章节 */
+section{margin-top:56px;scroll-margin-top:20px}
+.sec-tag{display:inline-flex;align-items:center;gap:8px;font-size:11.5px;font-weight:600;color:var(--primary);background:var(--primary-soft);border-radius:999px;padding:3px 13px;letter-spacing:1px}
+h2{font-size:25px;margin:12px 0 4px;letter-spacing:.3px}
+.sec-desc{color:var(--text-2);font-size:13.5px;margin-bottom:22px}
+h3{font-size:17px;margin:34px 0 6px;display:flex;align-items:center;gap:10px}
+h3::before{content:"";width:3px;height:16px;background:var(--primary);border-radius:2px}
+
+/* 通用 */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);box-shadow:var(--sh)}
+.pad{padding:24px}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+.grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
+.grid-4{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
+@media(max-width:900px){.grid-2,.grid-3,.grid-4{grid-template-columns:1fr}}
+.tag{display:inline-flex;align-items:center;gap:4px;font-size:11.5px;padding:2px 10px;border-radius:999px;background:var(--primary-soft);color:var(--primary)}
+.tag.warn{background:#fef3e2;color:#c27508}
+.tag.ok{background:#e6f8f1;color:#069669}
+.tag.gray{background:#eef1f4;color:var(--text-2)}
+.tag.new{background:#eaf6ff;color:#0b83d6}
+.btn{display:inline-flex;align-items:center;gap:6px;border:none;cursor:pointer;border-radius:var(--r-sm);padding:8px 18px;font-size:13.5px;font-weight:500;transition:.2s;font-family:inherit}
+.btn-primary{background:var(--primary);color:#fff}.btn-primary:hover{background:var(--primary-deep)}
+.btn-soft{background:var(--primary-soft);color:var(--primary)}
+.btn-ghost{background:transparent;border:1px solid var(--border);color:var(--text-2)}
+.btn-sm{padding:5px 12px;font-size:12px}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th,td{text-align:left;padding:9px 13px;border-bottom:1px solid var(--border);vertical-align:top}
+th{color:var(--text-3);font-weight:600;background:var(--surface-2);font-size:12px;letter-spacing:.5px}
+code{font-family:ui-monospace,Menlo,monospace;font-size:12px;background:#eef1f4;color:#c2455e;padding:2px 6px;border-radius:5px}
+.notice{display:flex;gap:10px;background:#fffbeb;border:1px solid #fde68a;border-radius:var(--r-sm);padding:12px 16px;font-size:12.5px;color:#92400e;margin-top:16px}
+.notice b{flex-shrink:0}
+
+/* 色板 */
+.swatches{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:12px}
+.swatch{border-radius:var(--r-sm);overflow:hidden;border:1px solid var(--border)}
+.swatch .color{height:56px}
+.swatch .info{padding:9px 11px;font-size:11.5px;background:var(--surface)}
+.swatch .info b{display:block;font-size:12.5px;margin-bottom:1px}
+.swatch .info span{color:var(--text-3);font-family:ui-monospace,Menlo,monospace;font-size:11px}
+
+/* 演示容器：模拟页面 */
+.frame{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;box-shadow:var(--sh)}
+.frame-bar{display:flex;align-items:center;gap:6px;padding:9px 14px;background:#f0f2f6;border-bottom:1px solid var(--border)}
+.frame-bar i{width:9px;height:9px;border-radius:50%;background:#dfe3ea}
+.frame-bar i:nth-child(1){background:#ff5f57}.frame-bar i:nth-child(2){background:#febc2e}.frame-bar i:nth-child(3){background:#28c840}
+.frame-bar span{margin-left:10px;font-size:11.5px;color:var(--text-3);font-family:ui-monospace,Menlo,monospace}
+.frame-body{padding:0;background:var(--bg)}
+
+/* ——— 主题组件预览样式（迁移时 1:1 到 ecod.css） ——— */
+.nav{background:rgba(255,255,255,.9);backdrop-filter:blur(14px);border-bottom:1px solid var(--border)}
+.nav-top{display:flex;align-items:center;gap:22px;height:60px;padding:0 22px}
+.logo{font-weight:800;font-size:17px;letter-spacing:.5px;color:var(--primary)}
+.nav-links{display:flex;gap:20px;font-size:13.5px;color:var(--text-2)}
+.nav-links .on{color:var(--primary);font-weight:600;position:relative}
+.nav-links .on::after{content:"";position:absolute;left:0;right:0;bottom:-18px;height:2px;background:var(--primary)}
+.nav-search{margin-left:auto;display:flex;align-items:center;gap:6px;background:#f1f3f7;border-radius:999px;padding:6px 14px;font-size:12.5px;color:var(--text-3)}
+.nav-search kbd{background:#fff;border:1px solid var(--border);border-radius:4px;padding:0 5px;font-size:10.5px;font-family:inherit}
+
+.banner{height:200px;background:linear-gradient(120deg,#2b3a6b,#5b4b9c 55%,#8e5aa8);position:relative;display:flex;flex-direction:column;justify-content:center;align-items:center;color:#fff;overflow:hidden}
+.banner::after{content:"";position:absolute;inset:0;background:radial-gradient(circle at 30% 30%,rgba(255,255,255,.18),transparent 45%)}
+.banner h4{font-size:22px;letter-spacing:1px;position:relative}
+.banner p{font-size:12.5px;opacity:.8;position:relative;margin-top:4px}
+.banner .wave{position:absolute;left:0;right:0;bottom:-2px;height:36px;background:var(--bg);
+  clip-path:polygon(0 100%,100% 100%,100% 35%,78% 70%,55% 38%,32% 72%,12% 45%,0 60%)}
+
+.cx{display:flex;gap:18px;padding:18px}
+.cx .main-col{flex:1;min-width:0;display:flex;flex-direction:column;gap:16px}
+.cx .side-col{width:230px;flex-shrink:0;display:flex;flex-direction:column;gap:14px}
+@media(max-width:820px){.cx{flex-direction:column}.cx .side-col{width:auto}}
+
+.hero-grid{display:grid;grid-template-columns:1fr 168px;gap:12px}
+.slider{height:196px;border-radius:var(--r);background:linear-gradient(135deg,#93a5f8,#c4b5fd 60%,#f9c9d9);position:relative;overflow:hidden}
+.slider .t{position:absolute;left:14px;bottom:12px;color:#fff;font-size:14px;font-weight:600;text-shadow:0 1px 8px rgba(0,0,0,.35)}
+.slider .dots{position:absolute;right:12px;bottom:14px;display:flex;gap:5px}
+.slider .dots i{width:6px;height:6px;border-radius:50%;background:rgba(255,255,255,.55)}
+.slider .dots i.on{width:16px;border-radius:3px;background:#fff}
+.rec{display:flex;flex-direction:column;gap:12px}
+.rec .it{position:relative;flex:1;border-radius:var(--r);overflow:hidden;background:linear-gradient(135deg,#fbcfe8,#c7d2fe)}
+.rec .it span{position:absolute;left:8px;bottom:8px;font-size:11.5px;color:#fff;background:rgba(0,0,0,.4);backdrop-filter:blur(4px);border-radius:5px;padding:2px 8px}
+
+.hot-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+.hot-grid .it{border-radius:var(--r);overflow:hidden;background:linear-gradient(150deg,#e0e7ff,#fae8ff);height:96px;position:relative;transition:.25s}
+.hot-grid .it:hover{transform:translateY(-3px);box-shadow:var(--sh-hover)}
+.hot-grid .it span.deg{position:absolute;top:6px;left:6px;font-size:10.5px;background:rgba(255,255,255,.88);color:#e0533f;border-radius:5px;padding:1px 6px;font-weight:600}
+.hot-grid .it b{position:absolute;left:8px;right:8px;bottom:7px;font-size:11.5px;font-weight:600;color:#2c3350;line-height:1.4;max-height:2.8em;overflow:hidden}
+
+.tabs-row{display:flex;align-items:center;gap:10px;padding:0 16px;border-bottom:1px solid var(--border);background:var(--surface);border-radius:var(--r) var(--r) 0 0}
+.tabs-row .tab{font-size:13.5px;padding:13px 12px;color:var(--text-2);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px}
+.tabs-row .tab.on{color:var(--primary);font-weight:600;border-color:var(--primary)}
+.notice-bar{margin-left:auto;font-size:12px;color:var(--text-2);background:var(--primary-soft);border-radius:6px;padding:4px 10px;display:flex;gap:6px;align-items:center}
+
+/* 文章卡片 */
+.cards{display:flex;flex-direction:column;gap:12px}
+.pk{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);display:flex;gap:16px;padding:16px;transition:.22s}
+.pk:hover{box-shadow:var(--sh-hover);transform:translateY(-2px);border-color:#d8dde8}
+.pk .thumb{width:170px;height:110px;border-radius:var(--r-sm);flex-shrink:0;background:linear-gradient(135deg,#c7d2fe,#e0e7ff 55%,#fbcfe8);position:relative;overflow:hidden}
+.pk .thumb .cat{position:absolute;top:7px;left:7px;font-size:10.5px;color:#fff;background:rgba(0,0,0,.5);backdrop-filter:blur(4px);border-radius:999px;padding:2px 9px}
+.pk .body{min-width:0;flex:1;display:flex;flex-direction:column}
+.pk h4{font-size:15.5px;line-height:1.45;margin-bottom:6px;font-weight:600}
+.pk h4 a:hover{color:var(--primary)}
+.pk .abs{font-size:12.5px;color:var(--text-2);line-height:1.65;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.pk .meta{margin-top:auto;padding-top:10px;display:flex;gap:14px;font-size:11.5px;color:var(--text-3)}
+.pk--feature{flex-direction:row;padding:0;overflow:hidden;height:200px}
+.pk--feature .thumb{width:54%;height:100%;border-radius:0}
+.pk--feature .body{padding:20px 20px 20px 4px;justify-content:center}
+.pk--feature h4{font-size:18px}
+.pk--feature .abs{-webkit-line-clamp:3}
+.pk--gallery{flex-direction:column;gap:12px}
+.pk--gallery .imgs{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.pk--gallery .imgs div{height:82px;border-radius:var(--r-sm);background:linear-gradient(135deg,#dbeafe,#ede9fe)}
+.pk--bare{padding:20px 22px}
+.pk--bare h4{font-size:16.5px}
+.pk--bare .abs{-webkit-line-clamp:1}
+.pk--bare .meta{padding-top:12px}
+.cards--grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+.pk--grid{flex-direction:column;padding:0;overflow:hidden;gap:0}
+.pk--grid .thumb{width:100%;height:126px;border-radius:0}
+.pk--grid .body{padding:14px}
+.pk--grid h4{font-size:14.5px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.pk--grid .abs{font-size:12px;-webkit-line-clamp:2;margin-top:4px}
+.pk--grid .meta{font-size:11px;gap:10px;padding-top:10px}
+@media(max-width:760px){.cards--grid{grid-template-columns:1fr}.pk--feature{flex-direction:column;height:auto}.pk--feature .thumb{width:100%;height:160px}}
+
+.loadmore{display:flex;align-items:center;justify-content:center;gap:8px;height:46px;border-radius:var(--r);background:var(--surface);border:1px solid var(--border);font-size:13.5px;color:var(--text-2);cursor:pointer}
+.loadmore:hover{color:var(--primary);border-color:#cfd8f5}
+.skeleton{height:110px;border-radius:var(--r);background:linear-gradient(90deg,#eef1f5 25%,#f7f8fa 37%,#eef1f5 63%);background-size:400% 100%;animation:sk 1.4s ease infinite}
+@keyframes sk{0%{background-position:100% 50%}100%{background-position:0 50%}}
+.pager{display:flex;gap:8px;justify-content:center;align-items:center;font-size:13px}
+.pager a,.pager span{min-width:34px;height:34px;display:flex;align-items:center;justify-content:center;border-radius:var(--r-sm);border:1px solid var(--border);background:var(--surface);color:var(--text-2);padding:0 10px}
+.pager .on{background:var(--primary);border-color:var(--primary);color:#fff;font-weight:600}
+
+.wd{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:16px}
+.wd h5{font-size:13px;padding-bottom:10px;border-bottom:1px dashed var(--border);margin-bottom:10px;display:flex;align-items:center;gap:8px;font-weight:600}
+.wd h5::before{content:"";width:3px;height:13px;background:var(--primary);border-radius:2px}
+.author-row{display:flex;gap:12px;align-items:center}
+.avatar{width:48px;height:48px;border-radius:50%;background:linear-gradient(135deg,#7c5cf0,#4f6ef2);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:18px;flex-shrink:0}
+.hot-item{display:flex;gap:9px;align-items:center;padding:6px 0;font-size:12.5px;color:var(--text-2)}
+.hot-item .no{width:18px;height:18px;border-radius:5px;background:var(--primary-soft);color:var(--primary);font-size:10.5px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-weight:700}
+.hot-item .no.top{background:#fdeaea;color:var(--danger)}
+.hot-item .txt{flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hot-item em{font-style:normal;color:var(--text-3);font-size:10.5px;flex-shrink:0}
+.cloud{display:flex;flex-wrap:wrap;gap:7px;font-size:12px}
+.cloud span{background:#f2f4f8;border-radius:5px;padding:3px 9px;color:var(--text-2)}
+.cloud span:nth-child(3n){background:var(--primary-soft);color:var(--primary)}
+
+.crumb{font-size:12.5px;color:var(--text-3);display:flex;gap:8px;align-items:center;padding:14px 22px}
+.crumb b{color:var(--text-2);font-weight:500}
+.page-head{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:26px 24px;text-align:center}
+.page-head h3{margin:0 0 6px;font-size:22px;justify-content:center}
+.page-head h3::before{display:none}
+.page-head p{font-size:12.5px;color:var(--text-3)}
+.page-head .chips{display:flex;gap:8px;justify-content:center;margin-top:14px;flex-wrap:wrap}
+.chip{font-size:12px;border:1px solid var(--border);border-radius:999px;padding:4px 14px;color:var(--text-2);background:var(--surface);cursor:pointer}
+.chip.on{background:var(--primary);border-color:var(--primary);color:#fff}
+
+.cmt{display:flex;gap:12px;padding:14px 0;border-bottom:1px dashed var(--border)}
+.cmt .ava{width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#fda4af,#c7d2fe);flex-shrink:0}
+.cmt .c-body{flex:1;min-width:0}
+.cmt .c-head{font-size:12.5px;display:flex;gap:8px;align-items:center}
+.cmt .c-head b{font-weight:600}
+.cmt .c-head time{color:var(--text-3);font-size:11.5px}
+.cmt p{font-size:13px;color:var(--text-2);margin:5px 0 6px}
+.cmt .c-act{font-size:11.5px;color:var(--text-3);display:flex;gap:14px}
+.cmt .c-act span{cursor:pointer}
+.cmt .c-act span:hover{color:var(--primary)}
+.cmt-form{background:var(--surface-2);border:1px dashed var(--border);border-radius:var(--r-sm);padding:14px}
+.cmt-form .row{display:flex;gap:10px;margin-bottom:10px}
+.cmt-form .inp{flex:1;height:34px;border:1px solid var(--border);border-radius:var(--r-sm);background:#fff;font-size:12.5px;color:var(--text-3);display:flex;align-items:center;padding:0 12px}
+.cmt-form .ta{height:74px;border:1px solid var(--border);border-radius:var(--r-sm);background:#fff;font-size:12.5px;color:var(--text-3);padding:10px 12px}
+
+.toc{font-size:12.5px;color:var(--text-2)}
+.toc li{list-style:none;padding:5px 0 5px 12px;border-left:2px solid transparent;cursor:pointer}
+.toc li.on{color:var(--primary);border-color:var(--primary);background:linear-gradient(90deg,var(--primary-soft),transparent)}
+.toc li.lv3{padding-left:26px;font-size:12px;color:var(--text-3)}
+
+.codeblock{background:#1e2230;color:#c9d4e8;border-radius:var(--r-sm);padding:14px 16px;font-size:12px;font-family:ui-monospace,Menlo,monospace;overflow:auto;line-height:1.85}
+.codeblock .k{color:#82aaff}.codeblock .f{color:#7fd6a4}.codeblock .s{color:#f0c674}.codeblock .c{color:#5b6478}
+
+.tree{font-family:ui-monospace,Menlo,monospace;font-size:12.5px;line-height:2;color:var(--text-2)}
+.tree .dir{color:var(--text);font-weight:600}
+.tree .note{color:var(--text-3)}
+.phases{counter-reset:p}
+.phase{position:relative;padding:0 0 26px 42px}
+.phase::before{counter-increment:p;content:counter(p);position:absolute;left:0;top:0;width:28px;height:28px;border-radius:50%;background:var(--primary);color:#fff;font-weight:700;display:flex;align-items:center;justify-content:center;font-size:13px}
+.phase::after{content:"";position:absolute;left:13px;top:30px;bottom:0;width:2px;background:var(--border)}
+.phase:last-child::after{display:none}
+.phase b{font-size:14.5px}.phase p{font-size:12.5px;color:var(--text-2);margin-top:3px}
+
+details{border:1px solid var(--border);border-radius:var(--r-sm);background:var(--surface-2);padding:0 14px;font-size:12.5px;color:var(--text-2)}
+details summary{cursor:pointer;padding:10px 0;font-weight:500;color:var(--text)}
+details[open] summary{border-bottom:1px dashed var(--border);margin-bottom:10px}
+details .in{padding-bottom:12px}
+.foot-note{text-align:center;color:var(--text-3);font-size:12px;margin-top:80px;padding-top:24px;border-top:1px solid var(--border)}
+
+/* ============ v3 增补组件 ============ */
+/* 大搜索盒 */
+.search-hero{background:linear-gradient(120deg,#eef1fe,#f6f0ff 55%,#eefaf6);border:1px solid var(--border);border-radius:var(--r);padding:28px 22px;text-align:center}
+.search-hero h4{font-size:16px;margin-bottom:12px}
+.search-hero .box{display:flex;gap:8px;max-width:520px;margin:0 auto}
+.search-hero .box div{flex:1;height:40px;background:#fff;border:1px solid var(--border);border-radius:var(--r-sm);display:flex;align-items:center;padding:0 14px;font-size:12.5px;color:var(--text-3)}
+.search-hero .hot{display:flex;gap:8px;justify-content:center;margin-top:12px;flex-wrap:wrap;font-size:11.5px;color:var(--text-3)}
+
+/* 分类导航卡 */
+.cat-nav{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.cat-nav .it{border:1px solid var(--border);border-radius:var(--r-sm);background:var(--surface);padding:13px 12px;display:flex;gap:10px;align-items:center;transition:.2s}
+.cat-nav .it:hover{border-color:#cfd8f5;box-shadow:var(--sh);transform:translateY(-2px)}
+.cat-nav .ico{width:32px;height:32px;border-radius:9px;background:var(--primary-soft);display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0}
+.cat-nav b{font-size:12.5px;display:block}
+.cat-nav span{font-size:11px;color:var(--text-3)}
+
+/* CMS 双栏模块 */
+.cms{display:grid;grid-template-columns:1.1fr 1fr;gap:14px}
+.cms .big{border-radius:var(--r);overflow:hidden;background:linear-gradient(135deg,#b9c6fb,#e7d9fb 60%,#fbd5e2);min-height:190px;position:relative}
+.cms .big .info{position:absolute;left:0;right:0;bottom:0;padding:14px;color:#fff;background:linear-gradient(transparent,rgba(15,20,40,.65))}
+.cms .big .info b{font-size:14px}
+.cms .big .info div{font-size:11px;opacity:.85;margin-top:3px}
+.cms .list{display:flex;flex-direction:column;gap:10px}
+.cms .list .row{display:flex;gap:10px;align-items:center;font-size:12.5px;padding-bottom:9px;border-bottom:1px dashed var(--border)}
+.cms .list .row:last-child{border:none}
+.cms .list .num{width:20px;height:20px;border-radius:6px;background:var(--primary-soft);color:var(--primary);font-size:11px;display:flex;align-items:center;justify-content:center;font-weight:700;flex-shrink:0}
+.cms .list .row .t{flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+/* 标题式列表（模式 F） */
+.title-list{display:flex;flex-direction:column}
+.title-list .row{display:flex;gap:12px;align-items:center;padding:11px 2px;border-bottom:1px dashed var(--border);font-size:13px}
+.title-list .row:last-child{border:none}
+.title-list .idx{font-size:12px;color:var(--text-3);font-family:ui-monospace,monospace;width:18px;flex-shrink:0}
+.title-list .t{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.title-list .t:hover{color:var(--primary)}
+.title-list time{font-size:11px;color:var(--text-3);flex-shrink:0}
+
+/* 角标体系 */
+.bd{display:inline-flex;align-items:center;gap:3px;font-size:10px;font-weight:600;border-radius:4px;padding:1px 6px;letter-spacing:.3px}
+.bd-top{background:#fff1e6;color:#d2691e;border:1px solid #fbd5b5}
+.bd-vip{background:linear-gradient(135deg,#3a3f52,#5b6076);color:#f6d789;border:1px solid #454b60}
+.bd-hot{background:#fdeaea;color:#d93636}
+.bd-pay{background:#e8f6ec;color:#12873f}
+.bd-new{background:#eaf6ff;color:#0b83d6}
+.badge-row{position:absolute;top:8px;left:8px;display:flex;gap:5px;z-index:2}
+
+/* 卡片元信息增强 */
+.meta-x{display:flex;gap:12px;align-items:center;font-size:11px;color:var(--text-3);flex-wrap:wrap}
+.meta-x .cat-dot{width:6px;height:6px;border-radius:50%;background:var(--primary);display:inline-block;margin-right:5px}
+.meta-x .price{color:#d97706;font-weight:600}
+/* 悬浮操作组 */
+.pk{position:relative}
+.act-group{position:absolute;right:12px;bottom:12px;display:flex;gap:6px;opacity:0;transform:translateY(4px);transition:.2s}
+.pk:hover .act-group{opacity:1;transform:none}
+.act-group span{width:26px;height:26px;border-radius:7px;background:#f2f4f8;display:flex;align-items:center;justify-content:center;font-size:12px;cursor:pointer;color:var(--text-2)}
+.act-group span:hover{background:var(--primary-soft);color:var(--primary)}
+
+/* 布局变体 */
+.layout-demo{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.layout-demo .d{border:1px solid var(--border);border-radius:var(--r-sm);padding:8px;background:var(--surface-2)}
+.layout-demo .d .bar{height:9px;border-radius:3px;background:#dfe4ef;margin-bottom:6px}
+.layout-demo .row{display:flex;gap:6px}
+.layout-demo .row .m{flex:1;height:66px;border-radius:5px;background:#eef1f7}
+.layout-demo .row .s{width:34px;height:66px;border-radius:5px;background:var(--primary-soft)}
+.layout-demo p{font-size:11px;color:var(--text-3);text-align:center;margin-top:6px}
+
+/* 移动抽屉 */
+.drawer{position:relative;height:190px;background:linear-gradient(135deg,#f3f4f8,#eceffa);border-radius:var(--r);overflow:hidden}
+.drawer .phone{position:absolute;left:50%;top:12px;transform:translateX(-50%);width:150px;height:166px;background:#fff;border:1px solid var(--border);border-radius:14px;overflow:hidden;box-shadow:var(--sh)}
+.drawer .phone .top{height:28px;background:#f4f6fa;display:flex;align-items:center;padding:0 8px;font-size:8px;color:var(--text-3)}
+.drawer .phone .panel{position:absolute;left:0;top:0;bottom:0;width:98px;background:#fff;border-right:1px solid var(--border);padding:8px;z-index:2}
+.drawer .phone .panel i{display:block;height:7px;border-radius:3px;background:#eef1f7;margin-bottom:6px}
+.drawer .phone .panel i:first-child{background:var(--primary-soft);width:70%}
+.drawer .mask{position:absolute;inset:0;background:rgba(20,25,40,.28)}
+
+/* 阅读进度 & 悬浮工具 */
+.progress-line{height:3px;background:#eef1f7;border-radius:2px;overflow:hidden}
+.progress-line i{display:block;height:100%;width:42%;background:var(--primary);border-radius:2px}
+.float-tools{display:flex;flex-direction:column;gap:8px;align-items:center}
+.float-tools .t{width:34px;height:34px;border-radius:9px;background:var(--surface);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:13px;box-shadow:var(--sh);color:var(--text-2)}
+.float-tools .t.on{background:var(--primary);border-color:var(--primary);color:#fff}
+
+/* 隐藏内容 / VIP */
+.locked{border:1px dashed #d9c9a3;background:#fffdf6;border-radius:var(--r-sm);padding:14px;text-align:center;font-size:12.5px;color:#8a6d3b}
+.overview{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;text-align:center}
+.overview .o{padding:14px 8px;border:1px solid var(--border);border-radius:var(--r-sm);background:var(--surface)}
+.overview .o b{display:block;font-size:20px;color:var(--primary)}
+.overview .o span{font-size:11px;color:var(--text-3)}
+.vip-card{background:linear-gradient(135deg,#2f3446,#4a4f6b);border-radius:var(--r);padding:20px;color:#f1e4c3}
+.vip-card .t{font-size:13px;letter-spacing:1px;opacity:.85}
+.vip-card .p{font-size:24px;font-weight:700;margin:6px 0;color:#f6d789}
+.vip-card ul{list-style:none;font-size:11.5px;opacity:.8;line-height:1.9}
+
+/* 菜单管理器示意（§03.5） */
+.navb{display:grid;grid-template-columns:.9fr 1.1fr;gap:0;font-size:12.5px;border-radius:var(--r-sm);overflow:hidden;border:1px solid var(--border)}
+.navb-col{background:var(--surface);padding:12px}
+.navb-col--main{border-left:1px solid var(--border);background:var(--surface-2)}
+.navb-colhd{display:flex;align-items:center;gap:8px;font-size:11px;letter-spacing:.6px;text-transform:uppercase;color:var(--text-3);font-weight:600;margin-bottom:10px}
+.navb-colhd em{font-style:normal;color:var(--primary);background:var(--primary-soft);border-radius:999px;padding:1px 7px;font-size:10.5px}
+.navb-hint{margin-left:auto;text-transform:none;letter-spacing:0;font-weight:400;font-size:10.5px}
+.navb-src{margin-bottom:10px}
+.navb-srchd{display:flex;align-items:center;gap:6px;margin:0 0 6px;font-size:11.5px;color:var(--text-2)}
+.navb-srchd span{margin-left:auto;color:var(--text-3);font-size:10.5px}
+.navb-item{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:6px 8px;border:1px solid var(--border);border-radius:6px;background:var(--surface);margin-bottom:4px;color:var(--text-2)}
+.navb-item button{border:1px solid var(--border);background:var(--surface-2);border-radius:5px;width:20px;height:20px;line-height:1;color:var(--text-2);cursor:default}
+.navb-form{display:grid;grid-template-columns:1fr;gap:4px}
+.navb-form input{border:1px solid var(--border);border-radius:6px;padding:5px 7px;font-size:11.5px;color:var(--text-2);background:var(--surface)}
+.navb-form button{border:0;background:var(--primary);color:#fff;border-radius:6px;padding:5px;font-size:11.5px}
+.navb-row{display:flex;align-items:center;gap:8px;padding:8px 9px;border:1px solid var(--border);border-radius:7px;background:var(--surface);margin-bottom:4px}
+.navb-row.is-sub{margin-left:22px;background:var(--surface-2);border-style:dashed}
+.navb-grip{width:8px;height:14px;flex-shrink:0;background:radial-gradient(circle,var(--text-3) 1px,transparent 1.2px) 0 0/4px 4px;opacity:.55}
+.navb-row b{font-size:12.5px;font-weight:600;color:var(--text)}
+.navb-row small{margin-left:auto;color:var(--text-3);font-size:10.5px}
+.navb-act{display:flex;gap:3px}
+.navb-act button{border:1px solid var(--border);background:var(--surface);border-radius:5px;width:20px;height:20px;line-height:1;color:var(--text-2);cursor:default;font-size:11px}
+.navb-empty{margin-top:8px;padding:10px;border:1px dashed var(--border);border-radius:7px;text-align:center;color:var(--text-3);font-size:11px}
+@media(max-width:640px){.navb{grid-template-columns:1fr}.navb-col--main{border-left:0;border-top:1px solid var(--border)}}
+
+/* 区域与模块管理台示意（§31 · WP 式两栏） */
+.wgt{display:grid;grid-template-columns:212px 1fr;gap:0;border:1px solid var(--border);border-radius:var(--r-sm);overflow:hidden;font-size:12px}
+.wgt-col{background:var(--surface);padding:11px}
+.wgt-col+.wgt-col{border-left:1px solid var(--border)}
+.wgt-col--mid{background:var(--surface-2)}
+.wgt-hd{font-size:10.5px;letter-spacing:.6px;text-transform:uppercase;color:var(--text-3);font-weight:600;margin-bottom:8px;display:flex;align-items:center;gap:6px}
+.wgt-hd em{font-style:normal;color:var(--text-3);font-weight:400;letter-spacing:0;text-transform:none}
+.wgt-hd em{color:var(--primary)}
+.wgt-find{height:24px;border:1px solid var(--border);border-radius:6px;background:var(--surface-2);margin-bottom:8px;display:flex;align-items:center;padding:0 7px;color:var(--text-3);font-size:10.5px}
+.wgt-lib{display:flex;flex-direction:column;gap:4px}
+.wgt-target{display:flex;align-items:center;justify-content:space-between;padding:4px 8px;border:1px dashed var(--border);border-radius:6px;margin:3px 0 3px 14px;color:var(--text-2)}
+.wgt-target span{font-size:10px;color:var(--text-3)}
+.wgt-target.on{border-color:var(--primary);color:var(--primary)}
+.wgt-target.off{opacity:.45}
+.wgt-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;align-items:start}
+.wgt-area{border:1px solid var(--border);border-radius:8px;background:var(--surface);overflow:hidden}
+.wgt-area.is-wide{grid-column:1/-1}
+.wgt-area.is-drop{border-color:var(--primary);box-shadow:0 0 0 2px rgba(79,110,242,.12)}
+.wgt-area__hd{display:flex;align-items:center;justify-content:space-between;gap:6px;padding:7px 10px;font-weight:600;background:var(--surface-2);font-size:11.5px;cursor:pointer}
+.wgt-area__hd::before{content:"▾";font-size:9px;color:var(--text-3);font-weight:400}
+.wgt-area.is-fold .wgt-area__hd::before{content:"▸"}
+.wgt-area__hd span{color:var(--text-3);font-weight:400;font-size:10px;margin-left:auto}
+.wgt-area__hd.on{color:var(--primary)}
+.wgt-area__hd.on{color:var(--primary)}
+.wgt-item{display:flex;align-items:center;gap:7px;border-top:1px solid var(--border);padding:7px 10px;flex-wrap:wrap}
+.wgt-item.is-open{background:var(--surface-2)}
+.wgt-item b{font-weight:600;font-size:12px}
+.wgt-item__body{width:100%;padding:4px 2px 2px 14px}
+.wgt-ops{font-size:10.5px;color:var(--text-3);margin-top:7px}
+.wgt-grip{width:7px;height:13px;flex-shrink:0;background:radial-gradient(circle,var(--text-3) 1px,transparent 1.2px) 0 0/4px 4px;opacity:.5}
+.wgt-card{display:flex;align-items:center;gap:7px;border:1px solid var(--border);background:var(--surface);border-radius:7px;padding:7px 8px;cursor:grab}
+.wgt-card.is-open{border-color:var(--primary)}
+.wgt-card b{font-weight:600;font-size:12px}
+.wgt-card small{margin-left:auto;color:var(--text-3);font-size:10px}
+.wgt-sw{width:22px;height:12px;border-radius:999px;background:var(--primary);position:relative;flex-shrink:0;margin-left:auto}
+.wgt-sw::after{content:"";position:absolute;right:2px;top:2px;width:8px;height:8px;border-radius:50%;background:#fff}
+.wgt-sw.off{background:#dfe4ec}
+.wgt-sw.off::after{right:12px}
+.wgt-field{margin-bottom:8px}
+.wgt-field label{display:block;font-size:10.5px;color:var(--text-3);margin-bottom:3px}
+.wgt-field i{display:block;height:22px;border:1px solid var(--border);border-radius:5px;background:var(--surface)}
+.wgt-empty{margin:6px;padding:14px 10px;border:1px dashed var(--border);border-radius:7px;text-align:center;color:var(--text-3);font-size:11px;line-height:1.6}
+@media(max-width:760px){.wgt{grid-template-columns:1fr}.wgt-col+.wgt-col{border-left:0;border-top:1px solid var(--border)}}
+</style>
+</head>
+<body>
+
+<div class="hero"><div class="in">
+  <span class="kicker">ECOD THEME · DESIGN SPEC v2</span>
+  <h1>全站页面 · 全组件设计稿</h1>
+  <p>DOM 结构 1:1 保持 Joe_2 · CSS 全新重构 · 6 种文章卡片模式 · 12 个可排序首页模块</p>
+  <div class="meta">基线 temp/Joe_2 ｜ 模板 11 个 · 组件 32 个 ｜ 参考 ripro + suxing ｜ v3 · 2026-10-28</div>
+</div></div>
+
+<div class="layout">
+  <nav class="sidenav">
+    <h6>基础</h6>
+    <a href="#s1">01 设计策略与 DOM</a>
+    <a href="#s2">02 设计令牌</a>
+    <h6>组件</h6>
+    <a href="#c1">03 导航 &amp; 搜索</a>
+    <a href="#c1b">03.5 菜单管理器</a>
+    <a href="#c2">04 Banner / 轮播 / 热门</a>
+    <a href="#c3">05 文章卡片 5 模式</a>
+    <a href="#c4">06 选项卡 / 分页</a>
+    <a href="#c5">07 侧栏组件</a>
+    <a href="#c6">08 正文 / 目录 / 代码</a>
+    <a href="#c7">09 评论组件</a>
+    <a href="#c8">10 短代码组件</a>
+    <a href="#c9">10.5 正文 oEmbed</a>
+    <h6>页面</h6>
+    <a href="#p1">11 首页 index</a>
+    <a href="#p2">12 文章页 post</a>
+    <a href="#p3">13 归档 archive</a>
+    <a href="#p4">14 独立页 page</a>
+    <a href="#p5">15 留言板 leaving</a>
+    <a href="#p6">16 友链 friends</a>
+    <a href="#p7">17 视频 video</a>
+    <a href="#p8">18 壁纸 wallpaper</a>
+    <a href="#p9">19 直播 live</a>
+    <a href="#p10">20 统计 census</a>
+    <a href="#p11">21 404 / 搜索</a>
+    <h6>v3 参考优化</h6>
+    <a href="#n1">22 参考站拆解</a>
+    <a href="#n2">23 首页模块库</a>
+    <a href="#n3">24 卡片增强 / 模式 F</a>
+    <a href="#n4">25 布局变体与抽屉</a>
+    <a href="#n5">26 阅读增强 & 会员</a>
+    <h6>工程</h6>
+    <a href="#s5">27 命名与目录</a>
+    <a href="#s6">28 实施计划</a>
+    <a href="#n6">29 设置项条件联动</a>
+    <a href="#s7">30 参考站组件落地</a>
+    <a href="#s8">31 区域与模块管理台</a>
+    <a href="#s9">32 分类与标签增强</a>
+  </nav>
+
+  <div class="main">
+
+<!-- 1 -->
+<section id="s1">
+  <span class="sec-tag">01 · 设计策略</span>
+  <h2>DOM 不动，CSS 重生</h2>
+  <p class="sec-desc">模板骨架、节点层级、包裹关系与 Joe_2 完全一致（便于后续合并上游修复）；仅替换类名/ID 前缀与样式实现，CSS 零继承、全部重写。</p>
+
+  <div class="grid-3">
+    <div class="card pad">
+      <b>① DOM：1:1 保持</b>
+      <p style="font-size:12.5px;color:var(--text-2);margin-top:8px;">保留 <code>#Ecod &gt; .ecod_container &gt; .ecod_main / .ecod_aside</code> 三层骨架；<code>public/header|aside|footer</code> 的嵌套顺序、<code>.ecod_card</code> 的四种模式分支都不变。好处：模板渲染逻辑、AJAX 输出、上游更新均可平移。</p>
+    </div>
+    <div class="card pad">
+      <b>② 命名：统一前缀替换</b>
+      <p style="font-size:12.5px;color:var(--text-2);margin-top:8px;">结构不变但标识换成主题命名：<code>joe_header</code> → <code>ecod_header</code>，<code>#Joe</code> → <code>#Ecod</code>。JSON 接口字段、Cookie 名同样改前缀，与 Joe 彻底隔离，避免同站共存冲突。</p>
+    </div>
+    <div class="card pad">
+      <b>③ CSS：零继承重写</b>
+      <p style="font-size:12.5px;color:var(--text-2);margin-top:8px;">不引用任何 <code>joe.*.css</code>。以 tokens + 组件分层重写：<code>base</code>（reset/变量）→ <code>layout</code> → <code>components</code> → <code>pages</code>，输出单一入口 <code>ecod.css</code>。</p>
+    </div>
+  </div>
+
+  <h3>DOM 与类名映射表（节选）</h3>
+  <div class="card" style="padding:0">
+    <table>
+      <tr><th style="width:30%">Joe 节点</th><th style="width:26%">Ecod 节点</th><th style="width:12%">层级</th><th>说明</th></tr>
+      <tr><td><code>#Joe</code></td><td><code>#Ecod</code></td><td>不变</td><td>全站根容器，主题样式作用域</td></tr>
+      <tr><td><code>.joe_container</code></td><td><code>.ecod_container</code></td><td>不变</td><td>内容栅格容器，宽度由 token 控制</td></tr>
+      <tr><td><code>.joe_main</code> / <code>.joe_aside</code></td><td><code>.ecod_main</code> / <code>.ecod_aside</code></td><td>不变</td><td>主栏 / 侧栏，移动端纵向堆叠</td></tr>
+      <tr><td><code>.joe_header__above-nav</code></td><td><code>.ecod_nav__links</code></td><td>不变</td><td>一级导航，<code>.active</code> → <code>.is-active</code></td></tr>
+      <tr><td><code>.joe_index__hot-list</code></td><td><code>.ecod_hot__grid</code></td><td>不变</td><td>热门四宫格（改 grid 实现）</td></tr>
+      <tr><td><code>.joe_list__item</code> + <code>single/multiple/none/default</code></td><td><code>.ecod_card</code> + <code>--feature/--gallery/--bare/--grid</code></td><td>不变</td><td>五卡片模式，见 05 节</td></tr>
+      <tr><td><code>.joe_detail__leaving-list</code></td><td><code>.ecod_leaving__list</code></td><td>不变</td><td>留言板时间流</td></tr>
+      <tr><td><code>.joe_action_item</code></td><td><code>.ecod_action__item</code></td><td>不变</td><td>暗色 / 字号 / 回到顶部 / 语言</td></tr>
+    </table>
+  </div>
+  <div class="notice"><b>确认点</b><span>若你本意是「类名也保留 joe_，只重写样式实现」，告我一声，我把映射表改成同名复用方案——其余设计不受影响。</span></div>
+</section>
+
+<!-- 2 -->
+<section id="s2">
+  <span class="sec-tag">02 · 设计令牌</span>
+  <h2>一套变量驱动全站与暗色</h2>
+  <p class="sec-desc">颜色 / 圆角 / 间距 / 阴影 / 字阶全部收敛为 <code>--ecod-*</code> 变量；后台可配置主色，运行时以内联变量覆盖，无需改 CSS。</p>
+  <div class="card pad">
+    <div class="swatches">
+      <div class="swatch"><div class="color" style="background:#4f6ef2"></div><div class="info"><b>Primary</b><span>#4f6ef2</span></div></div>
+      <div class="swatch"><div class="color" style="background:#3d5be0"></div><div class="info"><b>Primary-deep</b><span>#3d5be0</span></div></div>
+      <div class="swatch"><div class="color" style="background:#eef1fe"></div><div class="info"><b>Primary-soft</b><span>#eef1fe</span></div></div>
+      <div class="swatch"><div class="color" style="background:#f59e0b"></div><div class="info"><b>Accent</b><span>#f59e0b</span></div></div>
+      <div class="swatch"><div class="color" style="background:#1e2430"></div><div class="info"><b>Text</b><span>#1e2430</span></div></div>
+      <div class="swatch"><div class="color" style="background:#5b6472"></div><div class="info"><b>Text-2</b><span>#5b6472</span></div></div>
+      <div class="swatch"><div class="color" style="background:#98a1ad"></div><div class="info"><b>Text-3</b><span>#98a1ad</span></div></div>
+      <div class="swatch"><div class="color" style="background:#f5f6f9;box-shadow:inset 0 -1px 0 #e4e7ee"></div><div class="info"><b>BG</b><span>#f5f6f9</span></div></div>
+      <div class="swatch"><div class="color" style="background:#fff;box-shadow:inset 0 -1px 0 #e4e7ee"></div><div class="info"><b>Surface</b><span>#ffffff</span></div></div>
+      <div class="swatch"><div class="color" style="background:#e4e7ee"></div><div class="info"><b>Border</b><span>#e4e7ee</span></div></div>
+      <div class="swatch"><div class="color" style="background:#10b981"></div><div class="info"><b>Success</b><span>#10b981</span></div></div>
+      <div class="swatch"><div class="color" style="background:#ef4444"></div><div class="info"><b>Danger</b><span>#ef4444</span></div></div>
+    </div>
+    <div class="grid-3" style="margin-top:20px">
+      <div style="font-size:12.5px;color:var(--text-2)"><b style="color:var(--text)">字阶</b><br>12 / 12.5 / 13.5 / 15 / 17 / 22 / 28px<br>正文 15px，行高 1.75</div>
+      <div style="font-size:12.5px;color:var(--text-2)"><b style="color:var(--text)">圆角</b><br>卡片 12 · 按钮输入 8 · 标签 999<br>图片 8px</div>
+      <div style="font-size:12.5px;color:var(--text-2)"><b style="color:var(--text)">阴影</b><br>静态 1 层轻投影<br>hover 上浮 2px + 阴影加深</div>
+    </div>
+    <p style="margin-top:16px;font-size:12.5px;color:var(--text-2)"><b style="color:var(--text)">暗色校验记录（2026-10-30 全组件扫描）：</b>规则跟随组件就近放置 <code>html[data-theme="dark"]</code> 覆盖。本次补齐 9 处漏网：热度角标（<code>badge--hot</code>）、热榜 1/2 名序号（#fdeaea / #fff3e0 浅底）、评论等级徽章 lv3–lv6、待审评论标记、收藏删除 hover、热议卡缩略占位、图集卡占位渐变。写法统一为「主题色 12–20% 透明度底 + 提亮 400 号文字」，与既有 dark 规则同构。封面占位渐变（<code>card__media</code> 等）不随主题反相——与封面图同理由。白底 pay/member 角标只出现在彩色封面上，暗色不覆盖（1442 行注释为据）。断点体系按实现收敛为 1100 / 900 / 680（§25 表格同步），<code>?ecod-dark=1</code> 可强制暗色验收。</p>
+  </div>
+</section>
+
+<!-- 3 -->
+<section id="c1">
+  <span class="sec-tag">03 · 组件</span>
+  <h2>导航与搜索</h2>
+  <p class="sec-desc">结构对应 <code>.ecod_header__above</code>（一级）+ <code>__below</code>（分类条）。滚动下滑隐藏、上滑出现；搜索由内联输入改为居中浮层（Cmd/Ctrl + K）。</p>
+
+  <div class="frame">
+    <div class="frame-bar"><i></i><i></i><i></i><span>header.php · 一级导航</span></div>
+    <div class="frame-body">
+      <div class="nav">
+        <div class="nav-top">
+          <div class="logo">Ecod</div>
+          <div class="nav-links"><span class="on">首页</span><span>分类</span><span>归档</span><span>友链</span><span>关于</span></div>
+          <div class="nav-search">🔍 搜索文章 <kbd>⌘K</kbd></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="grid-2" style="margin-top:16px">
+    <div class="card pad">
+      <b style="font-size:13.5px">二级分类条 <span class="tag gray">.ecod_header__below</span></b>
+      <div class="tabs-row" style="border:1px solid var(--border);border-radius:var(--r-sm);margin-top:12px;padding:0 12px">
+        <div class="tab on">全部</div><div class="tab">技术</div><div class="tab">生活</div><div class="tab">设计</div><div class="tab">随笔</div>
+      </div>
+      <p style="font-size:12px;color:var(--text-3);margin-top:10px">当前分类自动高亮；文章页可切换为「返回首页」样式（Joe 的 current 态）。</p>
+    </div>
+    <div class="card pad">
+      <b style="font-size:13.5px">搜索浮层 <span class="tag new">新增</span></b>
+      <div style="margin-top:12px;border:1px solid var(--border);border-radius:var(--r-sm);overflow:hidden">
+        <div style="display:flex;align-items:center;gap:8px;padding:10px 12px;border-bottom:1px solid var(--border);font-size:13px;color:var(--text-3)">🔍 <span>输入关键词，回车搜索</span></div>
+        <div style="padding:10px 12px;font-size:12.5px;color:var(--text-2);display:flex;gap:8px;flex-wrap:wrap">
+          <span class="tag gray">Typecho</span><span class="tag gray">主题开发</span><span class="tag gray">PHP 8</span>
+        </div>
+      </div>
+      <p style="font-size:12px;color:var(--text-3);margin-top:10px">支持历史记录（localStorage）、分类过滤、↑↓ 键盘选择、Esc 关闭。</p>
+    </div>
+  </div>
+</section>
+
+<!-- 3.5 -->
+<section id="c1b">
+  <span class="sec-tag">03.5 · 后台</span>
+  <h2>导航菜单管理器</h2>
+  <p class="sec-desc">参考 WordPress「外观 → 菜单」的心智：<b>左边挑项加入，右边拖拽排序、缩进成二级</b>。支持一级 + 二级两层；某个一级下的二级项超过 6 个时，下拉面板自动分两列。全部菜单存成一个 option（<code>ENavSets</code> 的 JSON），前台 header 与移动抽屉共用同一套配置，改一次两处同步。站点可保存<b>多套导航</b>，后台顶部一个下拉随时切换，选择的那套即刻成为前台生效的导航。</p>
+
+  <div class="frame">
+    <div class="frame-bar"><i></i><i></i><i></i><span>后台 · 导航分组（.ecod-navb）</span></div>
+    <div class="frame-body">
+      <div class="navb">
+        <div class="navb-col">
+          <div class="navb-colhd">添加到菜单</div>
+          <div class="navb-src">
+            <div class="navb-srchd"><b>独立页面</b><span>4</span></div>
+            <div class="navb-item"><span>关于本站</span><button>+</button></div>
+            <div class="navb-item"><span>归档</span><button>+</button></div>
+            <div class="navb-item"><span>留言板</span><button>+</button></div>
+          </div>
+          <div class="navb-src">
+            <div class="navb-srchd"><b>分类</b><span>6</span></div>
+            <div class="navb-item"><span>技术</span><button>+</button></div>
+            <div class="navb-item"><span>生活</span><button>+</button></div>
+          </div>
+          <div class="navb-src">
+            <div class="navb-srchd"><b>自定义链接</b></div>
+            <div class="navb-form"><input placeholder="名称"><input placeholder="https://" value="https://github.com/you"><button>添加</button></div>
+          </div>
+        </div>
+        <div class="navb-col navb-col--main">
+          <div class="navb-colhd">菜单结构 <em>3 项</em><span class="navb-hint">拖动排序 · → 缩进为二级</span></div>
+          <div class="navb-row"><i class="navb-grip"></i><b>首页</b><small>内置</small><span class="navb-act"><button>→</button><button>×</button></span></div>
+          <div class="navb-row"><i class="navb-grip"></i><b>技术</b><small>分类</small><span class="navb-act"><button>→</button><button>×</button></span></div>
+          <div class="navb-row is-sub"><i class="navb-grip"></i><b>前端</b><small>二级</small><span class="navb-act"><button>←</button><button>×</button></span></div>
+          <div class="navb-row is-sub"><i class="navb-grip"></i><b>后端</b><small>二级</small><span class="navb-act"><button>←</button><button>×</button></span></div>
+          <div class="navb-row"><i class="navb-grip"></i><b>关于本站</b><small>页面</small><span class="navb-act"><button>→</button><button>×</button></span></div>
+          <div class="navb-empty">拖到这里调整顺序；一级项点「→」把上一项变成自己的二级</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="grid-2" style="margin-top:16px">
+    <div class="card pad">
+      <b style="font-size:13.5px">前台 · 二级下拉</b>
+      <div style="margin-top:12px;display:flex;gap:4px;font-size:12.5px;color:var(--text-2)">
+        <span style="padding:6px 10px;border-radius:var(--r-sm);background:var(--surface-2)">首页</span>
+        <span style="padding:6px 10px;border-radius:var(--r-sm);background:var(--primary-soft);color:var(--primary);display:inline-flex;align-items:center;gap:4px">技术 ▾</span>
+        <span style="padding:6px 10px;border-radius:var(--r-sm);background:var(--surface-2)">友链</span>
+      </div>
+      <div style="margin-top:-2px;margin-left:52px;width:186px;border:1px solid var(--border);border-radius:var(--r-sm);background:var(--surface);box-shadow:0 12px 28px rgba(0,0,0,.10);padding:6px">
+        <div style="padding:7px 10px;border-radius:6px;font-size:12.5px;color:var(--text-2)">前端</div>
+        <div style="padding:7px 10px;border-radius:6px;font-size:12.5px;color:var(--text-2)">后端</div>
+        <div style="padding:7px 10px;border-radius:6px;font-size:12.5px;color:var(--primary);background:var(--primary-soft)">运维</div>
+      </div>
+      <p style="font-size:12px;color:var(--text-3);margin-top:12px">悬停 / 键盘聚焦展开；父项在当前二级页时，父项与子项同时高亮。鼠标离开 120ms 再收，防止斜向移动时闪断。</p>
+    </div>
+    <div class="card pad">
+      <b style="font-size:13.5px">移动端 · 折叠展开</b>
+      <div style="margin-top:12px;border:1px solid var(--border);border-radius:var(--r-sm);overflow:hidden">
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:11px 12px;font-size:12.5px;border-bottom:1px solid var(--border)">首页<span style="color:var(--text-3)">›</span></div>
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:11px 12px;font-size:12.5px;border-bottom:1px solid var(--border);font-weight:600">技术<span style="color:var(--text-3)">⌄</span></div>
+        <div style="padding:8px 12px 10px 26px;font-size:12.5px;color:var(--text-2);display:flex;flex-direction:column;gap:8px;border-bottom:1px solid var(--border)"><span>前端</span><span>后端</span></div>
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:11px 12px;font-size:12.5px">友链<span style="color:var(--text-3)">›</span></div>
+      </div>
+      <p style="font-size:12px;color:var(--text-3);margin-top:12px">抽屉复用同一份 <code>ENavMenu</code>：有二级的项渲染成 <code>&lt;details&gt;</code>（原生折叠，零 JS），无二级的仍是普通链接。</p>
+    </div>
+  </div>
+
+  <div class="card" style="padding:0;margin-top:16px">
+    <table>
+      <tr><th style="width:18%">字段</th><th style="width:20%">类型</th><th>说明</th></tr>
+      <tr><td><code>type</code></td><td>page / cat / tag / link / home</td><td>页面与分类/标签存 slug 或 mid，改名换地址自动跟随；<code>home</code> 固定指向站点根</td></tr>
+      <tr><td><code>ref</code></td><td>string</td><td>page 存 slug、cat / tag 存 mid、link 存空、home 存空</td></tr>
+      <tr><td><code>label</code></td><td>string</td><td>导航显示名；留空回退到页面标题 / 分类名 / 链接原文</td></tr>
+      <tr><td><code>url</code></td><td>string</td><td>仅 link 必填；其余类型可留空，填了则覆盖解析出的地址</td></tr>
+      <tr><td><code>blank</code></td><td>bool</td><td>新窗口打开，默认 off</td></tr>
+      <tr><td><code>attr</code></td><td>string</td><td>链接的 <code>title</code> 属性（悬停提示），可留空；输出时转义</td></tr>
+      <tr><td><code>cls</code></td><td>string</td><td>附加到 <code>&lt;a&gt;</code> 的 CSS 类，仅保留 <code>[A-Za-z0-9_-]</code> 片段、最多 5 个；用于单条菜单的特殊样式</td></tr>
+      <tr><td><code>children</code></td><td>array</td><td>仅一级项可有；元素字段同上但不再嵌套，超出部分渲染时忽略</td></tr>
+    </table>
+  </div>
+
+  <div class="card pad" style="margin-top:16px">
+    <b style="font-size:13.5px">规则</b>
+    <table style="margin-top:8px">
+      <tr><td style="padding-left:0;width:24%">回退</td><td><code>ENavMenu</code> 为空（或从未配置）时，前台沿用旧逻辑：全部独立页面（<code>ENavHide</code> 排除）+ <code>ENavLinks</code> 文本链接。老站升级零感知</td></tr>
+      <tr><td style="padding-left:0">层级上限</td><td>两层。第三个层级在后台不被允许（缩进按钮在同一父项下再点无效），渲染侧对多余嵌套直接拍平</td></tr>
+      <tr><td style="padding-left:0">分栏</td><td>某个一级的二级项 &gt; 6 时下拉面板加 <code>is-cols</code>，网格两列（每列 ≥160px）；≤6 保持单列</td></tr>
+      <tr><td style="padding-left:0">溢出</td><td><code>ENavMax</code> 仍生效：超出的一级项收进「更多」下拉，二级按同样规则渲染在其下。另有 JS 兜底（<code>Ecod.initNavOverflow</code>）：视口放不下时把尾部整条 <code>li</code>（连同二级）收进「更多」，变宽自动还原；<b>搬运单位必须是整个 <code>li</code></b>，只搬 <code>&lt;a&gt;</code> 会把二级丢掉（2026-10-29 事故：二级菜单在前台被此逻辑清除）。下拉内的二级改渲染为静态缩进列表，不再是悬浮面板</td></tr>
+      <tr><td style="padding-left:0">指示箭头</td><td>chevron 素材默认朝右，导航场景统一转 90° 使用：<b>收起朝下、展开朝上</b>（<code>.ecod_nav__caret</code> / 「更多」summary / 抽屉 <code>.ecod_drawer__group</code> 三处同规则；展开态 270°，带 <code>--ecod-dur-fast</code> 翻转过渡）。面包屑、章节头「全部」等横向指示保持素材原方向朝右</td></tr>
+      <tr><td style="padding-left:0">高亮</td><td>页面按 <code>is('page', slug)</code> 命中；分类/标签按 <code>is('category', slug)</code> / <code>is('tag', slug)</code>；首页按 <code>is('index')</code>；命中二级时父项同时加 <code>is-active</code></td></tr>
+      <tr><td style="padding-left:0">PJAX</td><td>高亮地址随 shell 的 <code>data-ecod-nav-active</code> 输出，换页后 JS 按该值同步；下拉菜单本身无状态，不需要重新初始化</td></tr>
+      <tr><td style="padding-left:0">存储</td><td>单个隐藏字段 <code>ENavSets</code>（JSON，含多套菜单与 active），随主题设置一起保存；导出 / 导入 / 快照自动覆盖，无需额外处理</td></tr>
+    </table>
+  </div>
+
+  <div class="card pad" style="margin-top:16px">
+    <b style="font-size:13.5px">多套导航</b>
+    <p style="font-size:12.5px;color:var(--text-2);margin-top:6px">同一份数据里存多套菜单，后台顶部一个切换条；下拉选中的那套既是<b>前台生效</b>的导航，也是右侧正在编辑的对象。切换不清空数据，保存设置后前台按新选择渲染。</p>
+
+    <div class="frame" style="margin-top:12px">
+      <div class="frame-bar"><i></i><i></i><i></i><span>后台 · 导航切换条（.ecod-navb__bar）</span></div>
+      <div class="frame-body">
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:12px;background:var(--surface);border:1px solid var(--border);border-radius:var(--r-sm);font-size:12.5px;color:var(--text-2)">
+          <span style="color:var(--text-3)">当前导航</span>
+          <span style="display:inline-flex;align-items:center;gap:26px;padding:6px 10px;border:1px solid var(--border);border-radius:var(--r-sm);background:var(--surface-2)">主导航 <span style="color:var(--text-3)">⌄</span></span>
+          <span style="padding:6px 10px;border-radius:var(--r-sm);border:1px solid var(--border);background:var(--surface)">＋ 新建</span>
+          <span style="padding:6px 10px;border-radius:var(--r-sm);border:1px solid var(--border);background:var(--surface)">复制</span>
+          <span style="padding:6px 10px;border-radius:var(--r-sm);border:1px solid var(--border);background:var(--surface)">重命名</span>
+          <span style="padding:6px 10px;border-radius:var(--r-sm);border:1px solid var(--border);background:var(--surface);color:#c0392b">删除</span>
+          <span style="margin-left:auto;font-size:11px;color:var(--text-3)">切换后点「保存设置」生效</span>
+        </div>
+      </div>
+    </div>
+
+    <table style="margin-top:10px">
+      <tr><th style="width:20%">字段</th><th style="width:18%">类型</th><th>说明</th></tr>
+      <tr><td><code>sets[].id</code></td><td>string</td><td>稳定标识（<code>s</code> + base36 时间戳），重命名不改 id</td></tr>
+      <tr><td><code>sets[].name</code></td><td>string</td><td>后台展示名，仅用于识别，最长 24 字</td></tr>
+      <tr><td><code>sets[].note</code></td><td>string</td><td>备注，只在后台显示（如「活动期用」），最长 60 字，不参与前台渲染</td></tr>
+      <tr><td><code>sets[].items</code></td><td>array</td><td>菜单树，项字段见上表</td></tr>
+      <tr><td><code>active</code></td><td>string</td><td>前台生效的套 id；为空或指向已不存在的 id 时回退到第一套</td></tr>
+    </table>
+
+    <table style="margin-top:10px">
+      <tr><td style="padding-left:0;width:22%">切换</td><td>下拉选项即「前台生效的导航」，同时是右侧正在编辑的那套。切换保留各套未保存的改动，随「保存设置」一次性提交</td></tr>
+      <tr><td style="padding-left:0">新建 / 复制</td><td>新建走<b>页内弹窗</b>（<code>.ecod-navb-modal</code>，遮罩 + 对话框，非原生 prompt/alert）：标题「新建导航」+ 名称输入（默认「导航 N」），取消 / 创建；Enter 提交、Esc 与点击遮罩取消。复制深拷贝当前套全部项并命名「XX 副本」。最多 10 套，超出用同款弹窗提示先删</td></tr>
+      <tr><td style="padding-left:0">重命名 / 删除</td><td>重命名只改 name，不动 id 与项；删除后 active 落到剩余第一套，删掉最后一套时前台回到自动导航</td></tr>
+      <tr><td style="padding-left:0">迁移</td><td>升级前只有 <code>ENavMenu</code> 的老数据，首次加载时在内存里提升为「默认导航」一套；一旦存过 <code>ENavSets</code> 就不再读旧字段</td></tr>
+      <tr><td style="padding-left:0">上限</td><td>单套项数沿用构建器规则；套数 10、单套一级 40 项、单套二级各 24 项，超出部分渲染时截断</td></tr>
+    </table>
+  </div>
+
+  <div class="card pad" style="margin-top:16px">
+    <b style="font-size:13.5px">拖动排序与层级</b>
+    <p style="font-size:12.5px;color:var(--text-2);margin-top:6px">手抓左侧点阵手柄拖动：<b>上下拖改顺序，向右多拖 28px 缩进成二级，向左拖回一级</b>。落点用一条随层级左右偏移的蓝色指示线表示，实时显示落进哪一层。整行（含它的二级项）一起移动。</p>
+
+    <div class="frame" style="margin-top:12px">
+      <div class="frame-bar"><i></i><i></i><i></i><span>拖动中 · 指示线（.ecod-navb__marker）</span></div>
+      <div class="frame-body">
+        <div style="position:relative;padding:10px 0;background:var(--surface);border:1px solid var(--border);border-radius:var(--r-sm)">
+          <div class="navb-row" style="opacity:.4"><i class="navb-grip"></i><b>首页</b><small>内置</small></div>
+          <div class="navb-row" style="opacity:.4"><i class="navb-grip"></i><b>技术</b><small>分类</small></div>
+          <div style="height:2px;margin:4px 8px 4px 34px;background:var(--primary);border-radius:2px;position:relative">
+            <span style="position:absolute;left:-4px;top:-3px;width:8px;height:8px;border-radius:50%;background:var(--primary)"></span>
+            <span style="position:absolute;right:0;top:-22px;font-size:10px;color:var(--primary);background:var(--primary-soft);padding:1px 6px;border-radius:999px">二级</span>
+          </div>
+          <div class="navb-row"><i class="navb-grip"></i><b>前端</b><small>页面</small></div>
+          <div class="navb-row"><i class="navb-grip"></i><b>关于本站</b><small>页面</small></div>
+        </div>
+      </div>
+    </div>
+
+    <table style="margin-top:10px">
+      <tr><td style="padding-left:0;width:22%">层级判定</td><td>水平位移 ≥ 28px 记为「要当上一个一级项的二级」，否则一级。落点在最顶上时自动退回一级（前面没有可当父项的项）</td></tr>
+      <tr><td style="padding-left:0">带子项的一级项</td><td>锁死为一级：二级不能再挂子项。拖动时不出缩进指示线，避免拖出三层结构</td></tr>
+      <tr><td style="padding-left:0">命中判定</td><td>按指针 Y 与每行中线比较：在中线以上插入到该行之前，以下插入到之后；越过最后一行则追加到末尾。被拖动的行本身不参与命中</td></tr>
+      <tr><td style="padding-left:0">移动粒度</td><td>数据先摊平成 <code>[{item, level}]</code> 序列，摘出被拖区段（自身 + 紧随的二级项），按落点插回后按 <code>level</code> 重建两级树；重建时的规则保证二级项只会挂到它前面最近的一级项下</td></tr>
+      <tr><td style="padding-left:0">键盘 / 无拖拽</td><td>行内仍保留「→ / ←」按钮做缩进与升级，触屏或不便拖拽时可用</td></tr>
+      <tr><td style="padding-left:0">冲突规避</td><td>只有手柄可起拖，输入框内选字不会误触发；拖动期间 <code>body.is-navb-dragging</code> 关掉文字选中</td></tr>
+    </table>
+  </div>
+
+  <div class="card pad" style="margin-top:16px">
+    <b style="font-size:13.5px">编辑套与项的信息</b>
+    <p style="font-size:12.5px;color:var(--text-2);margin-top:6px">顶部「编辑」展开当前套的信息表单（名称 + 备注）；每一行末尾「⌄」展开该菜单项的完整字段，等价于 WordPress 菜单项的折叠面板。</p>
+
+    <div class="frame" style="margin-top:12px">
+      <div class="frame-bar"><i></i><i></i><i></i><span>菜单项编辑面板（.ecod-navb__edit）</span></div>
+      <div class="frame-body" style="background:var(--surface-2)">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:10px 12px;background:var(--surface);border:1px solid var(--border);border-radius:var(--r-sm);font-size:11.5px;color:var(--text-3)">
+          <label style="display:grid;gap:4px">名称<input value="技术" style="height:26px;padding:0 7px;border:1px solid var(--border);border-radius:6px;font-size:12px"></label>
+          <label style="display:grid;gap:4px">标题属性<input placeholder="悬停提示，可留空" style="height:26px;padding:0 7px;border:1px solid var(--border);border-radius:6px;font-size:12px"></label>
+          <label style="display:grid;gap:4px;grid-column:1/-1">链接地址<input placeholder="留空跟随源地址 /category/tech/" style="height:26px;padding:0 7px;border:1px solid var(--border);border-radius:6px;font-size:12px"></label>
+          <label style="display:grid;gap:4px">CSS 类<input placeholder="可选，空格分隔" style="height:26px;padding:0 7px;border:1px solid var(--border);border-radius:6px;font-size:12px"></label>
+          <label style="display:flex;align-items:center;gap:6px;align-self:end;height:26px"><input type="checkbox"> 新窗口打开</label>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px;padding:8px 2px 0;font-size:11px;color:var(--text-3)">
+          <span>来源：分类「技术」 · /category/tech/</span>
+          <span style="margin-left:auto;padding:3px 9px;border:1px solid var(--border);border-radius:6px;background:var(--surface)">清空自定义</span>
+        </div>
+      </div>
+    </div>
+
+    <table style="margin-top:10px">
+      <tr><td style="padding-left:0;width:22%">行内快捷</td><td>「↗」切新窗口、「→ / ←」调层级、「×」删除；名称点一下即展开面板并聚焦名称输入</td></tr>
+      <tr><td style="padding-left:0">地址留空</td><td>page / cat / tag 留空 = 跟随源（改页面标题或分类别名会自动跟随）；填了则覆盖，用于指向锚点或临时跳转。link 必填，为空时该项在保存后被丢弃</td></tr>
+      <tr><td style="padding-left:0">清空自定义</td><td>把名称 / 地址 / 标题属性 / CSS 类一次性清空，回到完全跟随源的状态；新窗口保持</td></tr>
+      <tr><td style="padding-left:0">套信息</td><td>名称最长 24 字（下拉里显示这个），备注最长 60 字只存后台。点「应用」写回，点「取消」丢弃</td></tr>
+      <tr><td style="padding-left:0">实时性</td><td>面板内改动即时写回隐藏字段（不重绘，保焦点），行内名称同步刷新；仍要「保存设置」才落库</td></tr>
+    </table>
+  </div>
+</section>
+
+<!-- 4 -->
+<section id="c2">
+  <span class="sec-tag">04 · 组件</span>
+  <h2>Banner · 轮播 · 热门四宫格</h2>
+  <p class="sec-desc">对应 <code>#EcodBigBanner</code> / <code>.ecod_index__banner</code> / <code>.ecod_hot__grid</code>。轮播改自写轻量组件，去掉 Swiper 依赖。</p>
+
+  <div class="frame">
+    <div class="frame-bar"><i></i><i></i><i></i><span>index.php · Hero Banner（视差 + 波浪）</span></div>
+    <div class="frame-body">
+      <div class="banner"><h4>Ecod · 随心而写，遇记而安</h4><p>「 把每一次思考，留在能被找回来的地方 」</p><div class="wave"></div></div>
+    </div>
+  </div>
+
+  <div class="frame" style="margin-top:16px">
+    <div class="frame-bar"><i></i><i></i><i></i><span>轮播（2/3）+ 推荐位（1/3）</span></div>
+    <div class="frame-body" style="padding:16px">
+      <div class="hero-grid">
+        <div class="slider"><div class="t">Typecho 主题开发实战：从结构到组件</div><div class="dots"><i class="on"></i><i></i><i></i><i></i></div></div>
+        <div class="rec"><div class="it"><span>推荐 · 设计系统</span></div><div class="it" style="background:linear-gradient(135deg,#fde68a,#fca5a5)"><span>推荐 · 性能优化</span></div></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="grid-2" style="margin-top:16px">
+    <div class="frame"><div class="frame-bar"><i></i><i></i><i></i><span>热门四宫格（.ecod_hot__grid）</span></div>
+      <div class="frame-body" style="padding:16px">
+        <div class="hot-grid">
+          <div class="it"><span class="deg">98℃</span><b>Typecho 后台提速 10 个细节</b></div>
+          <div class="it" style="background:linear-gradient(150deg,#fef3c7,#fecdd3)"><span class="deg">87℃</span><b>CSS 变量主题化实践</b></div>
+          <div class="it" style="background:linear-gradient(150deg,#d1fae5,#cffafe)"><span class="deg">76℃</span><b>PHP 8.3 兼容踩坑</b></div>
+          <div class="it" style="background:linear-gradient(150deg,#ede9fe,#fce7f3)"><span class="deg">65℃</span><b>我的 2026 阅读清单</b></div>
+        </div>
+      </div>
+    </div>
+    <div class="card pad">
+      <b style="font-size:13.5px">规格说明</b>
+      <table style="margin-top:8px">
+        <tr><td style="width:32%;padding-left:0">轮播高度</td><td>桌面 196px / 平板 240px / 手机 16:9</td></tr>
+        <tr><td style="padding-left:0">切换</td><td>淡入淡出 + 指示条，自动 5s，hover 暂停</td></tr>
+        <tr><td style="padding-left:0">推荐位</td><td>1~3 张自适应：1 张整高、2 张对分、3 张首张半高</td></tr>
+        <tr><td style="padding-left:0">热门卡</td><td>桌面 4 列 / 平板 2 列 / 手机 2 列，热度角标</td></tr>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- 5 卡片 -->
+<section id="c3">
+  <span class="sec-tag">05 · 核心组件</span>
+  <h2>文章卡片 · 6 种模式</h2>
+  <p class="sec-desc">Joe 原有 4 种（default / single / multiple / none，由文章自定义字段 <code>mode</code> 决定），新增 <b>grid 网格</b> 与 <b>title 标题式</b>（详见 24 节）。全部共用 <code>.ecod_card</code> 基类 + 修饰符，改一处全站生效。</p>
+
+  <div class="card pad" style="margin-bottom:16px">
+    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+      <span style="font-size:12.5px;color:var(--text-3);margin-right:4px">点击切换预览 →</span>
+      <button class="btn btn-primary btn-sm" data-mode="list">A · 列表 default</button>
+      <button class="btn btn-ghost btn-sm" data-mode="feature">B · 大图 single</button>
+      <button class="btn btn-ghost btn-sm" data-mode="gallery">C · 三图 multiple</button>
+      <button class="btn btn-ghost btn-sm" data-mode="bare">D · 无图 none</button>
+      <button class="btn btn-ghost btn-sm" data-mode="grid">E · 网格 grid</button>
+    </div>
+  </div>
+
+  <div class="frame">
+    <div class="frame-bar"><i></i><i></i><i></i><span id="modeLabel">模式 A · 列表（默认）</span></div>
+    <div class="frame-body" style="padding:16px">
+      <div class="cards" id="cardZone">
+        <div class="pk">
+          <div class="thumb"><span class="cat">Typecho</span></div>
+          <div class="body">
+            <h4><a href="#">Ecod Theme：一套组件化的 Typecho 主题设计实录</a></h4>
+            <div class="abs">从设计令牌到组件封装，完整记录 Ecod 主题的设计过程，包含色彩体系、栅格规则与交互细节拆解……</div>
+            <div class="meta"><span>2026-10-28</span><span>👁 1,024</span><span>💬 32</span><span>👍 88</span></div>
+          </div>
+        </div>
+        <div class="pk">
+          <div class="thumb" style="background:linear-gradient(135deg,#fde68a,#fca5a5)"><span class="cat">教程</span></div>
+          <div class="body">
+            <h4><a href="#">Typecho 主题开发：functions.php 配置项最佳实践</a></h4>
+            <div class="abs">配置项命名规范、类型划分、默认值兜底与前后端联动校验的完整方案……</div>
+            <div class="meta"><span>2026-10-26</span><span>👁 764</span><span>💬 18</span><span>👍 45</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top:16px;padding:0">
+    <table>
+      <tr><th>模式</th><th>字段值</th><th>版式</th><th>典型场景</th><th>响应式</th></tr>
+      <tr><td><b>A 列表</b></td><td><code>default</code></td><td>左文右图（170×110）</td><td>首页默认</td><td>&lt;560px 图片缩小 / 可关图</td></tr>
+      <tr><td><b>B 大图</b></td><td><code>single</code></td><td>右大图 54% + 左文，整卡 200px</td><td>重点文章、置顶</td><td>&lt;760px 上下堆叠</td></tr>
+      <tr><td><b>C 三图</b></td><td><code>multiple</code></td><td>上文下三图等分</td><td>图集、摄影、旅行</td><td>三图始终等分</td></tr>
+      <tr><td><b>D 无图</b></td><td><code>none</code></td><td>纯文字，标题更大</td><td>技术笔记、长文</td><td>无变化</td></tr>
+      <tr><td><b>E 网格</b></td><td><code>grid</code> <span class="tag new">新增</span></td><td>3 列卡片，上图下文</td><td>归档页 / 视图切换</td><td>3 → 2 → 1 列</td></tr>
+      <tr><td><b>F 标题式</b></td><td><code>title</code> <span class="tag new">v3</span></td><td>序号 + 标题 + 日期，无摘要</td><td>最新速览 / 侧栏</td><td>单行省略</td></tr>
+    </table>
+  </div>
+  <div class="notice"><b>交互统一</b><span>hover 上浮 2px + 阴影加深 + 图片 scale(1.03)；标题 hover 变主色；标题与缩略图均为链接（SEO 友好），不做整卡 click 劫持。</span></div>
+</section>
+
+<!-- 6 -->
+<section id="c4">
+  <span class="sec-tag">06 · 组件</span>
+  <h2>选项卡 · 通知条 · 加载与分页</h2>
+  <div class="frame">
+    <div class="frame-bar"><i></i><i></i><i></i><span>文章流头部（选项卡 + 公告）+ 底部加载</span></div>
+    <div class="frame-body" style="padding:16px">
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r)">
+        <div class="tabs-row">
+          <div class="tab on">最新</div><div class="tab">热门</div><div class="tab">评论</div><div class="tab">点赞</div>
+          <div class="notice-bar">📢 主题 v1.0 已发布，欢迎反馈</div>
+        </div>
+        <div style="padding:12px"><div class="skeleton"></div></div>
+      </div>
+      <div class="loadmore" style="margin-top:12px">加载更多 · 点击或滚动到底自动加载</div>
+      <div class="pager" style="margin-top:14px">
+        <span>‹ 上一页</span><span class="on">1</span><span>2</span><span>3</span><span>…</span><span>12</span><span>下一页 ›</span>
+      </div>
+    </div>
+  </div>
+  <div class="grid-2" style="margin-top:16px">
+    <div class="card pad">
+      <b style="font-size:13.5px">加载态</b>
+      <p style="font-size:12.5px;color:var(--text-2);margin-top:8px">骨架屏 2 条 → 数据返回后淡入；首屏 SSR 不出现骨架；失败展示「重试」按钮 + 原因文案。</p>
+    </div>
+    <div class="card pad">
+      <b style="font-size:13.5px">分页策略</b>
+      <p style="font-size:12.5px;color:var(--text-2);margin-top:8px">首页 / 归档：AJAX「加载更多」；分类页与搜索页：数字分页（可被搜索引擎抓取）；两者共用 <code>.ecod_pager</code>。</p>
+    </div>
+  </div>
+</section>
+
+<!-- 7 -->
+<section id="c5">
+  <span class="sec-tag">07 · 组件</span>
+  <h2>侧栏组件（可插拔）</h2>
+  <p class="sec-desc">对应 <code>.ecod_aside__item</code> 系列。每个块独立模板文件，后台可开关与排序。</p>
+  <div class="grid-3">
+    <div class="wd">
+      <h5>作者</h5>
+      <div class="author-row"><div class="avatar">E</div><div><b style="font-size:13px">Ecod</b><div style="font-size:11.5px;color:var(--text-3)">随心而写，遇记而安</div><div style="margin-top:6px;display:flex;gap:6px"><span class="tag">128 篇</span><span class="tag gray">456 评</span></div></div></div>
+    </div>
+    <div class="wd">
+      <h5>热门榜</h5>
+      <div class="hot-item"><span class="no top">1</span><span class="txt">Typecho 找回密码增加请求限制</span><em>9.2k</em></div>
+      <div class="hot-item"><span class="no top">2</span><span class="txt">Ecod 主题 1.0 发布说明</span><em>7.8k</em></div>
+      <div class="hot-item"><span class="no">3</span><span class="txt">PHP 8.3 兼容踩坑记录</span><em>5.1k</em></div>
+    </div>
+    <div class="wd">
+      <h5>标签云</h5>
+      <div class="cloud"><span>Typecho</span><span>PHP</span><span>CSS</span><span>设计</span><span>生活</span><span>随笔</span><span>Vue</span><span>工具</span></div>
+    </div>
+    <div class="wd">
+      <h5>最新评论</h5>
+      <div style="font-size:12px;color:var(--text-2);line-height:1.9">
+        <div>阿离：<span style="color:var(--text-3)">主题很好看，已用上～</span></div>
+        <div>小 K：<span style="color:var(--text-3)">求一个暗色截图</span></div>
+        <div>Neo：<span style="color:var(--text-3)">卡片模式 E 很实用</span></div>
+      </div>
+    </div>
+    <div class="wd">
+      <h5>站点信息</h5>
+      <div style="font-size:12px;color:var(--text-2);line-height:2">
+        文章 128 · 评论 456<br>分类 8 · 标签 36<br>运行 <b style="color:var(--primary)">1024</b> 天
+      </div>
+    </div>
+    <div class="wd">
+      <h5>广告位</h5>
+      <div style="height:88px;border-radius:var(--r-sm);background:linear-gradient(135deg,#dbeafe,#fae8ff);display:flex;align-items:center;justify-content:center;font-size:11.5px;color:#6b7a99">728×90 / 自适应</div>
+    </div>
+  </div>
+</section>
+
+<!-- 8 -->
+<section id="c6">
+  <span class="sec-tag">08 · 组件</span>
+  <h2>正文排版 · 目录 · 代码块</h2>
+  <div class="grid-2">
+    <div class="card pad">
+      <b style="font-size:13.5px">正文（.ecod_article__content）</b>
+      <div style="font-size:13.5px;color:var(--text-2);line-height:1.9;margin-top:10px">
+        <p style="margin-bottom:10px">正文 15px / 行高 1.9 / 段落间距 18px；引用块左侧 3px 主色条 + 浅底；列表使用自定义圆点。</p>
+        <blockquote style="border-left:3px solid var(--primary);background:var(--primary-soft);padding:10px 14px;border-radius:0 8px 8px 0;font-size:13px;color:var(--text-2)">好的排版不是装饰，而是让读者忘记排版的存在。</blockquote>
+        <p style="margin-top:10px">图片：圆角 8px，居中，超出宽度的表格横向滚动；h2/h3 自带锚点，hover 显示 # 复制链接。</p>
+        <p style="margin-top:10px"><b>章节标题三级</b>（h2 不做通栏分隔线——长文里割裂感太强；三级都用「标题左侧竖条 / 圆点」标识，靠粗细与长度递减）：</p>
+        <table style="width:100%;border-collapse:collapse;font-size:12.5px;margin-top:6px">
+          <tr><td style="padding:4px 8px 4px 0;color:var(--text-3);white-space:nowrap">h2 · 通高竖条</td><td>左侧 5×1.02em 主色圆角竖条（<code>top:.16em</code>），<code>padding-left:16px</code>；22px</td></tr>
+          <tr><td style="padding:4px 8px 4px 0;color:var(--text-3);white-space:nowrap">h3 · 短竖条</td><td>左侧 3×.78em 主色圆角竖条（<code>top:.34em</code>），<code>padding-left:14px</code>；18px</td></tr>
+          <tr><td style="padding:4px 8px 4px 0;color:var(--text-3);white-space:nowrap">h4 · 琥珀圆点</td><td>文字取 <code>--primary-deep</code>，前置 5px 琥珀圆点（<code>top:.48em</code>），<code>padding-left:13px</code>；15px</td></tr>
+        </table>
+        <p style="margin-top:6px;font-size:12.5px;color:var(--text-3)"><b>纯 CSS 命中</b>：只挂 <code>.ecod_content h2/h3/h4</code>，与标题文字内容无关——正文里有没有手写「第 N 节」都同样生效，不跑 JS、不改 DOM、不加类名。三条竖条的左边缘都在 <code>left:0</code> 对齐；装饰走 <code>::before</code> 伪元素，TOC 抽取（<code>textContent</code>）不受影响。</p>
+        <p style="margin-top:6px;font-size:12.5px;color:var(--text-3)">暗色下 h4 文字提亮为 <code>#9db0ff</code>，竖条随 <code>--primary</code> 自动适配。</p>
+        <div style="margin-top:14px">
+          <div style="position:relative;padding-left:16px"><span style="position:absolute;left:0;top:.16em;width:5px;height:1.02em;border-radius:3px;background:var(--primary)"></span><b style="font-size:22px;line-height:1.4">功能说明与使用方式</b></div>
+          <div style="position:relative;padding-left:14px;margin-top:16px"><span style="position:absolute;left:0;top:.34em;width:3px;height:.78em;border-radius:2px;background:var(--primary)"></span><b style="font-size:18px;line-height:1.4">安装步骤</b></div>
+          <div style="position:relative;padding-left:13px;margin-top:12px"><span style="position:absolute;left:2px;top:.48em;width:5px;height:5px;border-radius:50%;background:var(--accent)"></span><b style="font-size:15px;line-height:1.4;color:var(--primary-deep)">前置条件</b></div>
+        </div>
+      </div>
+    </div>
+    <div class="card pad">
+      <b style="font-size:13.5px">目录（粘性 + 滚动高亮）</b>
+      <ul class="toc" style="margin-top:10px">
+        <li class="on">一、设计策略与 DOM</li>
+        <li>二、设计令牌体系</li>
+        <li class="lv3">2.1 颜色与字阶</li>
+        <li>三、组件库</li>
+        <li>四、页面设计</li>
+      </ul>
+      <p style="font-size:12px;color:var(--text-3);margin-top:10px">桌面：右侧粘性，滚动时二级标题高亮；移动：折叠为底部浮层按钮。</p>
+    </div>
+  </div>
+  <div class="card pad" style="margin-top:16px">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+      <b style="font-size:13.5px">代码块</b>
+      <span class="tag gray">语言角标 + 一键复制</span>
+    </div>
+    <div class="codeblock"><span class="c">// assets/js/ecod.index.js</span><br><span class="k">const</span> Ecod = window.Ecod || {};<br>Ecod.card = {<br>&nbsp;&nbsp;<span class="f">switchMode</span>(root, mode) {<br>&nbsp;&nbsp;&nbsp;&nbsp;root.dataset.mode = mode;<br>&nbsp;&nbsp;&nbsp;&nbsp;localStorage.<span class="f">setItem</span>(<span class="s">'ecod:cardMode'</span>, mode);<br>&nbsp;&nbsp;}<br>};</div>
+  </div>
+</section>
+
+<!-- 9 -->
+<section id="c7">
+  <span class="sec-tag">09 · 组件</span>
+  <h2>评论区</h2>
+  <p class="sec-desc">沿用 <code>.ecod_comment</code> 结构（Joe 为无限级），视觉改为极简头像 + 细线分隔；支持楼中楼折叠、@ 引用、表情（owo）。</p>
+  <p style="font-size:12.5px;color:var(--text-2);margin:0 0 12px;line-height:1.9">折叠的呈现由两个设置配合：<b>折叠深度</b>决定前几层直接展开，<b>展开方式</b>决定更深的回复怎么铺开——逐条（每条自带「↳ 展开 N 条回复」）/ 顶部总按钮（标题行右侧一枚胶囊「⌄ 展开全部回复」，一次铺开所有折叠，再点变「⌃ 收起全部回复」，无折叠时自动隐藏）/ 全部展开（不折叠）。总按钮与逐条按钮同款胶囊样式，主色仅用于箭头与展开态。</p>
+  <div class="card pad">
+    <div class="cmt">
+      <div class="ava"></div>
+      <div class="c-body">
+        <div class="c-head"><b>阿离</b><span class="tag">博主</span><time>2 小时前</time></div>
+        <p>卡片模式 E 在归档页效果很好，3 列刚好。建议网格下摘要限制两行。</p>
+        <div class="c-act"><span>↩ 回复</span><span>👍 12</span></div>
+      </div>
+    </div>
+    <div class="cmt" style="padding-left:48px">
+      <div class="ava" style="background:linear-gradient(135deg,#93c5fd,#c4b5fd)"></div>
+      <div class="c-body">
+        <div class="c-head"><b>小 K</b><time>1 小时前</time><span style="font-size:11.5px;color:var(--text-3)">回复 @阿离</span></div>
+        <p>+1，手机上两列也够用。</p>
+        <div class="c-act"><span>↩ 回复</span><span>👍 3</span></div>
+      </div>
+    </div>
+    <div class="cmt-form" style="margin-top:14px">
+      <div class="row"><div class="inp">昵称</div><div class="inp">邮箱</div><div class="inp">网站（选填）</div></div>
+      <div class="ta">说点什么… 😊 🎉 🚀</div>
+      <div style="display:flex;justify-content:flex-end;margin-top:10px"><button class="btn btn-primary btn-sm">发表评论</button></div>
+    </div>
+  </div>
+</section>
+
+<!-- 10 -->
+<section id="c8">
+  <span class="sec-tag">10 · 组件</span>
+  <h2>短代码组件</h2>
+  <p class="sec-desc">对应 Joe 的 short.php 短代码，样式全部重做：提示框、折叠、时间线、按钮。</p>
+  <div class="grid-2">
+    <div class="card pad">
+      <b style="font-size:13.5px">提示框 4 态</b>
+      <div style="margin-top:10px;display:flex;flex-direction:column;gap:8px">
+        <div style="background:#eef1fe;border-left:3px solid #4f6ef2;padding:9px 13px;border-radius:0 8px 8px 0;font-size:12.5px;color:#33417a">说明：这是一条普通提示</div>
+        <div style="background:#e6f8f1;border-left:3px solid #10b981;padding:9px 13px;border-radius:0 8px 8px 0;font-size:12.5px;color:#065f46">成功：操作已完成</div>
+        <div style="background:#fef3e2;border-left:3px solid #f59e0b;padding:9px 13px;border-radius:0 8px 8px 0;font-size:12.5px;color:#92400e">警告：注意兼容性</div>
+        <div style="background:#fdeaea;border-left:3px solid #ef4444;padding:9px 13px;border-radius:0 8px 8px 0;font-size:12.5px;color:#991b1b">危险：此操作不可撤回</div>
+      </div>
+    </div>
+    <div class="card pad">
+      <b style="font-size:13.5px">折叠 / 时间线</b>
+      <details style="margin-top:10px"><summary>▸ 点击展开更多内容</summary><div class="in">这里是折叠区域，可放代码或长表格。</div></details>
+      <div style="margin-top:14px;border-left:2px solid var(--border);padding-left:16px">
+        <div style="position:relative;font-size:12.5px;color:var(--text-2);padding-bottom:12px"><span style="position:absolute;left:-22px;top:5px;width:8px;height:8px;border-radius:50%;background:var(--primary)"></span><b style="color:var(--text)">2026-10</b> · 设计稿定稿</div>
+        <div style="position:relative;font-size:12.5px;color:var(--text-2)"><span style="position:absolute;left:-22px;top:5px;width:8px;height:8px;border-radius:50%;background:var(--border)"></span><b style="color:var(--text)">2026-09</b> · 主题立项</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 10.5 -->
+<section id="c9">
+  <span class="sec-tag">10.5 · 组件</span>
+  <h2>正文 oEmbed 自动嵌入</h2>
+  <p class="sec-desc">正文里<b>独占一行</b>的站外地址自动变成嵌入块，不需要写短代码。全部本地解析：不请求对方 oEmbed 接口、不建缓存表、不需要 API Key，离线也稳定。视频 / 音频用原生 <code>iframe</code> 播放器；社交贴用官方 <code>blockquote</code> + 按需加载的 widgets 脚本；无法嵌入或脚本被拦截时降级为链接卡 / 原链接。</p>
+
+  <div class="grid-2">
+    <div class="card pad">
+      <b style="font-size:13.5px">视频 · 16:9 自适应</b>
+      <div style="margin-top:10px;border:1px solid var(--border);border-radius:var(--r);overflow:hidden;aspect-ratio:16/9;background:linear-gradient(135deg,#1f2430,#334155);display:flex;align-items:center;justify-content:center;color:#fff">
+        <div style="text-align:center">
+          <div style="width:44px;height:44px;border-radius:50%;background:rgba(255,255,255,.16);display:flex;align-items:center;justify-content:center;margin:0 auto 8px">▶</div>
+          <div style="font-size:12px;opacity:.8">YouTube / 哔哩哔哩 / Vimeo / 优酷 / 腾讯视频</div>
+        </div>
+      </div>
+      <div style="display:flex;justify-content:space-between;margin-top:8px;font-size:11.5px;color:var(--text-3)"><span style="font-weight:600">YouTube</span><span>打开原链接 ↗</span></div>
+    </div>
+    <div class="card pad">
+      <b style="font-size:13.5px">音频 · 固定高度</b>
+      <div style="margin-top:10px;height:70px;border:1px solid var(--border);border-radius:var(--r);background:var(--surface-2);display:flex;align-items:center;gap:10px;padding:0 14px;font-size:12px;color:var(--text-2)">🎵 网易云 / Spotify / SoundCloud 播放器（66 / 152 / 166）</div>
+      <div style="display:flex;justify-content:space-between;margin-top:8px;font-size:11.5px;color:var(--text-3)"><span style="font-weight:600">网易云音乐</span><span>打开原链接 ↗</span></div>
+    </div>
+  </div>
+
+  <div class="grid-2" style="margin-top:16px">
+    <div class="card pad">
+      <b style="font-size:13.5px">社交贴 · 脚本按需加载</b>
+      <div style="margin-top:10px;border:1px solid var(--border);border-radius:var(--r);padding:14px 16px;max-width:420px">
+        <div style="display:flex;align-items:center;gap:8px;font-size:12px;font-weight:600"><span style="width:22px;height:22px;border-radius:50%;background:#111"></span>@someone · 2 天前</div>
+        <p style="font-size:12.5px;color:var(--text-2);margin-top:8px">帖子正文由官方 widgets 脚本注入；脚本未到之前显示原链接，不占位、不抖动。</p>
+        <div style="font-size:11.5px;color:var(--text-3);margin-top:8px">♡ 128 · ⇄ 32 · 回复</div>
+      </div>
+      <p style="font-size:12px;color:var(--text-2);margin-top:10px">X / Instagram / TikTok：进入视口前 360px 才加载对应 <code>widgets.js / embed.js</code>，每个站点每页只加载一次；PJAX 换页后只刷新新出现的卡片。</p>
+    </div>
+    <div class="card pad">
+      <b style="font-size:13.5px">降级 · 链接卡</b>
+      <a style="display:flex;align-items:center;gap:12px;margin-top:10px;padding:12px 14px;border:1px solid var(--border);border-radius:var(--r-sm);background:var(--surface)" href="#c9" onclick="return false">
+        <span style="flex-shrink:0;padding:4px 8px;border-radius:6px;background:var(--primary-soft);color:var(--primary);font-size:11.5px;font-weight:600">微博</span>
+        <span style="flex:1;min-width:0;display:flex;flex-direction:column;gap:2px"><b style="font-size:12.5px">微博</b><small style="font-size:11.5px;color:var(--text-3)">weibo.com · 该站禁止外嵌，点击查看原帖</small></span>
+        <span style="color:var(--text-3);font-size:13px">↗</span>
+      </a>
+      <p style="font-size:12px;color:var(--text-2);margin-top:10px">微博 / <code>b23.tv</code> 短链 / <code>vm.tiktok.com</code> 短链无法在本地还原目标内容，统一输出链接卡，不做无意义的 iframe。</p>
+    </div>
+  </div>
+
+  <div class="card" style="padding:0;margin-top:16px">
+    <table>
+      <tr><th style="width:16%">平台</th><th style="width:38%">识别形态</th><th style="width:22%">渲染</th><th>尺寸</th></tr>
+      <tr><td>YouTube</td><td><code>youtube.com/watch?v=</code> · <code>/shorts/</code> · <code>/live/</code> · <code>youtu.be/</code></td><td><code>youtube.com/embed/</code></td><td>16:9</td></tr>
+      <tr><td>哔哩哔哩</td><td><code>bilibili.com/video/BV…</code> · <code>av…</code> · <code>b23.tv</code></td><td><code>player.bilibili.com</code>（带 <code>p=</code>）</td><td>16:9 / 短链降级卡</td></tr>
+      <tr><td>Vimeo</td><td><code>vimeo.com/{id}</code> · <code>/channels/…/{id}</code></td><td><code>player.vimeo.com/video/</code></td><td>16:9</td></tr>
+      <tr><td>优酷 / 腾讯视频</td><td><code>v.youku.com/v_show/id_…</code> · <code>v.qq.com/x/page|cover/…</code></td><td><code>player.youku.com/embed</code> · <code>v.qq.com/txp/iframe/player</code></td><td>16:9</td></tr>
+      <tr><td>X (Twitter)</td><td><code>x.com|twitter.com/{user}/status/{id}</code></td><td><code>blockquote.twitter-tweet</code> + widgets.js</td><td>max 550</td></tr>
+      <tr><td>Instagram</td><td><code>instagram.com/p|reel|tv/{code}</code></td><td><code>blockquote.instagram-media</code> + embed.js</td><td>max 540</td></tr>
+      <tr><td>TikTok</td><td><code>tiktok.com/@{user}/video/{id}</code></td><td><code>blockquote.tiktok-embed</code> + embed.js</td><td>max 605</td></tr>
+      <tr><td>网易云</td><td><code>music.163.com/song|album|playlist?id=</code></td><td><code>outchain/player</code></td><td>66 / 400 / 430</td></tr>
+      <tr><td>Spotify</td><td><code>open.spotify.com/track|album|playlist|episode/{id}</code></td><td><code>open.spotify.com/embed/</code></td><td>152 / 352 / 380</td></tr>
+      <tr><td>SoundCloud</td><td><code>soundcloud.com/{user}/{track}</code></td><td><code>w.soundcloud.com/player/?url=</code></td><td>166</td></tr>
+      <tr><td>微博</td><td><code>weibo.com/{uid}/{bid}</code> · <code>m.weibo.cn/detail|status/{id}</code></td><td>链接卡（该站禁止外嵌）</td><td>—</td></tr>
+    </table>
+  </div>
+
+  <div class="card pad" style="margin-top:16px">
+    <b style="font-size:13.5px">规则</b>
+    <table style="margin-top:8px">
+      <tr><td style="padding-left:0;width:26%">触发条件</td><td>段落里<b>只有一个</b>站外地址，且链接文字就是地址本身（手写「点这里」不当嵌入）；正文里 &lt;pre&gt; / &lt;code&gt; 内的地址不处理</td></tr>
+      <tr><td style="padding-left:0">生效范围</td><td>文章页 <code>post.php</code>、独立页 <code>page.php</code> 正文；评论与 RSS 不处理</td></tr>
+      <tr><td style="padding-left:0">管线顺序</td><td>短代码 → <b>oEmbed</b> → 图片懒加载 → 外链中转；嵌入块内的 <code>&lt;a&gt;</code> 带 <code>data-ecod-oembed</code> 标记，跳过 go 跳转页</td></tr>
+      <tr><td style="padding-left:0">开关</td><td><code>EOembed</code>（总开关，默认开）+ <code>EOembedSocial</code>（是否加载 X / IG / TikTok 第三方脚本，默认开）</td></tr>
+      <tr><td style="padding-left:0">性能</td><td>iframe 一律 <code>loading="lazy"</code>；社交脚本进视口前才请求；单页每站最多一个脚本</td></tr>
+      <tr><td style="padding-left:0">暗色</td><td>容器用令牌（surface / border）；第三方卡片自带浅色底无法改，故整体维持浅色卡片，不做反相</td></tr>
+    </table>
+  </div>
+</section>
+
+<!-- 11 首页 -->
+<section id="p1">
+  <span class="sec-tag">11 · 页面</span>
+  <h2>首页 index.php</h2>
+  <p class="sec-desc">完整版块编排：Banner → 轮播+推荐 → 热门四宫格 → 广告位 → 选项卡列表 → 加载更多；侧栏 5 块。<b>每个版块后台独立开关</b>，关闭后不留空白。</p>
+
+  <div class="frame">
+    <div class="frame-bar"><i></i><i></i><i></i><span>index.php · 首页全貌（桌面）</span></div>
+    <div class="frame-body">
+      <div class="nav"><div class="nav-top" style="height:48px"><div class="logo" style="font-size:15px">Ecod</div><div class="nav-links" style="font-size:12.5px"><span class="on">首页</span><span>分类</span><span>归档</span><span>友链</span></div><div class="nav-search" style="padding:4px 12px">🔍</div></div></div>
+      <div class="banner" style="height:120px"><h4 style="font-size:17px">Ecod · 随心而写</h4><p style="font-size:11.5px">「 把每一次思考留下来 」</p><div class="wave" style="height:22px"></div></div>
+      <div class="cx">
+        <div class="main-col">
+          <div class="hero-grid" style="grid-template-columns:1fr 140px">
+            <div class="slider" style="height:140px"><div class="t" style="font-size:12px">精挑细选的技术长文</div><div class="dots"><i class="on"></i><i></i><i></i></div></div>
+            <div class="rec"><div class="it"><span style="font-size:10px">推荐</span></div><div class="it" style="background:linear-gradient(135deg,#fde68a,#fca5a5)"><span style="font-size:10px">推荐</span></div></div>
+          </div>
+          <div class="hot-grid" style="gap:9px">
+            <div class="it" style="height:70px"><span class="deg">98℃</span><b style="font-size:10px">后台提速细节</b></div>
+            <div class="it" style="height:70px;background:linear-gradient(150deg,#fef3c7,#fecdd3)"><span class="deg">87℃</span><b style="font-size:10px">CSS 变量实践</b></div>
+            <div class="it" style="height:70px;background:linear-gradient(150deg,#d1fae5,#cffafe)"><span class="deg">76℃</span><b style="font-size:10px">PHP 8.3 兼容</b></div>
+            <div class="it" style="height:70px;background:linear-gradient(150deg,#ede9fe,#fce7f3)"><span class="deg">65℃</span><b style="font-size:10px">阅读清单</b></div>
+          </div>
+          <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r)">
+            <div class="tabs-row" style="padding:0 12px"><div class="tab on" style="padding:9px 8px;font-size:12px">最新</div><div class="tab" style="padding:9px 8px;font-size:12px">热门</div><div class="tab" style="padding:9px 8px;font-size:12px">评论</div><div class="tab" style="padding:9px 8px;font-size:12px">点赞</div><div class="notice-bar" style="font-size:10.5px;padding:2px 8px">📢 公告</div></div>
+            <div style="padding:10px;display:flex;flex-direction:column;gap:9px">
+              <div class="pk" style="padding:10px;gap:10px"><div class="thumb" style="width:104px;height:68px"></div><div class="body"><h4 style="font-size:11.5px;margin-bottom:3px">组件化 Typecho 主题设计实录</h4><div class="abs" style="font-size:10px">从设计令牌到组件封装……</div><div class="meta" style="font-size:9.5px;padding-top:5px;gap:8px"><span>10-28</span><span>1.0k</span><span>32</span></div></div></div>
+              <div class="pk" style="padding:10px;gap:10px"><div class="thumb" style="width:104px;height:68px;background:linear-gradient(135deg,#fde68a,#fca5a5)"></div><div class="body"><h4 style="font-size:11.5px;margin-bottom:3px">functions.php 配置项最佳实践</h4><div class="abs" style="font-size:10px">配置项命名与兜底策略……</div><div class="meta" style="font-size:9.5px;padding-top:5px;gap:8px"><span>10-26</span><span>764</span><span>18</span></div></div></div>
+            </div>
+          </div>
+          <div class="loadmore" style="height:34px;font-size:11.5px">加载更多</div>
+        </div>
+        <div class="side-col" style="width:170px;gap:10px">
+          <div class="wd" style="padding:11px"><h5 style="font-size:11px;padding-bottom:7px;margin-bottom:7px">作者</h5><div class="author-row" style="gap:8px"><div class="avatar" style="width:34px;height:34px;font-size:13px">E</div><div><b style="font-size:11px">Ecod</b><div style="font-size:9.5px;color:var(--text-3)">随心而写</div></div></div></div>
+          <div class="wd" style="padding:11px"><h5 style="font-size:11px;padding-bottom:7px;margin-bottom:7px">热门</h5>
+            <div class="hot-item" style="font-size:10px;padding:3px 0"><span class="no" style="width:14px;height:14px;font-size:9px">1</span><span class="txt">后台提速 10 细节</span></div>
+            <div class="hot-item" style="font-size:10px;padding:3px 0"><span class="no" style="width:14px;height:14px;font-size:9px">2</span><span class="txt">CSS 变量实践</span></div>
+            <div class="hot-item" style="font-size:10px;padding:3px 0"><span class="no" style="width:14px;height:14px;font-size:9px">3</span><span class="txt">PHP 8.3 踩坑</span></div>
+          </div>
+          <div class="wd" style="padding:11px"><h5 style="font-size:11px;padding-bottom:7px;margin-bottom:7px">标签</h5><div class="cloud" style="gap:5px;font-size:9.5px"><span style="padding:1px 6px">Typecho</span><span style="padding:1px 6px">CSS</span><span style="padding:1px 6px">PHP</span></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="grid-2" style="margin-top:16px">
+    <div class="card pad">
+      <b style="font-size:13.5px">版块开关清单（后台）</b>
+      <table style="margin-top:8px">
+        <tr><td style="padding-left:0">Banner</td><td>开关 + 图 + 高度 + 波浪</td></tr>
+        <tr><td style="padding-left:0">轮播</td><td><code>图||链接||标题</code> 每行一条</td></tr>
+        <tr><td style="padding-left:0">推荐位</td><td>CID 列表，最多 3 个</td></tr>
+        <tr><td style="padding-left:0">热门四宫格</td><td>开关 + 排序依据</td></tr>
+        <tr><td style="padding-left:0">广告位</td><td>图 + 链接，可插列表中间</td></tr>
+        <tr><td style="padding-left:0">公告条</td><td>文字 + 链接，支持多条轮播</td></tr>
+        <tr><td style="padding-left:0">卡片模式</td><td>默认模式 + 允许访客切换</td></tr>
+      </table>
+    </div>
+    <div class="card pad">
+      <b style="font-size:13.5px">移动端策略</b>
+      <p style="font-size:12.5px;color:var(--text-2);margin-top:8px;line-height:1.9">
+        · ≤ 820px：侧栏下沉至列表之后<br>
+        · Banner 高度降为 38vh，标题左对齐<br>
+        · 轮播与推荐改为上下排列，推荐横滑<br>
+        · 热门四宫格 → 2×2<br>
+        · 卡片：默认模式图片缩至 120×86，摘要 2 行<br>
+        · 底部悬浮：目录 / 回到顶部 / 随机一篇
+      </p>
+    </div>
+  </div>
+</section>
+
+<!-- 12 文章页 -->
+<section id="p2">
+  <span class="sec-tag">12 · 页面</span>
+  <h2>文章页 post.php</h2>
+  <p class="sec-desc">面包屑 → 主栏（标题区 / 正文 / 标签 / 互动 / 作者卡 / 上下篇 / 评论）+ 右侧目录侧栏。Joe 的 <code>joe_stretch</code> 伸展布局保留。</p>
+
+  <div class="frame">
+    <div class="frame-bar"><i></i><i></i><i></i><span>post.php · 文章页（桌面）</span></div>
+    <div class="frame-body">
+      <div class="crumb">首页 <span>/</span> <b>Typecho</b> <span>/</span> <span style="color:var(--text-3)">组件化主题设计实录</span></div>
+      <div class="cx" style="padding-top:0">
+        <div class="main-col">
+          <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:22px">
+            <h3 style="margin:0 0 8px;font-size:19px">Ecod Theme：一套组件化的 Typecho 主题设计实录</h3>
+            <div style="display:flex;gap:12px;font-size:11.5px;color:var(--text-3);flex-wrap:wrap">
+              <span>📅 2026-10-28</span><span>👁 1,024</span><span>💬 32</span><span>👍 88</span><span>⏱ 约 12 分钟</span>
+              <span class="tag">Typecho</span><span class="tag gray">设计</span>
+            </div>
+            <div style="height:1px;background:var(--border);margin:16px 0"></div>
+            <div style="font-size:12.5px;color:var(--text-2);line-height:1.95">
+              <p style="margin-bottom:10px">本文记录 Ecod 主题从设计令牌到组件封装的完整过程，包含色彩体系、栅格规则与交互细节。</p>
+              <div style="height:110px;border-radius:8px;background:linear-gradient(135deg,#e0e7ff,#fae8ff);margin:12px 0"></div>
+              <p style="margin-bottom:10px">为什么保留 Joe 的 DOM？因为结构经过大量站点验证，而视觉层才是差异化所在。</p>
+              <div class="codeblock" style="font-size:10.5px;padding:10px 12px">:root { <span class="k">--ecod-primary</span>: <span class="s">#4f6ef2</span>; }</div>
+            </div>
+          </div>
+          <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:16px;display:flex;gap:10px;align-items:center">
+            <div class="avatar" style="width:40px;height:40px;font-size:15px">E</div>
+            <div style="flex:1"><b style="font-size:12.5px">Ecod</b><div style="font-size:11px;color:var(--text-3)">随心而写，遇记而安 · 128 篇文章</div></div>
+            <button class="btn btn-soft btn-sm">关注</button>
+          </div>
+          <div style="display:flex;gap:10px">
+            <div style="flex:1;background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:12px;font-size:11.5px;color:var(--text-2)">← 上一篇<br><b style="color:var(--text);font-size:12px">CSS 变量主题化实践</b></div>
+            <div style="flex:1;background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:12px;font-size:11.5px;color:var(--text-2);text-align:right">下一篇 →<br><b style="color:var(--text);font-size:12px">PHP 8.3 兼容踩坑</b></div>
+          </div>
+          <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:16px">
+            <b style="font-size:12.5px">💬 评论 32</b>
+            <div class="cmt" style="padding:10px 0"><div class="ava" style="width:28px;height:28px"></div><div class="c-body"><div class="c-head" style="font-size:11.5px"><b>阿离</b><time>2h</time></div><p style="font-size:11.5px">卡片模式很实用。</p></div></div>
+          </div>
+        </div>
+        <div class="side-col" style="width:180px">
+          <div class="wd" style="padding:12px"><h5 style="font-size:11px;padding-bottom:7px;margin-bottom:7px">目录</h5>
+            <ul class="toc" style="font-size:11px"><li class="on" style="padding:4px 0 4px 9px">一、设计策略</li><li style="padding:4px 0 4px 9px">二、设计令牌</li><li class="lv3" style="padding:4px 0 4px 20px">2.1 颜色</li><li style="padding:4px 0 4px 9px">三、组件库</li></ul>
+          </div>
+          <div class="wd" style="padding:12px"><h5 style="font-size:11px;padding-bottom:7px;margin-bottom:7px">相关文章</h5>
+            <div style="font-size:10.5px;color:var(--text-2);line-height:1.9">· 设计令牌怎么落地<br>· 五卡片模式实现<br>· PJAX 简化方案</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="grid-3" style="margin-top:16px">
+    <div class="card pad"><b style="font-size:13px">阅读体验</b><p style="font-size:12px;color:var(--text-2);margin-top:6px">正文最大宽度 720px；图片点击灯箱；长代码块横向滚动；脚注悬浮预览。</p></div>
+    <div class="card pad"><b style="font-size:13px">互动区</b><p style="font-size:12px;color:var(--text-2);margin-top:6px">点赞（本地 + 服务端去重）、收藏、分享（复制链接 / 二维码）、赞赏（可关）。<b style="color:var(--text)">赞赏开关打开即占位显示</b>：未配置收款码时弹层输出虚线占位框 +「待配置」，不隐藏按钮；只配一侧时仅显示已配置的那一侧。</p></div>
+    <div class="card pad"><b style="font-size:13px">过期提示</b><p style="font-size:12px;color:var(--text-2);margin-top:6px">保留 Joe 的 <code>overdue</code> 逻辑：发布超 N 天在正文顶部提示内容可能过时。</p></div>
+  </div>
+</section>
+
+<!-- 13 归档 -->
+<section id="p3">
+  <span class="sec-tag">13 · 页面</span>
+  <h2>归档 archive.php（分类 / 标签 / 作者 / 搜索 / 日期）</h2>
+  <p class="sec-desc">页面头（标题 + 计数 + 排序）+ 视图切换（列表/网格）+ 列表 + 分页；空状态单独设计。</p>
+
+  <div class="frame">
+    <div class="frame-bar"><i></i><i></i><i></i><span>archive.php · 分类页</span></div>
+    <div class="frame-body" style="padding:16px">
+      <div class="page-head">
+        <h3>Typecho</h3>
+        <p>共 46 篇文章 · 持续更新中</p>
+        <div class="chips"><span class="chip on">最新</span><span class="chip">热门</span><span class="chip">评论</span><span class="chip" style="margin-left:auto">▦ 网格</span><span class="chip">☰ 列表</span></div>
+      </div>
+      <div style="margin-top:14px" class="cards">
+        <div class="pk"><div class="thumb"><span class="cat">Typecho</span></div><div class="body"><h4><a href="#">组件化主题设计实录</a></h4><div class="abs">从设计令牌到组件封装……</div><div class="meta"><span>10-28</span><span>1,024</span><span>32</span><span>88</span></div></div></div>
+        <div class="pk"><div class="thumb" style="background:linear-gradient(135deg,#fde68a,#fca5a5)"><span class="cat">Typecho</span></div><div class="body"><h4><a href="#">functions.php 配置项最佳实践</a></h4><div class="abs">配置项命名与兜底策略……</div><div class="meta"><span>10-26</span><span>764</span><span>18</span><span>45</span></div></div></div>
+      </div>
+      <div class="pager" style="margin-top:16px"><span>‹</span><span class="on">1</span><span>2</span><span>3</span><span>…</span><span>8</span><span>›</span></div>
+    </div>
+  </div>
+
+  <div class="grid-2" style="margin-top:16px">
+    <div class="card pad">
+      <b style="font-size:13.5px">排序与筛选</b>
+      <p style="font-size:12.5px;color:var(--text-2);margin-top:8px;line-height:1.9">排序：最新 / 热门 / 评论 / 点赞（AJAX，不改 URL）；筛选：子分类 chip；视图切换记忆到 localStorage；标签页显示标签云概览。</p>
+    </div>
+    <div class="card pad">
+      <b style="font-size:13.5px">空状态</b>
+      <div style="margin-top:10px;text-align:center;padding:18px;background:var(--surface-2);border-radius:var(--r-sm)">
+        <div style="font-size:26px">🗂</div>
+        <div style="font-size:12.5px;color:var(--text-2);margin-top:6px">这里还没有文章</div>
+        <div style="font-size:11.5px;color:var(--text-3)">换个分类看看，或返回首页</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card pad" style="margin-top:16px">
+    <b style="font-size:13.5px">分类 tab = 文章流筛选，不是换页</b>
+    <p style="font-size:12.5px;color:var(--text-2);margin-top:8px;line-height:1.9">点 <code>.ecod_tabs</code> 里的分类只替换 <code>#ecod-stream</code>（tab 高亮 + 排序条 + 卡片 + 分页一起换），页面其余骨架原地保留。替换粒度按两侧骨架判定：</p>
+    <table style="width:100%;border-collapse:collapse;font-size:12.5px;margin-top:6px">
+      <tr><td style="padding:6px 10px 6px 0;color:var(--text-3);white-space:nowrap">首页 → 分类</td><td>只换文章流：首页横幅（搜索 / 统计）与其后所有首页块（分类导航、推荐、热门、动态…）全部保留</td></tr>
+      <tr><td style="padding:6px 10px 6px 0;color:var(--text-3);white-space:nowrap">分类 → 分类</td><td>换分类页头（<code>.ecod_chead</code> 标题 / 统计 / 专题）+ 文章流，其余不动</td></tr>
+      <tr><td style="padding:6px 10px 6px 0;color:var(--text-3);white-space:nowrap">分类 → 首页</td><td>换整个 <code>#ecod-main</code>，首页横幅与首页块才能回来</td></tr>
+    </table>
+    <p style="font-size:12px;color:var(--text-3);margin-top:10px;line-height:1.9">URL 用 <code>pushState</code> 同步（可复制、可刷新）；链接保留 <code>href</code>，中键 / 新窗口 / 禁用 JS 仍是普通跳转。滚动位置不变。</p>
+  </div>
+</section>
+
+<!-- 14 独立页 -->
+<section id="p4">
+  <span class="sec-tag">14 · 页面</span>
+  <h2>独立页面 page.php</h2>
+  <p class="sec-desc">极简：单卡片容器 + 正文排版，无侧栏（Joe 结构相同，仅 <code>.ecod_detail</code>）。</p>
+  <div class="frame">
+    <div class="frame-bar"><i></i><i></i><i></i><span>page.php · 关于我</span></div>
+    <div class="frame-body" style="padding:16px">
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:26px;max-width:640px;margin:0 auto">
+        <h3 style="margin:0 0 10px;font-size:19px;justify-content:center">关于我</h3>
+        <div style="font-size:12.5px;color:var(--text-2);line-height:2;text-align:center">
+          <div class="avatar" style="width:64px;height:64px;font-size:24px;margin:6px auto 12px">E</div>
+          <p>写代码，也写字。这里记录技术、设计与生活。</p>
+          <p style="color:var(--text-3);margin-top:6px">📮 hello@example.com · 🐙 github.com/ecod</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 15 留言板 -->
+<section id="p5">
+  <span class="sec-tag">15 · 页面</span>
+  <h2>留言板 leaving.php</h2>
+  <p class="sec-desc">对应 <code>.ecod_detail__leaving</code>：留言以时间流卡片呈现（头像 + 昵称 + 时间 + 内容），底部表单；支持表情与悄悄话。</p>
+  <div class="frame">
+    <div class="frame-bar"><i></i><i></i><i></i><span>leaving.php · 留言板</span></div>
+    <div class="frame-body" style="padding:16px">
+      <div class="page-head" style="padding:18px"><h3 style="font-size:17px">留言板</h3><p>共 128 条留言 · 说点什么吧</p></div>
+      <div style="display:flex;flex-direction:column;gap:10px;margin-top:14px">
+        <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:14px;display:flex;gap:12px"><div class="avatar" style="width:36px;height:36px;font-size:13px">A</div><div><div style="font-size:12.5px"><b>阿离</b> <span style="color:var(--text-3);font-size:11px">· 2 小时前 · 来自 杭州</span></div><p style="font-size:12.5px;color:var(--text-2);margin-top:4px">主题很清爽，已换上～</p></div></div>
+        <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:14px;display:flex;gap:12px"><div class="avatar" style="width:36px;height:36px;font-size:13px;background:linear-gradient(135deg,#93c5fd,#c4b5fd)">K</div><div><div style="font-size:12.5px"><b>小 K</b> <span style="color:var(--text-3);font-size:11px">· 昨天</span></div><p style="font-size:12.5px;color:var(--text-2);margin-top:4px">求一个暗色模式截图 🔒 悄悄话</p></div></div>
+      </div>
+      <div class="cmt-form" style="margin-top:14px"><div class="row"><div class="inp">昵称</div><div class="inp">邮箱</div><div class="inp">网址</div></div><div class="ta">写下你的留言…</div><div style="display:flex;justify-content:space-between;align-items:center;margin-top:10px"><span style="font-size:11.5px;color:var(--text-3)">😊 表情 · 🔒 悄悄话</span><button class="btn btn-primary btn-sm">发送</button></div></div>
+    </div>
+  </div>
+</section>
+
+<!-- 16 友链 -->
+<section id="p6">
+  <span class="sec-tag">16 · 页面</span>
+  <h2>友链 friends.php</h2>
+  <p class="sec-desc">对应 <code>.ecod_detail__friends-item</code>：Joe 为纵向列表，改为 3 列卡片网格（头像 + 名称 + 描述），hover 抬升；申请入口置顶。</p>
+  <p class="sec-desc" style="margin-top:-6px">申请闭环（<code>.ecod_apply</code> / <code>.ecod_fmodal</code> / <code>.ecod_review</code>）：页头右侧「一键申请」→ 弹窗内 5 个字段 + 图形验证码，顶部固定一条「先把我加进你的友链」提示，附「复制本站信息」按钮（名称 | 链接 | 描述）；站点地址失焦自动补 <code>https://</code>，头像留空时回退站点图标，再失败回退首字母。管理员在同一页看到「待审核申请」面板，通过后自动把「名称 | 链接 | 描述 | 头像」追加进页面正文。</p>
+  <div class="frame">
+    <div class="frame-bar"><i></i><i></i><i></i><span>friends.php · 友情链接</span></div>
+    <div class="frame-body" style="padding:16px">
+      <div style="display:flex;gap:10px;align-items:center;margin-bottom:12px"><div style="flex:1;font-size:13px;font-weight:600">友情链接 <span class="tag gray">12</span></div><button class="btn btn-soft btn-sm">＋ 申请友链</button></div>
+      <div class="grid-3">
+        <div class="card pad" style="padding:14px;display:flex;gap:10px;align-items:center"><div class="avatar" style="width:36px;height:36px;font-size:13px">A</div><div style="min-width:0"><b style="font-size:12.5px">阿离的博客</b><div style="font-size:11px;color:var(--text-3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">写字与代码</div></div></div>
+        <div class="card pad" style="padding:14px;display:flex;gap:10px;align-items:center"><div class="avatar" style="width:36px;height:36px;font-size:13px;background:linear-gradient(135deg,#93c5fd,#c4b5fd)">K</div><div style="min-width:0"><b style="font-size:12.5px">小 K 手记</b><div style="font-size:11px;color:var(--text-3)">前端与设计</div></div></div>
+        <div class="card pad" style="padding:14px;display:flex;gap:10px;align-items:center"><div class="avatar" style="width:36px;height:36px;font-size:13px;background:linear-gradient(135deg,#fda4af,#fcd34d)">N</div><div style="min-width:0"><b style="font-size:12.5px">Neo 的角落</b><div style="font-size:11px;color:var(--text-3)">折腾记录</div></div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 17 视频 -->
+<section id="p7">
+  <span class="sec-tag">17 · 页面</span>
+  <h2>视频页 video.php</h2>
+  <p class="sec-desc">保留 Joe 结构：播放器 + 详情 + 分类标签 + 列表 + 搜索 + 分页（<code>.ecod_video__*</code>）。深色播放器 + 浅色列表。</p>
+  <div class="frame">
+    <div class="frame-bar"><i></i><i></i><i></i><span>video.php · 视频</span></div>
+    <div class="frame-body" style="padding:16px">
+      <div style="display:grid;grid-template-columns:1.6fr 1fr;gap:12px">
+        <div style="background:#111522;border-radius:var(--r);aspect-ratio:16/9;display:flex;align-items:center;justify-content:center;color:#8b95ad;font-size:12px">▶ 播放器（16:9）</div>
+        <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:14px">
+          <b style="font-size:13px">视频标题：主题开发全流程</b>
+          <div style="font-size:11.5px;color:var(--text-3);margin-top:4px">12:34 · 2.3 万次播放 · 2026-10-20</div>
+          <div style="font-size:12px;color:var(--text-2);margin-top:8px;line-height:1.8">简介：从零开始搭建一套 Typecho 主题，含组件拆分与样式组织。</div>
+          <div style="display:flex;gap:6px;margin-top:10px;flex-wrap:wrap"><span class="tag">Typecho</span><span class="tag gray">教程</span></div>
+        </div>
+      </div>
+      <div style="display:flex;gap:6px;margin:14px 0 10px;flex-wrap:wrap"><span class="chip on">全部</span><span class="chip">前端</span><span class="chip">后端</span><span class="chip">设计</span><span class="chip" style="margin-left:auto">🔍 搜索视频</span></div>
+      <div class="grid-4">
+        <div><div style="height:64px;border-radius:8px;background:linear-gradient(135deg,#c7d2fe,#fbcfe8)"></div><div style="font-size:11px;margin-top:5px;color:var(--text-2)">CSS 布局精讲</div></div>
+        <div><div style="height:64px;border-radius:8px;background:linear-gradient(135deg,#fde68a,#fca5a5)"></div><div style="font-size:11px;margin-top:5px;color:var(--text-2)">PHP 面向对象</div></div>
+        <div><div style="height:64px;border-radius:8px;background:linear-gradient(135deg,#d1fae5,#cffafe)"></div><div style="font-size:11px;margin-top:5px;color:var(--text-2)">主题配置项</div></div>
+        <div><div style="height:64px;border-radius:8px;background:linear-gradient(135deg,#ede9fe,#fce7f3)"></div><div style="font-size:11px;margin-top:5px;color:var(--text-2)">性能优化</div></div>
+      </div>
+      <div class="pager" style="margin-top:14px"><span>‹</span><span class="on">1</span><span>2</span><span>›</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- 18 壁纸 -->
+<section id="p8">
+  <span class="sec-tag">18 · 页面</span>
+  <h2>壁纸页 wallpaper.php</h2>
+  <p class="sec-desc">对应 <code>.ecod_wallpaper__list / __type</code>。改为<b>瀑布流网格</b>（CSS columns，零 JS 依赖），3 → 2 → 1 列；点击灯箱预览与下载。</p>
+  <div class="frame">
+    <div class="frame-bar"><i></i><i></i><i></i><span>wallpaper.php · 壁纸</span></div>
+    <div class="frame-body" style="padding:16px">
+      <div style="display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap"><span class="chip on">全部</span><span class="chip">风景</span><span class="chip">极简</span><span class="chip">插画</span><span class="chip">城市</span></div>
+      <div style="columns:3;column-gap:10px">
+        <div style="height:110px;border-radius:8px;background:linear-gradient(135deg,#93a5f8,#c4b5fd);margin-bottom:10px"></div>
+        <div style="height:140px;border-radius:8px;background:linear-gradient(135deg,#fde68a,#fca5a5);margin-bottom:10px"></div>
+        <div style="height:90px;border-radius:8px;background:linear-gradient(135deg,#d1fae5,#cffafe);margin-bottom:10px"></div>
+        <div style="height:96px;border-radius:8px;background:linear-gradient(135deg,#ede9fe,#fce7f3);margin-bottom:10px"></div>
+        <div style="height:120px;border-radius:8px;background:linear-gradient(135deg,#bae6fd,#a7f3d0);margin-bottom:10px"></div>
+        <div style="height:100px;border-radius:8px;background:linear-gradient(135deg,#fed7aa,#fecdd3);margin-bottom:10px"></div>
+      </div>
+      <div class="pager" style="margin-top:6px"><span>‹</span><span class="on">1</span><span>2</span><span>3</span><span>›</span></div>
+    </div>
+  </div>
+  <div class="notice"><b>灯箱规格</b><span>遮罩 92% 黑 + 图片居中 + 左右切换 + 下载按钮；ESC / 点击遮罩关闭；键盘 ← → 切换；移动端左右滑动。</span></div>
+</section>
+
+<!-- 19 直播 -->
+<section id="p9">
+  <span class="sec-tag">19 · 页面</span>
+  <h2>直播页 live.php</h2>
+  <p class="sec-desc">结构同 video（<code>.ecod_live__play / __type / __list</code>），差异：支持 HLS 与直播状态角标，列表为频道卡。</p>
+  <div class="frame">
+    <div class="frame-bar"><i></i><i></i><i></i><span>live.php · 直播</span></div>
+    <div class="frame-body" style="padding:16px">
+      <div style="display:grid;grid-template-columns:1.7fr 1fr;gap:12px">
+        <div style="background:#0d111c;border-radius:var(--r);aspect-ratio:16/9;position:relative;display:flex;align-items:center;justify-content:center;color:#7b859e;font-size:12px">LIVE 播放器
+          <span style="position:absolute;top:10px;left:10px;background:#ef4444;color:#fff;font-size:10px;border-radius:4px;padding:1px 7px">● LIVE</span>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px;font-size:11.5px;display:flex;gap:8px;align-items:center"><span style="width:6px;height:6px;border-radius:50%;background:#ef4444"></span>CCTV-1 综合</div>
+          <div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px;font-size:11.5px;display:flex;gap:8px;align-items:center"><span style="width:6px;height:6px;border-radius:50%;background:#24c55e"></span>CCTV-5 体育</div>
+          <div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px;font-size:11.5px;display:flex;gap:8px;align-items:center"><span style="width:6px;height:6px;border-radius:50%;background:#24c55e"></span>卫视 · 湖南</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 20 统计 -->
+<section id="p10">
+  <span class="sec-tag">20 · 页面</span>
+  <h2>统计页 census.php</h2>
+  <p class="sec-desc">对应 <code>.ecod_census__basic / __server / __lately / __filing</code>。数据卡片 + 纯 CSS 迷你柱状图，零图表库。</p>
+  <div class="frame">
+    <div class="frame-bar"><i></i><i></i><i></i><span>census.php · 站点统计</span></div>
+    <div class="frame-body" style="padding:16px">
+      <div class="grid-4">
+        <div class="card pad" style="padding:14px"><div style="font-size:11px;color:var(--text-3)">文章</div><div style="font-size:22px;font-weight:700;color:var(--primary)">128</div></div>
+        <div class="card pad" style="padding:14px"><div style="font-size:11px;color:var(--text-3)">评论</div><div style="font-size:22px;font-weight:700">456</div></div>
+        <div class="card pad" style="padding:14px"><div style="font-size:11px;color:var(--text-3)">分类</div><div style="font-size:22px;font-weight:700">8</div></div>
+        <div class="card pad" style="padding:14px"><div style="font-size:11px;color:var(--text-3)">标签</div><div style="font-size:22px;font-weight:700">36</div></div>
+      </div>
+      <div style="display:grid;grid-template-columns:1.4fr 1fr;gap:12px;margin-top:12px">
+        <div class="card pad" style="padding:14px">
+          <b style="font-size:12.5px">近 7 日发布量</b>
+          <div style="display:flex;align-items:flex-end;gap:9px;height:86px;margin-top:12px">
+            <div style="flex:1;height:40%;background:var(--primary-soft);border-radius:4px 4px 0 0"></div>
+            <div style="flex:1;height:65%;background:var(--primary-soft);border-radius:4px 4px 0 0"></div>
+            <div style="flex:1;height:30%;background:var(--primary-soft);border-radius:4px 4px 0 0"></div>
+            <div style="flex:1;height:85%;background:var(--primary);border-radius:4px 4px 0 0"></div>
+            <div style="flex:1;height:55%;background:var(--primary-soft);border-radius:4px 4px 0 0"></div>
+            <div style="flex:1;height:70%;background:var(--primary-soft);border-radius:4px 4px 0 0"></div>
+            <div style="flex:1;height:45%;background:var(--primary-soft);border-radius:4px 4px 0 0"></div>
+          </div>
+        </div>
+        <div class="card pad" style="padding:14px">
+          <b style="font-size:12.5px">运行环境</b>
+          <div style="font-size:11.5px;color:var(--text-2);line-height:2;margin-top:6px">PHP 8.3.2 · MySQL 8.0<br>服务器 2C4G · 负载 0.12<br>运行 1024 天 12 小时</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 21 404 -->
+<section id="p11">
+  <span class="sec-tag">21 · 页面</span>
+  <h2>404 · 搜索页</h2>
+  <div class="grid-2">
+    <div class="frame"><div class="frame-bar"><i></i><i></i><i></i><span>404.php</span></div>
+      <div class="frame-body" style="padding:32px;text-align:center">
+        <div style="font-size:44px;font-weight:800;color:#dfe4f8;letter-spacing:4px">404</div>
+        <div style="font-size:14px;font-weight:600;margin-top:4px">页面走丢了</div>
+        <p style="font-size:12px;color:var(--text-3);margin-top:4px">页面可能已被删除或地址有误</p>
+        <div style="display:flex;gap:8px;justify-content:center;margin-top:14px"><button class="btn btn-primary btn-sm">返回首页</button><button class="btn btn-ghost btn-sm">搜索一下</button></div>
+      </div>
+    </div>
+    <div class="frame"><div class="frame-bar"><i></i><i></i><i></i><span>搜索结果页（复用 archive）</span></div>
+      <div class="frame-body" style="padding:16px">
+        <div style="display:flex;gap:8px;margin-bottom:12px"><div style="flex:1;height:36px;border:1px solid var(--border);border-radius:8px;background:#fff;display:flex;align-items:center;padding:0 12px;font-size:12px;color:var(--text-3)">Typecho 主题</div><button class="btn btn-primary btn-sm">搜索</button></div>
+        <div style="font-size:12px;color:var(--text-3);margin-bottom:8px">找到 12 条结果 · 用时 0.03s</div>
+        <div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 12px;margin-bottom:8px"><b style="font-size:12px;color:var(--primary)">组件化 Typecho 主题设计实录</b><div style="font-size:11px;color:var(--text-3)">…一套 <mark>Typecho 主题</mark> 的设计过程…</div></div>
+        <div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 12px"><b style="font-size:12px;color:var(--primary)">functions.php 配置项最佳实践</b><div style="font-size:11px;color:var(--text-3)">…<mark>主题</mark> 配置项…</div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 22 参考拆解 -->
+<section id="n1">
+  <span class="sec-tag">22 · v3 参考优化</span>
+  <h2>两个参考站，拆出可用的部分</h2>
+  <p class="sec-desc">RiPro（<span style="color:var(--text-3)">ripro.rizhuti.com</span>）是资源站形态：模块化首页 + 角标 + 数据元信息；苏醒（<span style="color:var(--text-3)">suxing.me</span>）是个人博客形态：左栏布局 + 卡片操作组 + 移动抽屉。按博客定位取长补短。</p>
+
+  <div class="card" style="padding:0;margin-bottom:16px">
+    <table>
+      <tr><th style="width:22%">能力</th><th style="width:9%">RiPro</th><th style="width:9%">苏醒</th><th style="width:10%">采纳</th><th>落地方式</th></tr>
+      <tr><td>顶部大搜索盒</td><td>✓</td><td>—</td><td><span class="tag ok">采纳</span></td><td>首页首屏搜索模块，含热搜词；替代 Joe 的小搜索框</td></tr>
+      <tr><td>分类导航卡（图标 + 计数）</td><td>✓</td><td>—</td><td><span class="tag ok">采纳</span></td><td>4 列图标卡，后台可配图标与描述</td></tr>
+      <tr><td>CMS 双栏模块（大图 + 榜列）</td><td>✓</td><td>—</td><td><span class="tag ok">采纳</span></td><td>首页模块「焦点」：左大图 + 右 5 条编号列表</td></tr>
+      <tr><td>按分类输出区块 + 分类导航按钮</td><td>✓</td><td>—</td><td><span class="tag ok">采纳</span></td><td>「分类精选」模块，标题栏右侧放全部分类按钮</td></tr>
+      <tr><td>标题式紧凑列表</td><td>✓</td><td>—</td><td><span class="tag ok">采纳</span></td><td>新增卡片模式 F，用于侧栏/「最新速览」</td></tr>
+      <tr><td>角标（置顶/VIP/热/付费/新）</td><td>✓</td><td>✓</td><td><span class="tag ok">采纳</span></td><td>统一 <code>.ecod_badge</code> 体系，付费改为「系列」角标</td></tr>
+      <tr><td>数据元信息（浏览/点赞/收藏/价格）</td><td>✓</td><td>✓</td><td><span class="tag ok">采纳</span></td><td>去掉价格，保留浏览/评论/点赞/收藏 + 分类色点</td></tr>
+      <tr><td>卡片悬浮操作组</td><td>—</td><td>✓</td><td><span class="tag ok">采纳</span></td><td>hover 右下出现 收藏 / 点赞 / 分享</td></tr>
+      <tr><td>左栏布局</td><td>—</td><td>✓</td><td><span class="tag ok">采纳</span></td><td>后台三选一：右栏（默认）/ 左栏 / 无栏</td></tr>
+      <tr><td>移动端抽屉侧栏</td><td>—</td><td>✓</td><td><span class="tag ok">采纳</span></td><td>汉堡菜单 + 左侧滑出，遮罩点击关闭</td></tr>
+      <tr><td>阅读进度 / 悬浮工具</td><td>部分</td><td>✓</td><td><span class="tag ok">采纳</span></td><td>顶部进度条 + 右下工具组（目录/收藏/顶部）</td></tr>
+      <tr><td>内容可见性控制（评论/登录可见）</td><td>✓</td><td>—</td><td><span class="tag ok">采纳</span></td><td>短代码实现「回复可见 / 登录可见」，无支付</td></tr>
+      <tr><td>数据概览数字条</td><td>✓</td><td>—</td><td><span class="tag ok">采纳</span></td><td>首页/统计页的 4 格数字概览</td></tr>
+      <tr><td>VIP 会员卡 / 价格体系</td><td>✓</td><td>—</td><td><span class="tag gray">可选</span></td><td>仅做样式位，默认关闭；不做支付与订单</td></tr>
+      <tr><td>刮刮卡、积分、下载商城</td><td>✓</td><td>—</td><td><span class="tag warn">不采纳</span></td><td>与博客定位不符，避免臃肿</td></tr>
+      <tr><td>Bootstrap 栅格 / owl-carousel</td><td>✓</td><td>✓</td><td><span class="tag warn">不采纳</span></td><td>维持自写 grid 与轻量轮播，不引第三方库</td></tr>
+    </table>
+  </div>
+
+  <div class="grid-3">
+    <div class="card pad"><b style="font-size:13px">取：模块化编排</b><p style="font-size:12px;color:var(--text-2);margin-top:6px">RiPro 的首页本质是「可排序的模块数组」。Ecod 用同一思路：每个模块独立模板，后台拖动排序、逐个开关。</p></div>
+    <div class="card pad"><b style="font-size:13px">取：信息密度</b><p style="font-size:12px;color:var(--text-2);margin-top:6px">苏醒的卡片在标题下就给出分类、时间、互动数，扫读效率高。Ecod 卡片统一一行元信息，不堆砌。</p></div>
+    <div class="card pad"><b style="font-size:13px">舍：商城化</b><p style="font-size:12px;color:var(--text-2);margin-top:6px">不做价格、积分、订单、付费下载。保持纯内容站，减少后台配置项与安全面。</p></div>
+  </div>
+</section>
+
+<!-- 23 首页模块库 -->
+<section id="n2">
+  <span class="sec-tag">23 · 首页模块库</span>
+  <h2>12 个模块，自由排序</h2>
+  <p class="sec-desc">首页不再写死版块顺序。后台维护模块列表（拖动排序 + 开关），模板按顺序渲染；模块间统一 24px 间距，关闭后不留空。</p>
+
+  <div class="card" style="padding:0;margin-bottom:16px">
+    <table>
+      <tr><th style="width:8%">编号</th><th style="width:22%">模块</th><th>内容</th><th style="width:14%">默认</th></tr>
+      <tr><td>M1</td><td>搜索盒 <code>search</code></td><td>标题 + 输入框 + 热搜词 + 文章数概览</td><td>开</td></tr>
+      <tr><td>M2</td><td>分类导航 <code>catnav</code></td><td>4 列图标卡，图标 / 名称 / 文章数</td><td>开</td></tr>
+      <tr><td>M3</td><td>轮播 <code>slider</code></td><td>图 + 标题 + 指示器，可配 1~6 张</td><td>开</td></tr>
+      <tr><td>M4</td><td>推荐位 <code>recommend</code></td><td>1~3 张推荐卡，自动栅格</td><td>开</td></tr>
+      <tr><td>M5</td><td>热门四宫格 <code>hot</code></td><td>按热度排序的 4 张小卡</td><td>开</td></tr>
+      <tr><td>M6</td><td>动态流 <code>feed</code></td><td>最新更新的紧凑时间线（8 条）</td><td>关</td></tr>
+      <tr><td>M7</td><td>焦点 <code>focus</code></td><td>CMS 双栏：左大图 + 右编号列表</td><td>开</td></tr>
+      <tr><td>M8</td><td>分类精选 <code>cat-post</code></td><td>指定分类的文章区块，标题栏带「全部 →」</td><td>开</td></tr>
+      <tr><td>M9</td><td>最新速览 <code>title-list</code></td><td>标题式列表（模式 F），10 条</td><td>关</td></tr>
+      <tr><td>M10</td><td>数据概览 <code>overview</code></td><td>文章 / 评论 / 标签 / 运行天数</td><td>关</td></tr>
+      <tr><td>M11</td><td>广告位 <code>ad</code></td><td>图 + 链接，列表中间可插</td><td>关</td></tr>
+      <tr><td>M12</td><td>正文流 <code>list</code></td><td>选项卡 + 卡片列表 + 加载更多（必选）</td><td>锁定</td></tr>
+    </table>
+  </div>
+
+  <div class="frame">
+    <div class="frame-bar"><i></i><i></i><i></i><span>M1 搜索盒 + M2 分类导航</span></div>
+    <div class="frame-body" style="padding:16px;display:flex;flex-direction:column;gap:14px">
+      <div class="search-hero">
+        <h4>搜索你想看的内容</h4>
+        <div class="box"><div>🔍 输入关键词，如「Typecho 主题」</div><button class="btn btn-primary">搜索</button></div>
+        <div class="hot">热搜：<span>主题开发</span> · <span>CSS 变量</span> · <span>PHP 8.3</span> · <span>设计系统</span></div>
+      </div>
+      <div class="cat-nav">
+        <div class="it"><div class="ico">🧩</div><div><b>Typecho</b><span>46 篇</span></div></div>
+        <div class="it"><div class="ico" style="background:#e8f6ec">🎨</div><div><b>设计</b><span>28 篇</span></div></div>
+        <div class="it"><div class="ico" style="background:#fff1e6">⚙️</div><div><b>后端</b><span>34 篇</span></div></div>
+        <div class="it"><div class="ico" style="background:#f3ecff">📔</div><div><b>随笔</b><span>20 篇</span></div></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="frame" style="margin-top:16px">
+    <div class="frame-bar"><i></i><i></i><i></i><span>M7 焦点（CMS 双栏）+ M8 分类精选</span></div>
+    <div class="frame-body" style="padding:16px">
+      <div style="display:flex;align-items:center;margin-bottom:10px"><b style="font-size:13px">焦点</b><span style="font-size:11px;color:var(--text-3);margin-left:8px">本期精选 6 篇</span><a href="#" style="margin-left:auto;font-size:11.5px;color:var(--primary)">全部 →</a></div>
+      <div class="cms">
+        <div class="big"><div class="info"><b>组件化主题：从设计令牌到页面</b><div>2026-10-28 · 1,024 阅读 · 32 评论</div></div></div>
+        <div class="list">
+          <div class="row"><span class="num">1</span><span class="t">CSS 变量如何驱动暗色模式</span><time style="font-size:10.5px;color:var(--text-3)">10-26</time></div>
+          <div class="row"><span class="num">2</span><span class="t">PHP 8.3 兼容性排查清单</span><time style="font-size:10.5px;color:var(--text-3)">10-24</time></div>
+          <div class="row"><span class="num">3</span><span class="t">Typecho 模板层级与继承</span><time style="font-size:10.5px;color:var(--text-3)">10-21</time></div>
+          <div class="row"><span class="num">4</span><span class="t">卡片设计的五种密度</span><time style="font-size:10.5px;color:var(--text-3)">10-18</time></div>
+          <div class="row"><span class="num">5</span><span class="t">为什么我不再用 jQuery</span><time style="font-size:10.5px;color:var(--text-3)">10-15</time></div>
+        </div>
+      </div>
+      <div style="height:1px;background:var(--border);margin:16px 0"></div>
+      <div style="display:flex;align-items:center;margin-bottom:8px"><b style="font-size:13px">Typecho</b><a href="#" style="margin-left:auto;font-size:11.5px;color:var(--primary)">全部 46 篇 →</a></div>
+      <div class="title-list">
+        <div class="row"><span class="idx">01</span><a class="t" href="#">主题开发第一步：目录结构与命名规范</a><time>10-28</time></div>
+        <div class="row"><span class="idx">02</span><a class="t" href="#">主题配置项怎么设计才不反人类</a><time>10-26</time></div>
+        <div class="row"><span class="idx">03</span><a class="t" href="#">从 Joe 迁移到 Ecod 的完整记录</a><time>10-22</time></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="grid-2" style="margin-top:16px">
+    <div class="card pad">
+      <b style="font-size:13px">M6 动态流</b>
+      <div style="margin-top:10px;border-left:2px solid var(--border);padding-left:14px">
+        <div style="position:relative;font-size:12px;color:var(--text-2);padding-bottom:10px"><span style="position:absolute;left:-20px;top:5px;width:7px;height:7px;border-radius:50%;background:var(--primary)"></span><b style="color:var(--text)">发布</b> 组件化主题设计实录 <span style="color:var(--text-3)">· 2 小时前</span></div>
+        <div style="position:relative;font-size:12px;color:var(--text-2);padding-bottom:10px"><span style="position:absolute;left:-20px;top:5px;width:7px;height:7px;border-radius:50%;background:var(--border)"></span><b style="color:var(--text)">更新</b> PHP 8.3 兼容清单 <span style="color:var(--text-3)">· 昨天</span></div>
+        <div style="position:relative;font-size:12px;color:var(--text-2)"><span style="position:absolute;left:-20px;top:5px;width:7px;height:7px;border-radius:50%;background:var(--border)"></span><b style="color:var(--text)">发布</b> 卡片密度研究 <span style="color:var(--text-3)">· 3 天前</span></div>
+      </div>
+    </div>
+    <div class="card pad">
+      <b style="font-size:13px">M10 数据概览</b>
+      <div class="overview" style="margin-top:12px">
+        <div class="o"><b>128</b><span>文章</span></div>
+        <div class="o"><b>456</b><span>评论</span></div>
+        <div class="o"><b>36</b><span>标签</span></div>
+        <div class="o"><b>1024</b><span>运行天</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 24 卡片增强 -->
+<section id="n3">
+  <span class="sec-tag">24 · 卡片增强</span>
+  <h2>角标 · 元信息 · 操作组 · 模式 F</h2>
+  <p class="sec-desc">在原有 5 种模式上补齐信息层与交互层：角标置于缩略图左上，元信息统一一行，操作组 hover 才出现。新增模式 F 标题式，用于高密度场景。</p>
+
+  <div class="grid-2">
+    <div class="frame"><div class="frame-bar"><i></i><i></i><i></i><span>增强后的列表卡（角标 + 元信息 + 操作组）</span></div>
+      <div class="frame-body" style="padding:16px">
+        <div class="cards">
+          <div class="pk">
+            <div class="thumb"><div class="badge-row"><span class="bd bd-top">置顶</span><span class="bd bd-hot">热门</span></div><span class="cat">Typecho</span></div>
+            <div class="body">
+              <h4><a href="#">Ecod Theme：一套组件化的 Typecho 主题设计实录</a></h4>
+              <div class="abs">从设计令牌到组件封装，完整记录设计过程与交互细节……</div>
+              <div class="meta-x" style="margin-top:auto;padding-top:10px">
+                <span><i class="cat-dot"></i>Typecho</span><span>10-28</span><span>👁 1,024</span><span>💬 32</span><span>⭐ 88</span>
+              </div>
+            </div>
+            <div class="act-group"><span title="收藏">☆</span><span title="点赞">👍</span><span title="分享">↗</span></div>
+          </div>
+          <div class="pk">
+            <div class="thumb" style="background:linear-gradient(135deg,#fde68a,#fca5a5)"><div class="badge-row"><span class="bd bd-vip">系列</span></div><span class="cat">教程</span></div>
+            <div class="body">
+              <h4><a href="#">functions.php 配置项最佳实践</a></h4>
+              <div class="abs">配置项命名规范、类型划分与默认值兜底策略……</div>
+              <div class="meta-x" style="margin-top:auto;padding-top:10px"><span><i class="cat-dot" style="background:#f59e0b"></i>教程</span><span>10-26</span><span>👁 764</span><span>💬 18</span><span>⭐ 45</span></div>
+            </div>
+            <div class="act-group"><span>☆</span><span>👍</span><span>↗</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="frame"><div class="frame-bar"><i></i><i></i><i></i><span>模式 F · 标题式（title）</span></div>
+      <div class="frame-body" style="padding:16px">
+        <div class="title-list" style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:6px 14px">
+          <div class="row"><span class="idx">01</span><a class="t" href="#">主题开发第一步：目录结构与命名规范</a><time>10-28</time></div>
+          <div class="row"><span class="idx">02</span><a class="t" href="#">配置项怎么设计才不反人类</a><time>10-26</time></div>
+          <div class="row"><span class="idx">03</span><a class="t" href="#">从 Joe 迁移到 Ecod 的完整记录</a><time>10-22</time></div>
+          <div class="row"><span class="idx">04</span><a class="t" href="#">五种卡片密度的取舍</a><time>10-18</time></div>
+          <div class="row"><span class="idx">05</span><a class="t" href="#">为什么保留 DOM、重写 CSS</a><time>10-15</time></div>
+        </div>
+        <p style="font-size:11.5px;color:var(--text-3);margin-top:10px">模式 F 仅 1 行高度（约 40px），用于「最新速览」、侧栏、搜索结果紧凑模式；无缩略图、无摘要。</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top:16px;padding:0">
+    <table>
+      <tr><th style="width:18%">层级</th><th>规则</th><th style="width:26%">数据来源</th></tr>
+      <tr><td><b>角标</b></td><td>最多显示 2 个：置顶 / 热门 / 系列 / 新；顺序固定，超出裁剪</td><td>文章字段 <code>pin</code>、浏览量阈值、自定义字段 <code>series</code>、发布时间 &lt; 7 天</td></tr>
+      <tr><td><b>付费 / 会员角标</b></td><td>置所有角标最前；因只出现在缩略图（彩色封面）上，禁用 12% 半透明彩底，一律白底实色字：会员 <code>#7c3aed</code>、付费 <code>#b45309</code>，附轻投影保证浅色封面上可辨；正文行内场景仍用半透明彩底胶囊</td><td>自定义字段 <code>pay_mode</code> / <code>price</code>（core/pay.php）</td></tr>
+      <tr><td><b>元信息</b></td><td>一行 5 项：分类色点 + 日期 + 浏览 + 评论 + 点赞；&lt; 600px 只留 3 项</td><td>分类色由后台配置，未配置取主色</td></tr>
+      <tr><td><b>操作组</b></td><td>hover / 聚焦时出现，三按钮 26×26：收藏、点赞、分享</td><td>收藏本地 + 服务端计数；点赞 cookie 去重</td></tr>
+      <tr><td><b>模式 F</b></td><td>序号 + 标题 + 日期，两行折叠为一行省略</td><td>与 A~E 共用 <code>.ecod_card</code> 数据接口</td></tr>
+    </table>
+  </div>
+  <div class="notice"><b>性能</b><span>操作组用 CSS hover 控制，不用 JS 监听；图标走内联 SVG 雪碧图，单页新增 &lt; 3KB。</span></div>
+</section>
+
+<!-- 25 布局变体 -->
+<section id="n4">
+  <span class="sec-tag">25 · 布局与移动端</span>
+  <h2>三种栏位布局 + 抽屉侧栏</h2>
+  <p class="sec-desc">Joe 固定「主栏 + 右栏」。Ecod 增加后台三选一：右栏（默认）/ 左栏 / 无栏；无论哪种，栅格断点与卡片宽度一致，不出现二次适配。</p>
+
+  <div class="card pad">
+    <div class="layout-demo">
+      <div class="d"><div class="bar"></div><div class="row"><div class="m"></div><div class="s"></div></div><p>右栏（默认）· 侧栏 300px</p></div>
+      <div class="d"><div class="bar"></div><div class="row"><div class="s"></div><div class="m"></div></div><p>左栏 · 阅读流偏右，博客感强</p></div>
+      <div class="d"><div class="bar"></div><div class="row"><div class="m" style="height:66px"></div></div><p>无栏 · 正文最宽 820px</p></div>
+    </div>
+    <table style="margin-top:16px">
+      <tr><th style="width:20%">断点</th><th>行为</th></tr>
+      <tr><td>≥ 1101px</td><td>三栏布局可选；侧栏 300px，主栏自适应</td></tr>
+      <tr><td>901 – 1100px</td><td>侧栏 260px（左栏布局仍保留）</td></tr>
+      <tr><td>681 – 900px</td><td>单栏；左栏布局自动切回右栏；侧栏内容转入底部「更多」折叠区</td></tr>
+      <tr><td>≤ 680px</td><td>单栏 + 抽屉菜单；卡片切紧凑模式（720 / 640 / 560 / 520 为组件内二级收窄）</td></tr>
+    </table>
+    <p style="margin-top:10px;font-size:12px;color:var(--text-2)">注：早期稿写 1200 / 992 / 768，实现期整体下移一档（1100 / 900 / 680）让平板竖屏仍吃两栏，2026-10-30 与实现对齐。</p>
+  </div>
+
+  <div class="grid-2" style="margin-top:16px">
+    <div class="frame"><div class="frame-bar"><i></i><i></i><i></i><span>移动端抽屉（.ecod_drawer）</span></div>
+      <div class="frame-body" style="padding:16px">
+        <div class="drawer">
+          <div class="phone">
+            <div class="top">☰ &nbsp; Ecod</div>
+            <div style="padding:8px">
+              <div style="height:8px;background:#eef1f7;border-radius:3px;margin-bottom:6px;width:82%"></div>
+              <div style="height:8px;background:#eef1f7;border-radius:3px;margin-bottom:6px"></div>
+              <div style="height:56px;background:#eef1f7;border-radius:6px"></div>
+            </div>
+            <div class="mask"></div>
+            <div class="panel"><i style="width:62%"></i><i></i><i></i><i></i><i></i><i style="width:48%"></i></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card pad">
+      <b style="font-size:13px">抽屉规格</b>
+      <p style="font-size:12.5px;color:var(--text-2);margin-top:8px;line-height:1.9">
+        · 宽度 min(280px, 76vw)，左侧滑入 220ms<br>
+        · 遮罩 <code>rgba(20,25,40,.4)</code>，点击 / ESC 关闭<br>
+        · 内容：站点信息 → 导航 → 分类 → 搜索入口<br>
+        · 打开时锁 body 滚动，焦点困在抽屉内（可访问性）<br>
+        · 右侧栏内容不复用抽屉，避免信息重复
+      </p>
+    </div>
+  </div>
+</section>
+
+<!-- 26 阅读增强 -->
+<section id="n5">
+  <span class="sec-tag">26 · 阅读增强 &amp; 会员</span>
+  <h2>进度、工具、可见性控制</h2>
+  <p class="sec-desc">借鉴苏醒的阅读体验与 RiPro 的内容可见性，只做轻量、无支付的部分。</p>
+
+  <div class="grid-2">
+    <div class="card pad">
+      <b style="font-size:13px">阅读进度条</b>
+      <div class="progress-line" style="margin:10px 0 8px"><i></i></div>
+      <p style="font-size:12px;color:var(--text-2)">页面顶部 3px，跟随滚动；到达 100% 时主色渐变成绿色并淡出。移动端同样显示。</p>
+      <div style="height:1px;background:var(--border);margin:14px 0"></div>
+      <b style="font-size:13px">悬浮工具栏</b>
+      <div style="display:flex;gap:14px;margin-top:10px;align-items:center">
+        <div class="float-tools"><div class="t on">☰</div><div class="t">☆</div><div class="t">↑</div></div>
+        <p style="font-size:12px;color:var(--text-2);line-height:1.8">目录 / 收藏 / 回到顶部，三个按钮垂直排列；滚动超过一屏才出现，目录按钮在移动端打开底部浮层。</p>
+      </div>
+    </div>
+    <div class="card pad">
+      <b style="font-size:13px">内容可见性（短代码）</b>
+      <div class="locked" style="margin-top:10px">🔒 此处内容登录后可见<br><button class="btn btn-soft btn-sm" style="margin-top:8px">登录查看</button></div>
+      <div class="locked" style="margin-top:8px">💬 回复本文后可见<br><span style="font-size:11px;opacity:.75">（发表任意评论即解锁）</span></div>
+      <p style="font-size:12px;color:var(--text-2);margin-top:10px">两个短代码：<code>[ecod_login]</code>、<code>[ecod_reply]</code>；未解锁时输出统一锁定块，SEO 上不输出正文。</p>
+    </div>
+  </div>
+
+  <div class="grid-2" style="margin-top:16px">
+    <div class="card pad">
+      <b style="font-size:13px">会员卡位（可选，默认关闭）</b>
+      <div class="vip-card" style="margin-top:10px">
+        <div class="t">ECOD MEMBER</div>
+        <div class="p">¥ 0 / 永久</div>
+        <ul><li>· 全站文章无广告阅读</li><li>· 专属评论标识</li><li>· 系列文章合集下载</li></ul>
+      </div>
+      <p style="font-size:12px;color:var(--text-2);margin-top:10px">仅作为展示样式位，不含注册、支付、订单逻辑；开启需自行接入第三方会员插件。</p>
+    </div>
+    <div class="card pad">
+      <b style="font-size:13px">收藏 &amp; 点赞（前端 + 后端）</b>
+      <table style="margin-top:8px">
+        <tr><td style="padding-left:0;width:34%">收藏</td><td>localStorage 列表 + 可选写入 Typecho 自定义表；未登录仅本地</td></tr>
+        <tr><td style="padding-left:0">点赞</td><td>cookie 去重 + 文章字段计数，AJAX 即时更新</td></tr>
+        <tr><td style="padding-left:0">分享</td><td>复制链接 / 系统分享面板 / 二维码浮层</td></tr>
+        <tr><td style="padding-left:0">阅读数</td><td>沿用 Joe 逻辑，IP + 时间窗去重</td></tr>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- 22 -->
+<section id="s5">
+  <span class="sec-tag">27 · 工程</span>
+  <h2>命名规范与目录结构</h2>
+  <div class="grid-2">
+    <div class="card pad">
+      <b style="font-size:13.5px">目录</b>
+      <div class="tree" style="margin-top:10px">
+<span class="dir">ecod-theme/</span><br>
+├─ index · post · archive · page · 404<br>
+├─ leaving · friends · video · wallpaper · live · census<br>
+├─ functions.php <span class="note">配置项 E-* 前缀</span><br>
+├─ <span class="dir">public/</span> <span class="note">header · aside · footer · comment · include</span><br>
+├─ <span class="dir">components/</span> <span class="note">card · pager · nav · toc · widget…</span><br>
+├─ <span class="dir">core/</span> <span class="note">精简继承：factory · route · parse</span><br>
+├─ <span class="dir">assets/</span><br>
+│&nbsp;&nbsp;├─ css/ ecod.css · ecod.dark.css<br>
+│&nbsp;&nbsp;├─ js/ ecod.global · ecod.index · ecod.post …<br>
+│&nbsp;&nbsp;└─ img · fonts · owo<br>
+└─ <span class="dir">.workbuddy/</span> <span class="note">开发记忆</span>
+      </div>
+    </div>
+    <div class="card" style="padding:0">
+      <table>
+        <tr><th>对象</th><th>Joe</th><th>Ecod</th></tr>
+        <tr><td>CSS 类</td><td><code>joe_list__item</code></td><td><code>ecod_card</code></td></tr>
+        <tr><td>状态类</td><td><code>.active</code></td><td><code>.is-active</code></td></tr>
+        <tr><td>后台配置</td><td><code>JIndex_Hot</code></td><td><code>EIndex_Hot</code></td></tr>
+        <tr><td>PHP 函数</td><td><code>_getThumbnails()</code></td><td><code>ecod_thumbnails()</code></td></tr>
+        <tr><td>核心类</td><td><code>Factory</code></td><td><code>Ecod_Factory</code></td></tr>
+        <tr><td>JS 命名空间</td><td>全局散落</td><td><code>window.Ecod.*</code></td></tr>
+        <tr><td>DOM 根</td><td><code>#Joe</code></td><td><code>#Ecod</code></td></tr>
+        <tr><td>Cookie</td><td><code>joe_mode</code></td><td><code>ecod_mode</code></td></tr>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- 23 -->
+<section id="s6">
+  <span class="sec-tag">28 · 实施计划</span>
+  <h2>分批交付</h2>
+  <div class="card pad phases" style="padding:26px 26px 6px">
+    <div class="phase"><b>P1 基础层</b><p>目录骨架 + tokens + reset + 布局栅格（三栏变体）+ 导航/页脚/侧栏外壳 + 抽屉。</p></div>
+    <div class="phase"><b>P2 卡片与列表</b><p>六卡片模式（A–F）+ 角标 / 元信息 / 操作组 + 选项卡 + 加载/分页 + 骨架屏。</p></div>
+    <div class="phase"><b>P3 首页模块化</b><p>M1–M12 模块 + 后台模块排序面板（首页、归档可跑通）。</p></div>
+    <div class="phase"><b>P4 内容页</b><p>文章页排版 + 目录 + 代码块 + 评论 + 短代码（含可见性）+ 独立页 + 404。</p></div>
+    <div class="phase"><b>P5 特色页与阅读增强</b><p>留言 / 友链 / 视频 / 壁纸 / 直播 / 统计 + 进度条 + 悬浮工具 + 收藏点赞。</p></div>
+    <div class="phase"><b>P6 打磨</b><p>暗色模式全量校验 + 移动端适配 + PJAX + 性能与可访问性。</p></div>
+  </div>
+</section>
+
+<!-- 29 -->
+<section id="n6">
+  <span class="sec-tag">29 · 后台交互</span>
+  <h2>设置项的条件联动</h2>
+  <p class="sec-desc">设置项之间存在真实的生效依赖：总开关没开，子项填了也不生效。后台按「只看当下一步要填什么」组织：条件不满足的字段直接隐藏，控制字段下方给出隐藏数量提示，整组失效时在分组顶部给出提示条。</p>
+
+  <h3>三段式呈现</h3>
+  <div class="grid-3">
+    <div class="card pad">
+      <b>① 字段级隐藏</b>
+      <p style="font-size:12.5px;color:var(--text-2);margin-top:8px">子项条件不满足时整行移除出视野，不留占位、不置灰。父项被隐藏时，其下级字段一并隐藏（链式求值，最多 4 轮收敛）。</p>
+    </div>
+    <div class="card pad">
+      <b>② 父项计数提示</b>
+      <p style="font-size:12.5px;color:var(--text-2);margin-top:8px">控制字段下方追加一行浅色小字：<code>另有 3 项关联设置已隐藏（开启后显示）</code>。用户知道关掉它顺手关了什么，也知道打开后会出现新内容。</p>
+    </div>
+    <div class="card pad">
+      <b>③ 分组级提示条</b>
+      <p style="font-size:12.5px;color:var(--text-2);margin-top:8px">整组设置因外部开关失效时（如全站评论关闭、侧栏设为「无侧栏」），分组顶部出现提示条，附「去开启」按钮，一键跳回控制该组的字段并高亮。</p>
+    </div>
+  </div>
+
+  <h3>条件表达式</h3>
+  <p class="sec-desc" style="margin-bottom:10px">挂在控件上的 <code>data-ecod-show-when</code>，挂在分组面板上的 <code>data-ecod-pane-when</code>，同一套语法。</p>
+  <table>
+    <tr><th style="width:32%">写法</th><th>含义</th></tr>
+    <tr><td><code>ECommentProvider:twikoo</code></td><td>控制字段等于该值</td></tr>
+    <tr><td><code>ECommentProvider:twikoo|waline</code></td><td>等于其中任一值</td></tr>
+    <tr><td><code>ECardMode:!=bare|title</code></td><td>不等于其中任一值（前置 <code>!</code>）</td></tr>
+    <tr><td><code>ELogoImage:!empty</code></td><td>该字段非空（<code>empty</code> 为判空）</td></tr>
+    <tr><td><code>ECode:on,EFloatToc:on</code></td><td>逗号分隔为「且」，全部满足才显示</td></tr>
+  </table>
+  <div class="notice"><b>降级</b>JS 未加载时所有字段照常显示并可保存，联动只是可见性增强，不影响任何取值与提交。</div>
+
+  <h3>联动对照表</h3>
+  <table>
+    <tr><th style="width:16%">分组</th><th style="width:30%">控制项</th><th>被控制项</th></tr>
+    <tr><td>站点</td><td>Logo 图片（非空）</td><td>图片旁同时显示文字</td></tr>
+    <tr><td>版式</td><td>卡片模式 ≠ 无图 / 标题式 / 紧凑行</td><td>缩略图位置、默认缩略图池、服务端裁剪、摘要长度</td></tr>
+    <tr><td>版式</td><td>侧栏位置 ≠ 无侧栏</td><td>「侧栏」整个分组（提示条）</td></tr>
+    <tr><td>文章页</td><td>代码高亮 = 开启</td><td>高亮配色</td></tr>
+    <tr><td>文章页</td><td>正文 oEmbed = 开启</td><td>社交卡片第三方脚本</td></tr>
+    <tr><td>互动</td><td>全站评论 = 开启</td><td>敏感词、必须含中文、字数上限、邮件模板；「评论」分组整体</td></tr>
+    <tr><td>互动</td><td>邮件总开关 = 开启</td><td>SMTP 7 项、回复通知、账户邮件、友链通知 4 个模板</td></tr>
+    <tr><td>互动</td><td>GitHub 登录 = 开启</td><td>Client ID / Secret、邮箱自动绑定、自动建号</td></tr>
+    <tr><td>评论</td><td>评论服务 = 原生</td><td>嵌套折叠深度、长讨论展开方式、Turnstile、Akismet、评论表情</td></tr>
+    <tr><td>评论</td><td>评论服务 = Twikoo / Waline / Artalk / Giscus</td><td>对应服务地址与 Giscus 5 项</td></tr>
+    <tr><td>评论</td><td>长讨论展开 ≠ 全部展开</td><td>嵌套折叠深度</td></tr>
+    <tr><td>评论</td><td>评论表情 = 图片表情包</td><td>表情包 CDN 前缀</td></tr>
+    <tr><td>AI 助手</td><td>AI 智能摘要 = 开启</td><td>接口协议、API 地址、Key、模型、提示词</td></tr>
+    <tr><td>付费</td><td>付费阅读总开关 = 开启</td><td>货币、作者免费、卡片位置、试读、有效期、通道、易支付 4 项、会员 10 项</td></tr>
+    <tr><td>付费</td><td>付费卡位置 ≠ 不显示</td><td>试读字数</td></tr>
+    <tr><td>付费</td><td>默认支付通道</td><td>手动付款说明（手动）／易支付 4 项（易支付）</td></tr>
+  </table>
+
+  <h3>块参数抽屉</h3>
+  <p class="sec-desc" style="margin-bottom:10px">块参数在 <code>core/blocks-def.php</code> 用 <code>when</code> 声明，抽屉内实时重算，不需要关闭重开。</p>
+<pre style="background:#0f1420;color:#cdd6e8;padding:16px;border-radius:10px;overflow:auto;font-size:12px;line-height:1.7"><code>'slides' =&gt; [ 'type' =&gt; 'slides', ... ],
+'count'  =&gt; [ 'label' =&gt; '轮播数量', 'type' =&gt; 'number', 'when' =&gt; 'slides:empty' ],
+'source' =&gt; [ 'label' =&gt; '文章来源', 'type' =&gt; 'select', 'when' =&gt; 'slides:empty' ],</code></pre>
+  <p style="font-size:12.5px;color:var(--text-2);margin-top:10px">已接入：轮播的「数量 / 来源」随自定义幻灯片是否为空显隐；互动按钮的「支付宝 / 微信收款码」随赞赏开关显隐。</p>
+
+  <h3>落点</h3>
+  <table>
+    <tr><th style="width:28%">文件</th><th>职责</th></tr>
+    <tr><td><code>core/config.php</code></td><td>字段声明条件属性；分组声明 <code>data-ecod-pane-when</code> 与提示文案、跳转目标</td></tr>
+    <tr><td><code>assets/admin/config.js</code></td><td>条件求值、链式隐藏、计数提示、分组提示条、抽屉重算</td></tr>
+    <tr><td><code>assets/admin/config.css</code></td><td><code>.ecod-condnote</code> / <code>.ecod-condbar</code> 两处样式（含暗色与窄屏）</td></tr>
+    <tr><td><code>core/blocks-def.php</code></td><td>块参数 <code>when</code> 声明</td></tr>
+  </table>
+</section>
+
+<!-- 30 -->
+<section id="s7">
+  <span class="sec-tag">30 · 参考站组件落地</span>
+  <h2>八项决议与实施规格</h2>
+  <p class="sec-desc">参考站拆解（mirai / sukuy / 风记星辰 / Once / Alright / B2，见 <code>REFERENCE-TEARDOWN.html</code>）逐项拍板后的落地记录。形态一旦确定就写进本节，后续改代码前先回来对一遍。</p>
+
+  <div class="card pad">
+    <table>
+      <tr><th style="width:8%">#</th><th style="width:26%">决议</th><th>含义</th><th style="width:14%">状态</th></tr>
+      <tr><td>1</td><td>首屏 C5 Hero 480 左对齐</td><td>沉浸式深色首屏，480px 高，内容左对齐，底部玻璃数据带</td><td>已落地</td></tr>
+      <tr><td>2</td><td>排序入口 = 浮层</td><td>正文流右上角一枚胶囊，点开是下拉，不并列铺开</td><td>已落地</td></tr>
+      <tr><td>3</td><td>C2b + E1 + E2 全上</td><td>分类专题卡、分类页头、专题墙三件都做，分类变成「目的地」</td><td>已落地（第 2 轮）</td></tr>
+      <tr><td>4</td><td>反馈层 D1–D3</td><td>阅读时长、点赞头像堆叠、快速评论条</td><td>D1 已有 / D2·D3 待做</td></tr>
+      <tr><td>5</td><td>情感组件 D5 + D6</td><td>运行天数与里程碑进度，放页脚</td><td>已落地</td></tr>
+      <tr><td>6</td><td>按 5 轮推进</td><td>每轮可独立上线验收，不一次性改完</td><td>进行中</td></tr>
+      <tr><td>7</td><td>E2 落 <code>/topics</code> 独立页</td><td>专题是一个独立子系统：后台专题管理 + 文章专题标记 + 前台专题页</td><td>已落地（第 2 轮）</td></tr>
+      <tr><td>8</td><td>付费标识：封面左上 · 琥珀底白字</td><td>角标复用 <code>.ecod_card__badges</code>，色值 <code>#b45309</code></td><td>已落地</td></tr>
+    </table>
+  </div>
+
+  <h3>C1 · 列表排序</h3>
+  <p class="sec-desc">URL 契约 <code>?sort=recent|views|hot</code>，缺省 <code>recent</code>。选项本身是链接，关掉 JS 也能用；JS 只负责展开与关闭。</p>
+  <div class="card pad">
+    <table>
+      <tr><th style="width:30%">项</th><th>规格</th></tr>
+      <tr><td>生效范围</td><td><code>index</code> / <code>category</code> / <code>tag</code> / <code>author</code> / <code>search</code> 五种归档主查询</td></tr>
+      <tr><td>排序字段</td><td><code>views</code> → <code>contents.views DESC</code>；<code>hot</code> → <code>commentsNum DESC</code>；两者都以 <code>created DESC</code> 兜底</td></tr>
+      <tr><td>置顶优先</td><td><code>pin</code> 字段非空的文章浮到流的<b>最上面</b>（首页 / 分类 / 标签 / 作者四种归档；<code>search</code> 不置顶——搜索要的是相关度）。实现：主查询 <code>LEFT JOIN table.fields</code>（<code>name='pin' AND str_value&lt;&gt;''</code>）按 <code>str_value DESC</code> 排首列，JOIN 条件收在 <code>ON</code> 里不产生重复行；<b>必须同时 <code>select('table.contents.*')</code></b>——框架 <code>fields</code> 默认 <code>*</code>，JOIN 后会带出 <code>fields</code> 表的同名列（<code>cid</code>）覆盖正文数据。置顶内部按 <code>created DESC</code> 排序；空值 <code>pin</code> 字段（写作页关闭置顶留下的空串行）不参与 JOIN，不受影响。分类 / 标签页的置顶只在该归档自己的结果集里浮——不在该分类的置顶文不进结果集，自然不会乱浮。三种排序（recent/views/hot）下置顶都最优先；轮播 <code>source=pin</code> 与角标逻辑不变，<code>ecod_pinned_cids()</code> 仍归轮播专用</td></tr>
+      <tr><td>不做点赞排序</td><td>点赞按行存储（<code>ecod_likes</code> 一人一行），排序要子查询或冗余计数列，为一个排序项改表不值</td></tr>
+      <tr><td>落点</td><td><code>core/sort.php</code>（钩子）、<code>components/home/sort.php</code>（浮层）、<code>components/home/list.php</code>（挂载）</td></tr>
+    </table>
+  </div>
+  <p class="sec-desc" style="margin-top:10px"><b>框架坑（必须记住）：</b><code>Widget\Archive</code> 上只要挂了 <code>query</code> 钩子，<code>Archive::query()</code> 就<b>不再自己取数</b>（<code>var/Widget/Archive.php:1421</code>）。钩子里必须自己 <code>fetchAll</code> 再逐行 <code>push</code>，否则列表恒为空——哪怕这个钩子什么都不改。排序改写用 <code>Query::cleanAttribute('order')</code>，不能直接 <code>order()</code>，否则变成 <code>created DESC, views DESC</code> 的次级排序。</p>
+
+  <h3>C5 · 首屏</h3>
+  <div class="card pad">
+    <table>
+      <tr><th style="width:24%">块参数</th><th>默认</th><th>说明</th></tr>
+      <tr><td><code>style</code></td><td>immersive</td><td>沉浸式（480px）/ 浅色卡片（紧凑）</td></tr>
+      <tr><td><code>height</code></td><td>480</td><td>320–720，仅沉浸式生效</td></tr>
+      <tr><td><code>align</code></td><td>left</td><td>左对齐 / 居中</td></tr>
+      <tr><td><code>band</code></td><td>1</td><td>三格玻璃数据带；关掉回退成一行文字</td></tr>
+      <tr><td><code>bg</code></td><td>空</td><td>留空用主题色深渐变（两团柔光），填图则铺满</td></tr>
+    </table>
+  </div>
+  <p class="sec-desc" style="margin-top:10px">眉标题与副标题分离：原实现两者都回落到 <code>ESlogan</code>，开启数据带后同一句话会写两遍。现在眉标题固定为「写作 · 记录 · 分享」，副标题取站点描述。</p>
+
+  <h3>D5 + D6 · 站点年龄与里程碑</h3>
+  <p class="sec-desc">新块 <code>siteage</code>（页脚，order 15）。数字全部来自 <code>ecod_site_overview()</code>，一次查询、请求内缓存；进度条百分比在前端算，不额外查库。</p>
+
+  <h3>第 2 轮：专题子系统</h3>
+  <p class="sec-desc">分类与专题是两层东西：分类是「文章属于哪里」，专题是「编辑挑出来的一组文章」。专题不进 <code>metas</code> 表（Typecho 没有自定义分类法），沿用主题自己的 JSON 选项，和导航菜单同一套做法。</p>
+  <div class="card pad">
+    <table>
+      <tr><th style="width:22%">层</th><th>设计</th></tr>
+      <tr><td>数据</td><td>主题选项 <code>ETopics</code>：<code>{items:[{id, name, slug, desc, cover, cids:[], on}]}</code>，上限 30 个；<code>slug</code> 唯一（<code>[a-z0-9-]</code>），用作 <code>?t=</code> 的值</td></tr>
+      <tr><td>文章标记</td><td>自定义字段 <code>topic</code>（单个 slug，后台写作页为下拉选择，选项来自专题列表）。一篇文章只归一个专题——多归属会让「专题内排序」「上一专题 / 下一专题」都失去唯一答案。<b>写作页字段面板（admin/fields.js）接管为单选 chips</b>：数据由 admin/editor.php 注入 <code>ECOD_EDITOR.topics</code>，原生 select 隐藏作提交载体，保存链路与 Typecho 自定义字段完全一致</td></tr>
+      <tr><td>成员来源</td><td>成员 = 字段 <code>topic</code> 命中的文章 ∪ 专题自身的 <code>cids</code>（后台手挑）。两路合并去重，故「不改文章也能往专题里加稿」；<code>cids</code> 只决定成员，不决定顺序</td></tr>
+      <tr><td>排序</td><td>专题内一律 <code>created DESC</code>，不提供按阅读量 / 评论数排序——专题是编辑策展，读者要的是叙事顺序</td></tr>
+      <tr><td>前台</td><td>独立页面 <code>slug=topics</code> → <code>page-topics.php</code>：无参数是专题墙（E2），<code>?t=slug</code> 是专题详情（页头 + 文章流，<code>&amp;tp=N</code> 翻页）。页面 slug 由「特色页」一键创建，读取时按模板反查，改名不影响</td></tr>
+      <tr><td>后台</td><td>主题设置「专题」分组：列表式构建器（增删、拖动排序、名称 / 别名 / 描述 / 封面 / 启用）+ 文章挑选器（按标题搜索、加/移、排序），写入隐藏字段 <code>ETopics</code></td></tr>
+      <tr><td>与分类的关系</td><td>E1 是分类页的运行页头（不是专题）；E2 只展示专题。分类页挂一行「相关专题」chips（该分类下文章命中的专题），不混入文章流</td></tr>
+      <tr><td>数据成本</td><td>全站专题索引一次算完：字段表一条 <code>JOIN</code> 取 <code>slug → cid, created, title</code>，再与 <code>cids</code> 合并；封面按「最新一篇的首图」批量 <code>IN</code> 取。列表页专题角标走 <code>ecod_cards_preload</code> 批量预取，不产生 N+1</td></tr>
+      <tr><td>落点</td><td><code>core/topics.php</code>（数据）、<code>core/catstats.php</code>（分类统计）、<code>page-topics.php</code>、<code>components/topic/*</code>、<code>components/archive/head.php</code>（E1）、<code>assets/admin/topics.js</code></td></tr>
+    </table>
+  </div>
+
+  <h3>专题相关设置项</h3>
+  <div class="card pad">
+    <table>
+      <tr><th style="width:22%">设置项</th><th style="width:18%">默认</th><th>作用</th></tr>
+      <tr><td><code>ETopics</code></td><td>空</td><td>专题 JSON（隐藏字段，由构建器写入）</td></tr>
+      <tr><td><code>ETopicWallStyle</code></td><td>cover</td><td>专题墙形态：封面卡 / 纯文字卡（无封面时的降级形态同样适用）</td></tr>
+      <tr><td><code>ETopicWallCols</code></td><td>3</td><td>专题墙列数 2 / 3 / 4，窄屏自动降为单列</td></tr>
+      <tr><td><code>ETopicPerPage</code></td><td>12</td><td>专题详情每页篇数 6 / 12 / 18 / 24（夹在 6–48，防脏值）</td></tr>
+      <tr><td><code>ETopicMoreCount</code></td><td>8</td><td>详情页底部「其它专题」chips 个数 0 / 4 / 8 / 12；0 = 整行隐藏</td></tr>
+      <tr><td><code>ETopicCardChip</code></td><td>on</td><td>文章卡片显示所属专题角标（批量预取，不影响性能）</td></tr>
+      <tr><td><code>ECatHead</code></td><td>on</td><td>分类页运行页头 E1 总开关</td></tr>
+      <tr><td><code>ECatHeadBg</code></td><td>cover</td><td>页头背景：最新文章封面 / 主题色柔光</td></tr>
+      <tr><td><code>ECatHeadStats</code></td><td>on</td><td>页头三格数据：篇数 / 累计阅读 / 最近更新</td></tr>
+      <tr><td><code>ECatHeadTopics</code></td><td>on</td><td>页头「相关专题」chips</td></tr>
+    </table>
+  </div>
+
+  <h3>第 2 轮 · 验收记录</h3>
+  <div class="card pad">
+    <table>
+      <tr><th style="width:22%">项</th><th>结论</th></tr>
+      <tr><td>后台构建器</td><td>列表式：摘要行 65px、展开行 417px，每行仅一个 <code>.ecod-tpb__panel</code>。1200 / 800 / 520 三档实截无重叠、无溢出</td></tr>
+      <tr><td>后台踩坑 1</td><td>主题后台样式<b>没有全局 <code>box-sizing</code> reset</b>。<code>width:100%</code> + padding + border 的输入框会顶出卡片右边缘，并盖住两列之间的 <code>gap</code>。面板内统一 <code>border-box</code> 后归位</td></tr>
+      <tr><td>后台踩坑 2</td><td>窄屏不要改 <code>.ecod-tpb__cover</code> 的列数：四格里有两格是 <code>auto</code> 按钮，一旦压成两列，「清除」会被 1fr 拉伸成通栏。只把按钮组整体换行即可（≤640 落第二行右对齐；≤720 表单转单列）</td></tr>
+      <tr><td>前台</td><td>专题墙 / 专题详情 / 分类页 / 首页卡片 meta 四页均通过；390px 下 <code>docScrollWidth = 390</code>，零横向溢出（分类 chip 横向滚动条属设计内）</td></tr>
+      <tr><td>设置联动</td><td>实测改动四项后前台同步：<code>ETopicWallCols=4</code> → <code>.ecod_twall--c4</code>；<code>ETopicWallStyle=plain</code> → 三张 <code>.ecod_tcard--plain</code>；<code>ETopicCardChip=off</code> → 卡片无 <code>.ecod_card__meta-topic</code>；<code>ECatHeadTopics=off</code> → 页头无 <code>.ecod_chead__chip</code>。测完按字节还原（md5 一致）</td></tr>
+      <tr><td>运行环境</td><td>站点跑的是 <b>PHP 8.5</b>（nginx → <code>phpwebstudy-php-cgi-85.sock</code>），本机 CLI 是 8.1。<code>php -l</code> 只能当粗筛，8.4+ 的「隐式可空参数」弃用告警必须看 <code>vhost/logs/*.error.log</code>——它会直接混进 HTML 输出在 <code>&lt;!DOCTYPE&gt;</code> 之前</td></tr>
+    </table>
+  </div>
+
+  <h3>轮次</h3>
+  <div class="card pad">
+    <table>
+      <tr><th style="width:12%">轮</th><th>内容</th><th style="width:22%">状态</th></tr>
+      <tr><td>第 1 轮</td><td>C1 排序浮层 · C5 首屏 · D5 / D6 · F1 琥珀角标</td><td>已完成</td></tr>
+      <tr><td>第 2 轮</td><td>专题子系统：ETopics + 后台管理 + 文章标记 + <code>/topics</code> + E2 专题墙 + C2b 专题卡 + E1 分类页头</td><td>已完成（2026-10-30）</td></tr>
+      <tr><td>第 3 轮</td><td>C3 目录进度条 · C4 搜索面板（热词 / 标签 / ⌘K）</td><td>已完成（2026-10-30）</td></tr>
+      <tr><td>第 4 轮</td><td>D2 点赞头像堆叠 · D3 底部快速评论条 · D7 作者卡</td><td>已完成（2026-10-30）</td></tr>
+      <tr><td>第 5 轮</td><td>F3 分类工具条 · 收尾与回归</td><td>待开始</td></tr>
+    </table>
+  </div>
+  <h3>第 3 轮 · C3 目录进度条 + C4 搜索面板（规格）</h3>
+  <div class="card pad">
+    <table>
+      <tr><th style="width:20%">项</th><th>设计</th></tr>
+      <tr><td>C3 · 进度环</td><td>浮动目录按钮外套 SVG 进度环：轨道用边框色，弧线用主色，随阅读进度扫过；100% 时环满 + 主色微光。进度条（顶部 3px）不变，环是「目录侧」的镜像</td></tr>
+      <tr><td>C3 · 弹层进度</td><td>目录弹层头部加一条细进度条 +「x / n 节 · x%」；当前节之前的项目标 <code>is-read</code>（淡化 + 勾），读者一眼看到「读到哪了、还剩多少」</td></tr>
+      <tr><td>C3 · 范围</td><td>只做浮动目录（侧栏静态卡不 sticky，进度无意义）；<code>ETocProgress=off</code> 时回到纯按钮形态。顶部进度条不受此开关控制</td></tr>
+      <tr><td>C4 · 面板</td><td><code>ESearchPanel=on</code> 时输出居中搜索面板（桌面 560px 卡、移动端近全屏）：大号输入框 + 键盘提示（↑↓ / ↵ / Esc）→ 实时结果 → 热词 → 标签。导航搜索框点击、dock 搜索按钮、⌘K / Ctrl+K 三入口唤起</td></tr>
+      <tr><td>C4 · 热词</td><td>真源是设置项 <code>ESearchHot</code>（逗号 / 顿号分隔）；为空时回退到站内热门标签。点热词 = 填入输入框并即时搜索</td></tr>
+      <tr><td>C4 · 标签</td><td><code>Widget_Metas_Tag_Cloud</code> 按 <code>ESearchTagCount</code> 截取；点击 = 填入搜索。与热词区互为补充：热词是编辑推荐，标签是全站概览</td></tr>
+      <tr><td>C4 · 实时结果</td><td>复用 <code>api.php?action=search_suggest</code>（limit 5→8），防抖 180ms，标题高亮，链接由前端 <code>CFG.postUrl</code> 模板按 cid 拼（与现有下拉一致，不依赖独立入口的 Router）</td></tr>
+      <tr><td>C4 · 键盘</td><td>↑↓ 在结果 / 热词 / 标签间移动高亮，Enter 打开，Esc 关闭；<code>ESearchPanel=off</code> 时一切维持现状（原地下拉 + ⌘K 聚焦输入框）</td></tr>
+      <tr><td>最近搜索</td><td>沿用 <code>localStorage('ecod-search-history')</code>，面板空态显示最近 8 条，与导航下拉共用一份</td></tr>
+      <tr><td>落点</td><td><code>public/header.php</code>（面板 DOM）、<code>assets/js/ecod.global.js</code>（initSearchPanel / initToc 增强）、<code>assets/css/ecod.css §28</code>、<code>api.php</code>（suggest limit）、<code>core/config.php</code>（ETocProgress + 搜索分组）</td></tr>
+    </table>
+  </div>
+
+  <h3>第 3 轮 · 设置项</h3>
+  <div class="card pad">
+    <table>
+      <tr><th style="width:22%">设置项</th><th style="width:16%">默认</th><th>作用</th></tr>
+      <tr><td><code>ETocProgress</code></td><td>on</td><td>浮动目录的进度环 + 弹层进度条 + 已读态（文章页分组，跟在「浮动目录」后面）</td></tr>
+      <tr><td><code>ESearchPanel</code></td><td>on</td><td>居中搜索面板总开关；off 时保留原地下拉与 ⌘K 聚焦</td></tr>
+      <tr><td><code>ESearchHot</code></td><td>空</td><td>热词（逗号 / 顿号分隔）；空则回退热门标签</td></tr>
+      <tr><td><code>ESearchTagCount</code></td><td>10</td><td>面板标签区个数 6 / 8 / 10 / 12</td></tr>
+    </table>
+  </div>
+
+  <h3>第 3 轮 · 验收记录</h3>
+  <div class="card pad">
+    <table>
+      <tr><th style="width:22%">项</th><th>结论</th></tr>
+      <tr><td>C3 链路实测</td><td>把 <code>Ecod.readProgress</code> 伪造成 42 并派发 scroll：<code>stat = 1 / 6 节 · 42%</code>、环 <code>stroke-dashoffset = 58px</code>（100−42）、弹层进度条 <code>98.27px</code>（内容宽 234 × 42%）。三者与顶部进度条同源，无第二套口径</td></tr>
+      <tr><td>C3 开发期 bug</td><td><code>spy()</code> 原本 <code>if (next === activeIndex) return;</code> 在进度同步之前——同一节内滚动 pct 一直在变但被提前 return 挡住，进度只在跨章节时跳变。抽 <code>syncProgress(next)</code> 后放在 return 前调用</td></tr>
+      <tr><td>C4 三入口</td><td>导航搜索框（capture 拦截，原表单不再弹下拉）、移动端 dock 搜索按钮（capture + <code>stopImmediatePropagation</code>，不再同时开抽屉）、⌘K / Ctrl+K。面板关闭时三者全部退回旧行为</td></tr>
+      <tr><td>C4 设置联动</td><td><code>ESearchPanel=off</code> → 面板 DOM 计数 0、<code>CFG.searchPanel=false</code>；<code>ESearchHot="Typecho, 主题开发、PHP 8.5"</code> → 解析 3 项（逗号与顿号混用）；<code>ESearchTagCount=6</code> → <code>data-tags</code> 6 条</td></tr>
+      <tr><td>验收工具坑 1</td><td>文章页有 11 个外部播放器 iframe（YouTube / B 站 / Vimeo / 优酷 / 腾讯 / 网易云 / Spotify / SoundCloud），headless Chrome 必然 OOM 被杀（SIGTERM 137）。用 <code>--host-resolver-rules</code> 把这些域名黑洞到 127.0.0.1 才能截图</td></tr>
+      <tr><td>验收工具坑 2</td><td>headless 虚拟时间下：iframe 内 <code>scrollTo</code> 不生效（scrollY 恒 0）、<code>requestAnimationFrame</code> 不推进（addScroll 回调不跑）、CSS 过渡不推进（读到的仍是初始值）。诊断必须把 <code>rAF</code> 换成同步执行并临时禁掉 <code>transition</code></td></tr>
+      <tr><td>顺带修复</td><td><code>core/schema.php</code> 里 <code>ecod_pay_table()</code> 的文档注释头被并行改动吃掉，留下孤儿 <code> *</code> 行 → 全站文章页 500。补回 <code>/** 付费相关表名 */</code> 头后恢复</td></tr>
+      <tr><td>细节修正</td><td>搜索框原生清除按钮是系统蓝（<code>::-webkit-search-cancel-button</code>），与主色冲突，已隐藏；热词胶囊原本挂 <code>zap</code> 图标但 JS 图标表无此名，留下空隙，改为纯文字与标签区保持一致</td></tr>
+    </table>
+  </div>
+
+  <h3>第 4 轮 · D2 点赞头像堆叠 + D3 快速评论条 + D7 作者卡（规格）</h3>
+  <div class="card pad">
+    <table>
+      <tr><th style="width:12%">项</th><th>设计</th></tr>
+      <tr><td>D2 数据前置</td><td>拆解时前置条件是「点赞记录是否落库到 uid 级」，原表 <code>ecod_likes</code> 只有 <code>cid + ip(指纹)</code>。<b>选择升级而不是降级</b>：数据结构 v8→v9，表加 <code>uid INT UNSIGNED NOT NULL DEFAULT 0</code>（三种 adapter 同步，老表走 <code>ALTER TABLE ADD COLUMN</code> 迁移，有 <code>ecod_schema_has_column</code> 幂等保护）。游客点赞行 uid=0 完全不受影响</td></tr>
+      <tr><td>D2 去重口径</td><td>登录用户点赞仍按 <code>(cid, ip)</code> 唯一索引落行，行里补写 uid；POST 前先查「该 uid 在该文章是否已有行」，有则跨设备幂等（不再插新行），避免换设备多计一票；GET <code>mine</code> 同时匹配指纹行与 uid 行</td></tr>
+      <tr><td>D2 展示</td><td><code>ecod_post_likers(cid, 5)</code>：取 <code>uid &gt; 0</code> 的最近 5 条（按 MAX(created) 降序、GROUP BY uid 去重）JOIN users 拿昵称。头像优先 <code>ecod_account_avatar_url(uid)</code> 自定义头像，回落本地头像池 <code>ecod_local_avatar_url('uid:N')</code>。头像 24px、<code>margin-left:-7px</code> 重叠、2px 白描边（Alright 参数）；文案「@昵称 等 N 人觉得不错」，只有 1 人时不带「等」。<b>没有任何 uid 记录时整块不输出</b>（纯数字保持现状）。挂互动条点赞按钮下方，点击滚到评论区</td></tr>
+      <tr><td>D3 行为</td><td>移动端专用（≤768px 显示，桌面隐藏）：胶囊条固定视口底部、上移避开 dock；滚动过一屏正文且评论区还在视口之下时淡入，评论区进入视口即隐藏；点击不做弹窗，平滑滚到 <code>#comments</code> 并聚焦 <code>#textarea</code>。密码未解锁、付费锁、评论关闭的文章不输出 DOM。走 <code>Ecod.addScroll</code> 统一滚动队列，PJAX 换页随 <code>#ecod-shell</code> 重建</td></tr>
+      <tr><td>D7 判定</td><td>在线点 = 博主 uid 在 users 表的 <code>logged</code> 距今 ≤ 300 秒（Typecho 登录时自动盖章），不做长连接。博主 uid：<code>author</code> 侧栏块加 <code>uid</code> 参数，留空自动取 <code>group=administrator</code> 最小 uid（<code>ecod_site_author_id()</code>，请求内静态缓存）</td></tr>
+      <tr><td>D7 展示</td><td>头像右下呼吸绿点 + 名称旁「博主」徽章；不做 IP 属地（拆解已否决：隐私争议 + 需第三方库）。离线时绿点隐藏、徽章保留</td></tr>
+      <tr><td>降级</td><td>三件全部独立开关，关掉即回到第 3 轮形态；D2 无 uid 数据时自动降级为纯数字</td></tr>
+    </table>
+  </div>
+
+  <h3>第 4 轮 · 新设置项</h3>
+  <div class="card pad">
+    <table>
+      <tr><th style="width:22%">设置项</th><th style="width:10%">默认</th><th>作用</th></tr>
+      <tr><td><code>ELikers</code></td><td>on</td><td>文章页点赞头像堆叠总开关（互动条点赞按钮下方，无 uid 数据时自动不输出）</td></tr>
+      <tr><td><code>EQuickBar</code></td><td>on</td><td>移动端底部快速评论条总开关；关闭后移动端回到无快速入口形态</td></tr>
+      <tr><td><code>EAuthorOnline</code></td><td>on</td><td>侧栏作者卡在线点 + 博主徽章总开关</td></tr>
+    </table>
+  </div>
+
+  <h3>第 4 轮 · 验收记录</h3>
+  <div class="card pad">
+    <table>
+      <tr><th style="width:22%">项</th><th>结论</th></tr>
+      <tr><td>D2 数据迁移</td><td>改完代码后首次访问文章页即自动迁移：<code>typecho_ecod_likes</code> 出现 <code>uid</code> 列与 <code>cid_uid</code> 索引，<code>EcodSchema</code> = 9。老表 3800 行数据未受影响（uid 全部默认 0，等价于游客行）</td></tr>
+      <tr><td>D2 展示实测</td><td>seed 2 个注册用户 + 1 条游客点赞 → 互动条输出「@Ecod 等 <b>3</b> 人觉得不错」+ 2 个 24px 头像（−7px 重叠、2px 白描边，第三位是首字占位）。删掉 uid 行后整块消失，回落纯数字——降级路径成立</td></tr>
+      <tr><td>D3 输出与显隐</td><td>评论开启的文章输出 <code>.ecod_quickbar</code>；桌面 1000px 截图确认 <code>display:none</code>，390px 下 is-on 形态为圆角胶囊 + 阴影，距底 70px 正好压在 dock 之上。锁定 / 付费锁 / 关评论三个条件任一命中即不输出 DOM</td></tr>
+      <tr><td>D7 判定实测</td><td>博主 <code>logged</code> 为 6 小时前 → 只有徽章无绿点；刷成当前时间 → 绿点出现（<code>ecod_authorcard__dot</code> = 1）。徽章不受在线状态影响，只受开关控制</td></tr>
+      <tr><td>设置联动</td><td><code>ELikers / EQuickBar / EAuthorOnline</code> 全置 off → 文章页 <code>data-ecod-likers</code> / <code>ecod_quickbar</code> / <code>ecod_authorcard__dot</code> / <code>__badge</code> 计数全部为 0；恢复后主题设置行按字节还原（md5 <code>aab1c2fed475</code> 与备份一致）</td></tr>
+      <tr><td>验收坑 1</td><td>nginx 在 2026-10-30 做过安全加固：<code>^/usr/themes/ecod-theme/</code> 下只放行 <code>api / media / pay-admin / manifest</code> 四个 PHP 入口，其余直连一律 404。<b>视觉 harness 必须放站点根目录</b>，不要为此改 nginx 规则</td></tr>
+      <tr><td>验收坑 2</td><td>seed 点赞行写 uid 时要用<b>真实用户 uid</b>：测试用户自增不连续（本次实际是 17，不是 2），写错的孤儿行会被二段查昵称过滤掉，表现为「明明插了数据却没头像」</td></tr>
+      <tr><td>实现坑 3</td><td>Typecho <code>Query::join()</code> 会把条件串交给 <code>filterColumn</code> 逐字符处理，表别名的转义不可控。<code>ecod_post_likers</code> 改为两步查询（uid 列表 → <code>IN</code> 取昵称），5 人规模没有性能问题</td></tr>
+      <tr><td>实现坑 4</td><td><code>users.screenName</code> 可为 NULL（本站 admin 就是空），昵称必须回落 <code>name</code>；否则昵称为空被过滤，头像永远出不来</td></tr>
+      <tr><td>回归</td><td>首页 / 文章页 / 搜索页 / <code>topics.html</code> / <code>archives.html</code> 均 200；8 个改动文件 <code>php -l</code> 与 <code>node --check</code> 干净；错误日志无 8.4+ 弃用告警</td></tr>
+    </table>
+  </div>
+</section>
+
+<!-- 30 · 第 5 轮 -->
+<section id="s-round5">
+<h2>§30.5 第 5 轮：F3 分类工具条 + 收尾回归（2026-10-30）</h2>
+
+<h3>第 5 轮 · 规格决议</h3>
+<div class="card pad">
+<table>
+<tr><th style="width:22%">项</th><th>决议</th></tr>
+<tr><td>F3 形态</td><td>E1 分类页头下方独占一条 62px 工具条（<code>components/archive/cattools.php</code>，新增）：左侧分类内搜索表单占 1fr（placeholder「在『分类名』中搜索」，右侧 <kbd>/</kbd> 热键提示，热键聚焦输入框），右侧排序按钮固定宽度，复用 <code>components/home/sort.php</code> 同一枚按钮 + 浮层（与 C1 同套）</td></tr>
+<tr><td>隐藏重复导航</td><td>分类页启用工具条时隐藏 <code>home/list.php</code> 的整条 streambar（catbar tabs 在分类页是重复导航，拆解已否决；「共 N 篇」在 E1 统计里已有）；<code>ECatTools=off</code> 时分类页回退现有 catbar 形态，首页不受影响</td></tr>
+<tr><td>排序项</td><td>在现有 最新/最多浏览/最多评论 基础上加「随机一篇」（rand，全站归档可用）；「最多点赞」按拆解决议<b>留白</b>——点赞按行存储需子查询/冗余列才能排序，浮层里以禁用项展示「待接入」，<code>ecod_sort_current()</code> 拒绝该键防伪造参数</td></tr>
+<tr><td>rand 语义</td><td>主归档分页列表的随机 = <b>按日种子的稳定随机</b>：<code>ORDER BY MD5(CONCAT(cid, '当日种子'))</code>，同一天内顺序稳定（翻页/加载更多不重排，跨天换一批），与 EcodPostQuery 的「最近 200 篇打乱」是两种场景，互不影响。置顶优先在 rand 下保留</td></tr>
+<tr><td>分类内搜索</td><td>GET <code>?q=</code> 提交到当前分类 URL；<code>query</code> 钩子里对 category 归档追加 <code>title/text LIKE</code> 过滤，并<b>同步改写 <code>getCountSql()</code> 返回的计数查询</b>（getTotal 是惰性的，渲染期才执行）→ 「共 N 篇」与分页都按过滤后计数。翻页链接由 <code>ecod_sort_pager()</code> 白名单补 <code>q</code>，「加载更多」随之正确</td></tr>
+<tr><td>降级</td><td>搜索框无 JS 也可用（原生 GET 表单）；排序浮层本就是真实链接；<code>ECatTools=off</code> 回到旧形态；rand 在 <code>MD5()</code> 不可用（非 MySQL）时静默回落最新发布</td></tr>
+</table>
+</div>
+
+<h3>第 5 轮 · 新设置项</h3>
+<div class="card pad">
+<table>
+<tr><th style="width:22%">设置项</th><th style="width:10%">默认</th><th>作用</th></tr>
+<tr><td><code>ECatTools</code></td><td>on</td><td>分类页工具条总开关（分类内搜索 + 排序按钮）；关闭后分类页回到 catbar tabs 旧形态</td></tr>
+</table>
+</div>
+</section>
+
+<!-- 31 -->
+<section id="s8">
+  <span class="sec-tag">31 · 后台</span>
+  <h2>区域与模块管理台</h2>
+  <p class="sec-desc">把「哪块内容显示在哪」从主题设置的长页里拆出来，做成独立管理台：<b>左栏是全部可用模块，右栏是各区域位置，模块从左拖到右、点了就改参数，改完即存</b>。心智完全照 WordPress「外观 → 小工具」的经典布局（可用组件 ⇄ 侧栏盒子），位置命名对齐 Zibll（<code>top_fluid / top_content / bottom_content / bottom_fluid / sidebar</code>）；区别是<b>一个模块可以放多个实例，每个实例配置各自独立</b>。后台文案仍叫「模块」，代码内部仍叫 <code>block</code>，不引入 widget 这个词。</p>
+
+  <h3>为什么要改</h3>
+  <div class="card pad">
+    <table>
+      <tr><th style="width:21%">现状问题</th><th>证据</th><th style="width:23%">新模型</th></tr>
+      <tr><td>管理界面寄生在设置页</td><td>41 个块 + 102 个参数与上百个常规字段挤在同一张表单里；改一个参数要整页 POST，还得防其它分组未保存的内容被一起提交（<code>core/config.php</code> 850 行 + <code>assets/admin/config.js</code> 2516 行）</td><td>独立管理台，实例级保存</td></tr>
+      <tr><td>同一块在同一位置只能用一次</td><td>区域里存的是 <code>id</code>，<code>id</code> 全局唯一：放不了两个广告位、两个自定义 HTML</td><td>实例化（<code>uid</code>）</td></tr>
+      <tr><td>「参数共用」是假承诺</td><td><code>config.js:1188</code> 放置时 <code>copyParams</code> 深拷贝，<code>config.js:1242</code> 的弹层文案却写「参数共用」——改一处另一处不变</td><td>取消 place，一实例一配置</td></tr>
+      <tr><td>位置只有 4 个页面级桶</td><td>home / aside / post / footer，没有「顶部全宽」「内容区上方 / 下方」</td><td>页面类型 × 5 位置 + 全局区</td></tr>
+      <tr><td>侧栏只有全站一个开关</td><td><code>EAside</code> 单值，判断散在 <code>header.php:26</code>、<code>header.php:330</code>、<code>aside.php:13</code> 三处</td><td>按页面类型 + 单篇覆盖</td></tr>
+    </table>
+  </div>
+
+  <h3>页面类型</h3>
+  <div class="card pad">
+    <table>
+      <tr><th style="width:14%">key</th><th style="width:26%">含义</th><th>模板</th></tr>
+      <tr><td><code>home</code></td><td>首页</td><td><code>index.php</code></td></tr>
+      <tr><td><code>single</code></td><td>文章页</td><td><code>post.php</code></td></tr>
+      <tr><td><code>page</code></td><td>独立页面</td><td><code>page.php</code></td></tr>
+      <tr><td><code>cat</code> / <code>tag</code> / <code>search</code> / <code>author</code></td><td>归档四种</td><td><code>archive.php</code>（<code>$this-&gt;is()</code> 分支）</td></tr>
+      <tr><td><code>custom</code></td><td>个性页：归档 / 排行 / 专题 / 用户 / 会员 / 收银台 / 随机 / 登录 / 友链 / 视频 / 壁纸 / 直播 / 统计 / 留言板</td><td><code>page-*.php</code>、<code>friends.php</code>、<code>live.php</code>、<code>video.php</code>、<code>wallpaper.php</code>、<code>census.php</code>、<code>leaving.php</code>（共 14 个，均含 <code>.ecod_main</code>）</td></tr>
+    </table>
+  </div>
+
+  <h3>位置与区域 id</h3>
+  <p class="sec-desc">区域 id = <code>{页面类型}_{位置}</code>；全局区的页面类型段写成 <code>all</code>，先渲染全局、再渲染页面类型自己的区，与 Zibll 的顺序一致。</p>
+  <div class="card pad">
+    <table>
+      <tr><th style="width:16%">位置</th><th style="width:22%">落点</th><th style="width:14%">宽度</th><th>说明</th></tr>
+      <tr><td><code>top_fluid</code></td><td>导航之下、正文之前</td><td>全宽</td><td>通栏横幅 / 公告条 / 大图广告</td></tr>
+      <tr><td><code>top_content</code></td><td><code>.ecod_main</code> 首行</td><td>内容宽</td><td>面包屑、分类页头下方提示、文章顶部工具条</td></tr>
+      <tr><td><code>bottom_content</code></td><td><code>.ecod_main</code> 末行</td><td>内容宽</td><td>相关推荐、上/下篇、订阅卡</td></tr>
+      <tr><td><code>bottom_fluid</code></td><td><code>.ecod_layout</code> 之后、页脚之前</td><td>全宽</td><td>通栏 CTA、友情链接墙</td></tr>
+      <tr><td><code>sidebar</code></td><td><code>public/aside.php</code></td><td>栏内</td><td>侧栏模块；随滚动吸附与普通流由现有 CSS 决定</td></tr>
+    </table>
+    <p class="sec-desc" style="margin:12px 0 0">全局区固定四个：<code>all_top_fluid</code>、<code>all_bottom_fluid</code>、<code>all_sidebar_top</code>、<code>all_sidebar_bottom</code>。侧栏最终顺序 = <code>all_sidebar_top</code> → <code>{页面}_sidebar</code> → <code>all_sidebar_bottom</code>。</p>
+  </div>
+
+  <h3>侧栏可见性</h3>
+  <p class="sec-desc">沿用 Zibll 的两层判定：<b>按页面类型给默认值，单篇 / 单页可覆盖</b>。全站统一收敛成一个函数，<code>data-aside</code> 只在这一处产出。</p>
+  <div class="grid-2" style="margin-top:14px">
+    <div class="card pad">
+      <b style="font-size:13.5px">判定顺序</b>
+      <table style="margin-top:8px">
+        <tr><th style="width:26%">层</th><th>规则</th></tr>
+        <tr><td>① 单篇覆盖</td><td>文章 / 页面自定义字段 <code>aside</code>：跟随默认 / 无 / 左 / 右。非空即胜出</td></tr>
+        <tr><td>② 页面类型</td><td><code>EAsidePages</code> JSON，键为页面类型，值 right / left / none</td></tr>
+        <tr><td>③ 全站默认</td><td>沿用现有 <code>EAside</code>（默认 right），老站升级零感知</td></tr>
+      </table>
+    </div>
+    <div class="card pad">
+      <b style="font-size:13.5px">落点</b>
+      <table style="margin-top:8px">
+        <tr><th style="width:34%">位置</th><th>改动</th></tr>
+        <tr><td><code>core/blocks.php</code></td><td>新增 <code>ecod_aside_pos()</code>，返回 right / left / none</td></tr>
+        <tr><td><code>public/header.php:26,330</code></td><td>两处 <code>ecod_option('EAside')</code> 换成 <code>ecod_aside_pos()</code></td></tr>
+        <tr><td><code>public/aside.php:13</code></td><td>同上；返回 none 时整个 <code>&lt;aside&gt;</code> 不输出（连 DOM 一起省）</td></tr>
+        <tr><td><code>functions.php</code> themeFields</td><td>新增 <code>aside</code> 下拉，字段名避开框架保留字</td></tr>
+      </table>
+    </div>
+  </div>
+
+  <h3>数据结构 v2</h3>
+  <p class="sec-desc">新表存进 <code>options</code> 表 <code>user=0</code> 的独立行 <code>EWidgets</code>（复用 <code>ecod_cache_get/set</code>），<b>不再整行重写主题配置</b>；旧的 <code>EBlocks</code> 只作迁移来源，保留只读一个版本周期。</p>
+<pre style="background:#0f1420;color:#cdd6e8;padding:16px;border-radius:10px;overflow:auto;font-size:12px;line-height:1.7"><code>{
+  "v": 2,
+  "areas": {
+    "all_sidebar_top":    [{"uid":"toc-1","type":"toc","on":true,"params":{}}],
+    "home_top_content":   [{"uid":"slider-1","type":"slider","on":true,"params":{"count":5}}],
+    "single_bottom_content":[{"uid":"related-1","type":"related","on":true,"params":{"limit":6}}]
+  },
+  "aside": {"home":"right","single":"right","cat":"none","tag":"none","search":"none","page":"none","author":"right","custom":"none"}
+}</code></pre>
+  <div class="card pad" style="margin-top:16px">
+    <table>
+      <tr><th style="width:16%">字段</th><th style="width:20%">类型</th><th>说明</th></tr>
+      <tr><td><code>uid</code></td><td>string</td><td>实例 id，<code>{type}-{n}</code>，规范 <code>[a-z0-9-]</code>、≤40 字符；同一区域唯一。复制实例即新建 uid</td></tr>
+      <tr><td><code>type</code></td><td>string</td><td>指向 <code>blocks-def.php</code> 的块声明；决定的模板文件与参数 schema</td></tr>
+      <tr><td><code>on</code></td><td>bool</td><td>开关；<code>fixed</code> 块忽略此值（恒为 on）</td></tr>
+      <tr><td><code>params</code></td><td>object</td><td>只存该实例的差异值；缺省键回落块声明里的 <code>default</code> / <code>legacy</code></td></tr>
+    </table>
+    <p class="sec-desc" style="margin:12px 0 0">每区实例上限 20 个（含隐藏），超出时「添加模块」置灰并提示先删；不做全局上限，因为区域数本身有限。上限取 20 而非更小的值，是因为旧 <code>EBlocks</code> 首页一区就有 14 条（含 3 条隐藏），迁移必须原样带过来、不能被上限静默截断。</p>
+  </div>
+
+  <h3>v1 → v2 迁移</h3>
+  <p class="sec-desc">迁移只在<b>首次保存</b>时落盘；之前一直双读。判定顺序：<code>EWidgets</code> 有值就用它，否则读 <code>EBlocks</code> 现算，内存里转 v2 —— 老站升级前后前台输出必须逐字节一致。</p>
+  <div class="card pad">
+    <table>
+      <tr><th style="width:26%">旧区域</th><th style="width:30%">新区域</th><th>规则</th></tr>
+      <tr><td><code>home</code>（15 块）</td><td><code>home_top_content</code></td><td>顺序按旧存储顺序，<code>order</code> 只在不存过顺序时兜底</td></tr>
+      <tr><td><code>aside</code>（13 块）</td><td><code>all_sidebar_top</code></td><td>旧侧栏在所有含 <code>aside.php</code> 的页面都出现，等价于全局侧栏区</td></tr>
+      <tr><td><code>post</code> 锚点 <code>top</code>（5 块中的 top 项）</td><td><code>single_top_content</code></td><td><code>anchor</code> 机制在 v2 废弃，位置由区域表达</td></tr>
+      <tr><td><code>post</code> 其余</td><td><code>single_bottom_content</code></td><td>对应原 <code>post.php:171</code> 正文之后</td></tr>
+      <tr><td><code>footer</code>（8 块）</td><td>不迁移</td><td>其中 5 个是 <code>fixed</code> 单点渲染的浮动控件（progress / totop / dock / theme-toggle / notice），继续用 <code>ecod_block_render()</code> 定点输出；credits / links / siteage 仍由 <code>footer.php</code> 定点输出</td></tr>
+      <tr><td><code>place</code> 表</td><td>丢弃</td><td>一块多区 → 每区各生成一个独立实例，参数复制一份，之后各自独立</td></tr>
+      <tr><td>新块（v2 之后新增）</td><td>默认关闭</td><td>不再自动出现在任何区域，需在管理台手动添加</td></tr>
+    </table>
+  </div>
+
+  <h3>管理台</h3>
+  <p class="sec-desc">45 个区域全展开会拉成一条长卷，所以右栏改成<b>一行多列 + 逐区折叠</b>：有实例的区域默认展开、空区域默认收起（手动状态记在本地），同一组内 2–3 列并排，只有正在编辑参数的那个盒子横跨整行。下面示意里「全局 · 侧栏顶部」是展开且带表单的状态，「分类 / 标签」是折叠态。</p>
+  <div class="frame">
+    <div class="frame-bar"><i></i><i></i><i></i><span>独立入口 · /usr/themes/ecod-theme/widget.php</span></div>
+    <div class="frame-body" style="padding:14px">
+      <div class="wgt">
+        <div class="wgt-col">
+          <div class="wgt-hd">可用模块</div>
+          <div class="wgt-find">搜索模块…</div>
+          <div class="wgt-lib">
+            <div class="wgt-card"><i class="wgt-grip"></i><b>轮播</b><small>幻灯</small></div>
+            <div class="wgt-card"><i class="wgt-grip"></i><b>广告位</b><small>图片 + 链接</small></div>
+            <div class="wgt-card is-open"><i class="wgt-grip"></i><b>热门文章</b><small>点击展开 ↓</small></div>
+            <div class="wgt-target on">首页 · 侧栏<span>+</span></div>
+            <div class="wgt-target">文章 · 侧栏<span>+</span></div>
+            <div class="wgt-target off">首页 · 全宽通栏<span>已满 20</span></div>
+            <div class="wgt-card"><i class="wgt-grip"></i><b>分类导航</b><small>全站分类</small></div>
+          </div>
+        </div>
+        <div class="wgt-col wgt-col--mid">
+          <div class="wgt-hd">区域 <em>拖模块进来</em></div>
+          <div class="wgt-grid">
+            <div class="wgt-area is-wide">
+              <div class="wgt-area__hd on">全局 · 侧栏顶部<span>4</span></div>
+              <div class="wgt-item"><i class="wgt-grip"></i><b>关于本站</b><i class="wgt-sw"></i></div>
+              <div class="wgt-item"><i class="wgt-grip"></i><b>最新文章</b><i class="wgt-sw"></i></div>
+              <div class="wgt-item is-open">
+                <i class="wgt-grip"></i><b>标签云</b><i class="wgt-sw off"></i>
+                <div class="wgt-item__body">
+                  <div class="wgt-field"><label>显示数量</label><i></i></div>
+                  <div class="wgt-field"><label>最小字号</label><i></i></div>
+                  <div class="wgt-ops">复制 · 重置 · 删除</div>
+                </div>
+              </div>
+            </div>
+            <div class="wgt-area is-drop">
+              <div class="wgt-area__hd">首页 · 内容区上方<span>3</span></div>
+              <div class="wgt-empty">放到这里 = 添加 / 移到末尾</div>
+            </div>
+            <div class="wgt-area">
+              <div class="wgt-area__hd">文章 · 内容区下方<span>3</span></div>
+              <div class="wgt-item"><i class="wgt-grip"></i><b>版权声明</b><i class="wgt-sw"></i></div>
+            </div>
+            <div class="wgt-area is-fold">
+              <div class="wgt-area__hd">分类 · 内容区上方<span>0</span></div>
+            </div>
+            <div class="wgt-area is-fold">
+              <div class="wgt-area__hd">标签 · 侧栏<span>0</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card pad" style="margin-top:16px">
+    <table>
+      <tr><th style="width:16%">区域</th><th>行为</th></tr>
+      <tr><td>左栏 · 可用模块</td><td>主题提供的全部模块（按声明顺序），带搜索过滤。<b>拖到右栏任一区域</b> = 添加实例（参数用默认值）；<b>单击卡片</b>展开目标位置列表（列出<b>全部</b>区域，已到上限的置灰），点选即添加 —— 与 WordPress 可用组件的行为一致</td></tr>
+      <tr><td>右栏 · 区域盒子</td><td>全部区域按「全局 / 页脚定点 / 首页 / 文章 / 页面 / 分类 / 标签 / 搜索 / 作者 / 个性页」分组；同一组内<b>一行多列</b>排布（<code>grid</code> 自适应 <code>minmax(300px, 1fr)</code>，1400px 宽下 2–3 列），区域头常显实例数，区域体是投放目标（拖拽高亮）；空区域显示投放提示线</td></tr>
+      <tr><td>折叠</td><td>区域头即折叠开关（左侧 ▸ / ▾）。<b>默认规则：有实例 → 展开；空区域 → 折叠</b>，避免 45 个区域把页面拉成一条长卷；用户手动折叠 / 展开后写入 <code>localStorage</code>（<code>ecod-wgt-fold</code>），此后以手动状态为准。右栏头部提供「全部展开 / 全部折叠」两个动作</td></tr>
+      <tr><td>折叠区投放</td><td>折叠状态下区域头仍是有效投放目标（拖到头上 = 追加到末尾）；悬停 500ms 自动展开，方便精确落位。折叠只影响显示，不改变实例与保存逻辑</td></tr>
+      <tr><td>展开区跨度</td><td>某个区域里有实例表单展开时，该盒<b>横跨整行</b>（<code>grid-column: 1 / -1</code>），让参数表单拿到足够宽度；收起表单后回到单列宽度。避免窄格里塞 <code>slides</code> 这类宽控件</td></tr>
+      <tr><td>实例行</td><td>一行 = 拖柄 + 名称 + 启用开关；<b>点击行头内联展开参数表单</b>（同区域手风琴，一次只展开一行）；表单底部操作行：复制 · 移到 · 重置参数 · 删除；行可跨区域拖拽排序 / 移动（同一 <code>uid</code> 换区域保留参数）</td></tr>
+      <tr><td>侧栏显示</td><td>「按页面类型开关侧栏」不占区域，固定为右栏顶部的折叠卡片，展开后 8 行下拉（右侧栏 / 左侧栏 / 无侧栏）</td></tr>
+      <tr><td>保存</td><td><b>显式保存</b>：改动先暂存在本地（状态点变「未保存」，顶部「保存改动」按钮点亮），点按钮或 <code>Ctrl/Cmd+S</code> 一次性按顺序提交全部脏区域；任一失败即停并提示重试，全部成功回「已保存」。离开页面前有 <code>beforeunload</code> 拦截。「侧栏显示」的下拉改动走同一条保存队列（伪区域 <code>__aside</code>）</td></tr>
+      <tr><td>自由投放（第 4 轮修订）</td><td><b>不做区域白名单拦截</b>：任何模块都可以拖入任何区域，模块声明里的 <code>slots</code> / <code>pages</code> 仅作展示参考、不再限制落点；放错了前台显示不对，由用户自行拖回正确的区域。拖拽悬停不再出现红色禁用态（<code>is-nodrop</code> 已废除），唯一的落点拦截是<b>区域已满</b>（20 个）：悬停无高亮、松手 toast「区域已满」。后端 <code>ecod_wgt_clean_rows()</code> 同步取消白名单过滤（原先会静默丢弃不允许的实例，与前端限制叠加造成「拖进去了却不生效」的假象），只保留类型存在 + uid 唯一 + 数量上限三项校验</td></tr>
+      <tr><td>清空</td><td>区域为空时前台不输出任何包裹 DOM —— 不产生空 <code>&lt;div&gt;</code> 与多余间距</td></tr>
+    </table>
+  </div>
+
+  <h3>保存接口</h3>
+  <div class="card pad">
+    <table>
+      <tr><th style="width:20%">项</th><th>规格</th></tr>
+      <tr><td>入口</td><td><code>widget.php?action=save</code>，POST JSON；鉴权照 <code>pay-admin.php</code>：后台登录 cookie + <code>\Typecho\Cookie::setPrefix()</code> 校正</td></tr>
+      <tr><td>CSRF</td><td>Typecho security token，页面渲染时注入 <code>window.ECOD_WGT.token</code>；缺失或过期返回 403，前端提示刷新</td></tr>
+      <tr><td>写入</td><td><code>ecod_cache_set('EWidgets', $data)</code>，只动 <code>user=0</code> 的那一行；不触碰 <code>theme:{slug}</code> 主题配置行</td></tr>
+      <tr><td>并发</td><td>读时带 <code>rev</code>（受影响的区域数组哈希），写时比对；不一致返回 409 + 最新数据，前端提示「已被其他标签页修改」并重绘</td></tr>
+      <tr><td>校验</td><td><code>area</code> 必须在注册表内；<code>uid</code> 匹配 <code>[a-z0-9-]{1,40}</code>；<code>type</code> 必须在 <code>blocks-def.php</code> 声明过（<b>不校验区域白名单</b>，第 4 轮修订取消）；<code>params</code> 按 schema 白名单裁剪，未知键丢弃</td></tr>
+      <tr><td>返回</td><td><code>{ok:true, rev:"…", area:"…"}</code>；失败给 <code>{ok:false, error:"…"}</code>，不返回堆栈</td></tr>
+    </table>
+  </div>
+
+  <h3>渲染接口</h3>
+  <div class="card pad">
+    <table>
+      <tr><th style="width:32%">函数</th><th>用途</th></tr>
+      <tr><td><code>ecod_widgets_render(string $area)</code></td><td>渲染一个区域（含全局区叠加由模板显式调用，不隐式拼接）</td></tr>
+      <tr><td><code>ecod_widget_instances(string $area)</code></td><td>解析后的实例数组，供计数、预览、调试</td></tr>
+      <tr><td><code>ecod_widget_render(string $uid)</code></td><td>定点渲染单个实例（页脚浮动控件这类）</td></tr>
+      <tr><td><code>ecod_blocks_render()</code> / <code>ecod_block_render()</code></td><td>保留为兼容别名，把旧区域名映射到新区域，渲染管线完全一致；一个版本周期后删除</td></tr>
+    </table>
+    <p class="sec-desc" style="margin:12px 0 0">渲染层不改：<code>ecod_render_block()</code> 的包裹结构、<code>$this</code> 绑定、<code>params</code> 注入方式都保持现状，41 个模板文件不用动一行。</p>
+  </div>
+
+  <h3>埋点清单</h3>
+  <div class="card pad">
+    <table>
+      <tr><th style="width:28%">文件</th><th style="width:24%">位置</th><th>插入</th></tr>
+      <tr><td><code>public/header.php</code></td><td>329 行 <code>#ecod-shell</code> 内首行</td><td><code>all_top_fluid</code> + <code>{页面}_top_fluid</code></td></tr>
+      <tr><td><code>index.php</code> / <code>archive.php</code> / <code>post.php</code> / <code>page.php</code> / 14 个个性页</td><td><code>.ecod_main</code> 首行与末行</td><td><code>{页面}_top_content</code> / <code>{页面}_bottom_content</code></td></tr>
+      <tr><td><code>public/aside.php</code></td><td>18 行</td><td><code>all_sidebar_top</code> → <code>{页面}_sidebar</code> → <code>all_sidebar_bottom</code></td></tr>
+      <tr><td><code>public/footer.php</code></td><td><code>.ecod_layout</code> 收尾之后</td><td><code>all_bottom_fluid</code> + <code>{页面}_bottom_fluid</code></td></tr>
+      <tr><td><code>core/config.php</code></td><td>4 个块 pane</td><td>删掉块列表，换成「去模块管理台」入口卡 + 侧栏按页面类型开关</td></tr>
+      <tr><td><code>assets/admin/config.js</code></td><td>块管理器整段（约 1000 行）</td><td>移到 <code>assets/admin/widget.js</code>，随管理台加载；设置页不再加载</td></tr>
+    </table>
+  </div>
+
+  <h3>全宽区与 PJAX</h3>
+  <div class="card pad">
+    <table>
+      <tr><th style="width:22%">约束</th><th>处理</th></tr>
+      <tr><td>交换边界</td><td>PJAX 只替换 <code>#ecod-shell</code>（<code>ecod.global.js:3445</code>），shell 从 <code>header.php:329</code> 开。全宽区<b>必须放 shell 内</b>，否则换页后内容不更新</td></tr>
+      <tr><td>出血</td><td><code>width:100vw; margin-inline:calc(50% - 50vw)</code> + 父级 <code>overflow-x:clip</code>（不能用 <code>hidden</code>，会切断 sticky）</td></tr>
+      <tr><td>布局插入</td><td><code>#ecod-shell</code> 内改为纵向栈：<code>[top_fluid]</code> → <code>.ecod_layout</code>（main + aside）→ <code>[bottom_fluid]</code>；全宽块不参与 main/aside 的栅格</td></tr>
+      <tr><td>滚动条</td><td><code>100vw</code> 含滚动条宽度，桌面端会多出 1–2px 横向溢出，用 <code>body{overflow-x:clip}</code> 兜住，不加 <code>max-width:100%</code>（会被父容器裁切）</td></tr>
+    </table>
+  </div>
+
+  <h3>验收</h3>
+  <div class="card pad">
+    <table>
+      <tr><th style="width:6%">#</th><th style="width:34%">项</th><th>判定</th></tr>
+      <tr><td>1</td><td>升级零丢失</td><td>迁移前后前台 HTML 逐字节比对一致（41 块的位置、开关、参数全等）</td></tr>
+      <tr><td>2</td><td>实例化</td><td>同一区域放两个广告位，改其中一个的图片，另一个不变</td></tr>
+      <tr><td>3</td><td>跨区移动</td><td>把侧栏的「最新文章」拖到文章页内容区下方，参数保留</td></tr>
+      <tr><td>4</td><td>侧栏开关</td><td>关闭分类页侧栏后，<code>&lt;aside&gt;</code> 完全不输出；单篇覆盖为「左」时该篇侧栏在左</td></tr>
+      <tr><td>5</td><td>PJAX</td><td>首页 → 文章页切换后，<code>all_top_fluid</code> 内容随之更新，无残留</td></tr>
+      <tr><td>6</td><td>空区域</td><td>区域无实例时 DOM 里没有任何包裹节点</td></tr>
+      <tr><td>7</td><td>并发</td><td>两个标签页同时改同一区域，后者收到 409 而非静默覆盖</td></tr>
+      <tr><td>8</td><td>回滚</td><td>删掉 <code>EWidgets</code> 行，前台立刻回到 <code>EBlocks</code> 的旧布局</td></tr>
+    </table>
+    <p class="sec-desc" style="margin:12px 0 0"><b>第 4 轮修订（2026-10-30）· 取消区域白名单</b>：用户反馈「既然是 widget，位置应由用户自行调整」——拖放不再有允许区域拦截，红色禁用态与「不能放在」toast 一并移除，前端 <code>canDrop()</code> 只剩「区域已满」一个条件；后端 <code>ecod_wgt_clean_rows()</code> 删除白名单过滤（修复「拖进去保存了却没生效」的静默丢失）；<code>ecod_block_allowed_areas()</code> 及其仅有的两个辅助函数 <code>ecod_block_slots()</code> / <code>ecod_block_pages()</code> 无人使用，删除。验收补两条：① 任意模块拖入任意区域保存成功且前台按所在区域渲染；② 区域满 20 个时仍被拦截并 toast 提示。</p>
+  </div>
+
+  <h3>非目标</h3>
+  <div class="card pad">
+    <table>
+      <tr><th style="width:30%">不做</th><th>原因</th></tr>
+      <tr><td>单篇文章 / 单个页面单独建容器</td><td>Zibll 自己限定「页面别超 10 个，否则影响性能」；我们这个主题页面类型已经够用，层级再多收益递减</td></tr>
+      <tr><td>页脚拆三列</td><td>现有 8 个页脚块里 5 个是浮动控件不是列，硬拆会让 <code>fixed</code> 语义和列布局互相打架</td></tr>
+      <tr><td>可拖拽的 iframe 实时预览</td><td>要复制一套前台渲染管线；用「打开对应页面」链接 + 管理台内的位置示意足够</td></tr>
+      <tr><td>引入 sortable / 拖拽库</td><td>原生 HTML5 DnD 够用，主题不引第三方依赖</td></tr>
+      <tr><td>把块名 / 字段名改成 widget</td><td>41 个块声明、19 个模板、管理台 JS 全要跟着改，纯改名不产生价值</td></tr>
+    </table>
+  </div>
+</section>
+
+<section id="s9">
+  <span class="sec-tag">32 · 后台</span>
+  <h2>分类与标签增强</h2>
+  <p class="sec-desc">Typecho 的分类 / 标签共用 <code>metas</code> 表，原生只有名称、缩略名、描述（父级），<b>没有封面、没有独立 SEO 字段、也没有 metas 级自定义字段机制</b>。本节给分类 / 标签补齐：封面图、独立 SEO（标题 / 描述 / 关键词）、noindex 开关——存进主题自己的 KV 表，编辑入口直接注入 Typecho 原生后台「分类 / 标签」编辑表单，不另建管理页。</p>
+
+  <h3>需求与结论</h3>
+  <div class="card pad">
+    <table>
+      <tr><th style="width:20%">事项</th><th>结论</th></tr>
+      <tr><td>存储</td><td>新表 <code>{prefix}ecod_meta_meta</code>（KV，主键 <code>(mid, mkey)</code>）。不走 <code>description</code> 混装——描述还要参与前台展示与 <code>archiveDescription</code>，约定格式易脏。</td></tr>
+      <tr><td>编辑入口</td><td>注入原生编辑页（<code>admin/category.php</code>、<code>admin/manage-tags.php</code> 右栏表单）。标签无独立编辑页，原生就是在管理列表页右栏表单里编辑。不新建「增强管理器」页面。</td></tr>
+      <tr><td>保存链路</td><td>补丁 <code>var/Widget/Metas/Category/Edit.php</code> 与 <code>Tag/Edit.php</code> 的 insert / update / delete 三处，服务端同步保存，不依赖 JS 时序。</td></tr>
+      <tr><td>标签支持</td><td>同步支持；标签场景主要用 <code>seo_desc</code> / <code>noindex</code>，封面可留空。</td></tr>
+      <tr><td>降级</td><td>所有补丁带 <code>function_exists / is_file</code> 守卫：主题被删或未打补丁时，原生后台照常工作，只是没有增强字段；前台无值时全部回退现有逻辑。</td></tr>
+    </table>
+  </div>
+
+  <h3>数据表</h3>
+  <div class="card pad">
+    <table>
+      <tr><th style="width:22%">列</th><th style="width:24%">类型</th><th>说明</th></tr>
+      <tr><td><code>mid</code></td><td>INT UNSIGNED</td><td><code>metas.mid</code>，全站唯一，无需 type 列</td></tr>
+      <tr><td><code>mkey</code></td><td>VARCHAR(32)</td><td><code>cover / seo_title / seo_desc / seo_keywords / noindex</code></td></tr>
+      <tr><td><code>mvalue</code></td><td>TEXT</td><td>值；noindex 存 <code>1</code></td></tr>
+    </table>
+    <p style="margin-top:8px">主键 <code>(mid, mkey)</code>；保存语义 = delete+insert 或 upsert。建表走 <code>core/schema.php</code> 现有三适配流程，<code>ECOD_SCHEMA_VERSION</code> 6 → 7。</p>
+  </div>
+
+  <h3>注入点（4 个核心文件补丁）</h3>
+  <div class="card pad">
+    <table>
+      <tr><th style="width:38%">文件</th><th>改动</th></tr>
+      <tr><td><code>admin/category.php</code></td><td>渲染侧：<code>Edit::alloc()-&gt;form()</code> 后、<code>render()</code> 前调用主题 <code>ecod_meta_extend_form($form)</code> 追加字段；仅编辑模式（<code>?mid=</code> 存在）渲染</td></tr>
+      <tr><td><code>admin/manage-tags.php</code></td><td>同上（第 65 行右栏表单）</td></tr>
+      <tr><td><code>var/Widget/Metas/Category/Edit.php</code></td><td><code>insertCategory / updateCategory</code> 写库后调用 <code>ecod_meta_save_from_request()</code>；<code>deleteCategory</code> 顺带清理 KV 行</td></tr>
+      <tr><td><code>var/Widget/Metas/Tag/Edit.php</code></td><td>同上三处</td></tr>
+    </table>
+    <p style="margin-top:8px">注意：admin action 请求<b>不加载主题 functions.php</b>（仅 <code>Widget\Archive</code> 加载），所以补丁里保存调用前需 <code>require_once</code> 主题 <code>core/meta-meta.php</code>（<code>is_file</code> 守卫），再 <code>function_exists</code> 判断调用。追加字段用 Form API 原生元素，POST 字段随原生表单直达 action，无需自建接口。</p>
+  </div>
+
+  <h3>前台消费</h3>
+  <div class="card pad">
+    <table>
+      <tr><th style="width:26%">字段</th><th>消费点</th></tr>
+      <tr><td><code>cover</code></td><td>分类页头 E1（<code>components/archive/head.php</code>）：自定义封面优先，其次保持现状（最新文章封面 → 柔光）；<code>ecod_seo_image()</code> 与 JSON-LD 同步取用</td></tr>
+      <tr><td><code>seo_title</code></td><td><code>ecod_seo_title()</code> 最优先，空则回退 <code>archiveTitle</code></td></tr>
+      <tr><td><code>seo_desc</code></td><td><code>ecod_seo_description()</code> 最优先，空则回退分类描述 / 现有链</td></tr>
+      <tr><td><code>seo_keywords</code></td><td>分类 / 标签归档页 keywords</td></tr>
+      <tr><td><code>noindex</code></td><td>归档页输出 <code>&lt;meta name="robots" content="noindex"&gt;</code>，治稀疏标签的重复内容</td></tr>
+    </table>
+    <p style="margin-top:8px">mid 解析沿用 <code>ecod_cat_meta()</code> 的 slug 反查模式（Archive 不暴露 mid）；查询单请求静态缓存，无新增每请求常驻开销。</p>
+  </div>
+</section>
+
+<div class="foot-note">Ecod Theme · Design Spec v2 · 11 个模板 / 24 个组件 / 5 种卡片模式 · 2026-10-28</div>  </div>
+</div>
+
+<script>
+const modeData = {
+  list:    { label:'模式 A · 列表（默认）' },
+  feature: { label:'模式 B · 大图（single）' },
+  gallery: { label:'模式 C · 三图（multiple）' },
+  bare:    { label:'模式 D · 无图（none）' },
+  grid:    { label:'模式 E · 网格（grid）' }
+};
+const zone = document.getElementById('cardZone');
+const label = document.getElementById('modeLabel');
+const origin = zone.innerHTML;
+
+function render(mode){
+  label.textContent = modeData[mode].label;
+  if(mode === 'grid'){
+    zone.className = 'cards cards--grid';
+    zone.innerHTML = origin.replace(/class="pk"/g,'class="pk pk--grid"');
+    return;
+  }
+  zone.className = 'cards';
+  if(mode === 'gallery'){
+    zone.innerHTML = origin
+      .replace(/class="pk"/g,'class="pk pk--gallery"')
+      .replace(/<div class="thumb"><span class="cat">Typecho<\/span><\/div>/,'<div class="imgs"><div></div><div></div><div></div></div>')
+      .replace(/<div class="thumb" style="background:linear-gradient\(135deg,#fde68a,#fca5a5\)"><span class="cat">教程<\/span><\/div>/,'<div class="imgs"><div></div><div></div><div></div></div>');
+    return;
+  }
+  if(mode === 'feature'){
+    zone.innerHTML = origin.replace(/class="pk"/g,'class="pk pk--feature"');
+    return;
+  }
+  if(mode === 'bare'){
+    zone.innerHTML = origin
+      .replace(/class="pk"/g,'class="pk pk--bare"')
+      .replace(/<div class="thumb"><span class="cat">Typecho<\/span><\/div>/,'')
+      .replace(/<div class="thumb" style="background:linear-gradient\(135deg,#fde68a,#fca5a5\)"><span class="cat">教程<\/span><\/div>/,'');
+    return;
+  }
+  zone.innerHTML = origin;
+}
+
+document.querySelectorAll('[data-mode]').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    document.querySelectorAll('[data-mode]').forEach(b=>{ b.className = 'btn btn-ghost btn-sm'; });
+    btn.className = 'btn btn-primary btn-sm';
+    render(btn.dataset.mode);
+  });
+});
+
+document.querySelectorAll('.sidenav a').forEach(a=>{
+  a.addEventListener('click',e=>{
+    e.preventDefault();
+    const el = document.querySelector(a.getAttribute('href'));
+    if(el) window.scrollTo({top: el.offsetTop - 16, behavior:'smooth'});
+  });
+});
+</script>
+</body>
+</html>

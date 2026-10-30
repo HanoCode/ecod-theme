@@ -447,9 +447,9 @@
         }
         var html = '';
         list.forEach(function (f) {
-            html += '<a class="ecod_favs__item" href="' + escapeHtml(f.url) + '">'
-                + '<span class="ecod_favs__title">' + escapeHtml(f.title || '未命名') + '</span>'
-                + '<button type="button" class="ecod_favs__del" data-ecod-fav-del="' + escapeHtml(f.url) + '" aria-label="移除收藏">'
+            html += '<a class="ecod_favs__item" href="' + escHtml(f.url) + '">'
+                + '<span class="ecod_favs__title">' + escHtml(f.title || '未命名') + '</span>'
+                + '<button type="button" class="ecod_favs__del" data-ecod-fav-del="' + escHtml(f.url) + '" aria-label="移除收藏">'
                 + Ecod.icon('x', 12) + '</button></a>';
         });
         box.innerHTML = html;
@@ -3044,16 +3044,27 @@
     Ecod.ensurePostBundle = function (done) {
         var shell = document.getElementById('ecod-shell');
         var need = shell && shell.getAttribute('data-ecod-bundle') === 'post';
-        if (!need || Ecod._postLoaded || !CFG.post) {
+        if (!need || Ecod._postLoaded) {
             if (done) done();
             return;
         }
+        /* 内容页脚本链：prism（代码高亮库，先于增强包，initPrism 依赖它）
+           → 二维码（分享卡依赖）→ 增强包。按序注入保持 defer 的执行顺序；
+           正文页直载时页脚已按同序输出这三个标签，这里只补 PJAX 场景。
+           配色 CSS 体积小，全站在 head 常驻（见 include.php），无需注入。 */
+        var chain = [CFG.prismUrl, CFG.qrUrl, CFG.post].filter(Boolean);
         Ecod._postLoaded = true;
-        var s = document.createElement('script');
-        s.src = CFG.post;
-        s.onload = function () { if (done) done(); };
-        s.onerror = function () { if (done) done(); };
-        document.head.appendChild(s);
+        (function next() {
+            var url = chain.shift();
+            if (!url) {
+                if (done) done();
+                return;
+            }
+            var s = document.createElement('script');
+            s.src = url;
+            s.onload = s.onerror = next;
+            document.head.appendChild(s);
+        })();
     };
 
     /* 内部工具导出：ecod.post.js 经 Ecod.u 取用（函数声明已提升，可安全引用） */

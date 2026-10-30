@@ -31,14 +31,13 @@ if ($ecodCtSlug === '') {
     return;
 }
 
-/* 分类基础地址（不带任何 query）：搜索表单的 action，提交即回第一页 */
-$ecodCtUrl = '';
-$this->widget('\Widget\Metas\Category\Rows')->to($ecodCtCats);
-while ($ecodCtCats->next()) {
-    if ((string) $ecodCtCats->slug === $ecodCtSlug) {
-        $ecodCtUrl = (string) $ecodCtCats->permalink();
-        break;
-    }
+/* 分类基础地址（不带任何 query）：搜索表单的 action，提交即回第一页。
+   注意 Metas 的 permalink() 是输出型方法（echo / 返回 void），这里走 Router
+   拼接（同 core/site/catstats.php 的既有做法），拿得到返回值 */
+try {
+    $ecodCtUrl = (string) \Typecho\Router::url('category', ['slug' => $ecodCtSlug], \Widget\Options::alloc()->index);
+} catch (\Throwable $e) {
+    $ecodCtUrl = '';
 }
 if ($ecodCtUrl === '') {
     return;

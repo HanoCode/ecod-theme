@@ -102,8 +102,12 @@ $ecodSvg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">'
 window.ECOD = {
     api: <?php echo json_encode(ecod_api_url(), JSON_UNESCAPED_SLASHES); ?>,
     postUrl: <?php echo json_encode($ecodPostUrl, JSON_UNESCAPED_SLASHES); ?>,
-    /* 内容页增强包（ecod.post.js）：页脚按模板条件输出，PJAX 换页时 JS 据此动态注入 */
+    /* 内容页增强包（ecod.post.js）：页脚按模板条件输出，PJAX 换页时 JS 据此动态注入。
+       prismUrl / qrUrl 供注入链使用：正文页才加载 prism.js（库较大），
+       二维码库只服务分享卡；配色 CSS 体积小、需全站在 head 常驻，见下方说明 */
     post: <?php echo json_encode(ecod_asset('assets/js/ecod.post.js'), JSON_UNESCAPED_SLASHES); ?>,
+    prismUrl: <?php echo $ecodCode ? json_encode(ecod_asset('assets/vendor/prism/prism.js'), JSON_UNESCAPED_SLASHES) : "''"; ?>,
+    qrUrl: <?php echo json_encode(ecod_asset('assets/vendor/ecod-qr.js'), JSON_UNESCAPED_SLASHES); ?>,
     pjax: <?php echo ecod_option('EPjax', 'on') === 'on' ? 'true' : 'false'; ?>,
     lightbox: <?php echo $ecodLightbox ? 'true' : 'false'; ?>,
     prism: <?php echo $ecodCode ? 'true' : 'false'; ?>,
@@ -149,8 +153,7 @@ if ($ecodCriticalFile !== null) {
     $ecodCriticalCss = (string) file_get_contents(ECOD_THEME_DIR . '/' . $ecodCriticalFile);
     echo '<style id="ecod-critical">' . $ecodCriticalCss . '</style>' . "\n";
 ?>
-<link rel="preload" href="<?php echo $ecodFullCssUrl; ?>" as="style" onload="this.onload=null;this.rel='stylesheet'">
-<noscript><link rel="stylesheet" href="<?php echo $ecodFullCssUrl; ?>"></noscript>
+<link rel="stylesheet" href="<?php echo $ecodFullCssUrl; ?>">
 <?php } else { ?>
 <link rel="stylesheet" href="<?php echo $ecodFullCssUrl; ?>">
 <?php } ?>
@@ -177,7 +180,9 @@ html[data-theme="dark"] {
 <?php endif; ?>
 </style>
 <?php if ($ecodCode):
-/* 主题文件命名：默认 prism.css，其余 prism-<name>.css；缺失时回退默认。
+/* 代码块配色：每个主题仅 2-3KB，保持全站加载——PJAX 换页不重渲染 head，
+   若按页面条件输出，「列表页无刷新进文章页」会缺配色；体积换正确性。
+   主题文件命名：默认 prism.css，其余 prism-<name>.css；缺失时回退默认。
    auto：加载浅色 + 深色两套（深色默认 disabled），由前端随明暗模式切换 */
 if ($ecodCodeTheme === 'auto'): ?>
 <link rel="stylesheet" id="ecod-prism-light" href="<?php echo ecod_asset('assets/vendor/prism/themes/prism.css'); ?>">

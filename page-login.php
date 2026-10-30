@@ -20,8 +20,8 @@ if (!defined('__TYPECHO_ROOT_DIR__')) {
     exit;
 }
 $this->need('public/header.php');
-require_once __DIR__ . '/core/account.php';
-require_once __DIR__ . '/core/oauth.php';
+require_once __DIR__ . '/core/user/account.php';
+require_once __DIR__ . '/core/user/oauth.php';
 
 $ecodLogged = false;
 $ecodUcUrl = ecod_user_center_url();

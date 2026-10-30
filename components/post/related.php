@@ -2,7 +2,7 @@
 /**
  * 文章页块 · 相关推荐
  *
- * 相关度由 core/related.php 计算：同标签命中优先，同分类补齐，
+ * 相关度由 core/content/related.php 计算：同标签命中优先，同分类补齐，
  * 仍不足时用最近发布兜底，因此这个区域不会因为「文章没有标签」而消失。
  *
  * @package Ecod Theme
