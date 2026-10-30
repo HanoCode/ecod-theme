@@ -411,6 +411,8 @@ function ecod_friend_app_review(int $id, string $decision): array
         if (!ecod_friend_app_set_status($id, 'rejected')) {
             return ['ok' => false, 'error' => '操作失败，请稍后再试'];
         }
+        /* 站内消息：申请人邮箱命中注册用户时投一条 */
+        ecod_notif_friend_review($app, 'reject');
         return ['ok' => true];
     }
 
@@ -427,6 +429,9 @@ function ecod_friend_app_review(int $id, string $decision): array
     }
 
     ecod_friend_mail_applicant($app, 'approved');
+
+    /* 站内消息：申请人邮箱命中注册用户时投一条 */
+    ecod_notif_friend_review($app, 'approved');
 
     return ['ok' => true];
 }

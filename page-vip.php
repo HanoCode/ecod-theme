@@ -25,17 +25,8 @@ $ecodCurrency = ecod_pay_currency();
 $ecodUid = ecod_pay_current_uid();
 $ecodLoginHref = ecod_pay_login_url((string) ($_SERVER['REQUEST_URI'] ?? ''));
 
-/* 档位固定文案与权益清单 */
-$ecodTierCopy = [
-    1 => [
-        'desc'  => '畅读会员专属内容，升级之路的第一步。',
-        'perks' => ['会员专属内容随时读', '评论等级与标识不受影响', '一次开通，全站生效'],
-    ],
-    2 => [
-        'desc'  => '包含会员全部权益，可读更高等级的内容。',
-        'perks' => ['含会员档全部权益', '超级会员专属内容可见', '专属标识与优先支持'],
-    ],
-];
+/* 档位固定文案与权益清单（与个人中心会员 tab 共用 ecod_pay_tier_copy()） */
+$ecodTierCopy = ecod_pay_tier_copy();
 
 $ecodHasPrice = false;
 foreach ($ecodTiers as $ecodTier) {
@@ -53,8 +44,9 @@ $ecodPick = isset($ecodTiers[2]) && !empty($ecodTiers[2]['plans'])
     <?php /* 模块 · 内容区上方（模块管理台） */ ecod_widgets_render("top_content", $this); ?>
 
     <nav class="ecod_crumb" aria-label="面包屑">
+        <a class="ecod_crumb__back" href="javascript:history.back()" aria-label="返回"><?php echo ecod_icon('chevron', 13); ?></a>
         <a href="<?php $this->options->siteUrl(); ?>"><?php echo ecod_icon('home', 12); ?>首页</a>
-        <span class="ecod_crumb__sep" aria-hidden="true"><?php echo ecod_icon('chevron', 11); ?></span>
+        <span class="ecod_crumb__sep" aria-hidden="true">/</span>
         <span aria-current="page">会员</span>
     </nav>
 
@@ -77,6 +69,27 @@ $ecodPick = isset($ecodTiers[2]) && !empty($ecodTiers[2]['plans'])
                 <em><?php echo (int) $ecodVip['expire_at'] > 0 ? '至 ' . date('Y-m-d', (int) $ecodVip['expire_at']) : '长期有效'; ?></em>
             </span>
             <span class="ecod_vip__me-sub">续费会在剩余时间上累加，不会浪费一天</span>
+            <?php
+            /* 个人中心会员 tab 导流（hash 深链 #vip） */
+            $ecodUcUrl = '';
+            if (function_exists('ecod_pages_url')) {
+                $ecodUcUrl = ecod_pages_url('user');
+            }
+            if ($ecodUcUrl === '') {
+                try {
+                    $ecodUcRow = \Typecho\Db::get()->fetchRow(
+                        \Typecho\Db::get()->select('slug')->from('table.contents')
+                            ->where('template = ?', 'page-user.php')->where('type = ?', 'page')
+                            ->where('status = ?', 'publish')->limit(1)
+                    );
+                    $ecodUcUrl = $ecodUcRow ? ecod_pay_site_url('index.php/' . $ecodUcRow['slug'] . '.html') : '';
+                } catch (\Throwable $e) {
+                    $ecodUcUrl = '';
+                }
+            }
+            if ($ecodUcUrl !== ''): ?>
+                <a class="ecod_vip__me-link" href="<?php echo htmlspecialchars($ecodUcUrl, ENT_QUOTES, 'UTF-8'); ?>#vip">进入我的会员 →</a>
+            <?php endif; ?>
         </div>
     <?php endif; ?>
 

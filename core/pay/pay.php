@@ -203,6 +203,29 @@ function ecod_pay_level_name(int $level): string
     return $tiers[$level]['name'] ?? ($level >= 2 ? '超级会员' : '会员');
 }
 
+/**
+ * 档位固定文案与权益清单（会员购买页 / 个人中心会员 tab 共用）
+ *
+ * caps 键为二期预留：把权益变成真判定时按 level 查能力表。
+ *
+ * @return array<int, array{desc:string,perks:string[],caps:string[]}>
+ */
+function ecod_pay_tier_copy(): array
+{
+    return [
+        1 => [
+            'desc'  => '畅读会员专属内容，升级之路的第一步。',
+            'perks' => ['会员专属内容随时读', '评论等级与标识不受影响', '一次开通，全站生效'],
+            'caps'  => [],
+        ],
+        2 => [
+            'desc'  => '包含会员全部权益，可读更高等级的内容。',
+            'perks' => ['含会员档全部权益', '超级会员专属内容可见', '专属标识与优先支持'],
+            'caps'  => [],
+        ],
+    ];
+}
+
 /* ------------------------------------------------------------------
  * 权益
  * ---------------------------------------------------------------- */
@@ -619,7 +642,7 @@ function ecod_pay_order_create(array $spec): array
     $level = (int) ($spec['level'] ?? 0);
     $title = mb_substr(trim((string) ($spec['title'] ?? '')), 0, 180, 'UTF-8');
 
-    if ($uid <= 0 || !in_array($kind, ['post', 'vip'], true)) {
+    if ($uid <= 0 || !in_array($kind, ['post', 'vip', 'ad'], true)) {
         return ['ok' => false, 'error' => '参数不完整'];
     }
     if ($amount <= 0) {
@@ -754,15 +777,39 @@ function ecod_pay_settle(string $orderNo, string $tradeNo = '', string $channel 
         return ['ok' => false, 'status' => 'error', 'message' => '结算失败'];
     }
 
-    $granted = ecod_pay_grant([
-        'uid'       => (int) $order['uid'],
-        'kind'      => (string) $order['kind'],
-        'target'    => (int) $order['target'],
-        'level'     => (int) $order['level'],
-        'days'      => (int) $order['days'],
-        'source'    => $channel !== '' ? 'order' : 'order',
-        'source_id' => $orderNo,
-    ]);
+    /* 发权益：post / vip 走权益表；ad 走广告结算（支付完成 ≠ 上线，还差审核） */
+    if ((string) $order['kind'] === 'ad') {
+        if (!function_exists('ecod_ads_on_paid')) {
+            require_once __DIR__ . '/../site/ads.php';
+        }
+        $granted = ecod_ads_on_paid((int) $order['target']);
+    } else {
+        $granted = ecod_pay_grant([
+            'uid'       => (int) $order['uid'],
+            'kind'      => (string) $order['kind'],
+            'target'    => (int) $order['target'],
+            'level'     => (int) $order['level'],
+            'days'      => (int) $order['days'],
+            'source'    => $channel !== '' ? 'order' : 'order',
+            'source_id' => $orderNo,
+        ]);
+    }
+
+    /* 开会员送积分（guaqi 式拉新钩子）：仅 vip 订单、积分系统开启、配置大于 0 时发放 */
+    if ($granted && (string) $order['kind'] === 'vip') {
+        $ecodVipGift = max(0, (int) ecod_option('ECrVipGift', 0));
+        if ($ecodVipGift > 0) {
+            if (!function_exists('ecod_credits_add')) {
+                require_once __DIR__ . '/../user/credits.php';
+            }
+            ecod_credits_add((int) $order['uid'], $ecodVipGift, 'vip_gift', $orderNo, '开通会员赠送');
+        }
+    }
+
+    /* 推广返佣：被推荐人的订单结算成功，推荐人按比例得 Credit（见 core/user/referral.php） */
+    if ($granted && function_exists('ecod_ref_pay_commission')) {
+        ecod_ref_pay_commission($order);
+    }
 
     if (!$granted) {
         return ['ok' => false, 'status' => 'grant', 'message' => '权益写入失败'];
@@ -833,7 +880,7 @@ function ecod_pay_orders(int $uid, int $limit = 20, int $offset = 0): array
  */
 function ecod_pay_teaser_balance(string $html): string
 {
-    static $tags = ['hide', 'reply', 'note', 'fold', 'tabs', 'timeline', 'download', 'gallery', 'vip1', 'vip2'];
+    static $tags = ['hide', 'reply', 'note', 'fold', 'tabs', 'timeline', 'download', 'gallery', 'vip1', 'vip2', 'poll'];
 
     for ($guard = 0; $guard < 12; $guard++) {
         $cut = null;

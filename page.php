@@ -17,6 +17,7 @@ $this->need('public/header.php');
 <main class="ecod_main" id="ecod-main">
     <?php /* 模块 · 内容区上方（模块管理台） */ ecod_widgets_render("top_content", $this); ?>
     <nav class="ecod_crumb" aria-label="面包屑">
+        <a class="ecod_crumb__back" href="javascript:history.back()" aria-label="返回"><?php echo ecod_icon('chevron', 13); ?></a>
         <a href="<?php $this->options->siteUrl(); ?>">首页</a>
         <span aria-hidden="true">/</span>
         <span aria-current="page"><?php $this->title(); ?></span>
@@ -28,7 +29,7 @@ $this->need('public/header.php');
             <?php
             ob_start();
             $this->content();
-            echo ecod_go_rewrite(ecod_lazy_images(ecod_oembed_apply(ecod_shortcode_apply((string) ob_get_clean(), $this)), (string) $this->title));
+            echo ecod_go_rewrite(ecod_lazy_images(ecod_keywords_apply(ecod_oembed_apply(ecod_shortcode_apply((string) ob_get_clean(), $this))), (string) $this->title));
             ?>
         </div>
     </article>

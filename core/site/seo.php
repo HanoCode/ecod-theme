@@ -699,6 +699,9 @@ function ecod_sitemap_maybe_output(): void
 
 /**
  * 输出 sitemap（动态，需 rewrite 才能落到 /sitemap.xml）
+ *
+ * 内容走文件缓存（TTL 与上面的 max-age=3600 对齐）：爬虫反复抓取
+ * 不再每次全表查询；后台「写入静态 sitemap」会主动失效这份缓存。
  */
 function ecod_sitemap_output(): void
 {
@@ -710,7 +713,7 @@ function ecod_sitemap_output(): void
         header('Cache-Control: public, max-age=3600');
     }
 
-    echo ecod_sitemap_xml();
+    echo (string) ecod_cache_remember('sitemap', 3600, 'ecod_sitemap_xml');
     exit;
 }
 
@@ -886,6 +889,13 @@ function ecod_sitemap_write(): array
     @touch($file);
     ecod_cache_set('EcodSitemapBuilt', time());
 
+    /* 静态文件已更新，动态路由那份 sitemap 文件缓存同步失效（seo.php 可能被
+       未加载 cache.php 的入口引入，这里按 account.php 先例就地补载） */
+    if (!function_exists('ecod_cache_forget')) {
+        require_once __DIR__ . '/../lib/cache.php';
+    }
+    ecod_cache_forget('sitemap');
+
     $count = substr_count($xml, '<url>');
     return ['ok' => true, 'message' => '已生成 ' . $count . ' 条地址', 'path' => $file];
 }
@@ -959,6 +969,15 @@ function ecod_baidu_push(int $limit = 20): array
         return ['ok' => false, 'message' => '没有可推送的文章', 'count' => 0];
     }
 
+    /* 增量去重：24 小时内推送成功的地址不再推（主动推送对已收录 URL 无效，
+     * 重复推只会白白消耗每日配额） */
+    $urls = array_values(array_filter($urls, static function (string $u): bool {
+        return !ecod_baidu_recent($u);
+    }));
+    if (!$urls) {
+        return ['ok' => true, 'message' => '候选文章最近 24 小时内都已推送过，跳过（百度主动推送对重复 URL 无效）', 'count' => 0];
+    }
+
     $endpoint = 'http://data.zz.baidu.com/urls?site=' . urlencode($site) . '&token=' . urlencode($token);
     $body = implode("\n", $urls);
 
@@ -975,9 +994,15 @@ function ecod_baidu_push(int $limit = 20): array
         if (is_array($json) && isset($json['success'])) {
             $okCount = (int) $json['success'];
             $rest = isset($json['remain']) ? '，今日剩余 ' . (int) $json['remain'] . ' 条' : '';
+            foreach ($urls as $u) {
+                ecod_baidu_log($u, true, 'batch:' . $okCount);
+            }
             return ['ok' => true, 'message' => '已推送 ' . $okCount . ' 条' . $rest, 'count' => $okCount];
         }
         if (is_array($json) && isset($json['error'])) {
+            foreach ($urls as $u) {
+                ecod_baidu_log($u, false, (string) $json['error']);
+            }
             return ['ok' => false, 'message' => '百度返回：' . (string) $json['error'], 'count' => 0];
         }
         return ['ok' => false, 'message' => '百度返回内容无法解析：' . mb_substr($result, 0, 120, 'UTF-8'), 'count' => 0];
@@ -1058,4 +1083,252 @@ function ecod_robots_output(): void
     echo 'Sitemap: ' . $site . "/sitemap.xml\n";
 
     exit;
+}
+
+/* ------------------------------------------------------------------
+ * 百度主动推送：去重日志与发布增量推送
+ *
+ * ecod_push_log：一行一次推送记录（url 唯一），24 小时内推送成功的
+ * 地址不再重复推。主动推送只对「新 / 更新」的 URL 有意义，重复推
+ * 纯耗每日配额。发布 / 更新文章时经 finishPublish 自动单条增量。
+ * ---------------------------------------------------------------- */
+
+/**
+ * 日志表名（带前缀）
+ */
+function ecod_baidu_log_table(): string
+{
+    try {
+        return \Typecho\Db::get()->getPrefix() . 'ecod_push_log';
+    } catch (\Throwable $e) {
+        return 'typecho_ecod_push_log';
+    }
+}
+
+/**
+ * 建表（首次写入时自愈，与 ecod_notifs_ensure 同款套路）
+ */
+function ecod_baidu_log_ensure(?\Typecho\Db $db = null): bool
+{
+    static $ok = null;
+    if ($ok !== null) {
+        return $ok;
+    }
+
+    try {
+        $db = $db ?: \Typecho\Db::get();
+        $table = ecod_baidu_log_table();
+        $adapter = ecod_schema_adapter($db);
+
+        if ($adapter === 'sqlite') {
+            $db->query(
+                'CREATE TABLE IF NOT EXISTS "' . $table . '" ('
+                . ' "id" INTEGER PRIMARY KEY AUTOINCREMENT,'
+                . ' "url" VARCHAR(190) NOT NULL UNIQUE,'
+                . ' "ok" INTEGER NOT NULL DEFAULT 0,'
+                . ' "resp" VARCHAR(190) NOT NULL DEFAULT \'\','
+                . ' "created" INTEGER NOT NULL DEFAULT 0)'
+            );
+        } elseif ($adapter === 'pgsql') {
+            $db->query(
+                'CREATE TABLE IF NOT EXISTS "' . $table . '" ('
+                . ' "id" SERIAL PRIMARY KEY,'
+                . ' "url" VARCHAR(190) NOT NULL UNIQUE,'
+                . ' "ok" INTEGER NOT NULL DEFAULT 0,'
+                . ' "resp" VARCHAR(190) NOT NULL DEFAULT \'\','
+                . ' "created" INTEGER NOT NULL DEFAULT 0)'
+            );
+        } else {
+            $db->query(
+                'CREATE TABLE IF NOT EXISTS `' . $table . '` ('
+                . ' `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,'
+                . ' `url` VARCHAR(190) NOT NULL,'
+                . ' `ok` TINYINT UNSIGNED NOT NULL DEFAULT 0,'
+                . ' `resp` VARCHAR(190) NOT NULL DEFAULT \'\','
+                . ' `created` INT UNSIGNED NOT NULL DEFAULT 0,'
+                . ' PRIMARY KEY (`id`), UNIQUE KEY `url` (`url`)'
+                . ') DEFAULT CHARSET=utf8mb4'
+            );
+        }
+        return $ok = true;
+    } catch (\Throwable $e) {
+        error_log('[ecod-baidu] ensure: ' . $e->getMessage());
+        return $ok = false;
+    }
+}
+
+/**
+ * 写一条推送记录（upsert：重推覆盖状态与时间）
+ */
+function ecod_baidu_log(string $url, bool $ok, string $resp = ''): void
+{
+    try {
+        $db = \Typecho\Db::get();
+        if (!ecod_baidu_log_ensure($db)) {
+            return;
+        }
+        $table = ecod_baidu_log_table();
+        $row = [
+            'url'     => mb_substr($url, 0, 190, 'UTF-8'),
+            'ok'      => $ok ? 1 : 0,
+            'resp'    => mb_substr($resp, 0, 190, 'UTF-8'),
+            'created' => time(),
+        ];
+        $exist = $db->fetchRow($db->select('id')->from($table)->where('url = ?', $row['url'])->limit(1));
+        if ($exist) {
+            $db->query($db->update($table)->rows($row)->where('url = ?', $row['url']));
+        } else {
+            $db->query($db->insert($table)->rows($row));
+        }
+    } catch (\Throwable $e) {
+        error_log('[ecod-baidu] log: ' . $e->getMessage());
+    }
+}
+
+/**
+ * 24 小时内是否推送成功过
+ */
+function ecod_baidu_recent(string $url): bool
+{
+    try {
+        $db = \Typecho\Db::get();
+        if (!ecod_baidu_log_ensure($db)) {
+            return false;
+        }
+        $row = $db->fetchRow(
+            $db->select('ok', 'created')->from(ecod_baidu_log_table())
+                ->where('url = ?', mb_substr($url, 0, 190, 'UTF-8'))
+                ->limit(1)
+        );
+        return $row && (int) $row['ok'] === 1
+            && (time() - (int) $row['created']) < 86400;
+    } catch (\Throwable $e) {
+        return false;
+    }
+}
+
+/**
+ * 单条增量推送（发布 / 更新文章时调用）
+ *
+ * @return array{ok:bool,message:string}
+ */
+function ecod_baidu_push_one(string $url): array
+{
+    $token = '';
+    try {
+        $token = trim((string) (\Widget\Options::alloc()->EBaidu ?? ''));
+    } catch (\Throwable $e) {
+    }
+    if ($token === '') {
+        return ['ok' => false, 'message' => '未配置百度推送 Token，跳过'];
+    }
+
+    /* 只允许本站地址：防 SSRF，也防误推外链 */
+    $site = ecod_seo_site();
+    $host = (string) parse_url($url, PHP_URL_HOST);
+    $siteHost = (string) parse_url($site, PHP_URL_HOST);
+    $siteHost = strtolower(preg_replace('/^www\./i', '', $siteHost) ?: '');
+    $host = strtolower(preg_replace('/^www\./i', '', $host) ?: '');
+    if ($host === '' || $host !== $siteHost) {
+        return ['ok' => false, 'message' => '非本站地址，跳过'];
+    }
+
+    if (ecod_baidu_recent($url)) {
+        return ['ok' => true, 'message' => '24 小时内已推送过，跳过'];
+    }
+
+    $endpoint = 'http://data.zz.baidu.com/urls?site=' . urlencode($site)
+        . '&token=' . urlencode($token);
+    try {
+        $client = \Typecho\Http\Client::get();
+        $client->setMethod(\Typecho\Http\Client::METHOD_POST)
+            ->setData($url)
+            ->setHeader('Content-Type', 'text/plain')
+            ->setTimeout(8);
+        $result = (string) $client->send($endpoint);
+        $json = json_decode($result, true);
+
+        if (is_array($json) && isset($json['success'])) {
+            $rest = isset($json['remain']) ? '，今日剩余 ' . (int) $json['remain'] . ' 条' : '';
+            ecod_baidu_log($url, true, 'auto');
+            return ['ok' => true, 'message' => '已推送' . $rest];
+        }
+        if (is_array($json) && isset($json['error'])) {
+            ecod_baidu_log($url, false, (string) $json['error']);
+            return ['ok' => false, 'message' => '百度返回：' . (string) $json['error']];
+        }
+        ecod_baidu_log($url, false, mb_substr($result, 0, 60, 'UTF-8'));
+        return ['ok' => false, 'message' => '推送返回无法解析'];
+    } catch (\Throwable $e) {
+        ecod_baidu_log($url, false, $e->getMessage());
+        return ['ok' => false, 'message' => '推送请求失败：' . $e->getMessage()];
+    }
+}
+
+/**
+ * finishPublish 钩子：文章发布 / 更新时自动单条增量推送
+ *
+ * 响应结束后再发（fastcgi_finish_request），保存动作零等待；
+ * 自动开关「站长 → 收录与性能 → 发布自动推送」（EBaiduAuto）。
+ */
+function ecod_baidu_auto_push(array $contents, $edit = null): void
+{
+    try {
+        if (ecod_option('EBaiduAuto', 'off') !== 'on') {
+            return;
+        }
+        if ((string) ($contents['type'] ?? 'post') !== 'post'
+            || (string) ($contents['status'] ?? '') !== 'publish'
+            || !empty($contents['password'])) {
+            return;
+        }
+
+        /* 在编辑上下文里取 permalink；取不到则按 sitemap 同款路由规则生成 */
+        $link = '';
+        try {
+            if ($edit !== null && isset($edit->permalink)) {
+                $link = (string) $edit->permalink;
+            }
+        } catch (\Throwable $e) {
+        }
+        if ($link === '' && (int) ($contents['cid'] ?? 0) > 0) {
+            try {
+                \Typecho\Router::setRoutes(\Widget\Options::alloc()->routingTable);
+            } catch (\Throwable $e) {
+            }
+            $site = ecod_seo_site();
+            try {
+                $rewrite = (bool) \Widget\Options::alloc()->rewrite
+                    || (defined('__TYPECHO_REWRITE__') && __TYPECHO_REWRITE__);
+                $site = $rewrite ? $site : $site . '/index.php';
+            } catch (\Throwable $e) {
+            }
+            $link = ecod_sitemap_link('post', $contents, $site);
+        }
+        if ($link === '') {
+            return;
+        }
+
+        $job = static function () use ($link): void {
+            try {
+                if (function_exists('fastcgi_finish_request')) {
+                    fastcgi_finish_request();
+                }
+                $res = ecod_baidu_push_one($link);
+                if (!$res['ok'] && strpos($res['message'], '跳过') === false) {
+                    error_log('[ecod-baidu] auto: ' . $res['message']);
+                }
+            } catch (\Throwable $e) {
+                error_log('[ecod-baidu] auto: ' . $e->getMessage());
+            }
+        };
+
+        if (function_exists('fastcgi_finish_request')) {
+            register_shutdown_function($job);
+        } else {
+            $job();
+        }
+    } catch (\Throwable $e) {
+        error_log('[ecod-baidu] hook: ' . $e->getMessage());
+    }
 }

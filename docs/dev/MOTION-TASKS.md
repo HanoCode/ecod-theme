@@ -254,6 +254,20 @@ function commitSwap(fn) {
 4. reduced-motion 开启后：无级联、无回弹、无 View Transition，功能不受影响
 5. 关键交互回归：搜索面板开关、抽屉、用户下拉、右键菜单、弹层关闭（`Esc` / 点遮罩）、PJAX 前进后退
 
+### 验收记录（2026-10-30）
+
+| 项 | 方法 | 结果 |
+|---|---|---|
+| 构建 | `npm run build` | ✅ 全量产物重建，CSS -23.5% / JS -52.2% |
+| 移动端 390 | iframe 量测 `scrollWidth` | ✅ `innerWidth=390 = scrollWidth=390`，无横向溢出 |
+| 暗色模式 | iframe 置 `data-theme=dark` 截图 | ✅ 层次正常、无低对比区、无白底刺眼块 |
+| reduced-motion | `--force-prefers-reduced-motion` | ✅ `matchMedia=true`；瞬时时长被压到 `1e-05s`；右键菜单等功能照常 |
+| 右键菜单 origin | 临时开 `ECOD.ctxmenu` 后 dispatch `contextmenu` | ✅ `--ecod-ox/oy` 写入，`transform-origin: 0px 0px`（光标即原点） |
+| 用户下拉 origin | `details.open = true` 后读 computed | ✅ `transform-origin: 17px 34px`，动画 `0.24s cubic-bezier(.34,1.56,.64,1)` |
+| PJAX 前进 | iframe 内 dispatch 点击站内链接 | ✅ 无整页刷新（window 标记存活）、标题与 shell 均更新、加载条收尾正常 |
+| PJAX 后退 | 代码路径核查 | ✅ `popstate` → `load(href,false)` → **同一 `.then` 链 → 同一 `applyPage()`**，与前进共用，无独立分支；headless 实跑 `history.back()` 会 OOM，故以代码等价性代替 |
+| 错误日志 | `vhost/*.error.log` | ✅ 无 PHP 弃用告警（仅原有 favicon 404） |
+
 ---
 
 ## 八 · 变更记录

@@ -34,6 +34,8 @@ require_once __DIR__ . '/core/site/seo.php';
 require_once __DIR__ . '/core/user/account.php';
 require_once __DIR__ . '/core/pay/pay.php';
 require_once __DIR__ . '/core/pay/pay-channel.php';
+require_once __DIR__ . '/core/site/ads.php';
+require_once __DIR__ . '/core/site/shop.php';
 
 /* cookie 前缀：脚本在 /usr/themes/<主题>/ 下，必须按前台根目录重算 */
 try {
@@ -155,6 +157,13 @@ if ($ecodAction !== '') {
         }
         $ecodFlash = $ecodRevoked ? '已撤销' : '撤销失败';
         $ecodFlashBad = !$ecodRevoked;
+    } elseif ($ecodAction === 'adpass' || $ecodAction === 'adreject') {
+        $ecodAdRes = ecod_ads_review((int) ($_POST['ad_id'] ?? 0), $ecodAction === 'adpass' ? 'pass' : 'reject');
+        $ecodFlash = $ecodAdRes['message'];
+        $ecodFlashBad = empty($ecodAdRes['ok']);
+        if (!empty($ecodAdRes['ok'])) {
+            ecod_audit_log('ad_review', ['ad' => (int) ($_POST['ad_id'] ?? 0), 'op' => $ecodAction === 'adpass' ? 'pass' : 'reject']);
+        }
     } elseif ($ecodAction === 'cards') {
         $result = ecod_pay_card_batch([
             'count'  => (int) ($_POST['count'] ?? 1),
@@ -181,6 +190,7 @@ if ($ecodAction !== '') {
 $ecodPending = [];
 $ecodRecent = [];
 $ecodUnused = 0;
+$ecodAdsPending = [];
 try {
     $ecodPending = $ecodDb->fetchAll(
         $ecodDb->select()->from('table.ecod_orders')->where('status = ?', 'pending')
@@ -194,8 +204,18 @@ try {
         $ecodDb->select('COUNT(*) AS n')->from('table.ecod_pay_cards')->where('status = ?', 'unused')
     );
     $ecodUnused = $row ? (int) $row->n : 0;
+    $ecodAdsPending = $ecodDb->fetchAll(
+        $ecodDb->select()->from('table.ecod_ads')->where('status = ?', 'pending')
+            ->order('id', \Typecho\Db::SORT_DESC)->limit(50)
+    ) ?: [];
+    $ecodExchanges = $ecodDb->fetchAll(
+        $ecodDb->select()->from('table.ecod_exchanges')
+            ->order('id', \Typecho\Db::SORT_DESC)->limit(15)
+    ) ?: [];
 } catch (\Throwable $e) {
     $ecodPending = [];
+    $ecodAdsPending = [];
+    $ecodExchanges = [];
 }
 
 /** 用户名缓存 */
@@ -288,7 +308,11 @@ form.inline { display: inline; }
                         <td><?php echo htmlspecialchars(ecod_pay_admin_name($ecodDb, (int) $ecodOrder['uid']), ENT_QUOTES, 'UTF-8'); ?></td>
                         <td>
                             <?php echo htmlspecialchars(mb_substr((string) $ecodOrder['title'], 0, 24, 'UTF-8'), ENT_QUOTES, 'UTF-8'); ?>
-                            <span class="tag"><?php echo (string) $ecodOrder['kind'] === 'vip' ? '会员 Lv.' . (int) $ecodOrder['level'] : '单篇 #' . (int) $ecodOrder['target']; ?></span>
+                            <span class="tag"><?php
+                                $ecodOrderKind = (string) $ecodOrder['kind'];
+                                echo $ecodOrderKind === 'vip' ? '会员 Lv.' . (int) $ecodOrder['level']
+                                    : ($ecodOrderKind === 'ad' ? '广告 #' . (int) $ecodOrder['target'] : '单篇 #' . (int) $ecodOrder['target']);
+                            ?></span>
                         </td>
                         <td><?php echo date('m-d H:i', (int) $ecodOrder['created']); ?></td>
                         <td class="num">¥<?php echo ecod_pay_money((int) $ecodOrder['amount']); ?></td>
@@ -311,6 +335,73 @@ form.inline { display: inline; }
                 <?php endforeach; ?>
                 </tbody>
             </table>
+        <?php endif; ?>
+    </div>
+
+    <div class="card">
+        <h2>广告审核（<?php echo count($ecodAdsPending); ?>）</h2>
+        <?php if (!$ecodAdsPending): ?>
+            <div class="empty">没有待审核的广告</div>
+        <?php else: ?>
+            <table>
+                <thead><tr>
+                    <th>预览</th><th>用户</th><th>位置 / 天数</th><th>跳转</th><th>提交时间</th><th>操作</th>
+                </tr></thead>
+                <tbody>
+                <?php foreach ($ecodAdsPending as $ecodAd): ?>
+                    <tr>
+                        <td><img src="<?php echo htmlspecialchars((string) $ecodAd['image'], ENT_QUOTES, 'UTF-8'); ?>" alt="" width="120" style="border-radius:6px"></td>
+                        <td><?php echo htmlspecialchars(ecod_pay_admin_name($ecodDb, (int) $ecodAd['uid']), ENT_QUOTES, 'UTF-8'); ?></td>
+                        <td><?php
+                            $ecodAdSlotNames = ecod_ads_slots();
+                            echo htmlspecialchars((string) ($ecodAdSlotNames[(string) $ecodAd['slot']] ?? $ecodAd['slot']), ENT_QUOTES, 'UTF-8');
+                            ?> · <?php echo (int) $ecodAd['days']; ?> 天<br>
+                            <b><?php echo htmlspecialchars((string) $ecodAd['title'], ENT_QUOTES, 'UTF-8'); ?></b>
+                        </td>
+                        <td><a href="<?php echo htmlspecialchars((string) $ecodAd['link'], ENT_QUOTES, 'UTF-8'); ?>" target="_blank" rel="noopener">打开</a></td>
+                        <td><?php echo date('m-d H:i', (int) $ecodAd['created']); ?></td>
+                        <td>
+                            <form class="inline" method="post">
+                                <input type="hidden" name="token" value="<?php echo htmlspecialchars($ecodToken, ENT_QUOTES, 'UTF-8'); ?>">
+                                <input type="hidden" name="do" value="adpass">
+                                <input type="hidden" name="ad_id" value="<?php echo (int) $ecodAd['id']; ?>">
+                                <button class="primary" type="submit">通过</button>
+                            </form>
+                            <form class="inline" method="post">
+                                <input type="hidden" name="token" value="<?php echo htmlspecialchars($ecodToken, ENT_QUOTES, 'UTF-8'); ?>">
+                                <input type="hidden" name="do" value="adreject">
+                                <input type="hidden" name="ad_id" value="<?php echo (int) $ecodAd['id']; ?>">
+                                <button class="ghost" type="submit">拒绝</button>
+                            </form>
+                        </td>
+                    </tr>
+                <?php endforeach; ?>
+                </tbody>
+            </table>
+            <p class="hint">拒绝不会自动退款：请先在支付通道方退款，再关闭对应订单；广告订单在「待确认收款」里显示为「广告 #编号」。</p>
+        <?php endif; ?>
+    </div>
+
+    <div class="card">
+        <h2>最近兑换（积分商城）</h2>
+        <?php if (empty($ecodExchanges)): ?>
+            <div class="empty">还没有兑换记录</div>
+        <?php else: ?>
+            <table>
+                <thead><tr><th>用户</th><th>商品</th><th>发货</th><th class="num">消耗积分</th><th>时间</th></tr></thead>
+                <tbody>
+                <?php foreach ($ecodExchanges as $ecodEx): ?>
+                    <tr>
+                        <td><?php echo htmlspecialchars(ecod_pay_admin_name($ecodDb, (int) $ecodEx['uid']), ENT_QUOTES, 'UTF-8'); ?></td>
+                        <td><b><?php echo htmlspecialchars((string) $ecodEx['item_name'], ENT_QUOTES, 'UTF-8'); ?></b></td>
+                        <td><?php echo htmlspecialchars((string) $ecodEx['note'], ENT_QUOTES, 'UTF-8'); ?></td>
+                        <td class="num"><?php echo (int) $ecodEx['cost']; ?></td>
+                        <td><?php echo date('m-d H:i', (int) $ecodEx['created']); ?></td>
+                    </tr>
+                <?php endforeach; ?>
+                </tbody>
+            </table>
+            <p class="hint">text 类商品显示「待发货」说明，请按备注联系用户发货；vip / 单篇类已自动发放权益。</p>
         <?php endif; ?>
     </div>
 

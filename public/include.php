@@ -100,6 +100,7 @@ $ecodSvg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">'
 <script>
 /* 主题运行参数 */
 window.ECOD = {
+    version: <?php echo json_encode(ECOD_VERSION); ?>,
     api: <?php echo json_encode(ecod_api_url(), JSON_UNESCAPED_SLASHES); ?>,
     postUrl: <?php echo json_encode($ecodPostUrl, JSON_UNESCAPED_SLASHES); ?>,
     /* 内容页增强包（ecod.post.js）：页脚按模板条件输出，PJAX 换页时 JS 据此动态注入。
@@ -113,6 +114,7 @@ window.ECOD = {
     prism: <?php echo $ecodCode ? 'true' : 'false'; ?>,
     ctxmenu: <?php echo ecod_option('ECtxMenu', 'on') === 'on' ? 'true' : 'false'; ?>,
     tocProgress: <?php echo ecod_option('ETocProgress', 'on') === 'on' ? 'true' : 'false'; ?>,
+    tocEntry: <?php echo json_encode(ecod_option('ETocEntry', 'float')); ?>,
     searchPanel: <?php echo ecod_option('ESearchPanel', 'on') === 'on' ? 'true' : 'false'; ?>,
     hotwords: <?php echo json_encode(ecod_search_hotwords(), JSON_UNESCAPED_UNICODE); ?>,
     searchUrl: <?php echo json_encode($ecodSearchUrl, JSON_UNESCAPED_SLASHES); ?>,
@@ -154,11 +156,23 @@ if ($ecodCode) {
 $ecodFullCssUrl = ecod_asset('assets/css/ecod.css');
 $ecodCriticalFile = ecod_dist_resolve('assets/css/ecod.critical.css');
 if ($ecodCriticalFile !== null) {
-    $ecodCriticalCss = (string) file_get_contents(ECOD_THEME_DIR . '/' . $ecodCriticalFile);
+    /* 优先 require 构建期产出的 nowdoc PHP 变体（<同名>.php）：字符串常驻
+       opcache，省每请求一次磁盘读；变体缺失（旧构建产物）回退 file_get_contents */
+    $ecodCriticalPhp = $ecodCriticalFile . '.php';
+    if (is_file(ECOD_THEME_DIR . '/' . $ecodCriticalPhp)) {
+        $ecodCriticalCss = (string) require ECOD_THEME_DIR . '/' . $ecodCriticalPhp;
+    } else {
+        $ecodCriticalCss = (string) file_get_contents(ECOD_THEME_DIR . '/' . $ecodCriticalFile);
+    }
     echo '<style id="ecod-critical">' . $ecodCriticalCss . '</style>' . "\n";
 ?>
 <link rel="preload" href="<?php echo $ecodFullCssUrl; ?>" as="style" onload="this.onload=null;this.rel='stylesheet';document.documentElement.setAttribute('data-ecod-cssready','1');document.dispatchEvent(new Event('ecod:cssready'))">
 <noscript><link rel="stylesheet" href="<?php echo $ecodFullCssUrl; ?>"></noscript>
+<script>
+/* 启动期过渡禁用（.ecod-booting）的兜底解除：正常路径由 ecod.global.js 在
+   ecod:cssready 后双帧移除；主脚本缺失/被拦时这里也必须放开，否则全站过渡失效。 */
+setTimeout(function () { document.documentElement.classList.remove('ecod-booting'); }, 1800);
+</script>
 <?php } else { ?>
 <link rel="stylesheet" href="<?php echo $ecodFullCssUrl; ?>">
 <script>document.documentElement.setAttribute('data-ecod-cssready','1');</script>
@@ -168,12 +182,18 @@ if ($ecodCriticalFile !== null) {
     --ecod-primary: <?php echo $ecodPrimary; ?>;
     --ecod-primary-deep: <?php echo ecod_primary_deep(); ?>;
     --ecod-primary-soft: <?php echo ecod_primary_soft(); ?>;
+    /* 可访问性派生：--ecod-primary-ink 主色填充上的文字色（白或深墨），
+       --ecod-primary-text 软底/白面上的主色系文字（按对比度自动微调深浅），
+       规则见 functions.php ecod_primary_ink / ecod_primary_text */
+    --ecod-primary-ink: <?php echo ecod_primary_ink(); ?>;
+    --ecod-primary-text: <?php echo ecod_primary_text(false); ?>;
     --ecod-code-bg: <?php echo $ecodCodeLight[0]; ?>;
     --ecod-code-fg: <?php echo $ecodCodeLight[1]; ?>;
 }
 html[data-theme="dark"] {
     --ecod-code-bg: <?php echo $ecodCodeDark[0]; ?>;
     --ecod-code-fg: <?php echo $ecodCodeDark[1]; ?>;
+    --ecod-primary-text: <?php echo ecod_primary_text(true); ?>;
 }
 <?php if ($ecodFont !== ''): ?>
 /* 自定义字体预加载：@font-face 在下方 brand 样式里声明，浏览器要解析完 CSS
@@ -191,10 +211,12 @@ html[data-theme="dark"] {
 <?php if ($ecodCode):
 /* 代码块配色：每个主题仅 2-3KB，保持全站加载——PJAX 换页不重渲染 head，
    若按页面条件输出，「列表页无刷新进文章页」会缺配色；体积换正确性。
+   输出为非阻塞形态（media="print" + onload 换回 all），首页少一个
+   渲染阻塞请求；正文代码块在样式到达前短暂使用内置 .tok-* 底色，可接受。
    主题文件命名：默认 prism.css，其余 prism-<name>.css；缺失时回退默认。
    auto：加载浅色 + 深色两套（深色默认 disabled），由前端随明暗模式切换 */
 if ($ecodCodeTheme === 'auto'): ?>
-<link rel="stylesheet" id="ecod-prism-light" href="<?php echo ecod_asset('assets/vendor/prism/themes/prism.css'); ?>">
+<link rel="stylesheet" id="ecod-prism-light" href="<?php echo ecod_asset('assets/vendor/prism/themes/prism.css'); ?>" media="print" onload="this.media='all'">
 <link rel="stylesheet" id="ecod-prism-dark" href="<?php echo ecod_asset('assets/vendor/prism/themes/prism-tomorrow.css'); ?>" disabled>
 <?php else:
 $ecodCodeFile = $ecodCodeTheme === 'prism' ? 'prism.css' : 'prism-' . $ecodCodeTheme . '.css';
@@ -202,8 +224,9 @@ if (!is_file(__DIR__ . '/../assets/vendor/prism/themes/' . $ecodCodeFile)) {
     $ecodCodeFile = 'prism.css';
 }
 ?>
-<link rel="stylesheet" href="<?php echo ecod_asset('assets/vendor/prism/themes/' . $ecodCodeFile); ?>">
+<link rel="stylesheet" href="<?php echo ecod_asset('assets/vendor/prism/themes/' . $ecodCodeFile); ?>" media="print" onload="this.media='all'">
 <?php endif; ?>
+<noscript><link rel="stylesheet" href="<?php echo ecod_asset('assets/vendor/prism/themes/' . ($ecodCodeTheme === 'auto' ? 'prism.css' : $ecodCodeFile)); ?>"></noscript>
 <?php endif; ?>
 <?php if ($ecodCss !== ''): ?>
 <style id="ecod-custom-css">

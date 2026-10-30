@@ -1145,14 +1145,26 @@
             url.value = value == null ? '' : String(value);
             var pv = el('div', 'wgt-img__pv');
             pv.style.backgroundImage = url.value ? 'url("' + url.value.replace(/"/g, '%22') + '")' : '';
+            var pick = el('button', 'wgt-btn', '媒体库');
+            pick.type = 'button';
+            pick.addEventListener('click', function () {
+                openMediaPicker(function (picked) {
+                    url.value = picked;
+                    pv.style.backgroundImage = 'url("' + picked.replace(/"/g, '%22') + '")';
+                    setParam(area, row, key, picked, { noWhen: true });
+                });
+            });
+            var imgRow = el('div', 'wgt-img__row');
+            imgRow.appendChild(url);
+            imgRow.appendChild(pick);
             url.addEventListener('input', function () {
                 pv.style.backgroundImage = url.value ? 'url("' + url.value.replace(/"/g, '%22') + '")' : '';
                 setParam(area, row, key, url.value, { noWhen: true });
             });
-            box.appendChild(url);
+            box.appendChild(imgRow);
             wrap.appendChild(box);
             wrap.appendChild(pv);
-            wrap.appendChild(el('p', 'wgt-field__desc', '粘贴图片地址（可先去媒体库复制地址）'));
+            wrap.appendChild(el('p', 'wgt-field__desc', '从媒体库选图，或直接粘贴图片地址'));
         } else if (type === 'repeater') {
             /* 结构化行编辑器（第 10 轮）：子字段由声明注入，存储 JSON 数组字符串 */
             wrap.appendChild(repeaterEditor(area, row, key, value, param));
@@ -1393,6 +1405,134 @@
 
         paint();
         return box;
+    }
+
+    /* 媒体库选图（第 11 轮）：弹层网格，选中回填 URL */
+    function post(action, body, done, fail) {
+        window.fetch(DATA.ajax + '?action=' + action, {
+            method: 'POST',
+            credentials: 'same-origin',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(Object.assign({ token: DATA.token }, body || {}))
+        }).then(function (res) { return res.json(); }).then(function (data) {
+            if (!data || !data.ok) {
+                (fail || function () {})((data && data.error) || '请求失败');
+                return;
+            }
+            done(data);
+        }).catch(function () {
+            (fail || function () {})('网络错误');
+        });
+    }
+
+    function openMediaPicker(onPick) {
+        var page = 1;
+        var q = '';
+
+        var overlay = el('div', 'wgt-media');
+        var panel = el('div', 'wgt-media__panel');
+        var head = el('div', 'wgt-media__hd');
+        head.appendChild(el('b', '', '从媒体库选图'));
+
+        var search = el('input', 'wgt-input wgt-media__search');
+        search.type = 'text';
+        search.placeholder = '搜索文件名…';
+
+        var close = el('button', 'wgt-iconbtn', '✕');
+        close.type = 'button';
+        close.addEventListener('click', shut);
+
+        head.appendChild(search);
+        head.appendChild(close);
+        panel.appendChild(head);
+
+        var grid = el('div', 'wgt-media__grid');
+        var empty = el('p', 'wgt-media__empty', '');
+        var foot = el('div', 'wgt-media__ft');
+        panel.appendChild(grid);
+        panel.appendChild(empty);
+        panel.appendChild(foot);
+        overlay.appendChild(panel);
+
+        function shut() {
+            overlay.remove();
+            document.removeEventListener('keydown', onKey);
+        }
+
+        function onKey(event) {
+            if (event.key === 'Escape') {
+                shut();
+            }
+        }
+
+        overlay.addEventListener('click', function (event) {
+            if (event.target === overlay) {
+                shut();
+            }
+        });
+        document.addEventListener('keydown', onKey);
+
+        function load() {
+            grid.innerHTML = '';
+            empty.textContent = '加载中…';
+            empty.hidden = false;
+            foot.innerHTML = '';
+            post('media', { q: q, page: page }, function (res) {
+                page = res.page;
+                grid.innerHTML = '';
+                if (!res.items || !res.items.length) {
+                    empty.textContent = q ? '没有匹配的图片' : '媒体库还没有图片，先去后台「管理 → 文件」上传';
+                    return;
+                }
+                empty.hidden = true;
+                res.items.forEach(function (item) {
+                    var cell = el('button', 'wgt-media__cell');
+                    cell.type = 'button';
+                    cell.title = item.title;
+                    cell.style.backgroundImage = 'url("' + String(item.url).replace(/"/g, '%22') + '")';
+                    cell.addEventListener('click', function () {
+                        onPick(String(item.url));
+                        shut();
+                    });
+                    grid.appendChild(cell);
+                });
+
+                if (res.pages > 1) {
+                    var prev = el('button', 'wgt-btn', '‹ 上一页');
+                    prev.type = 'button';
+                    prev.disabled = res.page <= 1;
+                    prev.addEventListener('click', function () {
+                        page -= 1;
+                        load();
+                    });
+                    var next = el('button', 'wgt-btn', '下一页 ›');
+                    next.type = 'button';
+                    next.disabled = res.page >= res.pages;
+                    next.addEventListener('click', function () {
+                        page += 1;
+                        load();
+                    });
+                    foot.appendChild(prev);
+                    foot.appendChild(el('span', 'wgt-media__num', res.page + ' / ' + res.pages + '（共 ' + res.total + ' 张）'));
+                    foot.appendChild(next);
+                }
+            }, function (err) {
+                empty.textContent = err || '加载失败';
+            });
+        }
+
+        var debounce = null;
+        search.addEventListener('input', function () {
+            clearTimeout(debounce);
+            debounce = setTimeout(function () {
+                q = search.value.trim();
+                page = 1;
+                load();
+            }, 300);
+        });
+
+        document.body.appendChild(overlay);
+        load();
     }
 
     /* 参数条件显隐：key:empty / key:!empty / key:!value / key:a|b */    function whenOk(expr, params) {

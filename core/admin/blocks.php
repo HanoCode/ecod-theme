@@ -289,6 +289,17 @@ function ecod_block_define(string $id, array $args = []): void
             }
         }
     }
+
+    /* 侧栏模块统一带「滚动吸顶」开关：滚动时粘在页头下方，
+       后一个吸顶模块会把前一个推走（纯 CSS sticky，无 JS） */
+    if (($defs[$id]['area'] ?? '') === 'aside' && !isset($defs[$id]['params']['sticky'])) {
+        $defs[$id]['params']['sticky'] = [
+            'label'   => '滚动吸顶',
+            'type'    => 'switch',
+            'default' => 0,
+            'desc'    => '开启后滚动时该模块固定在页头下方，直到侧栏结束',
+        ];
+    }
 }
 
 /**
@@ -933,6 +944,36 @@ function ecod_block_current(): ?array
 }
 
 /**
+ * 当前访客是否管理员（挂件「未配置」提示只给管理员看）
+ */
+function ecod_block_admin(): bool
+{
+    static $admin = null;
+    if ($admin !== null) {
+        return $admin;
+    }
+    try {
+        $user = \Widget\User::alloc();
+        return $admin = $user->hasLogin() && $user->pass('administrator', true);
+    } catch (\Throwable $e) {
+        return $admin = false;
+    }
+}
+
+/**
+ * 挂件未配置提示：代替「开关没开就静默隐藏」——访客看不到任何东西，
+ * 管理员能看到一张说明卡，指明去哪里开启，避免「加了组件却不显示」的困惑。
+ */
+function ecod_block_setup_hint(string $text): void
+{
+    if (!ecod_block_admin()) {
+        return;
+    }
+    echo '<section class="ecod_widget ecod_setuphint">' . ecod_icon('info', 15)
+        . '<p>' . htmlspecialchars($text, ENT_QUOTES, 'UTF-8') . '</p></section>';
+}
+
+/**
  * 当前实例的参数（模板内部简写）
  */
 function ecod_p(string $key, $default = null)
@@ -1013,19 +1054,35 @@ function ecod_block_head(array $o = []): void
 /**
  * 模块模板文件路径
  *
- * 优先声明里的 file，其次按模块目录找（def['area']），最后才按当前区域找。
+ * 优先声明里的 file；跨区放置时优先用当前区域对应的同名变体
+ * （区域 key → 模板目录：sidebar→aside、single_top_content→post，
+ * 如「标题速览」放进侧栏时用紧凑挂件版，标题在卡片内，与原生侧栏挂件一致）；
+ * 没有变体的模块回落声明目录，最后才按当前区域兜底。
  */
 function ecod_block_file(array $block): string
 {
     $def = $block['def'];
     $type = (string) ($block['type'] ?? $block['id']);
+    $defArea = (string) $def['area'];
+
+    /* 渲染区域 key → 模板目录；共享槽位（top_content 等）没有同名目录，走声明区域 */
+    $areaMap = ['sidebar' => 'aside', 'single_top_content' => 'post'];
+    $area = (string) ($block['area'] ?? $defArea);
+    $dir = $areaMap[$area] ?? '';
 
     $candidates = [];
     if (!empty($def['file'])) {
         $candidates[] = $def['file'];
     }
-    $candidates[] = 'components/' . $def['area'] . '/' . $type . '.php';
-    $candidates[] = 'components/' . ($block['area'] ?? $def['area']) . '/' . $type . '.php';
+    if ($dir !== '' && $dir !== $defArea) {
+        $candidates[] = 'components/' . $dir . '/' . $type . '.php';
+    }
+    $candidates[] = 'components/' . $defArea . '/' . $type . '.php';
+    if ($dir !== '') {
+        $candidates[] = 'components/' . $dir . '/' . $type . '.php';
+    } elseif ($area !== $defArea) {
+        $candidates[] = 'components/' . $area . '/' . $type . '.php';
+    }
 
     foreach (array_unique($candidates) as $rel) {
         $path = dirname(dirname(__DIR__)) . '/' . ltrim($rel, '/');
@@ -1035,6 +1092,101 @@ function ecod_block_file(array $block): string
     }
 
     return '';
+}
+
+/**
+ * 模块默认壳属性（设计稿 ARTICLE-DETAIL-REDESIGN §6.4 映射表）
+ * key = 声明区域/模块类型；模板零改动，由 ecod_render_block() 注入 data-shell / data-density / 图标头。
+ * 单实例可用 $block['shell'] / ['density'] / ['head'] 覆盖（后台暂未暴露，留扩展位）。
+ */
+function ecod_block_shell_defaults(): array
+{
+    static $map = null;
+    if ($map !== null) {
+        return $map;
+    }
+    $map = [
+        'aside/about'    => ['density' => 'loose', 'head' => 'none'],
+        'aside/wstats'   => ['density' => 'compact'],
+        'aside/tags'     => ['density' => 'compact'],
+        'aside/toc'      => ['head' => 'plain'],
+        'aside/wsearch'  => ['head' => 'none'],
+        'aside/wtab'     => ['head' => 'plain'],
+        'post/authorbox' => ['shell' => 'member', 'head' => 'plain'],
+    ];
+    return $map;
+}
+
+/**
+ * 图标型模块头（设计稿 §6.3）：图标块 22×22 + 标题，按模块语义配图标
+ */
+function ecod_block_head_icons(): array
+{
+    static $map = null;
+    if ($map !== null) {
+        return $map;
+    }
+    $map = [
+        'aside/hot'        => 'medal',
+        'aside/rank'       => 'medal',
+        'aside/comments'   => 'comment',
+        'aside/recommend'  => 'star',
+        'aside/archives'   => 'clock',
+        'aside/cats'       => 'folder',
+        'aside/cat-post'   => 'folder',
+        'aside/tags'       => 'hash',
+        'aside/feed'       => 'radio',
+        'aside/flash'      => 'zap',
+        'aside/title-list' => 'list',
+    ];
+    return $map;
+}
+
+/**
+ * 给模板自输出的 <section class="ecod_widget"> 注入壳属性，并给图标型模块头补图标。
+ * 用输出缓冲后处理而不是包一层壳，避免双层卡面；模板没有壳时原样返回。
+ */
+function ecod_block_decorate(string $html, array $block): string
+{
+    $type = (string) ($block['type'] ?? $block['id'] ?? '');
+    $defArea = (string) ($block['def']['area'] ?? '');
+    $key = $defArea !== '' ? $defArea . '/' . $type : $type;
+    $defaults = ecod_block_shell_defaults()[$key] ?? [];
+
+    $shell = (string) ($block['shell'] ?? $defaults['shell'] ?? 'card');
+    $density = (string) ($block['density'] ?? $defaults['density'] ?? 'regular');
+
+    if (str_contains($html, 'ecod_widget')) {
+        $attrs = ' data-shell="' . htmlspecialchars($shell, ENT_QUOTES, 'UTF-8') . '"'
+            . ' data-density="' . htmlspecialchars($density, ENT_QUOTES, 'UTF-8') . '"';
+        /* 吸顶开关：参数开启才注入（仅侧栏模块声明了这个参数） */
+        if (!empty($block['params']['sticky'])) {
+            $attrs .= ' data-sticky="1"';
+        }
+        /* 只注入第一处壳标签 */
+        $pos = strpos($html, 'class="ecod_widget"');
+        if ($pos !== false && !str_contains(substr($html, 0, $pos + 30), 'data-shell')) {
+            $html = substr($html, 0, $pos + strlen('class="ecod_widget"'))
+                . $attrs . substr($html, $pos + strlen('class="ecod_widget"'));
+        }
+    }
+
+    /* 图标头：head 类型为 icon（默认）且模板头里还没有图标时，补语义图标块 */
+    $headType = (string) ($block['head'] ?? $defaults['head'] ?? 'icon');
+    if ($headType === 'icon') {
+        $iconName = ecod_block_head_icons()[$key] ?? '';
+        if ($iconName !== '' && !str_contains($html, 'ecod_widget__icon')) {
+            $icon = ecod_icon($iconName, 13);
+            $html = preg_replace(
+                '/(<h2 class="ecod_widget__title)((">))/',
+                '$1 has-icon$3<span class="ecod_widget__icon" aria-hidden="true">' . $icon . '</span>',
+                $html,
+                1
+            );
+        }
+    }
+
+    return $html;
 }
 
 /**
@@ -1060,10 +1212,17 @@ function ecod_render_block(array $block, $widget = null): void
         include $file;
     };
 
-    if (is_object($widget)) {
-        $render->call($widget);
-    } else {
-        $render();
+    ob_start();
+    try {
+        if (is_object($widget)) {
+            $render->call($widget);
+        } else {
+            $render();
+        }
+        echo ecod_block_decorate((string) ob_get_clean(), $block);
+    } catch (\Throwable $e) {
+        ob_end_clean();
+        throw $e;
     }
 
     $GLOBALS['ecod_block_current'] = $previous;

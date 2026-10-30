@@ -99,8 +99,9 @@ if ($ecodTotalComments > 0) {
     <?php /* 模块 · 内容区上方（模块管理台） */ ecod_widgets_render("top_content", $this); ?>
 
     <nav class="ecod_crumb" aria-label="面包屑">
+        <a class="ecod_crumb__back" href="javascript:history.back()" aria-label="返回"><?php echo ecod_icon('chevron', 13); ?></a>
         <a href="<?php $this->options->siteUrl(); ?>"><?php echo ecod_icon('home', 12); ?>首页</a>
-        <span class="ecod_crumb__sep" aria-hidden="true"><?php echo ecod_icon('chevron', 11); ?></span>
+        <span class="ecod_crumb__sep" aria-hidden="true">/</span>
         <span aria-current="page"><?php $this->title(); ?></span>
     </nav>
 

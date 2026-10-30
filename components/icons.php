@@ -29,7 +29,7 @@ if (!function_exists('ecod_icon_names')) {
             'edit', 'smile', 'search', 'clock', 'eye', 'comment', 'calendar',
             'heart', 'mail', 'inbox', 'layers', 'list', 'hash', 'chart',
             'medal', 'bulb', 'cloud', 'music', 'video', 'play', 'image',
-            'download', 'share', 'github', 'lock', 'info', 'radio',
+            'download', 'share', 'github', 'lock', 'info', 'radio', 'bell',
         ];
     }
 }
@@ -72,6 +72,7 @@ if (!function_exists('ecod_icon')) {
                 'share'    => '<circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.59 13.51l6.83 3.98m-.01-10.98l-6.82 3.98"/>',
                 'inbox'    => '<path d="M22 12h-6l-2 3h-4l-2-3H2"/><path d="M5.45 5.11L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/>',
                 'mail'     => '<rect x="2" y="4" width="20" height="16" rx="2"/><path d="M22 6l-10 7L2 6"/>',
+                'bell'     => '<path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/>',
                 'plus'     => '<path d="M12 5v14M5 12h14"/>',
                 'arrow-up-right' => '<path d="M7 17L17 7M8 7h9v9"/>',
                 'play'     => '<circle cx="12" cy="12" r="9"/><path d="M10 8.5l6 3.5-6 3.5z"/>',

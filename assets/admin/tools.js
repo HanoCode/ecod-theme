@@ -183,6 +183,40 @@
                 pageBtn.textContent = '创建';
             });
         }
+
+        /* 全站公告：notif_broadcast，成功后清空输入框 */
+        var sendBtn = event.target.closest('[data-ecod-broadcast-send]');
+        if (sendBtn) {
+            var wrap = sendBtn.closest('.ecod-broadcast');
+            var title = wrap ? wrap.querySelector('[data-ecod-broadcast-title]') : null;
+            var body = wrap ? wrap.querySelector('[data-ecod-broadcast-body]') : null;
+            var link = wrap ? wrap.querySelector('[data-ecod-broadcast-link]') : null;
+            var text = title ? String(title.value || '').trim() : '';
+            if (!text) {
+                status('公告标题不能为空', true);
+                if (title) title.focus();
+                return;
+            }
+            sendBtn.disabled = true;
+            sendBtn.textContent = '发送中…';
+            request('notif_broadcast', {
+                title: text,
+                body: body ? String(body.value || '') : '',
+                link: link ? String(link.value || '').trim() : ''
+            }).then(function (res) {
+                status(res.message || res.msg || (res.ok ? '公告已发送' : '发送失败'), !res.ok);
+                if (res.ok && wrap) {
+                    if (title) title.value = '';
+                    if (body) body.value = '';
+                    if (link) link.value = '';
+                }
+            }).catch(function (error) {
+                status(error.message || '请求失败', true);
+            }).then(function () {
+                sendBtn.disabled = false;
+                sendBtn.textContent = '发送公告';
+            });
+        }
     });
 
     /* 创建成功后把按钮换成「查看 / 编辑」，无需刷新后台 */
@@ -195,5 +229,123 @@
         var edit = res.edit || '';
         act.innerHTML = (res.url ? '<a class="ecod-admin__ghost" href="' + esc(res.url) + '" target="_blank" rel="noopener">查看</a>' : '')
             + (edit ? '<a class="ecod-admin__ghost" href="' + esc(edit) + '">编辑</a>' : '');
+    }
+
+    /* ------------------------------------------------------------------
+     * 自定义短链（ecod_shortlinks 表）
+     * ---------------------------------------------------------------- */
+    var golinkBox = document.querySelector('[data-ecod-golink-list]');
+    var golinkBase = '';
+
+    function renderGolinks(list) {
+        if (!golinkBox) {
+            return;
+        }
+        if (!list || !list.length) {
+            golinkBox.innerHTML = '<p class="ecod-snaplist__empty">还没有自定义短链。填好目标地址后点「保存短链」创建第一份。</p>';
+            return;
+        }
+        golinkBox.innerHTML = list.map(function (item) {
+            return '<div class="ecod-snap" data-key="' + esc(item.skey) + '">'
+                + '<div class="ecod-snap__main">'
+                + '<b>?go=' + esc(item.skey) + '</b>'
+                + '<small>→ ' + esc(item.target) + ' · ' + (item.count || 0) + ' 次点击</small>'
+                + '</div>'
+                + '<div class="ecod-snap__act">'
+                + '<button type="button" class="ecod-admin__ghost" data-ecod-golink-copy>复制</button>'
+                + '<button type="button" class="ecod-admin__ghost is-danger" data-ecod-golink-del>删除</button>'
+                + '</div>'
+                + '</div>';
+        });
+    }
+
+    function reloadGolinks() {
+        request('golink_list').then(function (res) {
+            if (res.ok) {
+                golinkBase = res.api || golinkBase;
+                renderGolinks(res.list || []);
+            }
+        }).catch(function () {});
+    }
+
+    if (golinkBox) {
+        document.addEventListener('click', function (event) {
+            var addBtn = event.target.closest('[data-ecod-golink-add]');
+            if (addBtn) {
+                var form = document.querySelector('[data-ecod-golink-form]');
+                var key = form ? (form.querySelector('[data-ecod-golink-key]') || {}).value || '' : '';
+                var target = form ? (form.querySelector('[data-ecod-golink-target]') || {}).value || '' : '';
+                if (!target) {
+                    status('请先填写目标地址', true);
+                    return;
+                }
+                addBtn.disabled = true;
+                request('golink_save', { key: key.trim(), target: target.trim() }).then(function (res) {
+                    status(res.message || (res.ok ? '已保存' : '保存失败'), !res.ok);
+                    if (res.ok) {
+                        if (form) {
+                            var k = form.querySelector('[data-ecod-golink-key]');
+                            var t = form.querySelector('[data-ecod-golink-target]');
+                            if (k) k.value = '';
+                            if (t) t.value = '';
+                        }
+                        reloadGolinks();
+                    }
+                }).catch(function (error) {
+                    status(error.message || '请求失败', true);
+                }).then(function () {
+                    addBtn.disabled = false;
+                });
+                return;
+            }
+
+            var delBtn = event.target.closest('[data-ecod-golink-del]');
+            if (delBtn) {
+                var row = delBtn.closest('[data-key]');
+                var keyVal = row ? row.getAttribute('data-key') : '';
+                if (!keyVal) {
+                    return;
+                }
+                delBtn.disabled = true;
+                request('golink_delete', { key: keyVal }).then(function (res) {
+                    status(res.message || (res.ok ? '已删除' : '删除失败'), !res.ok);
+                    if (res.ok && row.parentNode) {
+                        row.parentNode.removeChild(row);
+                    } else {
+                        delBtn.disabled = false;
+                    }
+                }).catch(function (error) {
+                    status(error.message || '请求失败', true);
+                    delBtn.disabled = false;
+                });
+                return;
+            }
+
+            var copyBtn = event.target.closest('[data-ecod-golink-copy]');
+            if (copyBtn) {
+                var copyRow = copyBtn.closest('[data-key]');
+                var copyKey = copyRow ? copyRow.getAttribute('data-key') : '';
+                var link = golinkBase ? golinkBase.replace('{key}', copyKey) : location.origin + '/?go=' + copyKey;
+                var done = function () {
+                    copyBtn.textContent = '已复制';
+                    setTimeout(function () {
+                        copyBtn.textContent = '复制';
+                    }, 1500);
+                };
+                if (navigator.clipboard && navigator.clipboard.writeText) {
+                    navigator.clipboard.writeText(link).then(done);
+                } else {
+                    var input = document.createElement('input');
+                    input.value = link;
+                    document.body.appendChild(input);
+                    input.select();
+                    document.execCommand('copy');
+                    document.body.removeChild(input);
+                    done();
+                }
+            }
+        });
+
+        reloadGolinks();
     }
 })();

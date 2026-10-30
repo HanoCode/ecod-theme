@@ -41,6 +41,10 @@ $ecodCmtTotal = (int) $ecodCmtStats['total'];
 $ecodTurnstile = ecod_option('ETurnstile', 'off') === 'on'
     ? trim((string) ecod_option('ETurnstileSite', ''))
     : '';
+
+/* 评论点赞：原生评论区启用；一次查全本文所有评论的赞数，渲染零额外查询 */
+$GLOBALS['ecodCLikeOn'] = ecod_option('ECLike', 'on') !== 'off';
+$GLOBALS['ecodCLikeCounts'] = $GLOBALS['ecodCLikeOn'] ? ecod_comment_like_counts((int) $this->cid) : null;
 ?>
 <section class="ecod_comments" id="comments">
     <?php $this->comments()->to($comments); ?>
@@ -51,7 +55,7 @@ $ecodTurnstile = ecod_option('ETurnstile', 'off') === 'on'
     <?php $ecodExpandMode = ecod_comment_expand_mode(); ?>
     <div class="ecod_comments__head">
         <h2 class="ecod_comments__title">
-            <?php echo $ecodCmtTotal > 0 ? $ecodCmtTotal . ' 条评论' : '暂无评论'; ?>
+            <?php echo $ecodCmtTotal > 0 ? '<b>' . (int) $ecodCmtTotal . '</b> 条评论' : '暂无评论'; ?>
         </h2>
         <?php if ($ecodExpandMode === 'button' && $ecodCmtTotal > 0): ?>
             <?php /* 没有折叠节点时由 JS 保持隐藏，避免空按钮 */ ?>

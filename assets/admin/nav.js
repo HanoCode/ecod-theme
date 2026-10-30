@@ -81,6 +81,9 @@
             cls: row && row.cls != null ? String(row.cls) : '',
             icon: row && row.icon != null ? String(row.icon) : '',
             badge: row && row.badge != null ? String(row.badge) : '',
+            desc: row && row.desc != null ? String(row.desc) : '',
+            group: row && row.group != null ? String(row.group) : '',
+            sub_style: row && row.sub_style != null ? String(row.sub_style) : '',
             children: []
         };
         if (row && row.children && row.children.length) {
@@ -105,6 +108,9 @@
             cls: item.cls || '',
             icon: item.icon || '',
             badge: item.badge || '',
+            desc: item.desc || '',
+            group: item.group || '',
+            sub_style: ['auto', 'list', 'icons', 'mega', 'mega-group'].indexOf(item.sub_style) >= 0 ? item.sub_style : '',
             children: (item.children || []).map(cleanItem)
         };
     }
@@ -118,6 +124,10 @@
             id: row && row.id ? String(row.id) : newId(),
             name: row && row.name ? String(row.name).slice(0, 24) : '未命名导航',
             note: row && row.note ? String(row.note).slice(0, 60) : '',
+            style: (function () {
+                var s = row && row.style != null ? String(row.style).toLowerCase().trim() : '';
+                return (s === '' || ['auto', 'list', 'icons', 'mega', 'mega-group'].indexOf(s) >= 0) ? s : '';
+            })(),
             items: (row && row.items ? row.items : []).map(norm)
         };
     }
@@ -182,6 +192,7 @@
                     id: s.id,
                     name: s.name,
                     note: s.note || '',
+                    style: (s.style === '' || ['auto', 'list', 'icons', 'mega', 'mega-group'].indexOf(s.style) >= 0) ? s.style : '',
                     items: s.items.map(cleanItem)
                 };
             })
@@ -270,6 +281,7 @@
             id: newId(),
             name: String(name || '').trim().slice(0, 24) || '未命名导航',
             note: '',
+            style: 'auto',
             items: fromItems || []
         };
         state.sets.push(set);
@@ -388,13 +400,17 @@
         if (!cur) {
             return;
         }
-        var nameInput = setFormEl.querySelector('[data-set-name]');
+var nameInput = setFormEl.querySelector('[data-set-name]');
         var noteInput = setFormEl.querySelector('[data-set-note]');
+        var styleInput = setFormEl.querySelector('[data-set-style]');
         if (nameInput) {
             nameInput.value = cur.name;
         }
         if (noteInput) {
             noteInput.value = cur.note || '';
+        }
+        if (styleInput) {
+            styleInput.value = cur.style || '';
         }
         setFormEl.hidden = false;
         if (nameInput) {
@@ -488,11 +504,16 @@
                 if (!cur) {
                     return;
                 }
-                var nameInput = setFormEl.querySelector('[data-set-name]');
+var nameInput = setFormEl.querySelector('[data-set-name]');
                 var noteInput = setFormEl.querySelector('[data-set-note]');
+                var styleInput = setFormEl.querySelector('[data-set-style]');
                 var name = nameInput ? nameInput.value.trim().slice(0, 24) : '';
                 cur.name = name || cur.name;
                 cur.note = noteInput ? noteInput.value.trim().slice(0, 60) : '';
+                if (styleInput) {
+                    var st = styleInput.value;
+                    cur.style = (st === '' || ['auto', 'list', 'icons', 'mega', 'mega-group'].indexOf(st) >= 0) ? st : '';
+                }
                 toggleSetForm(false);
                 renderBar();
                 sync();
@@ -676,6 +697,20 @@
             fieldHtml('CSS 类', 'cls', item.cls, '可选，空格分隔，最多 5 个') +
             iconField +
             fieldHtml('角标', 'badge', item.badge, '如「热」「NEW」，最长 6 字') +
+            (isSub
+                ? fieldHtml('分组', 'group', item.group, '分组宽面板的栏标题，最长 8 字') +
+                  fieldHtml('描述', 'desc', item.desc, '分组宽面板的条目描述，最长 40 字', true)
+                : '') +
+            (isSub ? '' :
+                '<label class="ecod-navb__field"><span>子菜单显示模式</span>' +
+                '<select data-e="sub_style">' +
+                '<option value="">跟随套设置</option>' +
+                '<option value="auto"' + (item.sub_style === 'auto' ? ' selected' : '') + '>自动</option>' +
+                '<option value="list"' + (item.sub_style === 'list' ? ' selected' : '') + '>纯文字列表</option>' +
+                '<option value="icons"' + (item.sub_style === 'icons' ? ' selected' : '') + '>图标卡片</option>' +
+                '<option value="mega"' + (item.sub_style === 'mega' ? ' selected' : '') + '>宽幅图标卡片</option>' +
+                '<option value="mega-group"' + (item.sub_style === 'mega-group' ? ' selected' : '') + '>分组宽面板</option>' +
+                '</select></label>') +
             '<label class="ecod-navb__check"><input type="checkbox" data-e="blank"' +
             (item.blank ? ' checked' : '') + '> 新窗口打开</label>' +
             '</div>' +
@@ -882,6 +917,17 @@
 
     listEl.addEventListener('change', function (e) {
         var input = e.target;
+        /* 子菜单显示模式下拉：项级覆盖套级样式 */
+        if (input.matches && input.matches('select[data-e="sub_style"]')) {
+            var subHit = editTarget(input);
+            if (!subHit) {
+                return;
+            }
+            var sv = input.value;
+            subHit.item.sub_style = ['auto', 'list', 'icons', 'mega', 'mega-group'].indexOf(sv) >= 0 ? sv : '';
+            sync();
+            return;
+        }
         if (!input.matches || !input.matches('input[data-e="blank"]')) {
             return;
         }

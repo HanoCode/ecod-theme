@@ -3,10 +3,13 @@
  *
  * 职责（模块卡片 / 抽屉参数 / EBlocks 序列化已于 v2.3 移除，
  * 模块布局统一在独立入口 widget.php 的模块管理台维护）：
- *  1. 把 Typecho 原生字段按 data-ecod-pane 搬到对应面板（保存逻辑完全不动）
+ *  1. 把 Typecho 原生字段按 data-ecod-pane 搬到对应面板，并按
+ *     DATA.sections 把字段行分发进面板内带标题的小节（保存逻辑完全不动）
  *  2. 字段增强：选择卡片 / 分段 / 开关 / 媒体 / 颜色 / 滑杆 / 预览 / 条件显隐
- *  3. 「/」搜索设置项、分组切换记忆、字段级 dirty 与离开拦截
- *  4. 配置导出 / 导入（仅设置项；模块布局在模块管理台导出）
+ *  3. 侧栏两层导航：分组手风琴（始终只展开一个）→ 面板
+ *  4. 「开始」引导页：三步卡、任务清单（字段值 / 访问记录 / 操作标记）、快捷入口
+ *  5. 「/」搜索设置项（含面板与小节）、分组切换记忆、字段级 dirty 与离开拦截
+ *  6. 配置导出 / 导入（仅设置项；模块布局在模块管理台导出）
  *
  * Copyright (c) 2026 Ecod. All Rights Reserved. · https://ecod.cc
  */
@@ -111,6 +114,70 @@
             }
             actions.appendChild(btn);
         }
+    }
+
+    /* ------------------------------------------------------------------
+     * 面板内小节：按 DATA.sections（PHP 侧 $ecodSections）把字段行分发进
+     * 带标题的小节容器，长面板才有层级可扫。没被任何小节引用的行
+     * （隐藏字段等）沉到面板末尾；整节字段为空的小节不渲染标题。
+     * ---------------------------------------------------------------- */
+    function applySections() {
+        var sections = DATA.sections || {};
+        Object.keys(sections).forEach(function (pane) {
+            var host = $('[data-fields="' + pane + '"]');
+            if (!host) {
+                return;
+            }
+            var spec = sections[pane] || [];
+            var rows = $$('.typecho-option', host);
+            if (!rows.length) {
+                return;
+            }
+
+            var byName = {};
+            spec.forEach(function (one, i) {
+                (one.fields || []).forEach(function (name) {
+                    byName[name] = i;
+                });
+            });
+
+            var boxes = spec.map(function (one) {
+                var box = document.createElement('div');
+                box.className = 'ecod-sect';
+                var hd = document.createElement('div');
+                hd.className = 'ecod-sect__hd';
+                hd.innerHTML = '<b class="ecod-sect__t">' + esc(one.title) + '</b>'
+                    + (one.desc ? '<small class="ecod-sect__d">' + esc(one.desc) + '</small>' : '');
+                var body = document.createElement('div');
+                body.className = 'ecod-sect__bd';
+                box.appendChild(hd);
+                box.appendChild(body);
+                return box;
+            });
+
+            var rest = document.createElement('div');
+            rest.className = 'ecod-sect ecod-sect--rest';
+            var restBody = document.createElement('div');
+            restBody.className = 'ecod-sect__bd';
+            rest.appendChild(restBody);
+
+            rows.forEach(function (row) {
+                var control = row.querySelector('input[name], select[name], textarea[name]');
+                var idx = control ? byName[control.name] : undefined;
+                var box = (idx === undefined || !boxes[idx]) ? rest : boxes[idx];
+                box.querySelector('.ecod-sect__bd').appendChild(row);
+            });
+
+            host.innerHTML = '';
+            boxes.forEach(function (box) {
+                if (box.querySelector('.ecod-sect__bd').children.length) {
+                    host.appendChild(box);
+                }
+            });
+            if (restBody.children.length) {
+                host.appendChild(rest);
+            }
+        });
     }
 
     /* ------------------------------------------------------------------
@@ -396,6 +463,7 @@
         paintCondNotes();
         paintPaneNotices();
         buildSearchIndex();
+        paintStart();
     }
 
     /* 父项下方的「另有 N 项」提示：让用户知道关掉一个开关顺手关了什么 */
@@ -496,7 +564,7 @@
                 if (!row) {
                     return;
                 }
-                row.scrollIntoView({ block: 'center', behavior: 'smooth' });
+                scrollElIntoScroller(row, 'smooth');
                 row.classList.remove('ecod-hit');
                 void row.offsetWidth;
                 row.classList.add('ecod-hit');
@@ -939,7 +1007,7 @@
      * 主色迷你预览：站点分组顶部放一张迷你卡片，改主色即时看到效果
      * ---------------------------------------------------------------- */
     function enhancePreview() {
-        var host = $('[data-fields="site"]');
+        var host = $('[data-fields="brand"]');
         if (!host || host.querySelector('[data-ecod-preview]')) {
             return;
         }
@@ -977,15 +1045,33 @@
 
 
     /* ------------------------------------------------------------------
-     * 分组切换
+     * 分组与面板切换
+     * 侧栏两层：分组（手风琴，始终只展开一个）→ 面板
      * ---------------------------------------------------------------- */
+    function setGroupOpen(gkey) {
+        $$('.ecod-admin__group', admin).forEach(function (group) {
+            var open = group.getAttribute('data-group') === gkey;
+            group.classList.toggle('is-open', open);
+            var hd = $('.ecod-admin__grouphd', group);
+            if (hd) {
+                hd.classList.toggle('is-active', open);
+                hd.setAttribute('aria-expanded', open ? 'true' : 'false');
+            }
+        });
+    }
+
     function switchPane(pane) {
+        if (!pane || !(DATA.panes || {})[pane]) {
+            return;
+        }
         $$('.ecod-admin__navitem').forEach(function (btn) {
             btn.classList.toggle('is-active', btn.dataset.pane === pane);
         });
         $$('[data-pane-panel]').forEach(function (panel) {
             panel.classList.toggle('is-active', panel.getAttribute('data-pane-panel') === pane);
         });
+        var item = $('.ecod-admin__navitem[data-pane="' + pane + '"]', admin);
+        setGroupOpen(item ? item.getAttribute('data-group') : null);
         var meta = (DATA.panes || {})[pane] || {};
         var title = $('[data-pane-title]');
         var desc = $('[data-pane-desc]');
@@ -1002,13 +1088,163 @@
         }
         try {
             sessionStorage.setItem('ecod-admin-pane', pane);
+            /* 面板访问记录：「开始」页的任务清单用它判定完成态 */
+            sessionStorage.setItem('ecod-seen-' + pane, '1');
         } catch (err) { /* 忽略隐私模式 */ }
+        if (pane === 'start') {
+            paintStart();
+        }
     }
+
+    /* 分组头：展开/收起；展开时点亮组内激活面板（没有则进第一个） */
+    $$('.ecod-admin__grouphd', admin).forEach(function (hd) {
+        hd.addEventListener('click', function () {
+            var group = hd.closest('.ecod-admin__group');
+            var gkey = group.getAttribute('data-group');
+            var willOpen = !group.classList.contains('is-open');
+            setGroupOpen(willOpen ? gkey : null);
+            if (willOpen) {
+                var active = $('.ecod-admin__navitem.is-active[data-group="' + gkey + '"]', admin)
+                    || $('.ecod-admin__navitem[data-group="' + gkey + '"]', admin);
+                if (active) {
+                    switchPane(active.dataset.pane);
+                }
+            }
+        });
+    });
 
     $$('.ecod-admin__navitem').forEach(function (btn) {
         btn.addEventListener('click', function () {
             switchPane(btn.dataset.pane);
         });
+    });
+
+    /* ------------------------------------------------------------------
+     * 「开始」引导页：任务清单
+     * 完成态由三类信号判定：字段值 / 面板访问记录（sessionStorage）/
+     * 操作标记（localStorage），勾掉一项就少一项焦虑。
+     * ---------------------------------------------------------------- */
+    var CHECK_SVG = '<svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" '
+        + 'stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>';
+    var FLAG_KEY = 'ecod-admin-flags';
+
+    function readFlags() {
+        try {
+            return JSON.parse(localStorage.getItem(FLAG_KEY) || '{}') || {};
+        } catch (err) {
+            return {};
+        }
+    }
+
+    function writeFlag(id) {
+        var flags = readFlags();
+        flags[id] = 1;
+        try {
+            localStorage.setItem(FLAG_KEY, JSON.stringify(flags));
+        } catch (err) { /* 忽略隐私模式 */ }
+    }
+
+    function seenPane(pane) {
+        try {
+            return sessionStorage.getItem('ecod-seen-' + pane) === '1';
+        } catch (err) {
+            return false;
+        }
+    }
+
+    var START_TASKS = [
+        { id: 'brand',    pane: 'brand',    label: '品牌门面',   desc: 'Logo、站点图标与主题主色', test: function (v) { return !!(v.ELogoImage || v.EFavicon); } },
+        { id: 'layout',   pane: 'layout',   label: '列表版式',   desc: '卡片模式、侧栏位置与缩略图', test: function (v, seen) { return seen('layout'); } },
+        /* 导航构建器空值时也会写一套默认空菜单：须解析 JSON 确认有真实菜单项 */
+        { id: 'nav',      pane: 'nav',      label: '导航菜单',   desc: '搭建主导航与二级菜单', test: function (v) {
+            try {
+                var doc = JSON.parse(String(v.ENavSets || '{}') || '{}');
+                return (doc.sets || []).some(function (set) {
+                    return !!(set.items || []).length;
+                });
+            } catch (err) {
+                return false;
+            }
+        } },
+        { id: 'widgets',  pane: '',         ext: 'widgets',     label: '首页模块',   desc: '去模块管理台摆放首页与侧栏', test: function (v, seen, flags) { return !!flags.widgets; } },
+        { id: 'comments', pane: 'comments', label: '评论互动',   desc: '评论服务、反垃圾与人机验证', test: function (v, seen) { return v.EComment === 'off' || seen('comments'); } },
+        { id: 'seo',      pane: 'tools',    label: '收录与特色页', desc: 'sitemap、robots 与一键建页', test: function (v, seen, flags) { return seen('tools') || !!flags.tools; } },
+        { id: 'backup',   pane: 'tools',    label: '配置备份',   desc: '保存快照或导出 JSON', test: function (v, seen, flags) { return !!flags.backup; } }
+    ];
+
+    function paintStart() {
+        var host = $('[data-start-tasks]');
+        if (!host) {
+            return;
+        }
+        var vals = {};
+        $$('input[name], select[name], textarea[name]', admin).forEach(function (el) {
+            vals[el.name] = String(el.value == null ? '' : el.value);
+        });
+        var flags = readFlags();
+        var widgetsUrl = ($('.ecod-start__qlink[data-start-flag="widgets"]', admin) || {}).getAttribute
+            ? $('.ecod-start__qlink[data-start-flag="widgets"]', admin).getAttribute('href') : '#';
+
+        var done = 0;
+        host.innerHTML = START_TASKS.map(function (task) {
+            var ok = !!task.test(vals, seenPane, flags);
+            if (ok) {
+                done++;
+            }
+            var open = task.ext
+                ? '<a class="ecod-start__task' + (ok ? ' is-done' : '') + '" href="' + esc(widgetsUrl) + '" target="_blank" rel="noopener" data-start-flag="' + task.ext + '">'
+                : '<button type="button" class="ecod-start__task' + (ok ? ' is-done' : '') + '" data-task-jump="' + esc(task.pane) + '">';
+            return open
+                + '<span class="ecod-start__tdot" aria-hidden="true">' + CHECK_SVG + '</span>'
+                + '<span class="ecod-start__tmain"><b>' + esc(task.label) + '</b><small>' + esc(task.desc) + '</small></span>'
+                + '<em>' + (ok ? '已完成' : '去完成 →') + '</em>'
+                + (task.ext ? '</a>' : '</button>');
+        }).join('');
+
+        var progress = $('[data-start-progress]');
+        if (progress) {
+            progress.textContent = done + ' / ' + START_TASKS.length + ' 已完成';
+        }
+    }
+
+    /* 引导页交互：任务卡 / 三步卡跳面板，快捷入口记操作标记 */
+    var startBox = $('.ecod-start', admin);
+    if (startBox) {
+        startBox.addEventListener('click', function (e) {
+            var flag = e.target.closest && e.target.closest('[data-start-flag]');
+            if (flag) {
+                writeFlag(flag.getAttribute('data-start-flag'));
+                paintStart();
+            }
+            var jump = e.target.closest && e.target.closest('[data-start-jump], [data-task-jump]');
+            if (jump) {
+                switchPane(jump.getAttribute('data-start-jump') || jump.getAttribute('data-task-jump'));
+            }
+            /* 「导出配置备份」：原地下载 JSON 并勾掉任务，不跳面板 */
+            var exp = e.target.closest && e.target.closest('[data-start-export]');
+            if (exp) {
+                exportConfig();
+            }
+        });
+    }
+
+    /* 模块管理台入口（面板内入口卡）与导出 / 快照动作同样推进任务清单 */
+    document.addEventListener('click', function (e) {
+        if (!e.target || !e.target.closest) {
+            return;
+        }
+        if (e.target.closest('.ecod-wgt-entry')) {
+            writeFlag('widgets');
+            paintStart();
+        }
+        if (e.target.closest('[data-ecod-export], [data-ecod-snapshot-save]')) {
+            writeFlag('backup');
+            paintStart();
+        }
+        if (e.target.closest('[data-ecod-build]')) {
+            writeFlag('tools');
+            paintStart();
+        }
     });
 
     /* ------------------------------------------------------------------
@@ -1041,6 +1277,10 @@
                 var label = labelEl ? labelEl.textContent.trim() : '';
                 var name = control ? String(control.name || '') : '';
                 var desc = descEl ? descEl.textContent.trim() : '';
+                /* 所在小节标题一并入索引：搜「SMTP」能命中「发信服务器（SMTP）」小节 */
+                var sect = opt.closest('.ecod-sect');
+                var sectEl = sect ? sect.querySelector('.ecod-sect__t') : null;
+                var sectTitle = sectEl ? sectEl.textContent.trim() : '';
                 if (!label && !name) {
                     return;
                 }
@@ -1048,10 +1288,25 @@
                     pane: pane,
                     kind: '设置',
                     label: label || name,
-                    hint: paneTitle(pane),
-                    text: (label + ' ' + name + ' ' + desc + ' ' + paneTitle(pane)).toLowerCase(),
+                    hint: sectTitle || paneTitle(pane),
+                    text: (label + ' ' + name + ' ' + desc + ' ' + sectTitle + ' ' + paneTitle(pane)).toLowerCase(),
                     el: opt
                 });
+            });
+        });
+
+        /* 面板入口：搜「导航」「付费」这类词即使不记得字段名也能直达面板 */
+        Object.keys(DATA.panes || {}).forEach(function (pane) {
+            if (pane === 'start') {
+                return;
+            }
+            searchIdx.push({
+                pane: pane,
+                kind: '面板',
+                label: DATA.panes[pane].title,
+                hint: DATA.panes[pane].desc,
+                text: (DATA.panes[pane].title + ' ' + DATA.panes[pane].desc).toLowerCase(),
+                el: $('[data-pane-panel="' + pane + '"]')
             });
         });
 
@@ -1094,7 +1349,7 @@
             if (!target) {
                 return;
             }
-            target.scrollIntoView({ block: 'center', behavior: 'smooth' });
+            scrollElIntoScroller(target, 'smooth');
             target.classList.remove('ecod-hit');
             /* 强制回流，让同一元素连续命中时动画能重放 */
             void target.offsetWidth;
@@ -1357,6 +1612,86 @@
     }
 
     /* ------------------------------------------------------------------
+     * 滚动收敛（固定框架模式）
+     *
+     * body.ecod-frame 把整页锁成 overflow:hidden（禁止滚轮滚动），但 overflow:hidden
+     * 本身仍是可编程滚动容器。于是下面任何「滚到某元素可见」的行为——聚焦控件、
+     * scrollIntoView（提示条跳转 / 搜索命中）——都会顺着祖先滚动链一次滚到
+     * documentElement（窗口）上去。框架模式下窗口本就不该被滚动，
+     * 结果就是：点进较低的设置项时内容整页向上弹、吸顶保存 header 随之被顶出屏，
+     * 且滚轮被锁死后回不来（表现为「无法显示保存 header」）。
+     *
+     * 修复：聚焦（focusin，捕获阶段）时只把元素滚动进 admin 自身的 scroller
+     * （.ecod-admin__body / 侧栏）内；若在固定框架模式下发现窗口被滚动到了，
+     * 立即钉回 0，避免程序化滚动逃逸到 document scroller。
+     * ---------------------------------------------------------------- */
+    function adminScrollerOf(el) {
+        if (!el || !el.closest) {
+            return null;
+        }
+        var sc = el.closest('[data-admin-body]');
+        if (!sc) {
+            sc = el.closest('.ecod-admin__aside');
+        }
+        return sc || null;
+    }
+
+    function scrollElIntoScroller(el, behavior) {
+        var sc = adminScrollerOf(el);
+        if (!sc) {
+            return;
+        }
+        var scRect = sc.getBoundingClientRect();
+        var r = el.getBoundingClientRect();
+        if (r.top >= scRect.top + 4 && r.bottom <= scRect.bottom - 4) {
+            /* 已可见：不动 */
+            return;
+        }
+        var top = r.top - scRect.top;
+        var bottom = r.bottom - scRect.top;
+        var maxScrollTop = Math.max(0, sc.scrollHeight - sc.clientHeight);
+        var target = sc.scrollTop;
+        if (top < 4) {
+            target = Math.max(0, sc.scrollTop - top + 4);
+        } else if (bottom > sc.clientHeight - 4) {
+            target = Math.min(maxScrollTop, sc.scrollTop + (bottom - sc.clientHeight + 4));
+        }
+        sc.scrollTo({ top: target, behavior: behavior || 'auto' });
+    }
+
+    function confineFrameScroll() {
+        if (!document.body.classList.contains('ecod-frame')) {
+            return;
+        }
+        if (window.scrollY > 0) {
+            window.scrollTo(0, 0);
+        }
+    }
+
+    document.addEventListener('focusin', function (e) {
+        if (!document.body.classList.contains('ecod-frame')) {
+            return;
+        }
+        var el = e.target;
+        if (el && el.closest) {
+            scrollElIntoScroller(el, 'auto');
+        }
+        confineFrameScroll();
+    }, true);
+
+    /* scroll 兜底：固定框架下整页被锁死，任何会滚到 document scroller 的滚动
+       （聚焦 / scrollIntoView / 锚点 / 脚本）都只准落在 admin scroller 内，
+       检测到窗口被移动就钉回顶部，避免整页弹上来把吸顶保存 header 顶出屏 */
+    document.addEventListener('scroll', function (e) {
+        if (!document.body.classList.contains('ecod-frame')) {
+            return;
+        }
+        if (window.scrollY > 0) {
+            window.scrollTo(0, 0);
+        }
+    }, true);
+
+    /* ------------------------------------------------------------------
      * 提交与离开保护
      * ---------------------------------------------------------------- */
     form.addEventListener('submit', function () {
@@ -1428,6 +1763,7 @@
      * 启动
      * ---------------------------------------------------------------- */
     layout();
+    applySections();
     enhanceFields();
     initConditions();
     enhanceMedia();

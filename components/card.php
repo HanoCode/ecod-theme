@@ -87,6 +87,17 @@ if (!function_exists('ecod_card')) {
         /* 是否加密：与访客身份无关，始终标记 */
         $locked = ecod_has_password($archive);
 
+        /* 首屏第一张封面走 eager + 高优先级（LCP 候选），其余交给浏览器懒加载。
+           计数放在所有模式分支之前——item / compact / gallery 等单图分支的首张封面
+           也吃得到（此前只有 default 系分支享受该待遇，首页清单卡成了 LCP 拖累）；
+           两者都带 width/height，避免图片到位后撑开布局 */
+        static $imgSeq = 0;
+        $isFirstImg = !empty($images) && $imgSeq === 0;
+        if (!empty($images)) {
+            $imgSeq++;
+        }
+        $imgFirstAttrs = $isFirstImg ? ' loading="eager" fetchpriority="high"' : ' loading="lazy"';
+
         /* 搜索页标题高亮 */
         $searchKw = trim((string) ($GLOBALS['ecodSearchKw'] ?? ''));
         if ($searchKw !== '') {
@@ -121,7 +132,7 @@ if (!function_exists('ecod_card')) {
             echo '<a class="ecod_card__media" href="' . $permalink . '" aria-hidden="true" tabindex="-1" style="background:' . $tint . '">';
             if (!empty($images)) {
                 echo '<img src="' . htmlspecialchars($images[0], ENT_QUOTES, 'UTF-8') . '" alt="' . $titleAttr . '"'
-                    . ' width="160" height="112" loading="lazy" decoding="async" data-ecod-img>';
+                    . ' width="160" height="112"' . $imgFirstAttrs . ' decoding="async" data-ecod-img>';
             } else {
                 echo '<span class="ecod_card__placeholder">' . mb_substr($rawTitle, 0, 1, 'UTF-8') . '</span>';
             }
@@ -181,7 +192,7 @@ if (!function_exists('ecod_card')) {
             echo ecod_badges($archive);
             if (!empty($images)) {
                 echo '<img src="' . htmlspecialchars($images[0], ENT_QUOTES, 'UTF-8') . '" alt="' . $titleAttr . '"'
-                    . ' width="400" height="280" loading="lazy" decoding="async" data-ecod-img>';
+                    . ' width="400" height="280"' . $imgFirstAttrs . ' decoding="async" data-ecod-img>';
             } else {
                 echo '<span class="ecod_card__placeholder">' . mb_substr($rawTitle, 0, 1, 'UTF-8') . '</span>';
             }
@@ -235,12 +246,9 @@ if (!function_exists('ecod_card')) {
         $hasThumb = !empty($images);
 
         /* 首屏第一张封面走 eager + 高优先级，其余交给浏览器懒加载；
+           计数已在函数开头（line ~94）统一维护，这里不能再声明同名 static ——
+           同一函数作用域里重复 static 声明会导致 PHP 编译期 Fatal（整站白屏）。
            两者都带 width/height，避免图片到位后撑开布局 */
-        static $imgSeq = 0;
-        $isFirstImg = $hasThumb && $imgSeq === 0;
-        if ($hasThumb) {
-            $imgSeq++;
-        }
 
         $classes = ['ecod_card', 'ecod_card--' . $mode];
         if ($locked) {
@@ -269,7 +277,7 @@ if (!function_exists('ecod_card')) {
             if ($hasThumb) {
                 echo '<img src="' . htmlspecialchars($images[0], ENT_QUOTES, 'UTF-8') . '" alt="' . $titleAttr . '"'
                     . ' width="400" height="264"'
-                    . ($isFirstImg ? ' loading="eager" fetchpriority="high"' : ' loading="lazy"')
+                    . $imgFirstAttrs
                     . ' decoding="async" data-ecod-img>';
             } else {
                 echo '<span class="ecod_card__placeholder">' . mb_substr($title, 0, 1, 'UTF-8') . '</span>';
@@ -288,23 +296,28 @@ if (!function_exists('ecod_card')) {
             echo '<h3 class="ecod_card__title"><a href="' . $permalink . '">' . $lockInTitle . $title . '</a></h3>';
         }
 
-        if ($mode !== 'title' && $excerpt !== '') {
+        if ($mode !== 'title' && $mode !== 'gallery' && $excerpt !== '') {
             echo '<p class="ecod_card__excerpt">' . $excerpt . '</p>';
         }
 
-        /* 三图模式：图片在文字下方 */
+        /* 三图模式：图片在上、文字在下 */
         if ($mode === 'gallery') {
-            echo '<h3 class="ecod_card__title"><a href="' . $permalink . '">' . $lockInTitle . $title . '</a></h3>';
             echo '<div class="ecod_card__gallery">';
             for ($i = 0; $i < 3; $i++) {
                 $src = $images[$i] ?? '';
                 if ($src !== '') {
-                    echo '<a href="' . $permalink . '" tabindex="-1" aria-hidden="true"><img src="' . htmlspecialchars($src, ENT_QUOTES, 'UTF-8') . '" alt="" width="400" height="400" loading="lazy" decoding="async" data-ecod-img></a>';
+                    echo '<a href="' . $permalink . '" tabindex="-1" aria-hidden="true"><img src="' . htmlspecialchars($src, ENT_QUOTES, 'UTF-8') . '" alt="" width="400" height="400"'
+                        . ($i === 0 ? $imgFirstAttrs : ' loading="lazy"')
+                        . ' decoding="async" data-ecod-img></a>';
                 } else {
                     echo '<span class="ecod_card__gallery-ph"></span>';
                 }
             }
             echo '</div>';
+            echo '<h3 class="ecod_card__title"><a href="' . $permalink . '">' . $lockInTitle . $title . '</a></h3>';
+            if ($excerpt !== '') {
+                echo '<p class="ecod_card__excerpt">' . $excerpt . '</p>';
+            }
         }
 
         /* 元信息 */

@@ -90,6 +90,7 @@
         page: 0,
         hasMore: false,
         keyword: '',
+        fmt: '',           /* 格式筛选：webp / png / svg / heic … */
         loading: false,
         tab: 'library',
         onPick: null,
@@ -97,8 +98,36 @@
         detail: null,      /* 详情侧栏当前展示的图片对象 */
         lb: false,         /* 灯箱是否打开 */
         lbList: [],        /* 灯箱可切换的图片列表 */
-        lbIndex: 0
+        lbIndex: 0,
+        stats: null        /* 用量统计 {total, size, drivers} */
     };
+
+    /* 后台 token：Security::getToken('ecod-media')，写操作 CSRF 用 */
+    function token() {
+        return CFG.token || '';
+    }
+
+    function post(action, data) {
+        var form = data instanceof FormData ? data : new FormData();
+        if (!(data instanceof FormData)) {
+            Object.keys(data || {}).forEach(function (k) {
+                form.append(k, data[k]);
+            });
+        }
+        form.append('_', token());
+        return fetch(apiUrl() + '?action=' + action, {
+            method: 'POST',
+            body: form,
+            credentials: 'same-origin'
+        }).then(function (res) {
+            if (res.status === 401) {
+                throw new Error('auth');
+            }
+            return res.json().catch(function () {
+                throw new Error('http');
+            });
+        });
+    }
 
     /* ------------------------------------------------------------------ *
      * 骨架
@@ -123,9 +152,28 @@
             + '    <label class="ecmd__search">' + ICON.search
             + '      <input type="search" placeholder="搜索图片名称…" data-search autocomplete="off">'
             + '    </label>'
+            + '    <select class="ecmd__fmt" data-fmt aria-label="格式筛选">'
+            + '      <option value="">全部格式</option>'
+            + '      <option value="webp">WebP</option>'
+            + '      <option value="jpg">JPG</option>'
+            + '      <option value="png">PNG</option>'
+            + '      <option value="gif">GIF</option>'
+            + '      <option value="avif">AVIF</option>'
+            + '      <option value="svg">SVG</option>'
+            + '      <option value="heic">HEIC</option>'
+            + '    </select>'
             + '    <span class="ecmd__count" data-count></span>'
+            + '    <span class="ecmd__stats" data-stats></span>'
             + '    <span class="ecmd__spacer"></span>'
+            + '    <button type="button" class="ecmd__btn" data-manage>批量管理</button>'
             + '    <button type="button" class="ecmd__btn" data-upload>' + ICON.upload + '上传图片</button>'
+            + '  </div>'
+            + '  <div class="ecmd__batch" data-batchbar hidden>'
+            + '    <span data-batch-tip>已选 0 张</span>'
+            + '    <span class="ecmd__spacer"></span>'
+            + '    <button type="button" class="ecmd__btn" data-batch-convert>批量转 WebP</button>'
+            + '    <button type="button" class="ecmd__btn ecmd__btn--danger" data-batch-delete>删除所选</button>'
+            + '    <button type="button" class="ecmd__btn" data-batch-exit>退出批量</button>'
             + '  </div>'
             + '  <div class="ecmd__main">'
             + '    <div class="ecmd__body" data-body>'
@@ -134,7 +182,7 @@
             + '        <div class="ecmd__empty" data-empty hidden></div>'
             + '        <div class="ecmd__loading" data-loading hidden><i class="ecmd__spin"></i>正在读取媒体库…</div>'
             + '        <button type="button" class="ecmd__more" data-more hidden>加载更多</button>'
-            + '        <input type="file" accept="image/*" multiple data-file hidden>'
+            + '        <input type="file" accept="image/*,.heic,.heif,.svg,.avif,.tif,.tiff" multiple data-file hidden>'
             + '      </div>'
             + '      <div class="ecmd__pane" data-pane="link" hidden>'
             + '        <div class="ecmd__link">'
@@ -153,6 +201,9 @@
             + '      </div>'
             + '      <div class="ecmd__side-actions">'
             + '        <button type="button" class="ecmd__btn" data-side-zoom>' + ICON.zoom + '预览大图</button>'
+            + '        <button type="button" class="ecmd__btn" data-side-rename>改名</button>'
+            + '        <button type="button" class="ecmd__btn" data-side-convert>转WebP</button>'
+            + '        <button type="button" class="ecmd__btn ecmd__btn--danger" data-side-delete>删除</button>'
             + '      </div>'
             + '    </aside>'
             + '  </div>'
@@ -180,7 +231,11 @@
             title: root.querySelector('[data-title]'),
             bar: root.querySelector('[data-bar]'),
             search: root.querySelector('[data-search]'),
+            fmt: root.querySelector('[data-fmt]'),
             count: root.querySelector('[data-count]'),
+            stats: root.querySelector('[data-stats]'),
+            batchbar: root.querySelector('[data-batchbar]'),
+            batchTip: root.querySelector('[data-batch-tip]'),
             body: root.querySelector('[data-body]'),
             grid: root.querySelector('[data-grid]'),
             empty: root.querySelector('[data-empty]'),
@@ -216,6 +271,9 @@
         if (keyword) {
             url += '&q=' + encodeURIComponent(keyword);
         }
+        if (state.fmt) {
+            url += '&fmt=' + encodeURIComponent(state.fmt);
+        }
 
         return fetch(url, {
             credentials: 'same-origin',
@@ -229,6 +287,45 @@
             }
             return res.json();
         });
+    }
+
+    function requestStats() {
+        return fetch(apiUrl() + (apiUrl().indexOf('?') > -1 ? '&' : '?') + 'action=stats', {
+            credentials: 'same-origin',
+            headers: { 'Accept': 'application/json' }
+        }).then(function (res) {
+            return res.ok ? res.json() : null;
+        }).then(function (data) {
+            if (data && data.ok) {
+                state.stats = data;
+                paintStats();
+            }
+            return data;
+        }).catch(function () {
+            return null;
+        });
+    }
+
+    function paintStats() {
+        if (!ui.stats) {
+            return;
+        }
+        var s = state.stats;
+        var bits = [];
+        if (s && s.total) {
+            bits.push('共 ' + s.total + ' 张');
+            if (s.size) {
+                bits.push(s.size);
+            }
+            var drv = s.drivers || {};
+            var nonLocal = Object.keys(drv).filter(function (k) {
+                return k !== 'local' && drv[k] > 0;
+            });
+            nonLocal.forEach(function (k) {
+                bits.push(k.toUpperCase() + ' ' + drv[k] + ' 张');
+            });
+        }
+        ui.stats.textContent = bits.join(' · ');
     }
 
     function load(reset) {
@@ -297,13 +394,19 @@
             return;
         }
 
+        var ext = (item.ext || (item.name || '').split('.').pop() || '').toUpperCase();
+        var driverLabel = { local: '本地', oss: '阿里云 OSS', cos: '腾讯云 COS', s3: 'S3 兼容' }[item.driver] || item.driver || '本地';
+
         ui.side.hidden = false;
-        ui.sideView.innerHTML = '<img src="' + esc(item.url) + '" alt="">';
+        ui.sideView.innerHTML = '<img src="' + esc(item.thumb || item.url) + '" alt="">';
         ui.sideMeta.innerHTML = ''
             + metaRow('文件名', esc(item.name || item.title || ''))
             + '<div class="ecmd__side-row"><dt>尺寸</dt><dd data-side-dims>读取中…</dd></div>'
             + metaRow('大小', esc(item.size || ''))
             + metaRow('类型', esc(item.mime || ''))
+            + (ext ? metaRow('格式', esc(ext) + (item.ext === 'webp' && item.driver ? '' : '')) : '')
+            + metaRow('存储', esc(driverLabel))
+            + metaRow('引用', item.refs > 0 ? '<b class="ecmd__refs">' + item.refs + ' 篇内容</b>' : '未被引用')
             + metaRow('上传日期', esc(item.date || ''));
         ui.sideLink.value = item.url;
 
@@ -428,7 +531,10 @@
             tile.className = 'ecmd__tile' + (state.selected.indexOf(item.url) > -1 ? ' is-on' : '');
             tile.title = item.title || item.name || item.url;
             tile.dataset.url = item.url;
-            tile.innerHTML = '<img src="' + esc(item.url) + '" alt="' + esc(item.name || item.title || '') + '" loading="lazy">'
+            var ext = (item.ext || '').toUpperCase();
+            tile.innerHTML = '<img src="' + esc(item.thumb || item.url) + '" alt="' + esc(item.name || item.title || '') + '" loading="lazy">'
+                + (ext && ext !== 'JPG' && ext !== 'JPEG'
+                    ? '<span class="ecmd__badge">' + esc(ext) + '</span>' : '')
                 + '<span class="ecmd__tile-name">' + esc(item.name || item.title || '未命名') + '</span>'
                 + '<span class="ecmd__check">' + ICON.check + '</span>'
                 + '<span class="ecmd__zoom" title="预览大图">' + ICON.zoom + '</span>';
@@ -485,6 +591,9 @@
         if (!state.selected.length) {
             ui.picked.textContent = state.multiple ? '未选择图片' : '未选择';
             ui.ok.disabled = true;
+            if (ui.batchTip) {
+                ui.batchTip.textContent = '已选 0 张';
+            }
             return;
         }
 
@@ -492,6 +601,9 @@
             ? '已选 <b>' + state.selected.length + '</b> 张'
             : '已选 <b>1</b> 张';
         ui.ok.disabled = false;
+        if (ui.batchTip) {
+            ui.batchTip.innerHTML = '已选 <b>' + state.selected.length + '</b> 张';
+        }
     }
 
     /* ------------------------------------------------------------------ *
@@ -500,15 +612,15 @@
 
     function upload(files) {
         var list = Array.prototype.slice.call(files || []).filter(function (file) {
-            return /^image\//i.test(file.type);
+            return !file.type || /^image\//i.test(file.type) || /\.(heic|heif|svg|avif|tiff?)$/i.test(file.name);
         });
 
         if (!list.length) {
             return;
         }
 
-        var done = [];
         var left = list.length;
+        var failed = 0;
 
         ui.loading.hidden = false;
         ui.loading.innerHTML = '<i class="ecmd__spin"></i>正在上传 ' + list.length + ' 张…';
@@ -516,35 +628,30 @@
         list.forEach(function (file) {
             var form = new FormData();
             form.append('file', file);
+            if (CFG.cid) {
+                form.append('cid', CFG.cid);
+            }
 
-            fetch(uploadUrl(), { method: 'POST', body: form, credentials: 'same-origin' })
-                .then(function (res) {
-                    return res.ok ? res.json() : null;
-                })
+            post('upload', form)
                 .then(function (data) {
-                    var att = data && data[1];
-                    if (!att || !att.url) {
+                    if (!data || !data.ok || !data.url) {
+                        failed++;
+                        if (data && data.error) {
+                            notice(data.error);
+                        }
                         return;
                     }
-
-                    var item = {
-                        cid: att.cid || 0,
-                        title: att.title || file.name,
-                        name: file.name,
-                        url: att.url,
-                        date: ''
-                    };
-
-                    done.push(item);
-
                     if (state.multiple) {
-                        state.selected.push(item.url);
+                        state.selected.push(data.url);
                     } else {
-                        state.selected = [item.url];
+                        state.selected = [data.url];
                     }
                 })
-                .catch(function () {
-                    /* 单个失败不打断其余文件 */
+                .catch(function (err) {
+                    failed++;
+                    if (err && err.message === 'auth') {
+                        notice('登录状态已失效，请刷新页面');
+                    }
                 })
                 .then(function () {
                     left--;
@@ -552,23 +659,24 @@
                         return;
                     }
 
+                    /* 全部结束后重新拉列表：拿到 cid / 缩略图 / 引用数 */
                     ui.loading.hidden = true;
                     ui.loading.innerHTML = '<i class="ecmd__spin"></i>正在读取媒体库…';
-
-                    if (!done.length) {
-                        notice('上传失败，请检查登录状态或附件设置');
-                        return;
+                    if (failed && !state.selected.length) {
+                        notice('上传失败，请检查登录状态或文件格式');
                     }
-
-                    state.items = done.concat(state.items);
-                    state.total = (state.total || 0) + done.length;
-                    ui.count.textContent = '共 ' + state.total + ' 张';
-                    paintGrid();
+                    state.total = 0;
+                    load(true);
+                    requestStats();
                 });
         });
     }
 
     function notice(message) {
+        if (state.manage) {
+            toast(message);
+            return;
+        }
         var old = ui.picked.innerHTML;
         ui.picked.textContent = message;
         ui.picked.style.color = '#c0392b';
@@ -576,6 +684,158 @@
             ui.picked.innerHTML = old;
             ui.picked.style.color = '';
         }, 3200);
+    }
+
+    /* 页面模式下底部选择栏被隐藏，提示改走浮动 toast */
+    function toast(message) {
+        if (!ui) {
+            return;
+        }
+        var box = ui.root.querySelector('[data-toast]');
+        if (!box) {
+            box = document.createElement('div');
+            box.className = 'ecmd__toast';
+            box.setAttribute('data-toast', '');
+            var dialog = ui.root.querySelector('.ecmd__dialog');
+            if (dialog) {
+                dialog.appendChild(box);
+            }
+        }
+        box.textContent = message;
+        box.classList.add('is-on');
+        window.setTimeout(function () {
+            box.classList.remove('is-on');
+        }, 3200);
+    }
+
+    /* ------------------------------------------------------------------ *
+     * 管理：删除 / 改名 / 转 WebP（单项 + 批量）
+     * ------------------------------------------------------------------ */
+
+    function removeLocal(url) {
+        var index = -1;
+        state.items.forEach(function (it, i) {
+            if (it.url === url) {
+                index = i;
+            }
+        });
+        if (index > -1) {
+            state.items.splice(index, 1);
+        }
+        var sel = state.selected.indexOf(url);
+        if (sel > -1) {
+            state.selected.splice(sel, 1);
+        }
+        if (state.detail && state.detail.url === url) {
+            showDetail(null);
+        }
+        if (state.total > 0) {
+            state.total--;
+        }
+        ui.count.textContent = state.total ? '共 ' + state.total + ' 张' : '';
+        paintGrid();
+    }
+
+    function deleteOne(item, force) {
+        return post('delete', { cid: item.cid, force: force ? '1' : '' }).then(function (data) {
+            if (data && data.ok) {
+                removeLocal(item.url);
+                requestStats();
+                return true;
+            }
+            if (data && data.refs > 0 && !force) {
+                if (window.confirm('「' + (item.name || item.title) + '」被 ' + data.refs + ' 篇内容引用，仍要删除吗？\n删除后引用处图片会失效。')) {
+                    return deleteOne(item, true);
+                }
+                return false;
+            }
+            notice((data && data.error) || '删除失败');
+            return false;
+        }).catch(function (err) {
+            notice(err && err.message === 'auth' ? '登录状态已失效' : '删除失败');
+            return false;
+        });
+    }
+
+    function convertOne(item) {
+        return post('convert', { cid: item.cid }).then(function (data) {
+            if (data && data.ok) {
+                notice('已生成 WebP 副本（原图保留）');
+                requestStats();
+                return true;
+            }
+            notice((data && data.error) || '转换失败');
+            return false;
+        }).catch(function (err) {
+            notice(err && err.message === 'auth' ? '登录状态已失效' : '转换失败');
+            return false;
+        });
+    }
+
+    function renameOne(item, title) {
+        return post('rename', { cid: item.cid, title: title }).then(function (data) {
+            if (data && data.ok) {
+                item.title = title;
+                paintGrid();
+                if (state.detail === item) {
+                    showDetail(item);
+                }
+                return true;
+            }
+            notice((data && data.error) || '改名失败');
+            return false;
+        }).catch(function () {
+            notice('改名失败');
+            return false;
+        });
+    }
+
+    function runBatch(kind) {
+        var targets = state.selected.map(function (url) {
+            return findItem(url);
+        }).filter(Boolean);
+        if (!targets.length) {
+            return;
+        }
+        if (kind === 'delete' && !window.confirm('确定删除所选 ' + targets.length + ' 张图片吗？')) {
+            return;
+        }
+
+        ui.loading.hidden = false;
+        ui.loading.innerHTML = '<i class="ecmd__spin"></i>正在处理 ' + targets.length + ' 张…';
+
+        var done = 0;
+        var chain = Promise.resolve();
+        targets.forEach(function (item) {
+            chain = chain.then(function () {
+                return kind === 'delete' ? deleteOne(item, false) : convertOne(item);
+            }).then(function () {
+                done++;
+                ui.loading.innerHTML = '<i class="ecmd__spin"></i>已处理 ' + done + ' / ' + targets.length + '…';
+            });
+        });
+        chain.then(function () {
+            ui.loading.hidden = true;
+            ui.loading.innerHTML = '<i class="ecmd__spin"></i>正在读取媒体库…';
+            if (kind === 'convert') {
+                load(true);
+            }
+            paintStats();
+        });
+    }
+
+    function toggleBatch(on) {
+        state.batch = typeof on === 'boolean' ? on : !state.batch;
+        if (state.batch) {
+            state.prevMultiple = state.multiple;
+            state.multiple = true;
+        } else {
+            state.multiple = !!state.prevMultiple;
+        }
+        if (ui.batchbar) {
+            ui.batchbar.hidden = !state.batch;
+        }
+        paintPicked();
     }
 
     /* ------------------------------------------------------------------ *
@@ -623,15 +883,28 @@
         }
 
         state.open = true;
+        state.manage = !!options.manage;
+        ui.root.classList.toggle('ecmd--page', state.manage);
         state.multiple = !!options.multiple;
         state.onPick = typeof options.onPick === 'function' ? options.onPick : null;
         state.keyword = '';
+        state.fmt = '';
         state.page = 0;
         state.hasMore = false;
         state.items = [];   /* 每次打开都重新拉取，保证看到刚上传的图 */
         state.returnFocus = document.activeElement;
         state.detail = null;
         state.lb = false;
+        if (state.batch) {
+            toggleBatch(false);
+        }
+
+        if (ui.fmt) {
+            ui.fmt.value = '';
+        }
+        if (ui.stats) {
+            ui.stats.textContent = '';
+        }
 
         ui.side.hidden = true;
         ui.sideView.innerHTML = '';
@@ -645,7 +918,7 @@
                 : [String(options.value)].filter(Boolean);
         }
 
-        ui.title.textContent = options.title || (state.multiple ? '选择图片（可多选）' : '选择图片');
+        ui.title.textContent = options.title || (state.manage ? '资源库' : (state.multiple ? '选择图片（可多选）' : '选择图片'));
         ui.search.value = '';
         ui.link.value = '';
         ui.preview.innerHTML = '粘贴或输入图片地址，下方会显示预览';
@@ -654,6 +927,7 @@
 
         switchTab('library');
         load(true);
+        requestStats();
 
         window.setTimeout(function () {
             ui.search.focus();
@@ -661,8 +935,8 @@
     }
 
     function close() {
-        if (!ui) {
-            return;
+        if (!ui || state.manage) {
+            return; /* 页面模式下对话框即页面本身，不允许关闭 */
         }
         closeLightbox();
         state.open = false;
@@ -726,6 +1000,26 @@
             }, 260);
         });
 
+        if (ui.fmt) {
+            ui.fmt.addEventListener('change', function () {
+                state.fmt = ui.fmt.value;
+                load(true);
+            });
+        }
+
+        ui.root.querySelector('[data-manage]').addEventListener('click', function () {
+            toggleBatch();
+        });
+        ui.root.querySelector('[data-batch-exit]').addEventListener('click', function () {
+            toggleBatch(false);
+        });
+        ui.root.querySelector('[data-batch-delete]').addEventListener('click', function () {
+            runBatch('delete');
+        });
+        ui.root.querySelector('[data-batch-convert]').addEventListener('click', function () {
+            runBatch('convert');
+        });
+
         ui.more.addEventListener('click', function () {
             load(false);
         });
@@ -785,6 +1079,30 @@
         });
         ui.root.querySelector('[data-side-zoom]').addEventListener('click', function () {
             openLightbox(state.detail);
+        });
+        ui.root.querySelector('[data-side-rename]').addEventListener('click', function () {
+            var item = state.detail;
+            if (!item) {
+                return;
+            }
+            var title = window.prompt('新的图片名称', item.title || item.name || '');
+            if (title && title.trim()) {
+                renameOne(item, title.trim());
+            }
+        });
+        ui.root.querySelector('[data-side-convert]').addEventListener('click', function () {
+            if (state.detail) {
+                convertOne(state.detail);
+            }
+        });
+        ui.root.querySelector('[data-side-delete]').addEventListener('click', function () {
+            var item = state.detail;
+            if (!item) {
+                return;
+            }
+            if (window.confirm('确定删除「' + (item.name || item.title) + '」吗？')) {
+                deleteOne(item, false);
+            }
         });
 
         /* 灯箱 */

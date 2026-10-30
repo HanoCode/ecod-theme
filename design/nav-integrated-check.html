@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>集成验证 · Header 导航（真实构建产物）</title>
+<link rel="stylesheet" href="../assets/dist/css/ecod.4eab39d5.min.css">
+<script defer src="../assets/dist/js/ecod.global.b881814b.min.js"></script>
+<style>body { background: var(--ecod-bg); } .checknote { max-width: 1200px; margin: 48px auto; padding: 0 24px; font-size: 14px; color: var(--ecod-text-2); line-height: 2; }</style>
+</head>
+<body>
+
+<header class="ecod_header" data-ecod-header>
+    <div class="ecod_container">
+        <nav class="ecod_nav" aria-label="主导航">
+            <a class="ecod_nav__logo" href="#">
+                <span class="ecod_nav__logo-mark" aria-hidden="true">E</span>
+                <span>ECOD·志</span>
+            </a>
+
+            <ul class="ecod_nav__links">
+                <!-- 当前页：is-active 药丸 -->
+                <li class="is-active">
+                    <a href="#"><span class="ecod_nav__licon"><svg class="ecod_icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 22V12h6v10"/></svg></span><span class="ecod_nav__ltext">首页</span></a>
+                </li>
+
+                <!-- badge + 图标卡片 + 两列宽面板（居中锚定） -->
+                <li class="has-sub">
+                    <a href="#">
+                        <span class="ecod_nav__ltext">产品中心</span>
+                        <i class="ecod_nav__badge">优惠</i>
+                        <i class="ecod_nav__caret" aria-hidden="true"><svg class="ecod_icon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 18l6-6-6-6"/></svg></i>
+                    </a>
+                    <ul class="ecod_nav__sub is-cols has-icons">
+                        <li><a href="#"><span class="ecod_nav__licon"><svg class="ecod_icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg></span>Ecod 主题</a></li>
+                        <li class="is-active"><a href="#"><span class="ecod_nav__licon"><svg class="ecod_icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2l9 5-9 5-9-5 9-5z"/><path d="M3 12l9 5 9-5M3 17l9 5 9-5"/></svg></span>插件生态</a></li>
+                        <li><a href="#"><span class="ecod_nav__licon"><svg class="ecod_icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><circle cx="7" cy="7" r="1.5"/></svg></span>标签大全</a></li>
+                        <li><a href="#"><span class="ecod_nav__licon"><svg class="ecod_icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg></span>更新日志</a></li>
+                        <li><a href="#">源码商城</a></li>
+                        <li><a href="#">定制服务</a></li>
+                    </ul>
+                </li>
+
+                <!-- 一列图标卡片面板 -->
+                <li class="has-sub">
+                    <a href="#">
+                        <span class="ecod_nav__ltext">功能演示</span>
+                        <i class="ecod_nav__caret" aria-hidden="true"><svg class="ecod_icon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 18l6-6-6-6"/></svg></i>
+                    </a>
+                    <ul class="ecod_nav__sub has-icons">
+                        <li><a href="#"><span class="ecod_nav__licon ecod_nav__licon--text">速</span>速度对比</a></li>
+                        <li><a href="#"><span class="ecod_nav__licon"><svg class="ecod_icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 18h6M10 22h4"/><path d="M12 2a6 6 0 0 0-3.5 10.9c.6.4.9 1 .9 1.7V16h5.2v-1.4c0-.7.3-1.3.9-1.7A6 6 0 0 0 12 2z"/></svg></span>功能清单</a></li>
+                        <li><a href="#"><span class="ecod_nav__licon"><svg class="ecod_icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="5" width="14" height="14" rx="2"/><path d="M16 10l6-3v10l-6-3z"/></svg></span>视频演示</a></li>
+                    </ul>
+                </li>
+
+                <!-- 10 个图标子项：两列 5 行 -->
+                <li class="has-sub is-active">
+                    <a href="#">
+                        <span class="ecod_nav__ltext">帮助中心</span>
+                        <i class="ecod_nav__caret" aria-hidden="true"><svg class="ecod_icon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 18l6-6-6-6"/></svg></i>
+                    </a>
+                    <ul class="ecod_nav__sub is-cols has-icons">
+                        <li><a href="#"><span class="ecod_nav__licon"><svg class="ecod_icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></span>用户相关</a></li>
+                        <li class="is-active"><a href="#"><span class="ecod_nav__licon"><svg class="ecod_icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M16 13H8m8 4H8"/></svg></span>文章帮助</a></li>
+                        <li><a href="#"><span class="ecod_nav__licon"><svg class="ecod_icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.59 13.51l6.83 3.98m-.01-10.98l-6.82 3.98"/></svg></span>社区帮助</a></li>
+                        <li><a href="#"><span class="ecod_nav__licon"><svg class="ecod_icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 12h-6l-2 3h-4l-2-3H2"/><path d="M5.45 5.11L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/></svg></span>商铺帮助</a></li>
+                        <li><a href="#"><span class="ecod_nav__licon"><svg class="ecod_icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 18h6M10 22h4"/><path d="M12 2a6 6 0 0 0-3.5 10.9c.6.4.9 1 .9 1.7V16h5.2v-1.4c0-.7.3-1.3.9-1.7A6 6 0 0 0 12 2z"/></svg></span>文档帮助</a></li>
+                        <li><a href="#"><span class="ecod_nav__licon"><svg class="ecod_icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg></span>导航帮助</a></li>
+                        <li><a href="#"><span class="ecod_nav__licon"><svg class="ecod_icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></span>反馈权限</a></li>
+                        <li><a href="#"><span class="ecod_nav__licon"><svg class="ecod_icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/></svg></span>常见问题</a></li>
+                        <li><a href="#"><span class="ecod_nav__licon"><svg class="ecod_icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="15" r="6"/><path d="M9 9L7 2h10l-2 7"/><path d="M12 12.5l1 2 2 .3-1.5 1.4.4 2-1.9-1-1.9 1 .4-2L9 14.8l2-.3z"/></svg></span>赞助支持</a></li>
+                        <li><a href="#"><span class="ecod_nav__licon"><svg class="ecod_icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M22 6l-10 7L2 6"/></svg></span>联系我们</a></li>
+                    </ul>
+                </li>
+
+                <li>
+                    <a href="#"><span class="ecod_nav__ltext">模板中心</span></a>
+                </li>
+
+                <!-- HOT badge：换个文案演示 -->
+                <li>
+                    <a href="#">
+                        <span class="ecod_nav__ltext">构建器</span>
+                        <i class="ecod_nav__badge">HOT</i>
+                    </a>
+                </li>
+            </ul>
+
+            <div class="ecod_nav__actions">
+                <div class="ecod_nav__tools">
+                    <button type="button" class="ecod_nav__searchbtn" aria-label="搜索" title="搜索（⌘K）"><svg class="ecod_icon" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M21l-4.35-4.35"/></svg></button>
+                    <i class="ecod_nav__sep" aria-hidden="true"></i>
+                    <button type="button" class="ecod_nav__themebtn" data-check-theme aria-label="切换深浅模式" title="深浅模式"><svg class="ecod_icon" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg></button>
+                </div>
+                <details class="ecod_nav__user" open>
+                    <summary aria-label="用户中心" style="list-style:none;"><svg class="ecod_icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></summary>
+                </details>
+            </div>
+
+            <button type="button" class="ecod_nav__burger" aria-label="打开菜单"><svg class="ecod_icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18M3 12h18M3 18h18"/></svg></button>
+        </nav>
+    </div>
+</header>
+
+<main class="checknote">
+    <b>集成验证页（真实构建 CSS）</b><br>
+    · <b>首页</b> = 选中态药丸　· <b>产品中心 / 帮助中心 / 功能演示</b> = 悬停或 Tab 聚焦展开 Mega 面板（小箭头缺口 · 两列图标卡片居中锚定）<br>
+    · <b>优惠 / HOT</b> = badge 字段旗标　· 右上角胶囊 = 工具组（搜索 + 分隔线 + 深浅切换，点月亮看暗色）
+</main>
+
+<script>
+document.querySelector('[data-check-theme]').addEventListener('click', function () {
+    var root = document.documentElement;
+    root.dataset.theme = root.dataset.theme === 'dark' ? 'light' : 'dark';
+});
+</script>
+</body>
+</html>

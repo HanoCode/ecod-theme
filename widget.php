@@ -451,6 +451,55 @@ if ($ecodAction !== '') {
             ecod_wgt_json(['ok' => true, 'doc' => $ecodDoc]);
             break;
 
+        case 'media':
+            /* 媒体库选图（第 11 轮）：只回图片附件，标题关键词 + 分页
+             * 白名单统一走 core/media/storage.php 的 ecod_media_ext_allowed() */
+            $ecodMediaQ = trim((string) ($ecodIn['q'] ?? ''));
+            $ecodMediaPage = max(1, (int) ($ecodIn['page'] ?? 1));
+            $ecodMediaSize = 24;
+
+            $ecodMediaRows = \Typecho\Db::get()->fetchAll(
+                \Typecho\Db::get()->select('cid', 'title', 'text')
+                    ->from('table.contents')
+                    ->where('type = ?', 'attachment')
+                    ->order('created', \Typecho\Db::SORT_DESC)
+            );
+
+            $ecodMediaItems = [];
+            foreach ($ecodMediaRows as $ecodMediaRow) {
+                $ecodMediaData = json_decode((string) $ecodMediaRow['text'], true);
+                if (!is_array($ecodMediaData) || !ecod_media_ext_allowed((string) ($ecodMediaData['type'] ?? ''))) {
+                    continue;
+                }
+                if ($ecodMediaQ !== '' && mb_stripos($ecodMediaRow['title'] . ' ' . ($ecodMediaData['name'] ?? ''), $ecodMediaQ) === false) {
+                    continue;
+                }
+                $ecodMediaUrl = '';
+                try {
+                    $ecodMediaUrl = ecod_media_attachment_url($ecodMediaData);
+                } catch (\Throwable $e) {
+                    continue;
+                }
+                $ecodMediaItems[] = [
+                    'cid'   => (int) $ecodMediaRow['cid'],
+                    'title' => (string) $ecodMediaRow['title'],
+                    'url'   => $ecodMediaUrl,
+                ];
+            }
+
+            $ecodMediaTotal = count($ecodMediaItems);
+            $ecodMediaPages = max(1, (int) ceil($ecodMediaTotal / $ecodMediaSize));
+            $ecodMediaPage = min($ecodMediaPage, $ecodMediaPages);
+
+            ecod_wgt_json([
+                'ok'    => true,
+                'items' => array_slice($ecodMediaItems, ($ecodMediaPage - 1) * $ecodMediaSize, $ecodMediaSize),
+                'total' => $ecodMediaTotal,
+                'page'  => $ecodMediaPage,
+                'pages' => $ecodMediaPages,
+            ]);
+            break;
+
         case 'import':
             $inDoc = is_array($ecodIn['doc'] ?? null) ? $ecodIn['doc'] : null;
             if (!$inDoc || empty($inDoc['areas']) || !is_array($inDoc['areas'])) {

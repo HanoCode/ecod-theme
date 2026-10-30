@@ -151,7 +151,8 @@ function ecod_thumb_abs_url(string $url): string
 }
 
 /**
- * 缩略图地址：本站 uploads 图返回裁剪代理地址，其余原样返回
+ * 缩略图地址：本站 uploads 图返回裁剪代理地址；
+ * 云驱动（OSS/COS）附件走 CDN 图片处理参数；其余原样返回
  */
 function ecod_thumb_url(string $url, string $preset = 'cover'): string
 {
@@ -164,12 +165,26 @@ function ecod_thumb_url(string $url, string $preset = 'cover'): string
     if (!isset($presets[$preset])) {
         return $url;
     }
-    if (ecod_thumb_local_path($url) === '') {
-        return $url;
+    if (ecod_thumb_local_path($url) !== '') {
+        $api = function_exists('ecod_api_url') ? ecod_api_url() : '/usr/themes/ecod-theme/api.php';
+        return $api . '?action=thumb&p=' . rawurlencode($preset) . '&src=' . rawurlencode($url);
     }
 
-    $api = function_exists('ecod_api_url') ? ecod_api_url() : '/usr/themes/ecod-theme/api.php';
-    return $api . '?action=thumb&p=' . rawurlencode($preset) . '&src=' . rawurlencode($url);
+    /* 非本地图：OSS / COS 驱动的附件 URL 加 CDN 处理参数（S3 系回退原图） */
+    if (function_exists('ecod_media_storage')) {
+        try {
+            $driver = ecod_media_storage();
+            if ($driver->id() !== 'local') {
+                $base = rtrim($driver->url(''), '/');
+                if ($base !== '' && strpos($url, $base) === 0) {
+                    return $driver->thumbUrl($url, $preset, $presets[$preset][0], $presets[$preset][1]);
+                }
+            }
+        } catch (\Throwable $e) {
+            /* 驱动异常回退原图 */
+        }
+    }
+    return $url;
 }
 
 /**

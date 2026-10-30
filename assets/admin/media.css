@@ -710,6 +710,87 @@
     background: rgba(255, 255, 255, .3);
 }
 
+/* ---------------- 格式筛选 / 用量统计 / 批量条 ---------------- */
+
+.ecmd__fmt {
+    height: 32px;
+    padding: 0 8px;
+    border: 1px solid var(--md-line-strong);
+    border-radius: var(--md-r-sm);
+    background: var(--md-card);
+    color: var(--md-ink);
+    font-size: 12px;
+    cursor: pointer;
+}
+
+.ecmd__fmt:focus {
+    outline: 0;
+    border-color: var(--md-brand);
+}
+
+.ecmd__stats {
+    color: var(--md-faint);
+    font-size: 11.5px;
+    white-space: nowrap;
+}
+
+.ecmd__batch {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
+    border-bottom: 1px solid var(--md-line);
+    background: var(--md-brand-soft);
+    color: var(--md-brand);
+    font-size: 12.5px;
+}
+
+.ecmd__batch[hidden] {
+    display: none;
+}
+
+.ecmd__batch .ecmd__spacer {
+    flex: 1;
+}
+
+.ecmd__batch .ecmd__btn {
+    height: 28px;
+    padding: 0 10px;
+    font-size: 12px;
+}
+
+.ecmd__btn--danger {
+    border-color: #e2b6b6;
+    color: #c0392b;
+}
+
+.ecmd__btn--danger:hover {
+    border-color: #c0392b;
+    background: #fdf1f0;
+    color: #c0392b;
+}
+
+.ecmd__refs {
+    color: var(--md-brand);
+    font-weight: 600;
+}
+
+/* 瓦片格式徽标（非 JPG 才显示） */
+
+.ecmd__badge {
+    position: absolute;
+    right: 7px;
+    bottom: 30px;
+    padding: 1px 6px;
+    border-radius: var(--md-r-xs);
+    background: rgba(20, 26, 44, .62);
+    color: #fff;
+    font-size: 10px;
+    line-height: 1.6;
+    letter-spacing: .4px;
+    pointer-events: none;
+}
+
 /* ---------------- 底部 ---------------- */
 
 .ecmd__foot {
@@ -969,4 +1050,56 @@
     .ecmd__tile img {
         background: #202636;
     }
+}
+
+/* ---------------- 页面管理模式（接管后台 manage-medias.php） ---------------- */
+
+.ecmd--page {
+    position: static;
+    inset: auto;
+    z-index: auto;
+    padding: 0;
+}
+
+.ecmd--page .ecmd__mask {
+    display: none;
+}
+
+.ecmd--page .ecmd__dialog {
+    width: 100%;
+    height: calc(100vh - 140px);
+    min-height: 480px;
+    border: 1px solid var(--md-line);
+    border-radius: var(--md-r);
+    box-shadow: none;
+    animation: none;
+}
+
+.ecmd--page .ecmd__tabs,
+.ecmd--page .ecmd__close,
+.ecmd--page .ecmd__foot {
+    display: none;
+}
+
+/* 浮动提示（页面模式下替代底部选择栏的 notice） */
+.ecmd__toast {
+    position: absolute;
+    left: 50%;
+    bottom: 28px;
+    transform: translate(-50%, 8px);
+    max-width: 80%;
+    padding: 8px 18px;
+    border-radius: var(--md-r-full);
+    background: rgba(28, 33, 48, .92);
+    color: #fff;
+    font-size: 13px;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity .18s ease, transform .18s ease;
+    z-index: 30;
+}
+
+.ecmd__toast.is-on {
+    opacity: 1;
+    transform: translate(-50%, 0);
 }

@@ -44,8 +44,9 @@ $ecodTopicIndex = ecod_topic_index();
 <?php if ($ecodTopicCur === null): ?>
 
     <nav class="ecod_crumb" aria-label="面包屑">
+        <a class="ecod_crumb__back" href="javascript:history.back()" aria-label="返回"><?php echo ecod_icon('chevron', 13); ?></a>
         <a href="<?php $this->options->siteUrl(); ?>"><?php echo ecod_icon('home', 12); ?>首页</a>
-        <span class="ecod_crumb__sep" aria-hidden="true"><?php echo ecod_icon('chevron', 11); ?></span>
+        <span class="ecod_crumb__sep" aria-hidden="true">/</span>
         <span aria-current="page">专题</span>
     </nav>
 
@@ -95,10 +96,11 @@ $ecodTopicIndex = ecod_topic_index();
     ?>
 
     <nav class="ecod_crumb" aria-label="面包屑">
+        <a class="ecod_crumb__back" href="javascript:history.back()" aria-label="返回"><?php echo ecod_icon('chevron', 13); ?></a>
         <a href="<?php $this->options->siteUrl(); ?>"><?php echo ecod_icon('home', 12); ?>首页</a>
-        <span class="ecod_crumb__sep" aria-hidden="true"><?php echo ecod_icon('chevron', 11); ?></span>
+        <span class="ecod_crumb__sep" aria-hidden="true">/</span>
         <a href="<?php echo htmlspecialchars(ecod_topics_url(), ENT_QUOTES, 'UTF-8'); ?>">专题</a>
-        <span class="ecod_crumb__sep" aria-hidden="true"><?php echo ecod_icon('chevron', 11); ?></span>
+        <span class="ecod_crumb__sep" aria-hidden="true">/</span>
         <span aria-current="page"><?php echo htmlspecialchars((string) $ecodTopic['name'], ENT_QUOTES, 'UTF-8'); ?></span>
     </nav>
 

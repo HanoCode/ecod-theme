@@ -71,8 +71,26 @@ function ecod_nav_clean_cls($raw): string
             break;
         }
     }
+}
 
-    return implode(' ', $out);
+/**
+ * 清理导航套的展示样式
+ *
+ * @param mixed $raw
+ * @return string auto|list|icons|mega
+ */
+function ecod_nav_clean_style($raw): string
+{
+    $raw = strtolower(trim((string) $raw));
+    if ($raw === '') {
+        return ''; // 空 = 跟随全局 ENavStyle
+    }
+    $allowed = ['auto', 'list', 'icons', 'mega', 'mega-group'];
+    if (!in_array($raw, $allowed, true)) {
+        return '';
+    }
+
+    return $raw;
 }
 
 /**
@@ -106,6 +124,21 @@ function ecod_nav_norm_item($row): ?array
     if (mb_strlen($badge) > 6) {
         $badge = mb_substr($badge, 0, 6);
     }
+    /* 条目描述（分组宽面板 mega-group 用）：最长 40 字 */
+    $desc = trim((string) ($row['desc'] ?? ''));
+    if (mb_strlen($desc) > 40) {
+        $desc = mb_substr($desc, 0, 40);
+    }
+    /* 分组名（mega-group 按名归组分栏）：最长 8 字 */
+    $group = trim((string) ($row['group'] ?? ''));
+    if (mb_strlen($group) > 8) {
+        $group = mb_substr($group, 0, 8);
+    }
+    /* 子菜单显示模式（项级覆盖套级）：空 = 跟随套设置 */
+    $subStyle = strtolower(trim((string) ($row['sub_style'] ?? '')));
+    if (!in_array($subStyle, ['auto', 'list', 'icons', 'mega', 'mega-group'], true)) {
+        $subStyle = '';
+    }
 
     /* link 必须有地址；page / cat / tag 必须有 ref；home 什么都不用 */
     if ($type === 'link' && $url === '') {
@@ -125,6 +158,9 @@ function ecod_nav_norm_item($row): ?array
         'cls'      => ecod_nav_clean_cls($row['cls'] ?? ''),
         'icon'     => (string) $icon,
         'badge'    => $badge,
+        'desc'     => $desc,
+        'group'    => $group,
+        'sub_style' => $subStyle,
         'children' => [],
     ];
 }
@@ -232,6 +268,7 @@ function ecod_nav_sets(): array
                     'id'    => $id,
                     'name'  => $name !== '' ? $name : '未命名导航',
                     'note'  => mb_substr(trim((string) ($row['note'] ?? '')), 0, 60),
+                    'style' => ecod_nav_clean_style($row['style'] ?? ''),
                     'items' => ecod_nav_norm_tree($row['items'] ?? []),
                 ];
             }
@@ -255,7 +292,7 @@ function ecod_nav_sets(): array
     if ($legacy) {
         $cache = [
             'active' => 'default',
-            'sets'   => [['id' => 'default', 'name' => '默认导航', 'note' => '', 'items' => $legacy]],
+            'sets'   => [['id' => 'default', 'name' => '默认导航', 'note' => '', 'style' => 'auto', 'items' => $legacy]],
         ];
     }
 
@@ -280,8 +317,27 @@ function ecod_nav_menu_raw(): array
 }
 
 /**
- * 后台是否配置过菜单
+ * 当前生效导航套的展示样式（auto/list/icons/mega）
  *
+ * 菜单为空时返回全局 ENavStyle 设置（或 auto）。
+ */
+function ecod_nav_style(): string
+{
+    $state = ecod_nav_sets();
+    foreach ($state['sets'] as $set) {
+        if ($set['id'] === $state['active']) {
+            /* 套内未设样式（空）→ 回退全局 ENavStyle；'auto' 是显式选择，不回退 */
+            $style = isset($set['style']) ? trim((string) $set['style']) : '';
+            if ($style !== '') {
+                return $style;
+            }
+            break;
+        }
+    }
+
+    return ecod_option('ENavStyle', 'auto');
+}
+/**
  * 用于决定前台是否还要渲染内置的「首页」项：菜单为空时走旧版回退（内置首页 + 全部页面）。
  */
 function ecod_nav_has_menu(): bool
@@ -485,6 +541,9 @@ function ecod_nav_resolve_item(array $item, array $pageMap): ?array
         'cls'      => ecod_nav_clean_cls($item['cls'] ?? ''),
         'icon'     => (string) ($item['icon'] ?? ''),
         'badge'    => (string) ($item['badge'] ?? ''),
+        'desc'     => (string) ($item['desc'] ?? ''),
+        'group'    => (string) ($item['group'] ?? ''),
+        'sub_style' => (string) ($item['sub_style'] ?? ''),
         'children' => [],
     ];
 }

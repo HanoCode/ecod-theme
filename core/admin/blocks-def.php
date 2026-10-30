@@ -458,6 +458,30 @@ ecod_block_define('topics', [
     ],
 ]);
 
+ecod_block_define('partners', [
+    'name'   => '合作伙伴',
+    'desc'   => '品牌 Logo 墙：图片 + 名称，横排外链（JustNews 同款首页模块）',
+    'icon'   => 'star',
+    'area'   => 'home',
+    'pages'  => ['home'],
+    'order'  => 170,
+    'on'     => false,
+    'head'   => ['dot' => true],
+    'params' => [
+        'links' => [
+            'label'   => '合作伙伴',
+            'type'    => 'repeater',
+            'default' => '',
+            'max'     => 24,
+            'fields'  => [
+                ['key' => 'label', 'label' => '名称', 'placeholder' => '如：Typecho'],
+                ['key' => 'href',  'label' => '链接', 'placeholder' => 'https://…'],
+                ['key' => 'img',   'label' => 'Logo 图片', 'placeholder' => 'https://…（留空显示首字）'],
+            ],
+        ],
+    ],
+]);
+
 ecod_block_define('flash', [
     'name'   => '快讯',
     'desc'   => '时间线形式的最新短讯，日期戳 + 标题 + 一行摘要，无封面',
@@ -563,6 +587,23 @@ ecod_block_define('author', [
             'type'    => 'switch',
             'default' => 1,
         ],
+        'banner' => [
+            'label'   => '横幅图',
+            'type'    => 'image',
+            'default' => '',
+            'desc'    => '卡片中部的 2:1 横幅，留空则不显示',
+        ],
+        'apps'   => [
+            'label'   => '快捷入口磁贴',
+            'type'    => 'repeater',
+            'default' => '',
+            'max'     => 4,
+            'fields'  => [
+                ['key' => 'label', 'label' => '名称', 'placeholder' => '如：创作'],
+                ['key' => 'href',  'label' => '链接', 'placeholder' => 'https://…'],
+                ['key' => 'icon',  'label' => '图标', 'placeholder' => '图标名：edit / star / zap…（留空用 link）'],
+            ],
+        ],
         'links'  => [
             'label'   => '社交链接',
             'type'    => 'repeater',
@@ -574,9 +615,20 @@ ecod_block_define('author', [
             ],
         ],
         'stats'  => [
-            'label'   => '显示文章/评论数',
+            'label'   => '显示文章/评论/天数',
             'type'    => 'switch',
             'default' => 1,
+        ],
+        'cta'    => [
+            'label'   => '显示底部主按钮',
+            'type'    => 'switch',
+            'default' => 1,
+            'desc'    => '登录用户跳个人中心；游客自动显示「登录 / 注册」跳登录页',
+        ],
+        'ctatext' => [
+            'label'   => '按钮文字',
+            'type'    => 'text',
+            'default' => '个人中心',
         ],
         'uid'    => [
             'label'   => '博主 uid',
@@ -793,6 +845,57 @@ ecod_block_define('rank', [
     ],
 ]);
 
+ecod_block_define('wtab', [
+    'name'   => '热门 Tab 组',
+    'desc'   => '热门 / 热评 / 最新 / 随机四合一选项卡，省侧栏纵向空间',
+    'icon'   => 'zap',
+    'area'   => 'aside',
+    'order'  => 55,
+    'on'     => false,
+    'head'   => ['scope' => 'widget', 'title' => '文章看看'],
+    'params' => [
+        'title' => [
+            'label'   => '标题',
+            'type'    => 'text',
+            'default' => '文章看看',
+        ],
+        'count' => [
+            'label'   => '每版条数',
+            'type'    => 'number',
+            'default' => 8,
+            'min'     => 3,
+            'max'     => 15,
+        ],
+        'hot'    => [
+            'label'   => '热门（按阅读量）',
+            'type'    => 'switch',
+            'default' => 1,
+        ],
+        'hotc'   => [
+            'label'   => '热评（按评论数）',
+            'type'    => 'switch',
+            'default' => 1,
+        ],
+        'recent' => [
+            'label'   => '最新',
+            'type'    => 'switch',
+            'default' => 1,
+        ],
+        'rand'   => [
+            'label'   => '随机',
+            'type'    => 'switch',
+            'default' => 1,
+        ],
+        'days'   => [
+            'label'   => '热门时间范围',
+            'type'    => 'number',
+            'default' => 0,
+            'min'     => 0,
+            'desc'    => '只统计最近 N 天；0 表示不限',
+        ],
+    ],
+]);
+
 /* ============================================================
  * 文章页
  * ========================================================== */
@@ -843,9 +946,9 @@ ecod_block_define('act', [
 ]);
 
 ecod_block_define('tts', [
-    'name'   => '朗读条',
-    'desc'   => '用浏览器语音合成朗读正文，可调语速、显示进度',
-    'icon'   => 'volume',
+    'name'   => '阅读工具条',
+    'desc'   => '吸顶工具条：目录 / 朗读（浏览器语音合成）/ 字号 / 阅读进度，吸收原「朗读条」横幅形态；形态可在「全站设置 → 阅读工具条形态」切换为侧栏竖栏',
+    'icon'   => 'list',
     'area'   => 'post',
     'pages'  => ['single'],
     'order'  => 12,
@@ -880,6 +983,23 @@ ecod_block_define('copyright', [
             'label'   => '附加说明',
             'type'    => 'textarea',
             'default' => '转载请注明出处，请勿用于商业用途。',
+        ],
+    ],
+]);
+
+ecod_block_define('authorbox', [
+    'name'   => '文末作者卡',
+    'desc'   => '正文结束后的「关于作者」：头像、简介与 TA 的文章入口',
+    'icon'   => 'user',
+    'area'   => 'post',
+    'pages'  => ['single'],
+    'order'  => 16,
+    'on'     => true,
+    'params' => [
+        'title' => [
+            'label'   => '标题',
+            'type'    => 'text',
+            'default' => '关于作者',
         ],
     ],
 ]);
@@ -1026,17 +1146,38 @@ ecod_block_define('dock', [
 
 ecod_block_define('notice', [
     'name'   => '站点公告',
-    'desc'   => '页面顶部横幅，可关闭（关闭后按内容记忆），支持跳转链接',
+    'desc'   => '页面顶部公告：单条横幅、多条轮播或每日弹窗，多条在「公告列表」里维护',
     'icon'   => 'alert',
     'area'   => 'footer',
     'order'  => 70,
     'file'   => 'components/header/notice.php',
     'params' => [
+        'mode'  => [
+            'label'   => '展示方式',
+            'type'    => 'select',
+            'default' => 'bar',
+            'options' => [
+                'bar'    => '横幅（单条展示，可关闭）',
+                'rotate' => '轮播（多条定时滚动）',
+                'popup'  => '弹窗（内容变化后弹一次）',
+            ],
+        ],
+        'items' => [
+            'label'   => '公告列表',
+            'type'    => 'repeater',
+            'max'     => 10,
+            'default' => '',
+            'fields'  => [
+                ['name' => 'text', 'label' => '公告内容（支持 HTML）'],
+                ['name' => 'link', 'label' => '跳转链接（可选）'],
+            ],
+            'desc'    => '排在前面的先展示；与下方「公告内容」二选一，列表优先',
+        ],
         'content'  => [
-            'label'   => '公告内容',
+            'label'   => '公告内容（单条兼容）',
             'type'    => 'textarea',
             'default' => '',
-            'desc'    => '支持 HTML；留空则不显示公告',
+            'desc'    => '支持 HTML；留空且公告列表为空则不显示公告',
         ],
         'tone'     => [
             'label'   => '样式',
@@ -1048,12 +1189,146 @@ ecod_block_define('notice', [
             'label'   => '跳转链接',
             'type'    => 'text',
             'default' => '',
-            'desc'    => '可选，填了内容右侧会显示「查看」箭头',
+            'desc'    => '单条模式的「查看」入口',
         ],
         'closable' => [
             'label'   => '允许关闭',
             'type'    => 'switch',
             'default' => 1,
+        ],
+    ],
+]);
+
+ecod_block_define('lottery', [
+    'name'   => '站点抽奖',
+    'desc'   => 'Credit 抽奖挂件：消耗、中奖概率、直接兑换、库存与保底进度，可就地抽奖（参考 guaqi 组件）',
+    'icon'   => 'medal',
+    'area'   => 'aside',
+    'order'  => 120,
+    'on'     => false,
+    'head'   => ['title' => '幸运抽奖', 'title_desc' => '挂件与抽奖页共用一套配置（「设置 → 变现 → 站点抽奖」）'],
+    'params' => [
+        'banner' => [
+            'label'   => '顶部横幅图',
+            'type'    => 'image',
+            'default' => '',
+            'desc'    => '可选；显示在标题下方，点击进入抽奖页',
+        ],
+        'facts' => [
+            'label'   => '显示数据栏',
+            'type'    => 'switch',
+            'default' => 1,
+            'desc'    => '消耗 / 中奖概率 / 直接兑换 / 库存 四格数据',
+        ],
+        'board' => [
+            'label'   => '显示奖品列表',
+            'type'    => 'switch',
+            'default' => 1,
+            'desc'    => '关闭后只留数据栏与抽奖按钮（抽奖仍按完整奖品池结算）',
+        ],
+    ],
+]);
+
+ecod_block_define('adbuy', [
+    'name'   => '自助广告',
+    'desc'   => '可购买的广告位价目卡，点击进入「广告投放」页下单（参考 guaqi 组件）',
+    'icon'   => 'radio',
+    'area'   => 'aside',
+    'order'  => 125,
+    'on'     => false,
+    'head'   => ['title' => '自助开通广告', 'title_desc' => '价目来自「设置 → 变现 → 自助广告」，未定价的位子不出现'],
+    'params' => [
+        'limit' => [
+            'label'   => '最多展示',
+            'type'    => 'number',
+            'min'     => 1,
+            'max'     => 6,
+            'default' => 3,
+        ],
+        'note' => [
+            'label'   => '底部说明',
+            'type'    => 'text',
+            'default' => '',
+            'desc'    => '可选，例如「按天计费，审核后上线」',
+        ],
+    ],
+]);
+
+ecod_block_define('ticker', [
+    'name'   => '更新动态',
+    'desc'   => '最新积分事件滚动播报（签到 / 中奖 / 被赞…），guaqi 式 LIVE 挂件；需开启积分并在「设置 → 互动 → 积分与 AI」打开播报开关',
+    'icon'   => 'radio',
+    'area'   => 'aside',
+    'order'  => 128,
+    'on'     => false,
+    'head'   => ['title' => '更新动态', 'title_desc' => '展示站点最新的积分奖励事件'],
+    'params' => [
+        'limit' => [
+            'label'   => '滚动条数',
+            'type'    => 'number',
+            'min'     => 3,
+            'max'     => 15,
+            'default' => 8,
+        ],
+        'seconds' => [
+            'label'   => '一轮秒数',
+            'type'    => 'number',
+            'min'     => 10,
+            'max'     => 120,
+            'default' => 30,
+        ],
+    ],
+]);
+
+ecod_block_define('shop', [
+    'name'   => '积分兑换',
+    'desc'   => 'Credit 兑换商城挂件：商品价目卡就地兑换（「设置 → 变现 → 兑换商城」维护商品）',
+    'icon'   => 'medal',
+    'area'   => 'aside',
+    'order'  => 122,
+    'on'     => false,
+    'head'   => ['title' => '积分兑换', 'title_desc' => '挂件与商城页共用一套商品配置'],
+    'params' => [
+        'limit' => [
+            'label'   => '最多展示',
+            'type'    => 'number',
+            'min'     => 1,
+            'max'     => 6,
+            'default' => 4,
+        ],
+    ],
+]);
+
+ecod_block_define('uads', [
+    'name'   => '投放广告',
+    'desc'   => '用户在「广告投放」页自助购买并审核通过的广告（「设置 → 变现 → 自助广告」定价）',
+    'icon'   => 'radio',
+    'area'   => 'aside',
+    'order'  => 130,
+    'on'     => false,
+    'params' => [
+        'slot' => [
+            'label'   => '拉取的广告位',
+            'type'    => 'select',
+            'default' => 'sidebar',
+            'options' => [
+                'sidebar'     => '侧边栏卡片',
+                'home_top'    => '首页顶部通栏',
+                'post_bottom' => '文章底部通栏',
+            ],
+            'desc'    => '本模块通常摆在侧栏并选「侧边栏卡片」；其余广告位请把模块放到对应区域',
+        ],
+        'limit' => [
+            'label'   => '最多展示',
+            'type'    => 'number',
+            'min'     => 1,
+            'max'     => 5,
+            'default' => 2,
+        ],
+        'label' => [
+            'label'   => '角标文字',
+            'type'    => 'text',
+            'default' => '广告',
         ],
     ],
 ]);

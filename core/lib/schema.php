@@ -25,7 +25,7 @@ if (!defined('__TYPECHO_ROOT_DIR__')) {
 }
 
 /** 当前数据结构版本，改动表结构时 +1 */
-define('ECOD_SCHEMA_VERSION', 9);
+define('ECOD_SCHEMA_VERSION', 13);
 
 /**
  * 数据库类型：mysql / pgsql / sqlite
@@ -678,6 +678,239 @@ function ecod_schema_ensure_throttle(\Typecho\Db $db): bool
 }
 
 /**
+ * 用户扩展资料表名（签名 / 简介等，见 core/user/meta.php）
+ */
+function ecod_usermeta_table(): string
+{
+    return \Typecho\Db::get()->getPrefix() . 'ecod_user_meta';
+}
+
+/**
+ * 确保用户扩展资料表存在
+ *
+ * uid + name 唯一：一个用户一个扩展字段一行。
+ */
+function ecod_schema_ensure_usermeta(\Typecho\Db $db): bool
+{
+    static $ok = null;
+    if ($ok !== null) {
+        return $ok;
+    }
+
+    $table = $db->getPrefix() . 'ecod_user_meta';
+    $adapter = ecod_schema_adapter($db);
+
+    try {
+        if ($adapter === 'sqlite') {
+            $db->query(
+                'CREATE TABLE IF NOT EXISTS "' . $table . '" ('
+                . ' "id" INTEGER PRIMARY KEY AUTOINCREMENT,'
+                . ' "uid" INTEGER NOT NULL,'
+                . ' "name" VARCHAR(32) NOT NULL,'
+                . ' "value" TEXT NOT NULL,'
+                . ' "created" INTEGER NOT NULL)'
+            );
+            $db->query(
+                'CREATE UNIQUE INDEX IF NOT EXISTS "' . $table . '_uid_name"'
+                . ' ON "' . $table . '" ("uid", "name")'
+            );
+        } elseif ($adapter === 'pgsql') {
+            $db->query(
+                'CREATE TABLE IF NOT EXISTS "' . $table . '" ('
+                . ' "id" SERIAL PRIMARY KEY,'
+                . ' "uid" INTEGER NOT NULL,'
+                . ' "name" VARCHAR(32) NOT NULL,'
+                . ' "value" TEXT NOT NULL,'
+                . ' "created" INTEGER NOT NULL)'
+            );
+            $db->query(
+                'CREATE UNIQUE INDEX IF NOT EXISTS "' . $table . '_uid_name"'
+                . ' ON "' . $table . '" ("uid", "name")'
+            );
+        } else {
+            $db->query(
+                'CREATE TABLE IF NOT EXISTS `' . $table . '` ('
+                . ' `id` INT(10) UNSIGNED NOT NULL AUTO_INCREMENT,'
+                . ' `uid` INT(10) UNSIGNED NOT NULL,'
+                . ' `name` VARCHAR(32) NOT NULL,'
+                . ' `value` TEXT NOT NULL,'
+                . ' `created` INT(10) UNSIGNED NOT NULL,'
+                . ' PRIMARY KEY (`id`),'
+                . ' UNIQUE KEY `uid_name` (`uid`, `name`)'
+                . ') ENGINE=InnoDB DEFAULT CHARSET=utf8mb4'
+            );
+        }
+        $ok = true;
+    } catch (\Throwable $e) {
+        $ok = false;
+    }
+
+    return $ok;
+}
+
+/**
+ * 评论点赞表名
+ */
+function ecod_clikes_table(): string
+{
+    return \Typecho\Db::get()->getPrefix() . 'ecod_clikes';
+}
+
+/**
+ * 确保评论点赞表存在
+ *
+ * 结构与文章点赞（ecod_likes）同构：coid 替代 cid，另存 post cid 便于整页一次取数。
+ * 去重 = coid + 指纹唯一索引；登录用户补记 uid（跨设备幂等）。
+ */
+function ecod_schema_ensure_clikes(\Typecho\Db $db): bool
+{
+    static $ok = null;
+    if ($ok !== null) {
+        return $ok;
+    }
+
+    $table = $db->getPrefix() . 'ecod_clikes';
+    $adapter = ecod_schema_adapter($db);
+
+    try {
+        if ($adapter === 'sqlite') {
+            $db->query(
+                'CREATE TABLE IF NOT EXISTS "' . $table . '" ('
+                . ' "id" INTEGER PRIMARY KEY AUTOINCREMENT,'
+                . ' "cid" INTEGER NOT NULL,'
+                . ' "coid" INTEGER NOT NULL,'
+                . ' "ip" VARCHAR(40) NOT NULL,'
+                . ' "uid" INTEGER NOT NULL DEFAULT 0,'
+                . ' "created" INTEGER NOT NULL)'
+            );
+            $db->query(
+                'CREATE UNIQUE INDEX IF NOT EXISTS "' . $table . '_coid_ip"'
+                . ' ON "' . $table . '" ("coid", "ip")'
+            );
+            $db->query(
+                'CREATE INDEX IF NOT EXISTS "' . $table . '_cid"'
+                . ' ON "' . $table . '" ("cid")'
+            );
+        } elseif ($adapter === 'pgsql') {
+            $db->query(
+                'CREATE TABLE IF NOT EXISTS "' . $table . '" ('
+                . ' "id" SERIAL PRIMARY KEY,'
+                . ' "cid" INTEGER NOT NULL,'
+                . ' "coid" INTEGER NOT NULL,'
+                . ' "ip" VARCHAR(40) NOT NULL,'
+                . ' "uid" INTEGER NOT NULL DEFAULT 0,'
+                . ' "created" INTEGER NOT NULL)'
+            );
+            $db->query(
+                'CREATE UNIQUE INDEX IF NOT EXISTS "' . $table . '_coid_ip"'
+                . ' ON "' . $table . '" ("coid", "ip")'
+            );
+            $db->query(
+                'CREATE INDEX IF NOT EXISTS "' . $table . '_cid"'
+                . ' ON "' . $table . '" ("cid")'
+            );
+        } else {
+            $db->query(
+                'CREATE TABLE IF NOT EXISTS `' . $table . '` ('
+                . ' `id` INT(10) UNSIGNED NOT NULL AUTO_INCREMENT,'
+                . ' `cid` INT(10) UNSIGNED NOT NULL,'
+                . ' `coid` INT(10) UNSIGNED NOT NULL,'
+                . ' `ip` CHAR(40) NOT NULL,'
+                . ' `uid` INT(10) UNSIGNED NOT NULL DEFAULT 0,'
+                . ' `created` INT(10) UNSIGNED NOT NULL,'
+                . ' PRIMARY KEY (`id`),'
+                . ' UNIQUE KEY `coid_ip` (`coid`, `ip`),'
+                . ' KEY `coid_uid` (`coid`, `uid`),'
+                . ' KEY `cid` (`cid`)'
+                . ') ENGINE=InnoDB DEFAULT CHARSET=utf8mb4'
+            );
+        }
+        $ok = true;
+    } catch (\Throwable $e) {
+        $ok = false;
+    }
+
+    return $ok;
+}
+
+/**
+ * 关注关系表名（uid 关注 target_uid，见 core/user/follow.php）
+ */
+function ecod_follows_table(): string
+{
+    return \Typecho\Db::get()->getPrefix() . 'ecod_follows';
+}
+
+/**
+ * 确保关注关系表存在
+ *
+ * 仅登录用户可关注：uid + target_uid 唯一；双向各一行（A→B 与 B→A 是两条记录）。
+ */
+function ecod_schema_ensure_follows(\Typecho\Db $db): bool
+{
+    static $ok = null;
+    if ($ok !== null) {
+        return $ok;
+    }
+
+    $table = $db->getPrefix() . 'ecod_follows';
+    $adapter = ecod_schema_adapter($db);
+
+    try {
+        if ($adapter === 'sqlite') {
+            $db->query(
+                'CREATE TABLE IF NOT EXISTS "' . $table . '" ('
+                . ' "id" INTEGER PRIMARY KEY AUTOINCREMENT,'
+                . ' "uid" INTEGER NOT NULL,'
+                . ' "target" INTEGER NOT NULL,'
+                . ' "created" INTEGER NOT NULL)'
+            );
+            $db->query(
+                'CREATE UNIQUE INDEX IF NOT EXISTS "' . $table . '_uid_target"'
+                . ' ON "' . $table . '" ("uid", "target")'
+            );
+            $db->query(
+                'CREATE INDEX IF NOT EXISTS "' . $table . '_target"'
+                . ' ON "' . $table . '" ("target")'
+            );
+        } elseif ($adapter === 'pgsql') {
+            $db->query(
+                'CREATE TABLE IF NOT EXISTS "' . $table . '" ('
+                . ' "id" SERIAL PRIMARY KEY,'
+                . ' "uid" INTEGER NOT NULL,'
+                . ' "target" INTEGER NOT NULL,'
+                . ' "created" INTEGER NOT NULL)'
+            );
+            $db->query(
+                'CREATE UNIQUE INDEX IF NOT EXISTS "' . $table . '_uid_target"'
+                . ' ON "' . $table . '" ("uid", "target")'
+            );
+            $db->query(
+                'CREATE INDEX IF NOT EXISTS "' . $table . '_target"'
+                . ' ON "' . $table . '" ("target")'
+            );
+        } else {
+            $db->query(
+                'CREATE TABLE IF NOT EXISTS `' . $table . '` ('
+                . ' `id` INT(10) UNSIGNED NOT NULL AUTO_INCREMENT,'
+                . ' `uid` INT(10) UNSIGNED NOT NULL,'
+                . ' `target` INT(10) UNSIGNED NOT NULL,'
+                . ' `created` INT(10) UNSIGNED NOT NULL,'
+                . ' PRIMARY KEY (`id`),'
+                . ' UNIQUE KEY `uid_target` (`uid`, `target`),'
+                . ' KEY `target` (`target`)'
+                . ') ENGINE=InnoDB DEFAULT CHARSET=utf8mb4'
+            );
+        }
+        $ok = true;
+    } catch (\Throwable $e) {
+        $ok = false;
+    }
+
+    return $ok;
+}
+
+/**
  * 确保分类 / 标签增强字段表存在（规格：docs/dev/design-proposal.html §32）
  *
  * mid + mkey 复合主键：metas.mid 全站唯一，无需 type 列；
@@ -966,6 +1199,431 @@ function ecod_schema_ensure_pay(\Typecho\Db $db): bool
 }
 
 /**
+ * 投票表名
+ */
+function ecod_polls_table(): string
+{
+    try {
+        return \Typecho\Db::get()->getPrefix() . 'ecod_polls_votes';
+    } catch (\Throwable $e) {
+        return 'typecho_ecod_polls_votes';
+    }
+}
+
+/**
+ * 确保投票表存在
+ *
+ * poll 为短代码投票的内容指纹（cid + 序号 + 选项摘要），一人（指纹）一票；
+ * multi 投票的所选选项存 opts（逗号分隔下标）。
+ */
+function ecod_schema_ensure_polls(\Typecho\Db $db): bool
+{
+    static $ok = null;
+    if ($ok !== null) {
+        return $ok;
+    }
+
+    $table = $db->getPrefix() . 'ecod_polls_votes';
+    $adapter = ecod_schema_adapter($db);
+
+    try {
+        if ($adapter === 'sqlite') {
+            $db->query(
+                'CREATE TABLE IF NOT EXISTS "' . $table . '" ('
+                . ' "id" INTEGER PRIMARY KEY AUTOINCREMENT,'
+                . ' "poll" VARCHAR(24) NOT NULL,'
+                . ' "fp" VARCHAR(40) NOT NULL,'
+                . ' "uid" INTEGER NOT NULL DEFAULT 0,'
+                . ' "opts" VARCHAR(64) NOT NULL DEFAULT \'\','
+                . ' "created" INTEGER NOT NULL)'
+            );
+            $db->query(
+                'CREATE UNIQUE INDEX IF NOT EXISTS "' . $table . '_poll_fp"'
+                . ' ON "' . $table . '" ("poll", "fp")'
+            );
+        } elseif ($adapter === 'pgsql') {
+            $db->query(
+                'CREATE TABLE IF NOT EXISTS "' . $table . '" ('
+                . ' "id" SERIAL PRIMARY KEY,'
+                . ' "poll" VARCHAR(24) NOT NULL,'
+                . ' "fp" VARCHAR(40) NOT NULL,'
+                . ' "uid" INTEGER NOT NULL DEFAULT 0,'
+                . ' "opts" VARCHAR(64) NOT NULL DEFAULT \'\','
+                . ' "created" INTEGER NOT NULL)'
+            );
+            $db->query(
+                'CREATE UNIQUE INDEX IF NOT EXISTS "' . $table . '_poll_fp"'
+                . ' ON "' . $table . '" ("poll", "fp")'
+            );
+        } else {
+            $db->query(
+                'CREATE TABLE IF NOT EXISTS `' . $table . '` ('
+                . ' `id` INT(10) UNSIGNED NOT NULL AUTO_INCREMENT,'
+                . ' `poll` VARCHAR(24) NOT NULL,'
+                . ' `fp` CHAR(40) NOT NULL,'
+                . ' `uid` INT(10) UNSIGNED NOT NULL DEFAULT 0,'
+                . ' `opts` VARCHAR(64) NOT NULL DEFAULT \'\','
+                . ' `created` INT(10) UNSIGNED NOT NULL,'
+                . ' PRIMARY KEY (`id`),'
+                . ' UNIQUE KEY `poll_fp` (`poll`, `fp`)'
+                . ') ENGINE=InnoDB DEFAULT CHARSET=utf8mb4'
+            );
+        }
+        $ok = true;
+    } catch (\Throwable $e) {
+        $ok = false;
+    }
+
+    return $ok;
+}
+
+/**
+ * 积分账本表名
+ */
+function ecod_credits_table(): string
+{
+    try {
+        return \Typecho\Db::get()->getPrefix() . 'ecod_credits';
+    } catch (\Throwable $e) {
+        return 'typecho_ecod_credits';
+    }
+}
+
+/**
+ * 确保积分账本表存在
+ *
+ * 只追加不修改：余额 = SUM(delta)，带 (uid, type, created) 索引即可
+ * 同时支撑余额、今日任务上限、签到去重与流水列表四类查询。
+ */
+function ecod_schema_ensure_credits(\Typecho\Db $db): bool
+{
+    static $ok = null;
+    if ($ok !== null) {
+        return $ok;
+    }
+
+    $table = $db->getPrefix() . 'ecod_credits';
+    $adapter = ecod_schema_adapter($db);
+
+    try {
+        if ($adapter === 'sqlite') {
+            $db->query(
+                'CREATE TABLE IF NOT EXISTS "' . $table . '" ('
+                . ' "id" INTEGER PRIMARY KEY AUTOINCREMENT,'
+                . ' "uid" INTEGER NOT NULL,'
+                . ' "delta" INTEGER NOT NULL DEFAULT 0,'
+                . ' "type" VARCHAR(20) NOT NULL DEFAULT \'\','
+                . ' "ref" VARCHAR(64) NOT NULL DEFAULT \'\','
+                . ' "note" VARCHAR(190) NOT NULL DEFAULT \'\','
+                . ' "created" INTEGER NOT NULL)'
+            );
+            $db->query('CREATE INDEX IF NOT EXISTS "' . $table . '_uid_cr" ON "' . $table . '" ("uid", "created")');
+            $db->query('CREATE INDEX IF NOT EXISTS "' . $table . "_uid_type\" ON \"" . $table . '" ("uid", "type", "created")');
+        } elseif ($adapter === 'pgsql') {
+            $db->query(
+                'CREATE TABLE IF NOT EXISTS "' . $table . '" ('
+                . ' "id" SERIAL PRIMARY KEY,'
+                . ' "uid" INTEGER NOT NULL,'
+                . ' "delta" INTEGER NOT NULL DEFAULT 0,'
+                . ' "type" VARCHAR(20) NOT NULL DEFAULT \'\','
+                . ' "ref" VARCHAR(64) NOT NULL DEFAULT \'\','
+                . ' "note" VARCHAR(190) NOT NULL DEFAULT \'\','
+                . ' "created" INTEGER NOT NULL)'
+            );
+            $db->query('CREATE INDEX IF NOT EXISTS "' . $table . '_uid_cr" ON "' . $table . '" ("uid", "created")');
+            $db->query('CREATE INDEX IF NOT EXISTS "' . $table . '_uid_type" ON "' . $table . '" ("uid", "type", "created")');
+        } else {
+            $db->query(
+                'CREATE TABLE IF NOT EXISTS `' . $table . '` ('
+                . ' `id` INT(10) UNSIGNED NOT NULL AUTO_INCREMENT,'
+                . ' `uid` INT(10) UNSIGNED NOT NULL,'
+                . ' `delta` INT NOT NULL DEFAULT 0,'
+                . ' `type` VARCHAR(20) NOT NULL DEFAULT \'\','
+                . ' `ref` VARCHAR(64) NOT NULL DEFAULT \'\','
+                . ' `note` VARCHAR(190) NOT NULL DEFAULT \'\','
+                . ' `created` INT(10) UNSIGNED NOT NULL,'
+                . ' PRIMARY KEY (`id`),'
+                . ' KEY `uid_created` (`uid`, `created`),'
+                . ' KEY `uid_type` (`uid`, `type`, `created`)'
+                . ') ENGINE=InnoDB DEFAULT CHARSET=utf8mb4'
+            );
+        }
+        $ok = true;
+    } catch (\Throwable $e) {
+        $ok = false;
+    }
+
+    return $ok;
+}
+
+/**
+ * 抽奖记录表名
+ */
+function ecod_lottery_table(): string
+{
+    try {
+        return \Typecho\Db::get()->getPrefix() . 'ecod_lottery_logs';
+    } catch (\Throwable $e) {
+        return 'typecho_ecod_lottery_logs';
+    }
+}
+
+/**
+ * 确保抽奖记录表存在
+ *
+ * 奖品池在主题设置里维护（文本协议），库存消耗量 = 按 prize_key COUNT 本表，
+ * 不再单独建库存表；(uid, day) 索引支撑每日次数上限。
+ */
+function ecod_schema_ensure_lottery(\Typecho\Db $db): bool
+{
+    static $ok = null;
+    if ($ok !== null) {
+        return $ok;
+    }
+
+    $table = $db->getPrefix() . 'ecod_lottery_logs';
+    $adapter = ecod_schema_adapter($db);
+
+    try {
+        if ($adapter === 'sqlite') {
+            $db->query(
+                'CREATE TABLE IF NOT EXISTS "' . $table . '" ('
+                . ' "id" INTEGER PRIMARY KEY AUTOINCREMENT,'
+                . ' "uid" INTEGER NOT NULL,'
+                . ' "prize_key" VARCHAR(24) NOT NULL DEFAULT \'\','
+                . ' "prize_name" VARCHAR(120) NOT NULL DEFAULT \'\','
+                . ' "prize_type" VARCHAR(12) NOT NULL DEFAULT \'none\','
+                . ' "credits" INTEGER NOT NULL DEFAULT 0,'
+                . ' "day" INTEGER NOT NULL DEFAULT 0,'
+                . ' "created" INTEGER NOT NULL)'
+            );
+            $db->query('CREATE INDEX IF NOT EXISTS "' . $table . '_uid_day" ON "' . $table . '" ("uid", "day")');
+            $db->query('CREATE INDEX IF NOT EXISTS "' . $table . '_pkey" ON "' . $table . '" ("prize_key")');
+        } elseif ($adapter === 'pgsql') {
+            $db->query(
+                'CREATE TABLE IF NOT EXISTS "' . $table . '" ('
+                . ' "id" SERIAL PRIMARY KEY,'
+                . ' "uid" INTEGER NOT NULL,'
+                . ' "prize_key" VARCHAR(24) NOT NULL DEFAULT \'\','
+                . ' "prize_name" VARCHAR(120) NOT NULL DEFAULT \'\','
+                . ' "prize_type" VARCHAR(12) NOT NULL DEFAULT \'none\','
+                . ' "credits" INTEGER NOT NULL DEFAULT 0,'
+                . ' "day" INTEGER NOT NULL DEFAULT 0,'
+                . ' "created" INTEGER NOT NULL)'
+            );
+            $db->query('CREATE INDEX IF NOT EXISTS "' . $table . '_uid_day" ON "' . $table . '" ("uid", "day")');
+            $db->query('CREATE INDEX IF NOT EXISTS "' . $table . '_pkey" ON "' . $table . '" ("prize_key")');
+        } else {
+            $db->query(
+                'CREATE TABLE IF NOT EXISTS `' . $table . '` ('
+                . ' `id` INT(10) UNSIGNED NOT NULL AUTO_INCREMENT,'
+                . ' `uid` INT(10) UNSIGNED NOT NULL,'
+                . ' `prize_key` VARCHAR(24) NOT NULL DEFAULT \'\','
+                . ' `prize_name` VARCHAR(120) NOT NULL DEFAULT \'\','
+                . ' `prize_type` VARCHAR(12) NOT NULL DEFAULT \'none\','
+                . ' `credits` INT NOT NULL DEFAULT 0,'
+                . ' `day` INT(10) UNSIGNED NOT NULL DEFAULT 0,'
+                . ' `created` INT(10) UNSIGNED NOT NULL,'
+                . ' PRIMARY KEY (`id`),'
+                . ' KEY `uid_day` (`uid`, `day`),'
+                . ' KEY `prize_key` (`prize_key`)'
+                . ') ENGINE=InnoDB DEFAULT CHARSET=utf8mb4'
+            );
+        }
+        $ok = true;
+    } catch (\Throwable $e) {
+        $ok = false;
+    }
+
+    return $ok;
+}
+
+/**
+ * 自助广告表名
+ */
+function ecod_ads_table(): string
+{
+    try {
+        return \Typecho\Db::get()->getPrefix() . 'ecod_ads';
+    } catch (\Throwable $e) {
+        return 'typecho_ecod_ads';
+    }
+}
+
+/**
+ * 确保自助广告表存在
+ *
+ * 状态机：pending_pay（待支付）→ pending（待审核）/ active（投放中）
+ * → rejected（未通过）→ expired（到期，惰性判定，不改状态）
+ */
+function ecod_schema_ensure_ads(\Typecho\Db $db): bool
+{
+    static $ok = null;
+    if ($ok !== null) {
+        return $ok;
+    }
+
+    $table = $db->getPrefix() . 'ecod_ads';
+    $adapter = ecod_schema_adapter($db);
+
+    try {
+        if ($adapter === 'sqlite') {
+            $db->query(
+                'CREATE TABLE IF NOT EXISTS "' . $table . '" ('
+                . ' "id" INTEGER PRIMARY KEY AUTOINCREMENT,'
+                . ' "uid" INTEGER NOT NULL,'
+                . ' "slot" VARCHAR(20) NOT NULL DEFAULT \'\','
+                . ' "title" VARCHAR(60) NOT NULL DEFAULT \'\','
+                . ' "image" VARCHAR(500) NOT NULL DEFAULT \'\','
+                . ' "link" VARCHAR(500) NOT NULL DEFAULT \'\','
+                . ' "days" INTEGER NOT NULL DEFAULT 0,'
+                . ' "status" VARCHAR(14) NOT NULL DEFAULT \'pending_pay\','
+                . ' "order_no" VARCHAR(24) NOT NULL DEFAULT \'\','
+                . ' "start_at" INTEGER NOT NULL DEFAULT 0,'
+                . ' "end_at" INTEGER NOT NULL DEFAULT 0,'
+                . ' "note" VARCHAR(255) NOT NULL DEFAULT \'\','
+                . ' "created" INTEGER NOT NULL DEFAULT 0,'
+                . ' "reviewed_at" INTEGER NOT NULL DEFAULT 0)'
+            );
+            $db->query('CREATE INDEX IF NOT EXISTS "' . $table . '_slot" ON "' . $table . '" ("slot", "status")');
+            $db->query('CREATE INDEX IF NOT EXISTS "' . $table . '_uid" ON "' . $table . '" ("uid")');
+        } elseif ($adapter === 'pgsql') {
+            $db->query(
+                'CREATE TABLE IF NOT EXISTS "' . $table . '" ('
+                . ' "id" SERIAL PRIMARY KEY,'
+                . ' "uid" INTEGER NOT NULL,'
+                . ' "slot" VARCHAR(20) NOT NULL DEFAULT \'\','
+                . ' "title" VARCHAR(60) NOT NULL DEFAULT \'\','
+                . ' "image" VARCHAR(500) NOT NULL DEFAULT \'\','
+                . ' "link" VARCHAR(500) NOT NULL DEFAULT \'\','
+                . ' "days" INTEGER NOT NULL DEFAULT 0,'
+                . ' "status" VARCHAR(14) NOT NULL DEFAULT \'pending_pay\','
+                . ' "order_no" VARCHAR(24) NOT NULL DEFAULT \'\','
+                . ' "start_at" INTEGER NOT NULL DEFAULT 0,'
+                . ' "end_at" INTEGER NOT NULL DEFAULT 0,'
+                . ' "note" VARCHAR(255) NOT NULL DEFAULT \'\','
+                . ' "created" INTEGER NOT NULL DEFAULT 0,'
+                . ' "reviewed_at" INTEGER NOT NULL DEFAULT 0)'
+            );
+            $db->query('CREATE INDEX IF NOT EXISTS "' . $table . '_slot" ON "' . $table . '" ("slot", "status")');
+            $db->query('CREATE INDEX IF NOT EXISTS "' . $table . '_uid" ON "' . $table . '" ("uid")');
+        } else {
+            $db->query(
+                'CREATE TABLE IF NOT EXISTS `' . $table . '` ('
+                . ' `id` INT(10) UNSIGNED NOT NULL AUTO_INCREMENT,'
+                . ' `uid` INT(10) UNSIGNED NOT NULL,'
+                . ' `slot` VARCHAR(20) NOT NULL DEFAULT \'\','
+                . ' `title` VARCHAR(60) NOT NULL DEFAULT \'\','
+                . ' `image` VARCHAR(500) NOT NULL DEFAULT \'\','
+                . ' `link` VARCHAR(500) NOT NULL DEFAULT \'\','
+                . ' `days` INT(10) UNSIGNED NOT NULL DEFAULT 0,'
+                . ' `status` VARCHAR(14) NOT NULL DEFAULT \'pending_pay\','
+                . ' `order_no` CHAR(24) NOT NULL DEFAULT \'\','
+                . ' `start_at` INT(10) UNSIGNED NOT NULL DEFAULT 0,'
+                . ' `end_at` INT(10) UNSIGNED NOT NULL DEFAULT 0,'
+                . ' `note` VARCHAR(255) NOT NULL DEFAULT \'\','
+                . ' `created` INT(10) UNSIGNED NOT NULL DEFAULT 0,'
+                . ' `reviewed_at` INT(10) UNSIGNED NOT NULL DEFAULT 0,'
+                . ' PRIMARY KEY (`id`),'
+                . ' KEY `slot_status` (`slot`, `status`),'
+                . ' KEY `uid` (`uid`)'
+                . ') ENGINE=InnoDB DEFAULT CHARSET=utf8mb4'
+            );
+        }
+        $ok = true;
+    } catch (\Throwable $e) {
+        $ok = false;
+    }
+
+    return $ok;
+}
+
+/**
+ * 兑换记录表名（积分商城）
+ */
+function ecod_shop_table(): string
+{
+    try {
+        return \Typecho\Db::get()->getPrefix() . 'ecod_exchanges';
+    } catch (\Throwable $e) {
+        return 'typecho_ecod_exchanges';
+    }
+}
+
+/**
+ * 确保兑换记录表存在
+ *
+ * 商品池在主题设置里维护（文本协议），库存消耗 = 按 item_key COUNT 本表；
+ * deliver 侧只记发货类型与引用（vip = 等级:天数 / post = cid / text = 说明）。
+ */
+function ecod_schema_ensure_shop(\Typecho\Db $db): bool
+{
+    static $ok = null;
+    if ($ok !== null) {
+        return $ok;
+    }
+
+    $table = $db->getPrefix() . 'ecod_exchanges';
+    $adapter = ecod_schema_adapter($db);
+
+    try {
+        if ($adapter === 'sqlite') {
+            $db->query(
+                'CREATE TABLE IF NOT EXISTS "' . $table . '" ('
+                . ' "id" INTEGER PRIMARY KEY AUTOINCREMENT,'
+                . ' "uid" INTEGER NOT NULL,'
+                . ' "item_key" VARCHAR(24) NOT NULL DEFAULT \'\','
+                . ' "item_name" VARCHAR(120) NOT NULL DEFAULT \'\','
+                . ' "cost" INTEGER NOT NULL DEFAULT 0,'
+                . ' "deliver" VARCHAR(12) NOT NULL DEFAULT \'text\','
+                . ' "ref" VARCHAR(64) NOT NULL DEFAULT \'\','
+                . ' "note" VARCHAR(190) NOT NULL DEFAULT \'\','
+                . ' "created" INTEGER NOT NULL)'
+            );
+            $db->query('CREATE INDEX IF NOT EXISTS "' . $table . '_uid" ON "' . $table . '" ("uid", "created")');
+            $db->query('CREATE INDEX IF NOT EXISTS "' . $table . '_item" ON "' . $table . '" ("item_key")');
+        } elseif ($adapter === 'pgsql') {
+            $db->query(
+                'CREATE TABLE IF NOT EXISTS "' . $table . '" ('
+                . ' "id" SERIAL PRIMARY KEY,'
+                . ' "uid" INTEGER NOT NULL,'
+                . ' "item_key" VARCHAR(24) NOT NULL DEFAULT \'\','
+                . ' "item_name" VARCHAR(120) NOT NULL DEFAULT \'\','
+                . ' "cost" INTEGER NOT NULL DEFAULT 0,'
+                . ' "deliver" VARCHAR(12) NOT NULL DEFAULT \'text\','
+                . ' "ref" VARCHAR(64) NOT NULL DEFAULT \'\','
+                . ' "note" VARCHAR(190) NOT NULL DEFAULT \'\','
+                . ' "created" INTEGER NOT NULL)'
+            );
+            $db->query('CREATE INDEX IF NOT EXISTS "' . $table . '_uid" ON "' . $table . '" ("uid", "created")');
+            $db->query('CREATE INDEX IF NOT EXISTS "' . $table . '_item" ON "' . $table . '" ("item_key")');
+        } else {
+            $db->query(
+                'CREATE TABLE IF NOT EXISTS `' . $table . '` ('
+                . ' `id` INT(10) UNSIGNED NOT NULL AUTO_INCREMENT,'
+                . ' `uid` INT(10) UNSIGNED NOT NULL,'
+                . ' `item_key` VARCHAR(24) NOT NULL DEFAULT \'\','
+                . ' `item_name` VARCHAR(120) NOT NULL DEFAULT \'\','
+                . ' `cost` INT(10) UNSIGNED NOT NULL DEFAULT 0,'
+                . ' `deliver` VARCHAR(12) NOT NULL DEFAULT \'text\','
+                . ' `ref` VARCHAR(64) NOT NULL DEFAULT \'\','
+                . ' `note` VARCHAR(190) NOT NULL DEFAULT \'\','
+                . ' `created` INT(10) UNSIGNED NOT NULL,'
+                . ' PRIMARY KEY (`id`),'
+                . ' KEY `uid_created` (`uid`, `created`),'
+                . ' KEY `item_key` (`item_key`)'
+                . ') ENGINE=InnoDB DEFAULT CHARSET=utf8mb4'
+            );
+        }
+        $ok = true;
+    } catch (\Throwable $e) {
+        $ok = false;
+    }
+
+    return $ok;
+}
+
+/**
  * 结构升级入口：版本号落后时才执行，每个请求最多一次
  */
 function ecod_schema_upgrade(): void
@@ -995,10 +1653,18 @@ function ecod_schema_upgrade(): void
     $pay = ecod_schema_ensure_pay($db);
     $metameta = ecod_schema_ensure_metameta($db);
     $throttle = ecod_schema_ensure_throttle($db);
+    $usermeta = ecod_schema_ensure_usermeta($db);
+    $clikes = ecod_schema_ensure_clikes($db);
+    $follows = ecod_schema_ensure_follows($db);
+    $polls = ecod_schema_ensure_polls($db);
+    $credits = ecod_schema_ensure_credits($db);
+    $lottery = ecod_schema_ensure_lottery($db);
+    $ads = ecod_schema_ensure_ads($db);
+    $shop = ecod_schema_ensure_shop($db);
     $likesUid = $likes ? ecod_schema_migrate_likes_uid($db, $db->getPrefix() . 'ecod_likes') : false;
 
     /* 全部成功才记版本，否则下次请求重试 */
-    if ($likes && $likesUid && $views && $avatars && $mailcode && $favs && $oauth && $pay && $metameta && $throttle) {
+    if ($likes && $likesUid && $views && $avatars && $mailcode && $favs && $oauth && $pay && $metameta && $throttle && $usermeta && $clikes && $follows && $polls && $credits && $lottery && $ads && $shop) {
         ecod_schema_mark($db, ECOD_SCHEMA_VERSION);
     }
 }

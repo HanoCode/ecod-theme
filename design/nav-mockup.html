@@ -1,0 +1,670 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ECOD Header 导航设计稿 · Mega Menu</title>
+<style>
+/* ============================================================
+   设计稿 token —— 与主题 assets/css/ecod.css 同源，便于后续落地
+   ============================================================ */
+:root {
+  --primary: #4f6ef2;
+  --primary-deep: #3d5be0;
+  --primary-soft: #eef1fe;
+  --primary-ink: #fff;
+  --accent: #f59e0b;
+  --danger: #ef4444;
+  --bg: #f5f6f9;
+  --surface: #fff;
+  --surface-2: #fafbfc;
+  --line: #eef0f5;
+  --border: #eef0f5;
+  --border-strong: #d3d9e4;
+  --ink: #12161d;
+  --ink-2: #5b6472;
+  --ink-3: #8a93a2;
+  --fs-sm: 13px;
+  --fs-md: 14px;
+  --fs-nav: 15px;
+  --radius-sm: 8px;
+  --radius: 12px;
+  --radius-lg: 16px;
+  --radius-full: 999px;
+  --shadow-pop: 0 12px 40px rgba(18,22,29,.10), 0 2px 8px rgba(18,22,29,.06);
+  --dur-fast: .14s;
+  --dur: .2s;
+  --ease: cubic-bezier(.4, 0, .2, 1);
+  --ease-pop: cubic-bezier(.34, 1.3, .64, 1);
+}
+html[data-theme="dark"] {
+  --primary-soft: rgba(79, 110, 242, .16);
+  --bg: #12161d;
+  --surface: #1b2028;
+  --surface-2: #212731;
+  --line: #2a303b;
+  --border: #2a303b;
+  --border-strong: #3a4150;
+  --ink: #e8ebf1;
+  --ink-2: #a6aebc;
+  --ink-3: #6b7280;
+  --shadow-pop: 0 12px 40px rgba(0,0,0,.42), 0 2px 8px rgba(0,0,0,.28);
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  background: var(--bg);
+  color: var(--ink);
+  min-height: 100vh;
+}
+svg { display: block; }
+
+/* ============================================================
+   Header
+   ============================================================ */
+.ecod_header {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  transition: background var(--dur) var(--ease), border-color var(--dur) var(--ease);
+}
+.ecod_container {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 0 24px;
+  height: 64px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+/* ---------- Logo ---------- */
+.ecod_logo {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  text-decoration: none;
+  color: var(--ink);
+  flex-shrink: 0;
+  margin-right: 20px;
+}
+.ecod_logo__mark {
+  width: 30px; height: 30px;
+  border-radius: 9px;
+  background: linear-gradient(135deg, var(--primary), var(--primary-deep));
+  color: #fff;
+  font-weight: 800;
+  font-size: 16px;
+  display: grid;
+  place-items: center;
+  box-shadow: 0 3px 10px rgba(79,110,242,.28);
+}
+.ecod_logo__text {
+  font-size: 19px;
+  font-weight: 800;
+  letter-spacing: .5px;
+}
+.ecod_logo__text i {
+  font-style: normal;
+  color: var(--primary);
+}
+
+/* ---------- 一级导航 ---------- */
+.ecod_nav {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  flex: 1;
+  min-width: 0;
+}
+.ecod_nav__item { position: relative; }
+.ecod_nav__link {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border-radius: var(--radius-full);
+  font-size: var(--fs-nav);
+  font-weight: 500;
+  color: var(--ink-2);
+  text-decoration: none;
+  white-space: nowrap;
+  cursor: pointer;
+  user-select: none;
+  transition: color var(--dur-fast) var(--ease), background var(--dur-fast) var(--ease);
+}
+.ecod_nav__link .ic {
+  display: inline-flex;
+  color: currentColor;
+  opacity: .85;
+}
+.ecod_nav__link .caret {
+  display: inline-flex;
+  margin-left: 1px;
+  opacity: .55;
+  transition: transform var(--dur-fast) var(--ease);
+}
+@media (hover: hover) {
+  .ecod_nav__link:hover { color: var(--primary); background: var(--primary-soft); }
+  .ecod_nav__link:hover .caret { transform: rotate(180deg); }
+}
+
+/* 选中态：药丸 + 主色，图标与文字同色 */
+.ecod_nav__link.is-active {
+  color: var(--primary);
+  background: var(--primary-soft);
+  font-weight: 600;
+}
+/* 面板展开中的一级项：药丸 + 箭头朝上 + 浅色描边，呼应 guaqi 帮助中心 */
+.ecod_nav__link.is-open {
+  color: var(--primary);
+  background: var(--primary-soft);
+  font-weight: 600;
+  box-shadow: inset 0 0 0 1px rgba(79,110,242,.18);
+}
+.ecod_nav__link.is-open .caret { transform: rotate(180deg); opacity: .9; }
+
+/* 角标：优惠 / HOT，叠在右上角 */
+.ecod_nav__flag {
+  position: absolute;
+  top: -7px;
+  right: -2px;
+  padding: 1.5px 6px;
+  border-radius: 6px 6px 6px 2px;
+  font-size: 10px;
+  font-style: normal;
+  font-weight: 600;
+  line-height: 1.5;
+  color: #fff;
+  pointer-events: none;
+  box-shadow: 0 2px 6px rgba(0,0,0,.15);
+}
+.ecod_nav__flag--hot { background: linear-gradient(135deg, #ff9d00, #f56c00); }
+.ecod_nav__flag--new { background: linear-gradient(135deg, #ff5f57, #ef4444); }
+
+/* ---------- 右侧行动区 ---------- */
+.ecod_actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+  margin-left: 12px;
+}
+.ecod_actions__group {
+  display: flex;
+  align-items: center;
+  height: 38px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-full);
+  background: var(--surface);
+  transition: border-color var(--dur-fast) var(--ease);
+}
+.ecod_actions__group:hover { border-color: var(--border-strong); }
+.ecod_actions__btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 38px;
+  border: 0;
+  border-radius: var(--radius-full);
+  background: transparent;
+  color: var(--ink-2);
+  cursor: pointer;
+  transition: color var(--dur-fast) var(--ease), background var(--dur-fast) var(--ease);
+}
+.ecod_actions__btn:hover { color: var(--primary); background: var(--primary-soft); }
+.ecod_actions__sep {
+  width: 1px;
+  height: 16px;
+  background: var(--border);
+}
+.ecod_actions__avatar {
+  width: 38px; height: 38px;
+  border-radius: var(--radius-full);
+  border: 2px solid var(--surface);
+  outline: 2px solid var(--accent);
+  outline-offset: -1px;
+  cursor: pointer;
+  background: linear-gradient(135deg, #ffd29d, #ff9d7a);
+  display: grid;
+  place-items: center;
+  font-size: 15px;
+}
+
+/* ============================================================
+   Mega 下拉面板（一级项下方，居中锚定）
+   ============================================================ */
+.ecod_mega {
+  position: absolute;
+  top: calc(100% + 14px);
+  left: 50%;
+  translate: -50% 0;
+  padding: 12px;
+  min-width: 320px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-pop);
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(6px) scale(.98);
+  transform-origin: top center;
+  transition:
+    opacity var(--dur-fast) var(--ease),
+    transform var(--dur) var(--ease-pop),
+    visibility var(--dur-fast) var(--ease);
+  z-index: 40;
+}
+/* 指向一级项的小箭头（guaqi 同款） */
+.ecod_mega::before {
+  content: "";
+  position: absolute;
+  top: -6px;
+  left: 50%;
+  width: 12px; height: 12px;
+  translate: -50% 0;
+  rotate: 45deg;
+  border-radius: 2px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-bottom: 0;
+  border-right: 0;
+}
+/* hover 或 is-open 时展开 */
+@media (hover: hover) {
+  .ecod_nav__item:hover > .ecod_mega {
+    opacity: 1; visibility: visible; transform: translateY(0) scale(1);
+  }
+}
+.ecod_nav__item.is-open > .ecod_mega {
+  opacity: 1; visibility: visible; transform: translateY(0) scale(1);
+}
+
+/* --- 变体 A：图标卡片网格（帮助中心） --- */
+.ecod_mega--grid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(120px, 1fr));
+  gap: 4px;
+  min-width: 560px;
+}
+.ecod_mega__card {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  text-decoration: none;
+  color: var(--ink);
+  font-size: var(--fs-nav);
+  font-weight: 500;
+  white-space: nowrap;
+  transition: background var(--dur-fast) var(--ease), color var(--dur-fast) var(--ease);
+}
+.ecod_mega__card .chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px; height: 34px;
+  flex-shrink: 0;
+  border-radius: 9px;
+  background: var(--primary-soft);
+  color: var(--primary);
+  transition: background var(--dur-fast) var(--ease), color var(--dur-fast) var(--ease), transform var(--dur) var(--ease-pop);
+}
+@media (hover: hover) {
+  .ecod_mega__card:hover { background: var(--surface-2); }
+  .ecod_mega__card:hover .chip {
+    background: var(--primary);
+    color: var(--primary-ink);
+    transform: scale(1.08);
+  }
+}
+/* 图标卡片：当前所在页（选中样式） */
+.ecod_mega__card.is-active {
+  color: var(--primary);
+  background: var(--primary-soft);
+  font-weight: 600;
+}
+.ecod_mega__card.is-active .chip { background: var(--primary); color: var(--primary-ink); }
+
+/* --- 变体 B：分组多列（产品中心，多级分组标题） --- */
+.ecod_mega--grouped {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(240px, 1fr));
+  gap: 8px 28px;
+  min-width: 560px;
+}
+.ecod_mega__group { min-width: 0; }
+.ecod_mega__group + .ecod_mega__group { margin-top: 4px; }
+.ecod_mega__gtitle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px 4px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: .8px;
+  color: var(--ink-3);
+  text-transform: uppercase;
+}
+.ecod_mega__gtitle::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+.ecod_mega__list { display: flex; flex-direction: column; gap: 1px; }
+.ecod_mega__link {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 8px 12px;
+  border-radius: 9px;
+  font-size: var(--fs-md);
+  color: var(--ink-2);
+  text-decoration: none;
+  white-space: nowrap;
+  transition: background var(--dur-fast) var(--ease), color var(--dur-fast) var(--ease);
+}
+.ecod_mega__link .mini {
+  display: inline-flex;
+  color: var(--ink-3);
+  transition: color var(--dur-fast) var(--ease);
+}
+.ecod_mega__link .cnt {
+  margin-left: auto;
+  font-size: 11px;
+  color: var(--ink-3);
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  padding: 1px 7px;
+  border-radius: var(--radius-full);
+}
+@media (hover: hover) {
+  .ecod_mega__link:hover { background: var(--primary-soft); color: var(--primary); }
+  .ecod_mega__link:hover .mini { color: var(--primary); }
+}
+.ecod_mega__link.is-active { color: var(--primary); background: var(--primary-soft); font-weight: 600; }
+.ecod_mega__link.is-active .mini { color: var(--primary); }
+
+/* 面板底部：可选的快捷入口条（guaqi 大面板常见） */
+.ecod_mega__foot {
+  grid-column: 1 / -1;
+  margin-top: 6px;
+  padding: 10px 14px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border-radius: 10px;
+  background: var(--primary-soft);
+  color: var(--primary);
+  font-size: var(--fs-sm);
+  text-decoration: none;
+  font-weight: 500;
+}
+
+/* ============================================================
+   页脚演示辅助
+   ============================================================ */
+.demo_body {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 48px 24px;
+}
+.demo_body h1 { font-size: 22px; margin-bottom: 8px; }
+.demo_body p { color: var(--ink-2); font-size: 14px; line-height: 1.8; max-width: 640px; }
+.demo_hint {
+  margin-top: 28px;
+  padding: 14px 18px;
+  border: 1px dashed var(--border-strong);
+  border-radius: var(--radius);
+  color: var(--ink-3);
+  font-size: 13px;
+  line-height: 2;
+}
+kbd {
+  font-family: inherit;
+  font-size: 11px;
+  padding: 1px 6px;
+  border: 1px solid var(--border-strong);
+  border-bottom-width: 2px;
+  border-radius: 5px;
+  background: var(--surface);
+}
+</style>
+</head>
+<body>
+
+<!-- ============ HEADER ============ -->
+<header class="ecod_header">
+  <div class="ecod_container">
+
+    <!-- Logo -->
+    <a class="ecod_logo" href="#">
+      <span class="ecod_logo__mark">E</span>
+      <span class="ecod_logo__text">ECOD<i>·</i>志</span>
+    </a>
+
+    <!-- 一级导航 -->
+    <nav class="ecod_nav" aria-label="主导航">
+
+      <!-- 首页（选中态示例） -->
+      <div class="ecod_nav__item">
+        <a class="ecod_nav__link is-active" href="#">
+          <span class="ic">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/></svg>
+          </span>首页
+        </a>
+      </div>
+
+      <!-- 产品中心：多级分组面板（badge 示例） -->
+      <div class="ecod_nav__item" data-mega-item>
+        <a class="ecod_nav__link" data-mega-toggle>
+          产品中心
+          <i class="ecod_nav__flag ecod_nav__flag--new">优惠</i>
+          <span class="caret">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+          </span>
+        </a>
+        <div class="ecod_mega ecod_mega--grouped" role="menu">
+          <div class="ecod_mega__group">
+            <div class="ecod_mega__gtitle">博客系统</div>
+            <div class="ecod_mega__list">
+              <a class="ecod_mega__link" href="#">
+                <span class="mini"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="4" width="18" height="16" rx="3"/><path d="M3 9h18"/></svg></span>
+                Ecod 主题<span class="cnt">12</span>
+              </a>
+              <a class="ecod_mega__link is-active" href="#">
+                <span class="mini"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20V4H6.5A2.5 2.5 0 0 0 4 6.5z"/></svg></span>
+                Typecho 插件<span class="cnt">8</span>
+              </a>
+            </div>
+          </div>
+          <div class="ecod_mega__group">
+            <div class="ecod_mega__gtitle">企业服务</div>
+            <div class="ecod_mega__list">
+              <a class="ecod_mega__link" href="#">
+                <span class="mini"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg></span>
+                定制开发
+              </a>
+              <a class="ecod_mega__link" href="#">
+                <span class="mini"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 3 2 8l10 5 10-5z"/><path d="M2 8v8l10 5 10-5V8"/></svg></span>
+                源码商城
+              </a>
+            </div>
+          </div>
+          <a class="ecod_mega__foot" href="#">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M13 2 3 14h7l-1 8 10-12h-7z"/></svg>
+            新客立减 ¥50，查看全部优惠活动 →
+          </a>
+        </div>
+      </div>
+
+      <!-- 功能演示：图标卡片面板 -->
+      <div class="ecod_nav__item" data-mega-item>
+        <a class="ecod_nav__link" data-mega-toggle>
+          <span class="ic">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="14" rx="2"/><path d="m7 9 3 3-3 3"/><path d="M12 15h5"/></svg>
+          </span>功能演示
+          <span class="caret">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+          </span>
+        </a>
+        <div class="ecod_mega ecod_mega--grid" role="menu">
+          <a class="ecod_mega__card" href="#">
+            <span class="chip"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-6 8-6s8 2 8 6"/></svg></span>
+            用户相关
+          </a>
+          <a class="ecod_mega__card" href="#">
+            <span class="chip"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h4"/></svg></span>
+            文章帮助
+          </a>
+          <a class="ecod_mega__card" href="#">
+            <span class="chip"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="6" cy="12" r="3"/><circle cx="18" cy="6" r="3"/><circle cx="18" cy="18" r="3"/><path d="m8.7 10.7 6.6-3.4M8.7 13.3l6.6 3.4"/></svg></span>
+            社区帮助
+          </a>
+          <a class="ecod_mega__card" href="#">
+            <span class="chip"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7l2-3h12l2 3M4 7h16v11a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z"/><path d="M9 11a3 3 0 0 0 6 0"/></svg></span>
+            商铺帮助
+          </a>
+          <a class="ecod_mega__card" href="#">
+            <span class="chip"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16v16H4z"/><path d="m7 9 3-2v10l-3-2M14 8h4M14 12h4M14 16h2"/></svg></span>
+            文档帮助
+          </a>
+        </div>
+      </div>
+
+      <!-- 帮助中心：默认展开演示（is-open） -->
+      <div class="ecod_nav__item is-open" data-mega-item>
+        <a class="ecod_nav__link is-open" data-mega-toggle>
+          <span class="ic">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.5 2.5 0 1 1 3.4 2.3c-.7.3-.9.8-.9 1.7"/><circle cx="12" cy="17" r=".5" fill="currentColor"/></svg>
+          </span>帮助中心
+          <span class="caret">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+          </span>
+        </a>
+        <div class="ecod_mega ecod_mega--grid" role="menu">
+          <a class="ecod_mega__card" href="#">
+            <span class="chip"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-6 8-6s8 2 8 6"/></svg></span>
+            用户相关
+          </a>
+          <a class="ecod_mega__card is-active" href="#">
+            <span class="chip"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h4"/></svg></span>
+            文章帮助
+          </a>
+          <a class="ecod_mega__card" href="#">
+            <span class="chip"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="6" cy="12" r="3"/><circle cx="18" cy="6" r="3"/><circle cx="18" cy="18" r="3"/><path d="m8.7 10.7 6.6-3.4M8.7 13.3l6.6 3.4"/></svg></span>
+            社区帮助
+          </a>
+          <a class="ecod_mega__card" href="#">
+            <span class="chip"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7l2-3h12l2 3M4 7h16v11a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z"/><path d="M9 11a3 3 0 0 0 6 0"/></svg></span>
+            商铺帮助
+          </a>
+          <a class="ecod_mega__card" href="#">
+            <span class="chip"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16v16H4z"/><path d="m7 9 3-2v10l-3-2M14 8h4M14 12h4M14 16h2"/></svg></span>
+            文档帮助
+          </a>
+          <a class="ecod_mega__card" href="#">
+            <span class="chip"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M10 14a5 5 0 0 0 7 0l3-3a5 5 0 0 0-7-7l-1.5 1.5"/><path d="M14 10a5 5 0 0 0-7 0l-3 3a5 5 0 0 0 7 7L12.5 18"/></svg></span>
+            导航帮助
+          </a>
+          <a class="ecod_mega__card" href="#">
+            <span class="chip"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 11.5a8.4 8.4 0 0 1-8.5 8.3c-1.5 0-3-.4-4.2-1L3 20l1.3-4.9A8.2 8.2 0 0 1 3.5 11a8.4 8.4 0 0 1 8.5-8.4 8.4 8.4 0 0 1 9 8.9z"/></svg></span>
+            反馈建议
+          </a>
+          <a class="ecod_mega__card" href="#">
+            <span class="chip"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 16v-5M12 8h.01"/></svg></span>
+            常见问题
+          </a>
+          <a class="ecod_mega__card" href="#">
+            <span class="chip"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 6h16v12H4z"/><path d="m4 7 8 6 8-6"/></svg></span>
+            联系我们
+          </a>
+          <a class="ecod_mega__card" href="#">
+            <span class="chip"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 21s-7-4.6-9.3-9A5.4 5.4 0 0 1 12 6.2 5.4 5.4 0 0 1 21.3 12C19 16.4 12 21 12 21z"/></svg></span>
+            赞助支持
+          </a>
+        </div>
+      </div>
+
+      <!-- 模板中心：普通链接项 -->
+      <div class="ecod_nav__item">
+        <a class="ecod_nav__link" href="#">
+          <span class="ic">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>
+          </span>模板中心
+        </a>
+      </div>
+
+      <!-- 构建器：HOT badge -->
+      <div class="ecod_nav__item">
+        <a class="ecod_nav__link" href="#">
+          <span class="ic">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18M8 4v5"/></svg>
+          </span>构建器
+          <i class="ecod_nav__flag ecod_nav__flag--hot">HOT</i>
+        </a>
+      </div>
+    </nav>
+
+    <!-- 右侧行动区 -->
+    <div class="ecod_actions">
+      <div class="ecod_actions__group">
+        <button class="ecod_actions__btn" title="搜索（⌘K）" aria-label="搜索">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+        </button>
+        <i class="ecod_actions__sep"></i>
+        <button class="ecod_actions__btn" title="深浅模式" aria-label="切换深浅模式" data-theme-toggle>
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A8.5 8.5 0 1 1 11.2 3a6.6 6.6 0 0 0 9.8 9.8z"/></svg>
+        </button>
+      </div>
+      <button class="ecod_actions__avatar" title="用户中心" aria-label="用户中心">布</button>
+    </div>
+  </div>
+</header>
+
+<!-- ============ 正文占位 ============ -->
+<main class="demo_body">
+  <h1>Header 导航设计稿</h1>
+  <p>参考 guaqi.com 的导航范式：一级「药丸」态 + 图标/badge，下挂带小箭头的 Mega 面板；二级以「图标卡片」或「分组多列」呈现，选中项以主色实心图标块 + 浅底药丸高亮。</p>
+
+  <div class="demo_hint">
+    交互演示：
+    <kbd>悬停</kbd> 任意带箭头的一级项可预览面板 ·
+    <kbd>点击</kbd> 可固定展开/收起（当前「帮助中心」默认展开）·
+    点击右上角 <kbd>月亮</kbd> 切换深色模式，两套配色都已适配。
+  </div>
+</main>
+
+<script>
+/* 点击固定展开（预先展开的帮助中心可被收起，其它项互斥固定） */
+document.querySelectorAll('[data-mega-toggle]').forEach(function (btn) {
+  btn.addEventListener('click', function (e) {
+    e.preventDefault();
+    var item = btn.closest('[data-mega-item]');
+    var wasOpen = item.classList.contains('is-open');
+    document.querySelectorAll('.ecod_nav__item.is-open').forEach(function (it) {
+      it.classList.remove('is-open');
+      it.querySelector('.ecod_nav__link').classList.remove('is-open');
+    });
+    if (!wasOpen) {
+      item.classList.add('is-open');
+      btn.classList.add('is-open');
+    }
+  });
+});
+
+/* 深浅模式切换 */
+document.querySelector('[data-theme-toggle]').addEventListener('click', function () {
+  var root = document.documentElement;
+  root.dataset.theme = root.dataset.theme === 'dark' ? 'light' : 'dark';
+});
+</script>
+</body>
+</html>

@@ -864,10 +864,25 @@
         state.uploading++;
         paintStatus();
 
+        /* 优先走主题媒体库上传（WebP 转换 + 对象存储驱动）；
+         * ECOD_MEDIA.token 不存在时回退 Typecho 原生 /action/upload */
+        var media = window.ECOD_MEDIA;
+        var viaTheme = !!(media && media.token && media.api);
         var form = new FormData();
         form.append('file', file);
+        var url;
 
-        fetch(uploadUrl(), {
+        if (viaTheme) {
+            form.append('_', media.token);
+            if (CFG.cid) {
+                form.append('cid', CFG.cid);
+            }
+            url = media.api + (media.api.indexOf('?') > -1 ? '&' : '?') + 'action=upload';
+        } else {
+            url = uploadUrl();
+        }
+
+        fetch(url, {
             method: 'POST',
             body: form,
             credentials: 'same-origin'
@@ -879,6 +894,14 @@
         }).then(function (data) {
             state.uploading--;
             paintStatus();
+            if (viaTheme) {
+                if (!data || !data.ok || !data.url) {
+                    toast((data && data.error) || '上传失败', 'error');
+                    return;
+                }
+                done({ url: data.url, title: data.title || file.name });
+                return;
+            }
             if (!data || !data[1]) {
                 toast('上传失败', 'error');
                 return;

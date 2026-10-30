@@ -61,7 +61,7 @@ if ($ecodLogoDims === '') {
 }
 $ecodLogoBoth = ecod_option('ELogoBoth', 'off') === 'on';
 $ecodDark = ecod_option('EDark', 'auto');
-$ecodAnim = (string) ecod_option('EAnimate', 'none');
+$ecodAnim = (string) ecod_option('EAnimate', 'blur');
 $ecodBackdrop = (string) ecod_option('EBackdrop', 'none');
 $ecodCursor = (string) ecod_option('ECursor', 'off');
 
@@ -87,6 +87,9 @@ $ecodHere = (string) (\Typecho\Request::getInstance()->getRequestUrl());
 /* 导航：独立页面 + 后台自定义链接，超出上限的收进「更多」 */
 $this->widget('\Widget\Contents\Page\Rows')->to($ecodPages);
 $ecodNav = ecod_nav_items($ecodPages);
+/* 当前导航套的展示样式（auto/list/icons/mega/mega-group），菜单为空时回退全局 ENavStyle。
+   一级项可带 sub_style 项级覆盖（空 = 跟随套），在循环内逐项计算生效样式 */
+$ecodNavStyle = ecod_nav_style();
 /* 当前页对应的导航高亮地址，输出在 shell 上供 PJAX 换页后同步 */
 $ecodNavActive = ecod_nav_active($this, $ecodNav);
 $ecodNavMax = (int) ecod_option('ENavMax', 0);
@@ -143,8 +146,14 @@ if ($ecodNavMax > 0 && count($ecodNav) > $ecodNavMax) {
                             }
                         }
                     }
-                    /* 二级超过 6 个自动分两列（设计稿 §03.5） */
-                    $ecodCols = count($ecodKids) > 6 ? ' is-cols' : '';
+                    /* 生效样式：项级 sub_style 覆盖套级样式（§03.5 项级显示模式） */
+                    $ecodStyle = (string) ($ecodItem['sub_style'] ?? '');
+                    if ($ecodStyle === '') {
+                        $ecodStyle = $ecodNavStyle;
+                    }
+                    /* 二级超过 6 个自动分两列；mega 样式强制两列（设计稿 §03.5） */
+                    $ecodForceCols = ($ecodStyle === 'mega');
+                    $ecodCols = ($ecodForceCols || count($ecodKids) > 6) ? ' is-cols' : '';
                     /* 一级项可选前置图标与角标（§03.5 icon / badge 字段） */
                     $ecodIconHtml = isset($ecodItem['icon']) && $ecodItem['icon'] !== ''
                         ? '<span class="ecod_nav__licon">' . ecod_icon((string) $ecodItem['icon'], 15) . '</span>'
@@ -158,23 +167,102 @@ if ($ecodNavMax > 0 && count($ecodNav) > $ecodNavMax) {
                             <?php echo ecod_nav_link_attrs($ecodItem); ?>><?php echo $ecodIconHtml; ?><span class="ecod_nav__ltext"><?php echo htmlspecialchars($ecodItem['title'], ENT_QUOTES, 'UTF-8'); ?></span><?php echo $ecodBadgeHtml; ?><?php echo $ecodKids ? '<i class="ecod_nav__caret" aria-hidden="true">' . ecod_icon('chevron', 12) . '</i>' : ''; ?></a>
                         <?php if ($ecodKids): ?>
                             <?php
-                            /* 任一子项配了图标 → 面板切图标卡片网格（§03.5） */
-                            $ecodKidIcons = false;
-                            foreach ($ecodKids as $ecodKid) {
-                                if (isset($ecodKid['icon']) && $ecodKid['icon'] !== '') {
-                                    $ecodKidIcons = true;
-                                    break;
+                            /* mega-group 分组形态：任一子项配了 group 或 desc 即启用 */
+                            $ecodHasGroup = $ecodHasDesc = false;
+                            if ($ecodStyle === 'mega-group') {
+                                foreach ($ecodKids as $ecodKid) {
+                                    if (($ecodKid['group'] ?? '') !== '') { $ecodHasGroup = true; }
+                                    if (($ecodKid['desc'] ?? '') !== '') { $ecodHasDesc = true; }
                                 }
                             }
+                            if ($ecodStyle === 'mega-group' && ($ecodHasGroup || $ecodHasDesc)):
+                                /* 按 group 名归组，保持首次出现顺序；无组名的归入末尾空组（不渲染栏标题） */
+                                $ecodGroups = [];
+                                foreach ($ecodKids as $ecodKid) {
+                                    $ecodGroups[(string) ($ecodKid['group'] ?? '')][] = $ecodKid;
+                                }
+                                if (isset($ecodGroups['']) && count($ecodGroups) > 1) {
+                                    $ecodEmptyG = $ecodGroups[''];
+                                    unset($ecodGroups['']);
+                                    $ecodGroups[''] = $ecodEmptyG;
+                                }
+                                $ecodGCols = min(max(count($ecodGroups), 1), 4); ?>
+                                <ul class="ecod_nav__sub is-mega-full has-icons" style="--ecod-mega-cols:<?php echo $ecodGCols; ?>">
+                                    <?php foreach ($ecodGroups as $ecodGName => $ecodGKids): ?>
+                                        <li class="ecod_nav__group">
+                                            <?php if ($ecodGName !== ''): ?>
+                                                <p class="ecod_nav__group-t"><?php echo htmlspecialchars($ecodGName, ENT_QUOTES, 'UTF-8'); ?></p>
+                                            <?php endif; ?>
+                                            <ul class="ecod_nav__group-list">
+                                                <?php foreach ($ecodGKids as $ecodKid): ?>
+                                                    <li class="<?php echo ecod_nav_item_is_active($this, $ecodKid) ? 'is-active' : ''; ?>">
+                                                        <a href="<?php echo htmlspecialchars($ecodKid['url'], ENT_QUOTES, 'UTF-8'); ?>"
+                                                            <?php echo ecod_nav_link_attrs($ecodKid); ?>>
+                                                            <span class="ecod_nav__licon<?php echo ($ecodKid['icon'] ?? '') === '' ? ' ecod_nav__licon--text' : ''; ?>"><?php echo ($ecodKid['icon'] ?? '') !== '' ? ecod_icon((string) $ecodKid['icon'], 16) : htmlspecialchars(mb_substr((string) $ecodKid['title'], 0, 1), ENT_QUOTES, 'UTF-8'); ?></span>
+                                                            <span class="ecod_nav__item-body">
+                                                                <span class="ecod_nav__item-t"><?php echo htmlspecialchars($ecodKid['title'], ENT_QUOTES, 'UTF-8'); ?><?php if (($ecodKid['badge'] ?? '') !== ''): ?><i class="ecod_nav__badge ecod_nav__badge--item"><?php echo htmlspecialchars((string) $ecodKid['badge'], ENT_QUOTES, 'UTF-8'); ?></i><?php endif; ?></span>
+                                                                <?php if (($ecodKid['desc'] ?? '') !== ''): ?>
+                                                                    <span class="ecod_nav__item-d"><?php echo htmlspecialchars((string) $ecodKid['desc'], ENT_QUOTES, 'UTF-8'); ?></span>
+                                                                <?php endif; ?>
+                                                            </span>
+                                                        </a>
+                                                    </li>
+                                                <?php endforeach; ?>
+                                            </ul>
+                                        </li>
+                                    <?php endforeach; ?>
+                                </ul>
+                            <?php elseif ($ecodStyle === 'mega-group'):
+                                /* mega-group 退化形态：全宽多列图标行（3~5 列自适应） */
+                                $ecodRowsCount = count($ecodKids);
+                                $ecodRowsCols = $ecodRowsCount <= 5 ? $ecodRowsCount : min(5, (int) ceil($ecodRowsCount / 2)); ?>
+                                <ul class="ecod_nav__sub is-mega-full is-rows has-icons" style="--ecod-mega-cols:<?php echo max(1, $ecodRowsCols); ?>">
+                                    <?php foreach ($ecodKids as $ecodKid): ?>
+                                        <li class="<?php echo ecod_nav_item_is_active($this, $ecodKid) ? 'is-active' : ''; ?>">
+                                            <a href="<?php echo htmlspecialchars($ecodKid['url'], ENT_QUOTES, 'UTF-8'); ?>"
+                                                <?php echo ecod_nav_link_attrs($ecodKid); ?>>
+                                                <span class="ecod_nav__licon<?php echo ($ecodKid['icon'] ?? '') === '' ? ' ecod_nav__licon--text' : ''; ?>"><?php echo ($ecodKid['icon'] ?? '') !== '' ? ecod_icon((string) $ecodKid['icon'], 16) : htmlspecialchars(mb_substr((string) $ecodKid['title'], 0, 1), ENT_QUOTES, 'UTF-8'); ?></span>
+                                                <span class="ecod_nav__ltext"><?php echo htmlspecialchars($ecodKid['title'], ENT_QUOTES, 'UTF-8'); ?></span>
+                                                <?php if (($ecodKid['badge'] ?? '') !== ''): ?><i class="ecod_nav__badge ecod_nav__badge--item"><?php echo htmlspecialchars((string) $ecodKid['badge'], ENT_QUOTES, 'UTF-8'); ?></i><?php endif; ?>
+                                            </a>
+                                        </li>
+                                    <?php endforeach; ?>
+                                </ul>
+                            <?php else:
+                            /* 根据生效样式决定是否启用图标卡片面板 */
+                            if ($ecodStyle === 'list') {
+                                $ecodKidIcons = false;
+                            } elseif ($ecodStyle === 'icons' || $ecodStyle === 'mega') {
+                                $ecodKidIcons = true;
+                            } else {
+                                /* auto：任一子项配了图标 → 图标卡片网格 */
+                                $ecodKidIcons = false;
+                                foreach ($ecodKids as $ecodKid) {
+                                    if (isset($ecodKid['icon']) && $ecodKid['icon'] !== '') {
+                                        $ecodKidIcons = true;
+                                        break;
+                                    }
+                                }
+                            }
+                            $ecodForceIcons = ($ecodStyle === 'icons' || $ecodStyle === 'mega');
                             ?>
                             <ul class="ecod_nav__sub<?php echo $ecodCols; ?><?php echo $ecodKidIcons ? ' has-icons' : ''; ?>">
                                 <?php foreach ($ecodKids as $ecodKid): ?>
                                     <li class="<?php echo ecod_nav_item_is_active($this, $ecodKid) ? 'is-active' : ''; ?>">
                                         <a href="<?php echo htmlspecialchars($ecodKid['url'], ENT_QUOTES, 'UTF-8'); ?>"
-                                            <?php echo ecod_nav_link_attrs($ecodKid); ?>><?php echo isset($ecodKid['icon']) && $ecodKid['icon'] !== '' ? '<span class="ecod_nav__licon">' . ecod_icon((string) $ecodKid['icon'], 15) . '</span>' : ''; ?><?php echo htmlspecialchars($ecodKid['title'], ENT_QUOTES, 'UTF-8'); ?></a>
+                                            <?php echo ecod_nav_link_attrs($ecodKid); ?>><?php
+                                            $ecodKidIconHtml = '';
+                                            if (isset($ecodKid['icon']) && $ecodKid['icon'] !== '') {
+                                                $ecodKidIconHtml = '<span class="ecod_nav__licon">' . ecod_icon((string) $ecodKid['icon'], 15) . '</span>';
+                                            } elseif ($ecodForceIcons) {
+                                                $ecodKidIconHtml = '<span class="ecod_nav__licon ecod_nav__licon--text">' . htmlspecialchars(mb_substr((string) $ecodKid['title'], 0, 1), ENT_QUOTES, 'UTF-8') . '</span>';
+                                            }
+                                            echo $ecodKidIconHtml;
+                                            ?><?php echo htmlspecialchars($ecodKid['title'], ENT_QUOTES, 'UTF-8'); ?></a>
                                     </li>
                                 <?php endforeach; ?>
                             </ul>
+                            <?php endif; /* mega-group 分支收口 */ ?>
                         <?php endif; ?>
                     </li>
                 <?php endforeach; ?>
@@ -203,21 +291,49 @@ if ($ecodNavMax > 0 && count($ecodNav) > $ecodNavMax) {
 
             <?php $ecodSPanelOn = ecod_option('ESearchPanel', 'on') === 'on'; ?>
             <div class="ecod_nav__actions">
-                <i class="ecod_nav__sep" aria-hidden="true"></i>
-                <?php if ($ecodSPanelOn): ?>
-                    <button type="button" class="ecod_nav__searchbtn" data-ecod-spanel-open aria-label="搜索"
-                            title="搜索（⌘K）"><?php echo ecod_icon('search', 17); ?></button>
-                <?php else: ?>
-                    <form class="ecod_nav__search" role="search" method="post" action="<?php $this->options->siteUrl(); ?>">
-                        <?php echo ecod_icon('search', 14); ?>
-                        <input type="search" name="s" placeholder="搜索文章" aria-label="搜索文章" autocomplete="off" data-ecod-search-input>
-                        <kbd>↵</kbd>
-                    </form>
+                <?php if ($ecodSPanelOn || $ecodDark !== 'off'): ?>
+                <div class="ecod_nav__tools">
+                    <?php if ($ecodSPanelOn): ?>
+                        <button type="button" class="ecod_nav__searchbtn" data-ecod-spanel-open aria-label="搜索"
+                                title="搜索（⌘K）"><?php echo ecod_icon('search', 17); ?></button>
+                    <?php else: ?>
+                        <form class="ecod_nav__search" role="search" method="post" action="<?php $this->options->siteUrl(); ?>">
+                            <?php echo ecod_icon('search', 14); ?>
+                            <input type="search" name="s" placeholder="搜索文章" aria-label="搜索文章" autocomplete="off" data-ecod-search-input>
+                            <kbd>↵</kbd>
+                        </form>
+                    <?php endif; ?>
+                    <?php if ($ecodSPanelOn && $ecodDark !== 'off'): ?>
+                        <i class="ecod_nav__sep" aria-hidden="true"></i>
+                    <?php endif; ?>
+                    <?php if ($ecodDark !== 'off'): /* 后台关掉深色模式后，头部的切换按钮一并隐藏（与页脚 / dock 保持一致） */ ?>
+                        <button type="button" class="ecod_nav__themebtn" data-ecod-theme-toggle
+                                aria-label="切换深浅模式" title="深浅模式"><?php echo ecod_icon('moon', 17); ?></button>
+                    <?php endif; ?>
+                </div>
                 <?php endif; ?>
-                <button type="button" class="ecod_nav__themebtn" data-ecod-theme-toggle
-                        aria-label="切换深浅模式" title="深浅模式"><?php echo ecod_icon('moon', 17); ?></button>
 
                 <?php if ($ecodUserLogged): ?>
+                    <?php /* 站内消息铃铛：角标由 JS 拉 notif_unread 回填 */ ?>
+                    <details class="ecod_nav__bell" data-ecod-bell>
+                        <summary aria-label="站内消息" title="站内消息">
+                            <?php echo ecod_icon('bell', 17); ?>
+                            <i class="ecod_nav__bell-badge" data-ecod-bell-badge hidden></i>
+                        </summary>
+                        <div class="ecod_nav__bellpop" role="dialog" aria-label="站内消息列表">
+                            <div class="ecod_nav__bellpop-head">
+                                <b>站内消息</b>
+                                <div class="ecod_nav__bellpop-ops">
+                                    <button type="button" class="ecod_nav__bellpop-op" data-ecod-notif-readall>全部已读</button>
+                                    <button type="button" class="ecod_nav__bellpop-op" data-ecod-notif-clear>清空</button>
+                                </div>
+                            </div>
+                            <div class="ecod_nav__bellpop-list" data-ecod-notif-list aria-live="polite"></div>
+                            <?php if ($ecodUcUrl !== ''): ?>
+                                <a class="ecod_nav__bellpop-foot" href="<?php echo htmlspecialchars($ecodUcUrl, ENT_QUOTES, 'UTF-8'); ?>#notifs">在个人中心查看全部 →</a>
+                            <?php endif; ?>
+                        </div>
+                    </details>
                     <details class="ecod_nav__user" data-ecod-user data-ecod-logged="1">
                     <summary aria-label="用户中心">
                         <span class="ecod_nav__user-ic"><?php echo ecod_icon('user', 16); ?></span>
@@ -236,6 +352,20 @@ if ($ecodNavMax > 0 && count($ecodNav) > $ecodNavMax) {
                         </div>
                         <?php if ($ecodUcUrl !== ''): ?>
                             <a href="<?php echo htmlspecialchars($ecodUcUrl, ENT_QUOTES, 'UTF-8'); ?>"><?php echo ecod_icon('user', 14); ?>个人中心</a>
+                        <?php endif; ?>
+                        <?php if (ecod_credits_enabled()):
+                            /* 积分余额 + 每日签到直达（guaqi 式）：服务端直出，签到点击走 api */
+                            $ecodHdSigned = ecod_credits_signed_today((int) $ecodUserWidget->uid); ?>
+                        <div class="ecod_nav__upop-credit" data-ecod-credits-quick
+                             data-api="<?php echo htmlspecialchars(ecod_api_url(), ENT_QUOTES, 'UTF-8'); ?>"
+                             data-token="<?php echo htmlspecialchars(ecod_account_token(), ENT_QUOTES, 'UTF-8'); ?>">
+                            <span class="ecod_nav__upop-credit-label"><?php echo ecod_icon('zap', 13); ?><?php echo htmlspecialchars(ecod_credits_name(), ENT_QUOTES, 'UTF-8'); ?></span>
+                            <b data-ecod-credits-quick-balance><?php echo ecod_credits_balance((int) $ecodUserWidget->uid); ?></b>
+                            <button type="button" class="ecod_nav__upop-signin" data-ecod-credits-quick-signin
+                                    data-signed="<?php echo $ecodHdSigned ? '1' : '0'; ?>">
+                                <?php echo $ecodHdSigned ? '已签到' : '签到 +' . max(0, (int) ecod_option('ECrCheckin', 0)); ?>
+                            </button>
+                        </div>
                         <?php endif; ?>
                         <a href="<?php $this->options->adminUrl(); ?>" target="_blank" rel="noopener"><?php echo ecod_icon('edit', 14); ?>管理后台</a>
                         <a href="<?php $this->options->logoutUrl(); ?>"><?php echo ecod_icon('logout', 14); ?>退出登录</a>

@@ -501,7 +501,8 @@ body.is-navb-dragging {
     grid-column: 1 / -1;
 }
 
-.ecod-navb__field input {
+.ecod-navb__field input,
+.ecod-navb__field select {
     width: 100%;
     height: 28px;
     padding: 0 8px;
@@ -511,6 +512,7 @@ body.is-navb-dragging {
     font-size: 12px;
     color: var(--ea-ink);
 }
+.ecod-navb__field select { padding: 0 4px; cursor: pointer; }
 
 /* 前置图标选择器：触发按钮 + 图标网格浮层（替代文本下拉） */
 .ecod-navb__ipick {
@@ -617,7 +619,8 @@ body.is-navb-dragging {
     color: var(--ea-sub);
 }
 
-.ecod-navb__field input:focus {
+.ecod-navb__field input:focus,
+.ecod-navb__field select:focus {
     outline: none;
     border-color: var(--ea-brand);
     box-shadow: 0 0 0 3px var(--ea-brand-soft);

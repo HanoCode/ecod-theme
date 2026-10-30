@@ -39,17 +39,38 @@ if ($this->is('search')) {
     <?php /* 分类归档复用首页文章流：tab 条 + 列表 + 分页，支持无刷新切换 */ ?>
     <?php $this->need('components/home/list.php'); ?>
 <?php else: ?>
-    <header class="ecod_pagehead">
-        <h1>
-            <?php $this->archiveTitle([
-                'category' => _t('分类：%s'),
-                'search'   => _t('搜索：%s'),
-                'tag'      => _t('标签：%s'),
-                'author'   => _t('作者：%s'),
-            ], '', ''); ?>
-        </h1>
-        <p><?php echo (int) $this->getTotal(); ?> 篇文章<?php if ($this->is('search')): ?> · 关键词「<?php $this->keywords(); ?>」<?php endif; ?></p>
-    </header>
+    <?php /* 标签 / 作者 / 搜索 / 日期归档：可见面包屑（SEO JSON-LD 里已有同源数据） */ ?>
+    <?php ob_start();
+    $this->archiveTitle([
+        'search' => _t('搜索：%s'),
+        'tag'    => _t('标签：%s'),
+        'author' => _t('%s 的文章'),
+    ], '', '');
+    $ecodArcCrumb = trim((string) ob_get_clean()); ?>
+    <nav class="ecod_crumb" aria-label="面包屑">
+        <a class="ecod_crumb__back" href="javascript:history.back()" aria-label="返回"><?php echo ecod_icon('chevron', 13); ?></a>
+        <a href="<?php $this->options->siteUrl(); ?>"><?php echo ecod_icon('home', 12); ?>首页</a>
+        <span class="ecod_crumb__sep" aria-hidden="true">/</span>
+        <span aria-current="page"><?php echo $ecodArcCrumb !== '' ? $ecodArcCrumb : '归档'; ?></span>
+    </nav>
+
+    <?php if ($this->is('author')): ?>
+        <?php /* 公开作者主页头卡：头像 / 用户组 / 简介 / 统计（components/archive/author.php） */ ?>
+        <?php $this->need('components/archive/author.php'); ?>
+        <?php if (empty($GLOBALS['ecodAuthorHeadDone'])): ?>
+            <h1 class="ecod_sr"><?php $this->archiveTitle(['author' => _t('作者：%s')], '', ''); ?></h1>
+        <?php endif; ?>
+    <?php else: ?>
+        <header class="ecod_pagehead">
+            <h1>
+                <?php $this->archiveTitle([
+                    'search' => _t('搜索：%s'),
+                    'tag'    => _t('标签：%s'),
+                ], '', ''); ?>
+            </h1>
+            <p><?php echo (int) $this->getTotal(); ?> 篇文章<?php if ($this->is('search')): ?> · 关键词「<?php $this->keywords(); ?>」<?php endif; ?></p>
+        </header>
+    <?php endif; ?>
 
     <?php /* 容器与卡片同源：避免网格容器里混入横向卡导致挤压 */ ?>
     <?php $ecodArchiveMode = ecod_list_force_mode(); ?>

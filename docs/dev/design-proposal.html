@@ -1260,6 +1260,27 @@ details .in{padding-bottom:12px}
     </div>
   </div>
 
+  <h3 style="margin-top:26px">13.5 · 内页精美化实施记录（2026-10-30）</h3>
+  <p style="font-size:13px;color:var(--text-2)">规格真源见 <code>docs/dev/ARTICLE-DETAIL-REDESIGN.html</code>（参考 guaqi.com 计算样式实测）。本节只记落地结果，改值前请先改规格稿。</p>
+  <table>
+    <thead><tr><th>层</th><th>落地内容</th><th>文件</th></tr></thead>
+    <tbody>
+      <tr><td>Token</td><td>新增 <code>--ecod-ink/-ink-2/-ink-3</code>、<code>--ecod-line/-line-2/-line-strong</code>、<code>--ecod-sp-*</code>；旧 <code>--ecod-text*</code>/<code>--ecod-border*</code> 保留为别名。正文 <code>fs-base 15→16</code>、行高 1.75；补上一直被引用却未定义的 <code>--ecod-shadow-lg</code></td><td><code>assets/css/ecod.css</code></td></tr>
+      <tr><td>头卡</td><td>封面出血到卡边（负 margin）、徽标组、标题、作者条（头像 + 身份标 + 关注）、元信息主次两行（无边框、无底片、<code>·</code> 分隔）。<b>关注双入口修复</b>：<code>bottom_content</code> 有启用的 <code>authorbox</code> 实例时头卡不输出关注按钮（遍历 <code>ecod_widget_area_order('bottom_content','single')</code> 判 type）</td><td><code>post.php</code> + CSS §头卡</td></tr>
+      <tr><td>动作条</td><td>C4 竖排格：cell 64px 高、icon 20 顶置、标签 12px、相邻分隔线 1×22px（挂 <code>&gt; * + *::before</code> 左缘）、hover 主色 14% tint、点赞激活主色语义（icon 实心 12% 主色，替代旧红色底）；<code>grid-auto-flow:column</code> 按实际格数等分（评论「N 讨论」+ 新增第 6 格「报错」）。移动端 52px、纯图标（数字标签保留）</td><td><code>components/post/act.php</code> + CSS</td></tr>
+      <tr><td>报错格</td><td><code>details</code> 弹层：4 原因单选 + 选填说明（蜜罐 <code>ecod_hp</code>）；后端 <code>api.php?action=report</code>（POST + same_origin + 原因白名单 + cookie 60s 限速 + 分级限流），SMTP 已配走 <code>ecod_mail_smtp</code> 邮件通知，未配置返回引导评论区文案；<b>不落库</b>（不改数据结构）</td><td><code>api.php</code> + <code>ecod.post.js</code></td></tr>
+      <tr><td>阅读工具条</td><td>原「朗读条」横幅升级为吸顶 <code>.ecod_readbar</code>（目录 / 朗读 / 字号 A−A+ / 进度线，92% surface + blur，纯 CSS sticky）；字号 14/16/18 存 <code>localStorage</code> 键 <code>ecod-content-fs</code>；目录按钮接浮目录；无可视工具整条隐藏；后台模块更名「阅读工具条」（widget type 仍 <code>tts</code>）</td><td><code>components/post/tts.php</code> + <code>ecod.post.js</code> initReadbar</td></tr>
+      <tr><td>分组卡</td><td><code>bottom_content</code> 包进 <code>.ecod_stack</code>：组内共享边框首尾圆角、gap 必须 0（原 16px 与「共享边框」自相矛盾）、栈内成员 margin 归零、postnav 组内补分隔线</td><td><code>post.php</code> + CSS §分组卡</td></tr>
+      <tr><td>元信息次行</td><td><code>.ecod_article__metasec</code>：字数·时长·分类·更新于（仅 modified &gt; created 才标更新）；锁定 / 付费锁时缺字数项；主行只留 时间 / 阅读 / 评论链接</td><td><code>post.php</code> + CSS</td></tr>
+      <tr><td>移动端正文字号</td><td>≤680px 移除正文 14px 降级（<b>正文永远 16px</b>，唯一可缩是标题 22px=<code>fs-3xl</code>）</td><td>CSS §移动端</td></tr>
+      <tr><td>标签</td><td>去底片：只留 <code>#</code> 前缀 + 墨色，hover 出浅底</td><td>CSS</td></tr>
+      <tr><td>相关阅读</td><td>3 列大卡 → 列表式（缩略图 96×64 + 标题两行 + 元信息）</td><td><code>components/post/related.php</code></td></tr>
+      <tr><td>上下篇</td><td>文字 + 右侧缩略图对称卡，有封面时不再压暗标题</td><td>CSS</td></tr>
+      <tr><td>评论</td><td>讨论头计数加粗、编辑器聚焦整卡 3px 光环、来宾字段单行、min-height 76</td><td><code>comments.php</code> + CSS</td></tr>
+    </tbody>
+  </table>
+  <p style="font-size:13px;color:var(--text-2)"><b>实施中修掉的真实缺陷：</b><code>components/post/act.php</code> 引用了 <code>post.php</code> 的模板局部变量 <code>$ecodLocked / $ecodPayLocked</code>——模块经 <code>ecod_render_block()</code> 独立作用域渲染，拿不到父模板变量，两条 PHP Warning 直接打印进动作条，把 5 等分网格挤成 18 列。改为本地自算 <code>ecod_pay_access($this)</code>。教训：<b>模块模板里不允许直接引用主题模板的局部变量</b>，要么走 <code>$this</code> API，要么本地重算。</p>
+
   <div class="grid-3" style="margin-top:16px">
     <div class="card pad"><b style="font-size:13px">阅读体验</b><p style="font-size:12px;color:var(--text-2);margin-top:6px">正文最大宽度 720px；图片点击灯箱；长代码块横向滚动；脚注悬浮预览。</p></div>
     <div class="card pad"><b style="font-size:13px">互动区</b><p style="font-size:12px;color:var(--text-2);margin-top:6px">点赞（本地 + 服务端去重）、收藏、分享（复制链接 / 二维码）、赞赏（可关）。<b style="color:var(--text)">赞赏开关打开即占位显示</b>：未配置收款码时弹层输出虚线占位框 +「待配置」，不隐藏按钮；只配一侧时仅显示已配置的那一侧。</p></div>
@@ -2456,6 +2477,14 @@ details .in{padding-bottom:12px}
       <tr><td>把块名 / 字段名改成 widget</td><td>41 个块声明、19 个模板、管理台 JS 全要跟着改，纯改名不产生价值</td></tr>
     </table>
   </div>
+  <h3 style="margin-top:26px">31.9 · 模块壳 / 密度 / 图标头落地（2026-10-30）</h3>
+  <p style="font-size:13px;color:var(--text-2)">模板零改动：壳属性由渲染层注入。模块模板照旧输出 <code>&lt;section class="ecod_widget"&gt;</code>，<code>ecod_render_block()</code> 用输出缓冲后处理，给第一处壳标签补 <code>data-shell</code> / <code>data-density</code>，并按模块语义给标题补 <code>.ecod_widget__icon</code> 图标块（22×22，圆角 6，primary-soft 底）。</p>
+  <ul style="font-size:13px;color:var(--text-2)">
+    <li>默认值表 <code>ecod_block_shell_defaults()</code>：about=loose/none、wstats 与 tags=compact、toc=plain、wsearch=none。</li>
+    <li>图标表 <code>ecod_block_head_icons()</code>：hot/rank=medal、comments=comment、recommend=star、archives=clock、cats/cat-post=folder、tags=hash、feed=radio、flash=zap、title-list=list。</li>
+    <li>单实例可用 <code>$block['shell'|'density'|'head']</code> 覆盖（后台 UI 暂未暴露，留扩展位）。</li>
+    <li>模板没有 <code>.ecod_widget</code> 壳（post/* 等正文内模块）时装饰层原样返回，不受影响。</li>
+  </ul>
 </section>
 
 <section id="s9">

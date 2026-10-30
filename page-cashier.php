@@ -162,8 +162,9 @@ $ecodEpayType = (string) ecod_option('EPayEpayType', 'alipay') === 'wxpay' ? 'wx
     <?php /* 模块 · 内容区上方（模块管理台） */ ecod_widgets_render("top_content", $this); ?>
 
     <nav class="ecod_crumb" aria-label="面包屑">
+        <a class="ecod_crumb__back" href="javascript:history.back()" aria-label="返回"><?php echo ecod_icon('chevron', 13); ?></a>
         <a href="<?php $this->options->siteUrl(); ?>"><?php echo ecod_icon('home', 12); ?>首页</a>
-        <span class="ecod_crumb__sep" aria-hidden="true"><?php echo ecod_icon('chevron', 11); ?></span>
+        <span class="ecod_crumb__sep" aria-hidden="true">/</span>
         <span aria-current="page">收银台</span>
     </nav>
 
@@ -177,6 +178,22 @@ $ecodEpayType = (string) ecod_option('EPayEpayType', 'alipay') === 'wxpay' ? 'wx
          data-level="<?php echo (int) $ecodLevel; ?>"
          data-plan="<?php echo htmlspecialchars($ecodPlan, ENT_QUOTES, 'UTF-8'); ?>"
          data-permalink="<?php echo htmlspecialchars($ecodPermalink, ENT_QUOTES, 'UTF-8'); ?>"
+         data-uc="<?php echo htmlspecialchars((function () {
+             $uc = function_exists('ecod_pages_url') ? ecod_pages_url('user') : '';
+             if ($uc === '') {
+                 try {
+                     $ucRow = \Typecho\Db::get()->fetchRow(
+                         \Typecho\Db::get()->select('slug')->from('table.contents')
+                             ->where('template = ?', 'page-user.php')->where('type = ?', 'page')
+                             ->where('status = ?', 'publish')->limit(1)
+                     );
+                     $uc = $ucRow ? ecod_pay_site_url('index.php/' . $ucRow['slug'] . '.html') : '';
+                 } catch (\Throwable $e) {
+                     $uc = '';
+                 }
+             }
+             return $uc;
+         })(), ENT_QUOTES, 'UTF-8'); ?>"
          <?php if ($ecodOrderState === 'pending'): ?>data-resume-order="<?php echo htmlspecialchars($ecodOrderNo, ENT_QUOTES, 'UTF-8'); ?>"<?php endif; ?>>
 
         <?php if ($ecodError !== ''): ?>

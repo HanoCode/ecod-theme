@@ -33,6 +33,23 @@ $ecodCpAuthor = trim((string) ob_get_clean());
 
 $ecodCpNotice = trim((string) ecod_p('notice', ''));
 $ecodCpLink = (string) $this->permalink;
+
+/* 版权模板多套（JustNews 同款）：设置「版权模板」里按「名称丨声明文本」逐行定义，
+   文章自定义字段 copyright 填名称即选用对应文本；没命中回落模块通用说明 */
+$ecodCpTpl = '';
+try {
+    $ecodCpTpl = trim((string) ($this->fields->copyright ?? ''));
+} catch (\Throwable $e) {
+}
+if ($ecodCpTpl !== '') {
+    foreach (preg_split('/\r\n|\r|\n/', (string) ecod_option('ECopyrightSet', '')) as $ecodCpLine) {
+        $ecodCpParts = array_map('trim', explode('丨', str_replace('|', '丨', (string) $ecodCpLine)));
+        if (count($ecodCpParts) >= 2 && $ecodCpParts[0] === $ecodCpTpl && $ecodCpParts[1] !== '') {
+            $ecodCpNotice = $ecodCpParts[1];
+            break;
+        }
+    }
+}
 ?>
 <aside class="ecod_copyright" role="note">
     <div class="ecod_copyright__head">

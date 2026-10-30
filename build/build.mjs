@@ -79,6 +79,24 @@ const CRITICAL_SECTIONS = [
     '24@1', '25@1', '27',            // 列表排序浮层 / 首屏 Hero / 专题与分类页头
 ];
 
+/**
+ * CSS 括号平衡守卫：剥掉注释与字符串字面量后逐字符扫描花括号，
+ * 深度不允许变负、结尾必须归零。防「少写一个 }」把 @media 后半段
+ * 泄漏到顶层（移动端规则在桌面端生效）这类静默排版事故。
+ */
+function assertBraceBalance(css, label) {
+    const stripped = css.replace(/\/\*[\s\S]*?\*\//g, '').replace(/"(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*'/g, '');
+    let depth = 0;
+    for (const ch of stripped) {
+        if (ch === '{') depth++;
+        else if (ch === '}') {
+            depth--;
+            if (depth < 0) throw new Error(`${label}：花括号深度变负（多余的 }），媒体查询可能提前闭合`);
+        }
+    }
+    if (depth !== 0) throw new Error(`${label}：花括号不配对（差 ${depth} 个 }）`);
+}
+
 /** 按分节标记从 CSS 源码中抽取指定编号的节，保持原顺序拼接。
     'N@k' 语法用于区分源码中重复的编号（如两个 23. / 两个 24.）。 */
 function extractCssSections(source, numbers) {
@@ -121,6 +139,68 @@ function extractCssSections(source, numbers) {
         throw new Error('关键 CSS 抽取为空：分节标记与 CRITICAL_SECTIONS 对不上');
     }
     return out.join('\n');
+}
+
+/**
+ * 首帧防闪守卫：把「全屏浮层」的隐藏态规则强制并入关键 CSS（构建期自动生成）。
+ *
+ * 背景：关键 CSS 按分节抽取（CRITICAL_SECTIONS）。任何一个全屏浮层
+ * （position:fixed; inset:0，靠 opacity:0 / visibility:hidden 默认隐藏）如果写在
+ * 未纳入抽取的分节里，首帧就完全没有它的规则，浏览器按默认样式（opacity:1、
+ * visibility:visible）把它整块画出来，等完整样式表异步到位才过渡到隐藏 ——
+ * 表现为「整页闪一下」。首页的搜索面板、文章页的图片灯箱都踩过同一个坑。
+ *
+ * 这里扫描整份源码，挑出这类浮层规则；关键 CSS 里还没有同名选择器就补进去。
+ * 只补「隐藏态」定义，不改变浮层自身分节里的视觉样式。
+ */
+function overlayGuardCss(source, criticalText) {
+    const css = source.replace(/\/\*[\s\S]*?\*\//g, '');
+    const guards = [];
+    let sel = '';
+    let body = '';
+    let depth = 0;
+
+    for (const ch of css) {
+        if (depth === 0) {
+            if (ch === '{') {
+                depth = 1;
+                body = '';
+            } else {
+                sel += ch;
+            }
+            continue;
+        }
+        if (ch === '{') {
+            depth += 1;
+            body += ch;
+            continue;
+        }
+        if (ch === '}') {
+            depth -= 1;
+            if (depth > 0) {
+                body += ch;
+                continue;
+            }
+            const s = sel.replace(/\s+/g, ' ').trim();
+            const full = s && !s.startsWith('@')
+                && /position:\s*fixed/.test(body)
+                && /inset:\s*0(?=\s|;|$)/.test(body)
+                && (/(?:^|[;{\s])opacity:\s*0(?=\s|;|$)/.test(body) || /visibility:\s*hidden/.test(body));
+            if (full && !criticalText.includes(s) && !guards.some((g) => g.startsWith(s + ' '))) {
+                guards.push(`${s} {${body}}`);
+            }
+            sel = '';
+            body = '';
+            continue;
+        }
+        body += ch;
+    }
+
+    if (!guards.length) return '';
+    return [
+        '/* ---- 首帧防闪守卫：全屏浮层默认隐藏态（build 自动生成，勿手改） ---- */',
+        ...guards,
+    ].join('\n');
 }
 
 /**
@@ -199,7 +279,10 @@ async function main() {
            节编号对应源码的 /* ============ N. 名称 ============ 分节标记，
            想调整首屏覆盖面改这一个数组即可。 */
         if (rel === 'assets/css/ecod.css') {
-            const criticalSource = extractCssSections(source, CRITICAL_SECTIONS);
+            assertBraceBalance(source, 'ecod.css 源码');
+            const sectionSource = extractCssSections(source, CRITICAL_SECTIONS);
+            assertBraceBalance(sectionSource, '关键 CSS 抽取');
+            const criticalSource = sectionSource + '\n' + overlayGuardCss(source, sectionSource);
             const criticalMin = (
                 await build({
                     stdin: { contents: criticalSource, loader: 'css', resolveDir: THEME_DIR },
@@ -221,6 +304,13 @@ async function main() {
             await writeFile(join(THEME_DIR, criticalRel) + '.br', brotliCompressSync(criticalMin, {
                 params: { [zlibConstants.BROTLI_PARAM_QUALITY]: 11 },
             }));
+            /* opcache 变体：nowdoc 无插值无转义，include.php require 它之后
+               字符串常驻 opcache 共享内存，省掉每请求一次磁盘读。
+               nowdoc 闭合标记独占一行，CSS 内容不可能出现该标记 */
+            await writeFile(
+                join(THEME_DIR, criticalRel) + '.php',
+                "<?php return <<<'ECODCSS'\n" + criticalMin + '\nECODCSS;\n'
+            );
             /* 伪源路径键：ecod_dist_resolve('assets/css/ecod.critical.css') 可查到 */
             manifest['assets/css/ecod.critical.css'] = criticalRel;
             report.push({
@@ -253,7 +343,7 @@ async function main() {
     /* 清理不在本次 manifest 里的旧产物（含预压缩副产物与哈希变更的孤儿文件） */
     const keep = new Set([
         MANIFEST,
-        ...Object.values(manifest).flatMap((f) => [f, f + '.gz', f + '.br'].map((p) => join(THEME_DIR, p))),
+        ...Object.values(manifest).flatMap((f) => [f, f + '.gz', f + '.br', f + '.php'].map((p) => join(THEME_DIR, p))),
     ]);
     for (const f of await walk(OUT_ROOT)) {
         if (!keep.has(f)) {

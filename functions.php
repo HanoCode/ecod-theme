@@ -14,11 +14,17 @@ if (!defined('__TYPECHO_ROOT_DIR__')) {
     exit;
 }
 
+/* 主题版本号（前端控制台信息条等共用，改版时同步文件头 @version） */
+define('ECOD_VERSION', '2.0.0');
+
 /* 构建产物解析（dist 哈希文件优先，见 build/ 与 core/lib/asset.php） */
 require_once __DIR__ . '/core/lib/asset.php';
 
 /* 表结构定义（点赞表 / contents.views），模板与接口共用 */
 require_once __DIR__ . '/core/lib/schema.php';
+
+/* 文件型 TTL 缓存（大对象跨请求缓存，options 只放小配置，见 core/lib/cache.php） */
+require_once __DIR__ . '/core/lib/cache.php';
 
 /* SEO 元信息、结构化数据与 sitemap */
 require_once __DIR__ . '/core/site/seo.php';
@@ -41,6 +47,9 @@ require_once __DIR__ . '/core/content/related.php';
 /* 服务端缩略图裁剪 */
 require_once __DIR__ . '/core/content/thumbs.php';
 
+/* 媒体存储驱动层（local / oss / cos / s3 + 上传管线） */
+require_once __DIR__ . '/core/media/storage.php';
+
 /* AI 智能摘要（后台 AI 助手配置接入后生效） */
 require_once __DIR__ . '/core/content/ai.php';
 
@@ -52,6 +61,15 @@ require_once __DIR__ . '/core/site/pages.php';
 
 /* 外链中转（go 跳转加载页） */
 require_once __DIR__ . '/core/site/go.php';
+
+/* 评论推送（企业微信 / Server酱 / Bark / WxPusher / 通用 webhook，响应结束后异步发送） */
+require_once __DIR__ . '/core/site/push.php';
+
+/* 自定义短链（ecod_shortlinks 表 + 后台管理，与 go 中转共用 ?go= 入口） */
+require_once __DIR__ . '/core/site/golinks.php';
+
+/* 关键词内链（DOM 文本节点替换，正文管线在 go_rewrite 之前调用） */
+require_once __DIR__ . '/core/content/keywords.php';
 
 /* 导航菜单（后台配置的一级 / 二级菜单，含旧版自动导航回退） */
 require_once __DIR__ . '/core/site/nav.php';
@@ -71,6 +89,24 @@ require_once __DIR__ . '/core/site/meta-meta.php';
 /* 付费与会员可见：门槛 / 权益 / 交易三层分离（见 docs/paywall-design.md） */
 require_once __DIR__ . '/core/pay/pay.php';
 require_once __DIR__ . '/core/pay/pay-channel.php';
+
+/* Credit 积分（签到 / 任务 / AI 与抽奖计费） */
+require_once __DIR__ . '/core/user/credits.php';
+
+/* 账户令牌 / 自定义头像：挂件与功能页的表单令牌对访客也要可用，全局加载 */
+require_once __DIR__ . '/core/user/account.php';
+
+/* 站点抽奖（奖品池在主题设置维护，见 core/site/lottery.php 头注） */
+require_once __DIR__ . '/core/site/lottery.php';
+
+/* 自助广告（下单走支付通道，见 core/site/ads.php 头注） */
+require_once __DIR__ . '/core/site/ads.php';
+
+/* 积分兑换商城（商品池在主题设置维护，见 core/site/shop.php 头注） */
+require_once __DIR__ . '/core/site/shop.php';
+
+/* 推广返佣（?ref= 归因 + 订单结算返积分，见 core/user/referral.php 头注） */
+require_once __DIR__ . '/core/user/referral.php';
 
 /* ------------------------------------------------------------------
  * 后台配置项
@@ -264,9 +300,31 @@ function themeInit($archive = null)
     ecod_schema_upgrade();
     ecod_sitemap_maybe_output();
 
+    /* 推广归因：任意页面带 ?ref=<uid> 写 30 天 Cookie（注册时归因，见 referral.php） */
+    ecod_ref_capture();
+
     /* 列表排序：钩子在主查询 order/page 之后、取数之前触发，
        只对归档主查询生效（core/site/sort.php 内按 type 判定） */
     \Typecho\Plugin::factory('Widget\Archive')->query = 'ecod_sort_query';
+
+    /* 每页文章数：后台「列表与卡片 → EListPerPage」自定义覆盖。
+       themeInit 在框架 ->page(currentPage, pageSize) 之前执行（var/Widget/Archive.php:675→689），
+       改 parameter->pageSize 即可让各列表页的条数、pageNav 总页数与「加载更多」一并生效；
+       留 0 / 非法值回退 Typecho 后台「阅读」的原始 pageSize。
+       注意移动到 ->page() 之后改没有意义，且 feed（invokeFromOutside）不会走到这里。 */
+    if ($archive !== null) {
+        try {
+            $ecodPageType = (string) ($archive->parameter->type ?? '');
+            if (in_array($ecodPageType, ['index', 'category', 'tag', 'author', 'search', 'date'], true)) {
+                $ecodPerPage = (int) trim((string) ecod_option('EListPerPage', '0'));
+                if ($ecodPerPage >= 5 && $ecodPerPage <= 60) {
+                    $archive->parameter->pageSize = $ecodPerPage;
+                }
+            }
+        } catch (\Throwable $e) {
+            /* 取不到类型就按原 pageSize 走 */
+        }
+    }
 
     /* 付费内容的 Feed / 第三方消费方兜底。
        文章页正文与描述在 themeInit 之前已被 singleHandle 算好，钩子对文章页无效，
@@ -362,6 +420,60 @@ function ecod_primary_soft(): string
 function ecod_primary_deep(): string
 {
     return ecod_color_mix(ecod_primary(), '#000000', 0.16);
+}
+
+/**
+ * WCAG 2.x 相对亮度：对比度换算用，勿用于视觉色彩调整
+ */
+function ecod_color_luma(string $hex): float
+{
+    $hex = ecod_color($hex, '#000000');
+    $lin = static function (int $v): float {
+        $c = $v / 255;
+        return $c <= 0.04045 ? $c / 12.92 : (($c + 0.055) / 1.055) ** 2.4;
+    };
+    return 0.2126 * $lin((int) hexdec(substr($hex, 1, 2)))
+        + 0.7152 * $lin((int) hexdec(substr($hex, 3, 2)))
+        + 0.0722 * $lin((int) hexdec(substr($hex, 5, 2)));
+}
+
+/** WCAG 对比度（范围 1-21） */
+function ecod_color_contrast(string $a, string $b): float
+{
+    $l1 = ecod_color_luma($a);
+    $l2 = ecod_color_luma($b);
+    return (max($l1, $l2) + 0.05) / (min($l1, $l2) + 0.05);
+}
+
+/**
+ * 主色填充（胶囊 / 按钮底）上的文字颜色：白字对比度 < 4.5 时切深墨色。
+ * 用户后台选浅暖色（如琥珀 #f59e0b）时，白字对比只有 2.1，必须自动换深色。
+ */
+function ecod_primary_ink(): string
+{
+    return ecod_color_contrast(ecod_primary(), '#ffffff') >= 4.5 ? '#ffffff' : '#12161d';
+}
+
+/**
+ * 主色系文字在浅底（primary-soft 胶囊 / 白面 active 态）上的安全色：
+ * 从主色出发向深色微调至对比度 ≥ 4.8，默认蓝色只微调一点，浅暖色调得较深。
+ */
+function ecod_primary_text(bool $dark = false): string
+{
+    $primary = ecod_primary();
+    /* 暗色目标底色须与 ecod.css html[data-theme=dark] --ecod-primary-soft 保持一致 */
+    $bg = $dark ? '#262d47' : ecod_primary_soft();
+    $away = $dark ? '#ffffff' : '#000000';
+    if (ecod_color_contrast($primary, $bg) >= 4.8) {
+        return $primary;
+    }
+    for ($t = 0.02; $t <= 0.9; $t += 0.02) {
+        $candidate = ecod_color_mix($primary, $away, $t);
+        if (ecod_color_contrast($candidate, $bg) >= 4.8) {
+            return $candidate;
+        }
+    }
+    return $dark ? '#ffffff' : '#000000';
 }
 
 /**
@@ -682,8 +794,17 @@ function ecod_asset(string $path): string
     $ver = !$isDynamic && $dist === null && is_file($file) ? (string) filemtime($file) : '';
     $suffix = $ver !== '' ? '?v=' . $ver : '';
 
+    /* CDN / 本地模式开关（后台「站长 → 性能与资源」）：
+       显式 local → 无条件走本站；显式 cdn → 有前缀才走 CDN，否则退回本地；
+       留空（历史配置没有该选项） → 保持旧行为：填了合法前缀即走 CDN。 */
     $cdn = trim((string) ecod_option('ECdn', ''));
-    if ($cdn !== '' && preg_match('#^https?://#i', $cdn)) {
+    $cdnOk = $cdn !== '' && preg_match('#^https?://#i', $cdn);
+    $mode = (string) ecod_option('EAssetMode', '');
+    if (!in_array($mode, ['local', 'cdn'], true)) {
+        $mode = $cdnOk ? 'cdn' : 'local';
+    }
+
+    if ($mode === 'cdn' && $cdnOk) {
         return rtrim($cdn, '/') . '/' . $path . $suffix;
     }
 
@@ -861,6 +982,7 @@ function ecod_excerpt($archive, ?int $length = null): string
  * 原生 loading="lazy" 对没有 width/height 的图片基本不生效（浏览器为避免布局
  * 偏移会立即加载）。这里把真实地址挪进 data-src，src 换成 1px 透明占位，
  * 由前端脚本在图片接近视口时才发起请求；noscript 兜底保证禁 JS 时仍能显示。
+ * 站内图顺带读文件头补 width/height：占位阶段按宽高比留出准确空间（防 CLS）。
  * 顺带补全无障碍与解码提示：无 alt 的图用文章标题兜底，缺 decoding 的补 async。
  */
 function ecod_lazy_images(string $html, string $title = ''): string
@@ -888,6 +1010,11 @@ function ecod_lazy_images(string $html, string $title = ''): string
         }
 
         $src = trim($s[2]);
+        /* 站内图读真实宽高（components/media.php 只读文件头，按请求缓存）：
+           占位阶段浏览器按宽高比留出准确空间，加载完成高度不跳动 */
+        $ecodDims = (!preg_match('/\swidth=(["\'])/i', $tag) && $src !== '' && stripos($src, 'data:') !== 0)
+            ? ecod_img_attrs($src)
+            : '';
         /* data URI（表情等内联图）不懒加载，但仍补 alt/decoding */
         if ($src !== '' && stripos($src, 'data:') !== 0) {
             /* 禁 JS 兜底：原图原样输出，脚本可用时浏览器会忽略 noscript */
@@ -907,6 +1034,10 @@ function ecod_lazy_images(string $html, string $title = ''): string
         /* 解码提示：主线程不阻塞 */
         if (stripos($lazy, 'decoding=') === false) {
             $lazy = (string) preg_replace('/<img\b/i', '<img decoding="async"', $lazy, 1);
+        }
+        /* 宽高属性（防 CLS 占位）：只加在懒加载图上，表情等原图不动 */
+        if ($ecodDims !== '') {
+            $lazy = (string) preg_replace('/<img\b/i', '<img' . $ecodDims, $lazy, 1);
         }
 
         return $noscript . $lazy;
@@ -1389,6 +1520,26 @@ function ecod_likes(int $cid): int
         $db = \Typecho\Db::get();
         $row = $db->fetchObject(
             $db->select('COUNT(*) AS num')->from(ecod_likes_table())->where('cid = ?', $cid)
+        );
+        return $cache[$cid] = $row ? (int) $row->num : 0;
+    } catch (\Throwable $e) {
+        return $cache[$cid] = 0;
+    }
+}
+
+/**
+ * 文章收藏数（单篇，带请求内缓存；动作条展示与接口共用）
+ */
+function ecod_favs_count(int $cid): int
+{
+    static $cache = [];
+    if (array_key_exists($cid, $cache)) {
+        return $cache[$cid];
+    }
+    try {
+        $db = \Typecho\Db::get();
+        $row = $db->fetchObject(
+            $db->select('COUNT(*) AS num')->from(ecod_favs_table())->where('cid = ?', $cid)
         );
         return $cache[$cid] = $row ? (int) $row->num : 0;
     } catch (\Throwable $e) {
@@ -1903,6 +2054,40 @@ function ecod_comment_stats(int $cid): array
 }
 
 /**
+ * 评论点赞数：整篇文章一次查全（coid → count），threadedComments 渲染零额外查询
+ *
+ * 表不存在时返回空 map（首次访问由 schema 自愈建表，下一轮就有数）。
+ *
+ * @return array<int,int>
+ */
+function ecod_comment_like_counts(int $cid): array
+{
+    static $cache = [];
+
+    if ($cid <= 0) {
+        return [];
+    }
+    if (isset($cache[$cid])) {
+        return $cache[$cid];
+    }
+    $cache[$cid] = [];
+
+    try {
+        $db = \Typecho\Db::get();
+        $rows = $db->fetchAll(
+            $db->select('coid', 'COUNT(*) AS num')->from(ecod_clikes_table())
+                ->where('cid = ?', $cid)->group('coid')
+        );
+        foreach ($rows as $row) {
+            $cache[$cid][(int) $row['coid']] = (int) $row['num'];
+        }
+    } catch (\Throwable $e) {
+    }
+
+    return $cache[$cid];
+}
+
+/**
  * 极简 POST（curl 优先，退回 stream），只用于服务端调用外部接口
  */
 function ecod_http_post(string $url, array $fields, int $timeout = 8): ?string
@@ -2181,6 +2366,13 @@ if (class_exists('\Typecho\Plugin')) {
     try {
         \Typecho\Plugin::factory('Widget\Feedback')->finishComment = 'ecod_mail_notify';
         \Typecho\Plugin::factory('Widget\Feedback')->finishComment = 'ecod_mail_notify_reply';
+        \Typecho\Plugin::factory('Widget\Feedback')->finishComment = 'ecod_notif_comment';
+        \Typecho\Plugin::factory('Widget\Feedback')->finishComment = 'ecod_credits_comment';
+        \Typecho\Plugin::factory('Widget\Feedback')->finishComment = 'ecod_push_comment';
+        \Typecho\Plugin::factory('Widget\Contents\Post\Edit')->finishPublish = 'ecod_credits_post_publish';
+        \Typecho\Plugin::factory('Widget\Contents\Post\Edit')->finishPublish = 'ecod_baidu_auto_push';
+        /* 通知模块：站内消息（Core\site\notifs.php），api.php 侧重读 */
+        require_once __DIR__ . '/core/site/notifs.php';
     } catch (\Throwable $e) {
         /* 注册失败只是收不到提醒 */
     }
@@ -2301,6 +2493,44 @@ function ecod_comment_badge($comments): string
 }
 
 /**
+ * 评论者名字输出：填了主页就输出链接，站外链接走外链中转
+ *
+ * 内核 Comments::author() 直接 echo $comments->url（无 target、不过中转页），
+ * 这里按前台展示语义重写：站外 → /go/ 中转 + target=_blank + nofollow；
+ * 站内链接原样开新窗口；未填主页输出纯文本。只影响展示层，feed 不受影响。
+ */
+function ecod_comment_author_link($comments): void
+{
+    $name = trim((string) ($comments->author ?? ''));
+    if ($name === '') {
+        $name = '匿名';
+    }
+    $name = htmlspecialchars($name, ENT_QUOTES, 'UTF-8');
+
+    $url = trim((string) ($comments->url ?? ''));
+    if ($url === '' || !preg_match('#^https?://#i', $url)) {
+        echo $name;
+        return;
+    }
+
+    $isLocal = ecod_go_is_local($url);
+    $useGo = !$isLocal
+        && ecod_option('ELinkGo', 'on') === 'on'
+        && ecod_option('ELinkGoAuthor', 'on') === 'on';
+
+    if ($useGo) {
+        $href = ecod_go_url($url);
+        $rel = 'nofollow noopener noreferrer';
+    } else {
+        $href = $url;
+        $rel = $isLocal ? 'noopener' : 'external nofollow noopener';
+    }
+
+    echo '<a href="' . htmlspecialchars($href, ENT_QUOTES, 'UTF-8') . '"'
+        . ' target="_blank" rel="' . $rel . '">' . $name . '</a>';
+}
+
+/**
  * 父评论作者名（用于 @ 提示）
  */
 function ecod_comment_parent_author(int $coid): string
@@ -2364,7 +2594,7 @@ if (!function_exists('threadedComments')) {
             </div>
             <div class="ecod_cmt__main">
                 <div class="ecod_cmt__head">
-                    <cite class="ecod_cmt__name" itemprop="name"><?php $comments->author(); ?></cite>
+                    <cite class="ecod_cmt__name" itemprop="name"><?php ecod_comment_author_link($comments); ?></cite>
                     <?php echo ecod_comment_badge($comments); ?>
                     <a class="ecod_cmt__time" href="<?php $comments->permalink(); ?>" rel="nofollow">
                         <time itemprop="commentTime" datetime="<?php $comments->date('c'); ?>"><?php $comments->date('Y-m-d H:i'); ?></time>
@@ -2386,6 +2616,14 @@ if (!function_exists('threadedComments')) {
                 <?php endif; ?>
 
                 <div class="ecod_cmt__act">
+                    <?php /* 评论点赞：数量由 comments.php 一次查全；「我是否赞过」由 JS 批量回填 */ ?>
+                    <?php if (($GLOBALS['ecodCLikeOn'] ?? true) && ($GLOBALS['ecodCLikeCounts'] ?? null) !== null): ?>
+                        <?php $ecodCLikeN = (int) ($GLOBALS['ecodCLikeCounts'][(int) ($comments->coid ?? 0)] ?? 0); ?>
+                        <button type="button" class="ecod_cmt__like" data-ecod-clike="<?php $comments->coid(); ?>" aria-pressed="false">
+                            <?php echo ecod_icon('heart', 13); ?>
+                            <span data-ecod-clike-num><?php echo $ecodCLikeN > 0 ? $ecodCLikeN : '赞'; ?></span>
+                        </button>
+                    <?php endif; ?>
                     <?php $comments->reply('回复'); ?>
                     <a href="#<?php $comments->theId(); ?>" class="ecod_cmt__anchor" aria-label="复制本楼链接">#</a>
                 </div>
@@ -2445,4 +2683,63 @@ try {
     \Typecho\Plugin::factory('Widget\Base\Contents')->excerptEx = 'ecod_feed_excerpt';
 } catch (\Throwable $e) {
     /* 注册失败不影响正常渲染，模板层会兜底 */
+}
+
+/**
+ * 评论积分任务：登录用户发表评论通过后加 Credit（当日有上限，静默跳过）
+ *
+ * 挂 Widget\Feedback::finishComment（与邮件 / 通知同一挂点，垃圾评论
+ * 在 comment 钩子已被拦下，走不到这里）。
+ */
+function ecod_credits_comment($comment): void
+{
+    try {
+        $ecodCmtUid = (int) ($comment->authorId ?? 0);
+        if ($ecodCmtUid > 0) {
+            ecod_credits_award($ecodCmtUid, 'comment', 'coid:' . (int) ($comment->coid ?? 0), '评论 #' . (int) ($comment->cid ?? 0));
+        }
+    } catch (\Throwable $e) {
+        /* 积分失败不影响评论本身 */
+    }
+}
+
+/**
+ * 投稿积分任务：文章发布（含投稿通过）时给作者加 Credit
+ *
+ * 挂 Widget\Contents\Post\Edit::finishPublish；同一篇文章只在首次发布时
+ * 发一次（ref = post:{cid} 去重），反复编辑重发不再加。
+ */
+function ecod_credits_post_publish(array $contents, $edit): void
+{
+    try {
+        $ecodPubUid = 0;
+        try {
+            $ecodPubUid = (int) ($edit->authorId ?? 0);
+        } catch (\Throwable $e) {
+        }
+        if ($ecodPubUid <= 0) {
+            $ecodPubUid = (int) ($contents['authorId'] ?? 0);
+        }
+
+        $ecodPubCid = (int) ($contents['cid'] ?? ($edit->cid ?? 0));
+        if ($ecodPubUid <= 0 || $ecodPubCid <= 0) {
+            return;
+        }
+
+        /* 同文章防重：查是否已发过这条流水 */
+        $ecodPubDb = \Typecho\Db::get();
+        $ecodPubDone = $ecodPubDb->fetchRow(
+            $ecodPubDb->select('id')->from('table.ecod_credits')
+                ->where('uid = ?', $ecodPubUid)->where('type = ?', 'post')
+                ->where('ref = ?', 'post:' . $ecodPubCid)
+                ->limit(1)
+        );
+        if ($ecodPubDone) {
+            return;
+        }
+
+        ecod_credits_award($ecodPubUid, 'post', 'post:' . $ecodPubCid, '发布文章 #' . $ecodPubCid);
+    } catch (\Throwable $e) {
+        /* 积分失败不影响发布 */
+    }
 }

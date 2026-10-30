@@ -1,6 +1,16 @@
 <?php
 /**
- * 文章页块 · 朗读（浏览器 SpeechSynthesis，零依赖）
+ * 文章页块 · 阅读工具条（设计稿 §05 C3）
+ *
+ * 目录（浮目录）/ 朗读（浏览器 SpeechSynthesis）/ 字号 / 阅读进度 一条吸顶横条，
+ * 吸收原「朗读条」的横幅形态——不再单独占一条。
+ *
+ * 朗读控件沿用原 data-ecod-tts 属性契约，ecod.post.js 的 initTts 无需改动即可接管；
+ * 浏览器不支持时 initTts 只隐藏本条的朗读钮，工具条其余部分保留。
+ *
+ * 条件输出（设计稿验收「无目录无朗读时不输出空条」）：
+ * - 目录钮：EFloatToc 开启时输出（标题 <2 个时由 JS 隐藏）；
+ * - 朗读钮：本模块启用即视为「有朗读」（后台模块开关控制）。
  *
  * @package Ecod Theme
  * @author  Ecod
@@ -16,27 +26,44 @@ if (!empty($this->hidden)) {
     return;
 }
 
-$ecodTtsWords = ecod_word_count((string) $this->content);
-$ecodTtsMinutes = max(1, (int) ceil($ecodTtsWords / 400));
+$ecodTtsMinutes = max(1, (int) ceil(ecod_word_count((string) $this->content) / 400));
+$ecodTocOn = ecod_option('EFloatToc', 'on') === 'on';
+/* 形态（后台「阅读工具条形态」）：吸顶横条 top / 侧栏竖栏 side；
+   side 由 JS 挂 is-side（≥900px 才生效，窄屏自动回落吸顶横条） */
+$ecodRbSide = ecod_option('EReadBarMode', 'top') === 'side' ? '1' : '0';
 ?>
-<div class="ecod_tts" data-ecod-tts data-ecod-tts-minutes="<?php echo $ecodTtsMinutes; ?>">
-    <button type="button" class="ecod_tts__btn" data-ecod-tts-toggle aria-pressed="false">
-        <span class="ecod_tts__ic" data-ecod-tts-ic><?php echo ecod_icon('play', 14); ?></span>
-        <span data-ecod-tts-label>朗读本文</span>
-    </button>
-    <span class="ecod_tts__track" aria-hidden="true"><i data-ecod-tts-bar></i></span>
-    <span class="ecod_tts__hint" data-ecod-tts-hint>约 <?php echo $ecodTtsMinutes; ?> 分钟</span>
-    <span class="ecod_tts__spacer"></span>
-    <label class="ecod_tts__rate">
-        <span class="ecod_tts__rate-txt" aria-hidden="true">语速</span>
-        <select data-ecod-tts-rate aria-label="朗读语速">
-            <option value="0.8">0.8×</option>
-            <option value="1" selected>1.0×</option>
-            <option value="1.25">1.25×</option>
-            <option value="1.5">1.5×</option>
-        </select>
-    </label>
-    <button type="button" class="ecod_tts__stop" data-ecod-tts-stop aria-label="停止朗读" hidden>
-        <?php echo ecod_icon('x', 13); ?>
-    </button>
+<div class="ecod_readbar" data-ecod-readbar data-ecod-rb-side="<?php echo $ecodRbSide; ?>" aria-label="阅读工具">
+    <?php if ($ecodTocOn): ?>
+        <button type="button" class="ecod_readbar__tool" data-ecod-readbar-toc aria-haspopup="true">
+            <?php echo ecod_icon('list', 15); ?><span>目录</span>
+        </button>
+    <?php endif; ?>
+
+    <span class="ecod_readbar__tts" data-ecod-tts data-ecod-tts-minutes="<?php echo $ecodTtsMinutes; ?>">
+        <button type="button" class="ecod_readbar__tool" data-ecod-tts-toggle aria-pressed="false">
+            <span class="ecod_readbar__ic" data-ecod-tts-ic><?php echo ecod_icon('volume', 15); ?></span>
+            <span data-ecod-tts-label>朗读</span>
+        </button>
+        <label class="ecod_readbar__ratebox">
+            <select data-ecod-tts-rate aria-label="朗读语速">
+                <option value="0.8">0.8×</option>
+                <option value="1" selected>1.0×</option>
+                <option value="1.25">1.25×</option>
+                <option value="1.5">1.5×</option>
+            </select>
+        </label>
+        <button type="button" class="ecod_readbar__stop" data-ecod-tts-stop aria-label="停止朗读" hidden>
+            <?php echo ecod_icon('x', 13); ?>
+        </button>
+    </span>
+
+    <span class="ecod_readbar__fs" data-ecod-rb-fs>
+        <button type="button" class="ecod_readbar__tool ecod_readbar__fsbtn" data-ecod-fs="down" aria-label="正文字号调小">A<i>−</i></button>
+        <button type="button" class="ecod_readbar__tool ecod_readbar__fsbtn" data-ecod-fs="up" aria-label="正文字号调大">A<i>+</i></button>
+    </span>
+
+    <div class="ecod_readbar__prog" aria-hidden="true">
+        <span data-ecod-rb-pct>已读 0%</span>
+        <span class="ecod_readbar__progl"><i data-ecod-rb-pctbar></i></span>
+    </div>
 </div>

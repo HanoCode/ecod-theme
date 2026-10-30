@@ -204,3 +204,62 @@ function ecod_ai_summary(int $cid): array
     $unlock();
     return ['ok' => true, 'summary' => $summary, 'cached' => false];
 }
+
+/**
+ * AI 对话（OpenAI 兼容协议，供 page-ai / api ai_chat 使用）
+ *
+ * 与摘要共用「EAI 开关 + 端点 + 密钥」，但无缓存无锁：对话上下文
+ * 由调用方拼好传入，计费（扣积分）在调用成功之后由调用方处理。
+ *
+ * @param array<int, array{role:string,content:string}> $messages
+ * @return array{ok:bool, reply?:string, error?:string}
+ */
+function ecod_ai_chat_call(array $messages, int $maxTokens = 800): array
+{
+    if (!ecod_ai_enabled()) {
+        return ['ok' => false, 'error' => 'AI 未开启或配置不完整'];
+    }
+
+    $endpoint = ecod_ai_endpoint();
+    $key = trim((string) ecod_option('EAIKey', ''));
+    $model = trim((string) ecod_option('EAIModel', ''));
+
+    $payload = json_encode([
+        'model'       => $model,
+        'temperature' => 0.7,
+        'max_tokens'  => max(100, min(4000, $maxTokens)),
+        'messages'    => array_values($messages),
+    ], JSON_UNESCAPED_UNICODE);
+
+    if (!function_exists('curl_init')) {
+        return ['ok' => false, 'error' => '服务器缺少 curl 扩展'];
+    }
+
+    $ch = curl_init($endpoint);
+    curl_setopt_array($ch, [
+        CURLOPT_POST           => true,
+        CURLOPT_POSTFIELDS     => $payload,
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_TIMEOUT        => 45,
+        CURLOPT_HTTPHEADER     => [
+            'Content-Type: application/json',
+            'Authorization: Bearer ' . $key,
+        ],
+    ]);
+    $body = curl_exec($ch);
+    $errno = curl_errno($ch);
+    curl_close($ch);
+
+    if ($errno || !is_string($body)) {
+        return ['ok' => false, 'error' => '接口请求失败，请稍后重试'];
+    }
+
+    $data = json_decode($body, true);
+    $reply = trim((string) ($data['choices'][0]['message']['content'] ?? ''));
+    if ($reply === '') {
+        $errMsg = trim((string) ($data['error']['message'] ?? ''));
+        return ['ok' => false, 'error' => $errMsg !== '' ? mb_substr($errMsg, 0, 120, 'UTF-8') : '接口未返回内容'];
+    }
+
+    return ['ok' => true, 'reply' => $reply];
+}

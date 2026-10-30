@@ -28,6 +28,10 @@ if (!empty($this->hidden)) {
     return;
 }
 
+/* 模块由 ecod_render_block() 独立作用域渲染，拿不到 post.php 的模板局部变量，本地自算 */
+$ecodPay = function_exists('ecod_pay_access') ? ecod_pay_access($this) : ['mode' => 'free', 'allow' => true];
+$ecodPayLocked = $ecodPay['mode'] !== 'free' && !$ecodPay['allow'];
+
 /* 发布日期：$this->date() 是 echo 方法，不能取值，改用 date 对象格式化 */
 $ecodActDate = is_object($this->date) ? (string) $this->date->format('Y.m.d') : '';
 if ($ecodActDate === '' && !empty($this->created)) {
@@ -40,41 +44,46 @@ if ($ecodActDate === '' && !empty($this->created)) {
      data-title="<?php echo htmlspecialchars((string) $this->title, ENT_QUOTES, 'UTF-8'); ?>"
      data-site="<?php echo htmlspecialchars((string) $this->options->title, ENT_QUOTES, 'UTF-8'); ?>"
      data-date="<?php echo htmlspecialchars($ecodActDate, ENT_QUOTES, 'UTF-8'); ?>">
+    <?php
+    /* D2 点赞头像堆叠：取 uid 落库的最近 5 条；无 uid 记录时整块不输出（降级纯数字）。
+       整行独立于按钮行（设计稿 §05 动作条） */
+    if ($ecodActLike && ecod_option('ELikers', 'on') === 'on'):
+        $ecodLikeNum = ecod_likes((int) $this->cid);
+        $ecodLikers = ecod_post_likers((int) $this->cid, 5);
+        if ($ecodLikers):
+            $ecodLikersFirst = $ecodLikers[0];
+            /* 名字是用户可控字段必须转义；数字段加粗（参考站文案口径） */
+            $ecodLikersText = count($ecodLikers) > 1
+                ? '@' . htmlspecialchars($ecodLikersFirst['name'], ENT_QUOTES, 'UTF-8') . ' 等 <b>' . (int) $ecodLikeNum . '</b> 人觉得不错'
+                : '@' . htmlspecialchars($ecodLikersFirst['name'], ENT_QUOTES, 'UTF-8') . ' 觉得不错';
+    ?>
+    <button type="button" class="ecod_likers" data-ecod-likers aria-label="跳到评论区">
+        <span class="ecod_likers__av" aria-hidden="true">
+            <?php foreach ($ecodLikers as $ecodLiker): ?>
+                <?php if ($ecodLiker['avatar'] !== ''): ?>
+                    <img src="<?php echo htmlspecialchars($ecodLiker['avatar'], ENT_QUOTES, 'UTF-8'); ?>" alt="" width="24" height="24" loading="lazy" decoding="async">
+                <?php else: ?>
+                    <i><?php echo htmlspecialchars(mb_substr($ecodLiker['name'], 0, 1, 'UTF-8'), ENT_QUOTES, 'UTF-8'); ?></i>
+                <?php endif; ?>
+            <?php endforeach; ?>
+        </span>
+        <span class="ecod_likers__text"><?php echo $ecodLikersText; ?></span>
+    </button>
+    <?php endif; endif; ?>
+
+    <div class="ecod_article__actrow">
     <?php if ($ecodActLike): ?>
         <?php $ecodLikeNum = ecod_likes((int) $this->cid); ?>
         <button type="button" class="ecod_actbtn" data-ecod-act="like" data-cid="<?php echo (int) $this->cid; ?>" aria-pressed="false">
-            <?php echo ecod_icon('heart', 15); ?>
-            <span data-ecod-like-num="full"><?php echo $ecodLikeNum > 0 ? (int) $ecodLikeNum . ' 赞' : '点赞'; ?></span>
+            <?php echo ecod_icon('heart', 20); ?>
+            <b class="ecod_actbtn__lb<?php echo $ecodLikeNum > 0 ? ' is-num' : ''; ?>" data-ecod-like-num="short"><?php echo $ecodLikeNum > 0 ? ecod_num_short($ecodLikeNum) : '点赞'; ?></b>
         </button>
-        <?php
-        /* D2 点赞头像堆叠：取 uid 落库的最近 5 条；无 uid 记录时整块不输出（降级纯数字） */
-        if (ecod_option('ELikers', 'on') === 'on'):
-            $ecodLikers = ecod_post_likers((int) $this->cid, 5);
-            if ($ecodLikers):
-                $ecodLikersFirst = $ecodLikers[0];
-                /* 名字是用户可控字段必须转义；数字段加粗（参考站文案口径） */
-                $ecodLikersText = count($ecodLikers) > 1
-                    ? '@' . htmlspecialchars($ecodLikersFirst['name'], ENT_QUOTES, 'UTF-8') . ' 等 <b>' . (int) $ecodLikeNum . '</b> 人觉得不错'
-                    : '@' . htmlspecialchars($ecodLikersFirst['name'], ENT_QUOTES, 'UTF-8') . ' 觉得不错';
-        ?>
-        <button type="button" class="ecod_likers" data-ecod-likers aria-label="跳到评论区">
-            <span class="ecod_likers__av" aria-hidden="true">
-                <?php foreach ($ecodLikers as $ecodLiker): ?>
-                    <?php if ($ecodLiker['avatar'] !== ''): ?>
-                        <img src="<?php echo htmlspecialchars($ecodLiker['avatar'], ENT_QUOTES, 'UTF-8'); ?>" alt="" width="24" height="24" loading="lazy" decoding="async">
-                    <?php else: ?>
-                        <i><?php echo htmlspecialchars(mb_substr($ecodLiker['name'], 0, 1, 'UTF-8'), ENT_QUOTES, 'UTF-8'); ?></i>
-                    <?php endif; ?>
-                <?php endforeach; ?>
-            </span>
-            <span class="ecod_likers__text"><?php echo $ecodLikersText; ?></span>
-        </button>
-        <?php endif; endif; ?>
     <?php endif; ?>
     <?php if ($ecodActFav): ?>
+        <?php $ecodFavNum = ecod_favs_count((int) $this->cid); ?>
         <button type="button" class="ecod_actbtn" data-ecod-act="fav" aria-pressed="false">
-            <?php echo ecod_icon('star', 15); ?>
-            <span>收藏</span>
+            <?php echo ecod_icon('star', 20); ?>
+            <b class="ecod_actbtn__lb<?php echo $ecodFavNum > 0 ? ' is-num' : ''; ?>" data-ecod-fav-num="short"><?php echo $ecodFavNum > 0 ? ecod_num_short($ecodFavNum) : '收藏'; ?></b>
         </button>
     <?php endif; ?>
     <?php
@@ -90,8 +99,8 @@ if ($ecodActDate === '' && !empty($this->created)) {
         ?>
         <details class="ecod_share" data-ecod-sharebox>
             <summary class="ecod_actbtn" aria-label="分享文章">
-                <?php echo ecod_icon('share', 15); ?>
-                <span>分享</span>
+                <?php echo ecod_icon('share', 20); ?>
+                <b class="ecod_actbtn__lb">分享</b>
             </summary>
             <div class="ecod_share__pop">
                 <div class="ecod_share__label">分享到</div>
@@ -110,6 +119,10 @@ if ($ecodActDate === '' && !empty($this->created)) {
                         <?php echo ecod_icon('link', 15); ?>
                         <span>复制链接</span>
                     </button>
+                    <button type="button" class="ecod_share__row" data-ecod-share-wechat aria-haspopup="dialog">
+                        <?php echo ecod_icon('wechat', 15); ?>
+                        <span>微信扫码</span>
+                    </button>
                     <button type="button" class="ecod_share__row" data-ecod-share-native hidden>
                         <?php echo ecod_icon('share', 15); ?>
                         <span>系统分享</span>
@@ -118,6 +131,10 @@ if ($ecodActDate === '' && !empty($this->created)) {
                         <?php echo ecod_icon('image', 15); ?>
                         <span>生成分享图</span>
                     </button>
+                </div>
+                <div class="ecod_share__qr" data-ecod-share-qr hidden>
+                    <canvas class="ecod_share__qrimg" width="132" height="132" aria-label="文章链接二维码"></canvas>
+                    <span>微信扫一扫，在手机上打开<em>· 朋友圈可长按识别</em></span>
                 </div>
             </div>
         </details>
@@ -133,8 +150,8 @@ if ($ecodActDate === '' && !empty($this->created)) {
         ?>
         <details class="ecod_reward">
             <summary class="ecod_actbtn">
-                <?php echo ecod_icon('heart', 15); ?>
-                <span>赞赏</span>
+                <?php echo ecod_icon('heart', 20); ?>
+                <b class="ecod_actbtn__lb">赞赏</b>
             </summary>
             <div class="ecod_reward__pop">
                 <?php foreach ($ecodRewardItems as $ecodRewardItem): ?>
@@ -159,4 +176,41 @@ if ($ecodActDate === '' && !empty($this->created)) {
             </div>
         </details>
     <?php endif; ?>
+    <?php
+    /* 第 5 格 · 评论；第 6 格 · 报错（设计稿 §05 动作条 5 等分） */
+    $ecodActComments = empty($this->hidden) && !$ecodPayLocked
+        && ecod_option('EComment', 'on') !== 'off'
+        && $this->allow('comment');
+    $ecodActCmtNum = (int) $this->commentsNum;
+    if ($ecodActComments):
+    ?>
+        <a class="ecod_actbtn" href="#comments">
+            <?php echo ecod_icon('comment', 20); ?>
+            <b class="ecod_actbtn__lb<?php echo $ecodActCmtNum > 0 ? ' is-num' : ''; ?>"><?php echo $ecodActCmtNum > 0 ? $ecodActCmtNum . ' 讨论' : '讨论'; ?></b>
+        </a>
+    <?php endif; ?>
+    <details class="ecod_report">
+        <summary class="ecod_actbtn" aria-haspopup="dialog" aria-label="报告本文内容问题">
+            <?php echo ecod_icon('alert', 20); ?>
+            <b class="ecod_actbtn__lb">报错</b>
+        </summary>
+        <div class="ecod_report__pop">
+            <div class="ecod_report__label">问题类型</div>
+            <div class="ecod_report__opts" role="radiogroup" aria-label="问题类型">
+                <?php
+                /* 4 个原因单选（设计稿 §05 C4）：复用分享/赞赏弹层的定位与浮层阴影 */
+                foreach (['内容有误' => 'wrong', '链接失效' => 'dead-link', '图片缺失' => 'no-image', '其他问题' => 'other'] as $ecodRepLabel => $ecodRepKey):
+                ?>
+                <button type="button" class="ecod_report__opt" data-ecod-report-opt="<?php echo $ecodRepKey; ?>" aria-pressed="false"><?php echo $ecodRepLabel; ?></button>
+                <?php endforeach; ?>
+            </div>
+            <textarea class="ecod_report__note" data-ecod-report-note rows="2" maxlength="200" placeholder="补充说明（选填）"></textarea>
+            <div class="ecod_report__foot">
+                <input type="text" name="ecod_hp" data-ecod-report-hp tabindex="-1" autocomplete="off" aria-hidden="true">
+                <button type="button" class="ecod_report__send ecod_btn" data-ecod-report-send disabled>提交反馈</button>
+            </div>
+            <p class="ecod_report__tip" data-ecod-report-tip hidden role="status"></p>
+        </div>
+    </details>
+    </div>
 </div>

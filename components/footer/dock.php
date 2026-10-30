@@ -29,10 +29,12 @@ try {
         <?php echo ecod_icon('search', 19); ?>
         <span>搜索</span>
     </button>
-    <button type="button" class="ecod_dock__btn" data-ecod-theme-toggle aria-label="切换深色模式">
-        <?php echo ecod_icon('moon', 19); ?>
-        <span>深浅</span>
-    </button>
+    <?php if (ecod_option('EDark', 'auto') !== 'off'): /* 深色模式关闭时不给移动端 dock 放切换入口 */ ?>
+        <button type="button" class="ecod_dock__btn" data-ecod-theme-toggle aria-label="切换深浅模式">
+            <?php echo ecod_icon('moon', 19); ?>
+            <span>深浅</span>
+        </button>
+    <?php endif; ?>
     <button type="button" class="ecod_dock__btn" data-ecod-dock-top aria-label="回到顶部">
         <?php echo ecod_icon('arrow-up', 19); ?>
         <span>顶部</span>

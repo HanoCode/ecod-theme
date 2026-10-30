@@ -1,0 +1,997 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ecod Theme · 瓜奇/Zibll 参考功能设计稿 v2（AI 摘要 / 评论解锁 / 热门榜 / 磁贴区 / 付费资源卡 / 聚合Tab / 动效令牌）</title>
+<style>
+/* ============================================================
+   设计稿自身样式（非主题产物）
+   ============================================================ */
+:root{
+  --bg:#f5f6f9; --surface:#fff; --surface-2:#fafbfc; --border:#e4e7ee;
+  --text:#1e2430; --text-2:#5b6472; --text-3:#98a1ad;
+  --primary:#4f6ef2; --primary-soft:#eef1fe; --primary-deep:#3d5be0;
+  --accent:#f59e0b; --success:#10b981; --danger:#ef4444; --violet:#7c5cf0;
+  --r:12px; --r-sm:8px;
+  --sh:0 1px 3px rgba(31,36,48,.06),0 4px 16px rgba(31,36,48,.05);
+  --sh-hover:0 4px 12px rgba(31,36,48,.09),0 12px 32px rgba(31,36,48,.08);
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+  background:var(--bg);color:var(--text);font-size:15px;line-height:1.7;-webkit-font-smoothing:antialiased}
+a{color:inherit;text-decoration:none}
+mark{background:#fff3c4;color:inherit;padding:0 2px;border-radius:2px}
+
+/* 布局：左侧目录 + 内容 */
+.layout{display:flex;max-width:1400px;margin:0 auto;gap:40px;padding:0 32px 120px}
+.sidenav{width:230px;flex-shrink:0;position:sticky;top:0;align-self:flex-start;height:100vh;overflow-y:auto;padding:28px 0}
+.sidenav h6{font-size:11px;letter-spacing:1.5px;color:var(--text-3);margin:22px 0 8px;font-weight:600}
+.sidenav a{display:block;font-size:13px;color:var(--text-2);padding:5px 12px;border-radius:6px;border-left:2px solid transparent}
+.sidenav a:hover{background:var(--primary-soft);color:var(--primary)}
+.main{flex:1;min-width:0;padding-top:28px}
+@media(max-width:1000px){.sidenav{display:none}.layout{padding:0 18px 80px}}
+
+/* 封面 */
+.hero{background:linear-gradient(135deg,#4f6ef2,#7c5cf0 62%,#9d5cf0);color:#fff;padding:60px 24px;text-align:center;position:relative;overflow:hidden}
+.hero::before{content:"";position:absolute;inset:0;
+  background:radial-gradient(circle at 18% 20%,rgba(255,255,255,.22),transparent 42%),radial-gradient(circle at 82% 78%,rgba(255,255,255,.16),transparent 40%)}
+.hero .in{position:relative}
+.hero .kicker{display:inline-block;background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.28);border-radius:999px;padding:4px 16px;font-size:12px;letter-spacing:2px}
+.hero h1{font-size:34px;margin:16px 0 8px;letter-spacing:.5px}
+.hero p{opacity:.9;font-size:14px}
+.hero .meta{margin-top:18px;font-size:12.5px;opacity:.72}
+
+/* 章节 */
+section{margin-top:56px;scroll-margin-top:20px}
+.sec-tag{display:inline-flex;align-items:center;gap:8px;font-size:11.5px;font-weight:600;color:var(--primary);background:var(--primary-soft);border-radius:999px;padding:3px 13px;letter-spacing:1px}
+h2{font-size:25px;margin:12px 0 4px;letter-spacing:.3px}
+.sec-desc{color:var(--text-2);font-size:13.5px;margin-bottom:22px}
+h3{font-size:17px;margin:26px 0 10px;display:flex;align-items:center;gap:8px}
+h3::before{content:"";width:4px;height:16px;border-radius:2px;background:var(--primary)}
+h4{font-size:14.5px;margin:18px 0 8px;color:var(--text)}
+
+/* 卡片与面板 */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);box-shadow:var(--sh);padding:20px 22px;margin-bottom:16px}
+.card.tight{padding:14px 18px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+@media(max-width:820px){.grid2,.grid3{grid-template-columns:1fr}}
+
+/* 表格 */
+table{width:100%;border-collapse:collapse;font-size:13.5px;background:var(--surface);border:1px solid var(--border);border-radius:var(--r-sm);overflow:hidden;margin:12px 0 20px}
+th{background:var(--surface-2);text-align:left;font-weight:600;color:var(--text-2);padding:9px 14px;border-bottom:1px solid var(--border);white-space:nowrap}
+td{padding:9px 14px;border-bottom:1px solid var(--border);vertical-align:top}
+tr:last-child td{border-bottom:none}
+td code,p code,li code{background:#eef1f6;border-radius:4px;padding:1px 6px;font-size:12.5px;font-family:"SF Mono",ui-monospace,Menlo,Consolas,monospace;color:#c2452d}
+table code{white-space:nowrap}
+
+/* 徽章 */
+.b{display:inline-flex;align-items:center;gap:4px;font-size:11.5px;font-weight:600;border-radius:999px;padding:2px 10px;white-space:nowrap}
+.b-blue{background:var(--primary-soft);color:var(--primary)}
+.b-green{background:#e7f8f1;color:#0a8f68}
+.b-amber{background:#fef4e2;color:#b26a00}
+.b-red{background:#feecec;color:#c53030}
+.b-gray{background:#eef0f4;color:var(--text-2)}
+.b-violet{background:#f1edfe;color:var(--violet)}
+
+/* 提示框 */
+.note{border-left:3px solid var(--primary);background:var(--primary-soft);border-radius:0 var(--r-sm) var(--r-sm) 0;padding:12px 16px;font-size:13.5px;color:var(--text-2);margin:14px 0}
+.note.warn{border-left-color:var(--accent);background:#fff9ef}
+.note.danger{border-left-color:var(--danger);background:#fef4f4}
+.note.ok{border-left-color:var(--success);background:#f0fbf6}
+
+/* 代码块 */
+pre{background:#1e2430;color:#dbe2f0;border-radius:var(--r-sm);padding:16px 18px;font-size:12.8px;line-height:1.75;overflow-x:auto;margin:12px 0 20px;font-family:"SF Mono",ui-monospace,Menlo,Consolas,monospace}
+pre .c{color:#6b7a94}pre .k{color:#7fb4ff}pre .s{color:#9bd49b}pre .f{color:#f2c67e}
+
+/* 流程 */
+.flow{display:flex;flex-wrap:wrap;align-items:stretch;gap:0;margin:14px 0 20px}
+.flow .step{flex:1;min-width:150px;background:var(--surface);border:1px solid var(--border);border-radius:var(--r-sm);padding:12px 14px;position:relative;font-size:13px}
+.flow .step b{display:block;font-size:13px;margin-bottom:4px}
+.flow .step small{color:var(--text-3);font-size:12px;line-height:1.6;display:block}
+.flow .arr{align-self:center;color:var(--text-3);padding:0 8px;font-size:16px;flex-shrink:0}
+@media(max-width:820px){.flow{flex-direction:column}.flow .arr{transform:rotate(90deg);padding:4px 0;align-self:center}}
+
+/* demo 展示台 */
+.stage{background:
+  linear-gradient(45deg,#eef0f5 25%,transparent 25%,transparent 75%,#eef0f5 75%),
+  linear-gradient(45deg,#eef0f5 25%,transparent 25%,transparent 75%,#eef0f5 75%);
+  background-size:22px 22px;background-position:0 0,11px 11px;
+  border:1px dashed #cdd3de;border-radius:var(--r);padding:26px;display:flex;flex-wrap:wrap;gap:20px;align-items:flex-start;margin:14px 0 24px}
+.stage.dark{background-color:#171a23;background-image:
+  linear-gradient(45deg,#1f2330 25%,transparent 25%,transparent 75%,#1f2330 75%),
+  linear-gradient(45deg,#1f2330 25%,transparent 25%,transparent 75%,#1f2330 75%)}
+.stage .cap{width:100%;font-size:12px;color:var(--text-3);letter-spacing:1px;font-weight:600}
+
+/* ============ 以下为「主题侧组件」的实际渲染样式 ============ */
+/* 令牌（示例值，落地时进入主题 CSS） */
+.ecod-tokens{
+  --ecod-card-radius:14px; --ecod-card-radius-sm:10px;
+  --ecod-card-pad:16px 18px;
+  --ecod-card-surface:#fff;
+  --ecod-card-border:#e8ebf1;
+  --ecod-card-shadow:0 1px 3px rgba(24,32,52,.05),0 6px 20px rgba(24,32,52,.05);
+  --ecod-card-shadow-hover:0 6px 16px rgba(24,32,52,.10),0 16px 40px rgba(24,32,52,.10);
+  --ecod-card-lift:-2px;
+  --ecod-card-motion:cubic-bezier(.33,.12,.15,1);
+  --ecod-dur-fast:.22s; --ecod-dur-slow:.45s;
+  --ecod-accent:#4f6ef2; --ecod-accent-soft:#eef1fe;
+  --ecod-ok:#10b981; --ecod-warn:#f59e0b;
+}
+.ecod-tokens.dark{
+  --ecod-card-surface:#1d212e; --ecod-card-border:#2c3142;
+  --ecod-card-shadow:0 1px 3px rgba(0,0,0,.3),0 6px 20px rgba(0,0,0,.22);
+  --ecod-card-shadow-hover:0 6px 16px rgba(0,0,0,.4),0 16px 40px rgba(0,0,0,.35);
+  --ecod-accent-soft:#262c42; color:#e6e9f2;
+}
+
+/* 磁贴快捷区 demo */
+.ecod-tile-zone{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;width:min(560px,100%)}
+.ecod-tile{display:flex;flex-direction:column;align-items:center;gap:8px;background:var(--ecod-card-surface);
+  border:1px solid var(--ecod-card-border);border-radius:var(--ecod-card-radius-sm);padding:16px 8px 12px;
+  box-shadow:var(--ecod-card-shadow);transition:box-shadow var(--ecod-dur-fast) var(--ecod-card-motion),transform var(--ecod-dur-fast) var(--ecod-card-motion);
+  font-size:12px;color:inherit;cursor:pointer;text-align:center}
+.ecod-tile:hover{box-shadow:var(--ecod-card-shadow-hover);transform:translateY(var(--ecod-card-lift))}
+.ecod-tile .ic{width:38px;height:38px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:19px}
+.ecod-tile .badge{position:absolute}
+.ecod-tile{position:relative}
+.ecod-tile .tb{position:absolute;top:8px;right:8px;font-size:10px;font-weight:700;border-radius:999px;padding:1px 6px;color:#fff}
+
+/* 热门榜 demo */
+.ecod-hot{width:min(320px,100%);background:var(--ecod-card-surface);border:1px solid var(--ecod-card-border);
+  border-radius:var(--ecod-card-radius);box-shadow:var(--ecod-card-shadow);padding:var(--ecod-card-pad)}
+.ecod-hot .h{display:flex;align-items:center;gap:8px;font-weight:700;font-size:14.5px;margin-bottom:10px}
+.ecod-hot .h .dot{width:18px;height:18px;border-radius:6px;background:var(--ecod-accent-soft);color:var(--ecod-accent);display:flex;align-items:center;justify-content:center;font-size:11px}
+.ecod-hot ol{list-style:none;counter-reset:hot}
+.ecod-hot li{display:flex;gap:10px;align-items:flex-start;padding:8px 0;border-top:1px dashed var(--ecod-card-border);font-size:13px}
+.ecod-hot li:first-of-type{border-top:none}
+.ecod-hot .no{counter-increment:hot;flex-shrink:0;width:18px;height:18px;border-radius:5px;background:#eef0f4;color:#98a1ad;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;margin-top:2px}
+.ecod-hot .no::before{content:counter(hot)}
+.ecod-hot li:nth-child(1) .no{background:#fdeeee;color:#e05252}
+.ecod-hot li:nth-child(2) .no{background:#fef3e4;color:#d97a06}
+.ecod-hot li:nth-child(3) .no{background:#fdf6e0;color:#b8890a}
+.ecod-hot .t{flex:1;min-width:0;display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;overflow:hidden}
+.ecod-hot .m{color:var(--text-3);font-size:11.5px;flex-shrink:0;display:flex;gap:8px}
+.ecod-tokens.dark .ecod-hot .no{background:#2b3143;color:#7e879c}
+.ecod-tokens.dark .ecod-hot .m{color:#7e879c}
+
+/* AI 摘要卡 demo */
+.ecod-ai-sum{width:min(560px,100%);background:linear-gradient(135deg,var(--ecod-accent-soft),transparent 60%),var(--ecod-card-surface);
+  border:1px solid var(--ecod-card-border);border-radius:var(--ecod-card-radius);box-shadow:var(--ecod-card-shadow);
+  padding:var(--ecod-card-pad);position:relative;overflow:hidden}
+.ecod-ai-sum .head{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.ecod-ai-sum .logo{width:22px;height:22px;border-radius:7px;background:linear-gradient(135deg,#4f6ef2,#9d5cf0);color:#fff;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800}
+.ecod-ai-sum .head b{font-size:13.5px}
+.ecod-ai-sum .head .tag{font-size:10.5px;color:var(--ecod-accent);border:1px solid currentColor;border-radius:999px;padding:0 8px;opacity:.85}
+.ecod-ai-sum p{font-size:13.5px;line-height:1.8;color:inherit}
+.ecod-ai-sum .foot{display:flex;justify-content:space-between;align-items:center;margin-top:10px;font-size:11.5px;color:var(--text-3)}
+.ecod-ai-sum .foot .k{display:flex;gap:6px;align-items:center}
+.ecod-tokens.dark .ecod-ai-sum .foot{color:#7e879c}
+
+/* 评论区解锁卡 demo */
+.ecod-pay-comment{width:min(560px,100%);background:var(--ecod-card-surface);border:1px solid var(--ecod-card-border);
+  border-radius:var(--ecod-card-radius);box-shadow:var(--ecod-card-shadow);padding:var(--ecod-card-pad);text-align:center}
+.ecod-pay-comment .lock{width:40px;height:40px;border-radius:12px;background:var(--ecod-accent-soft);color:var(--ecod-accent);display:flex;align-items:center;justify-content:center;font-size:18px;margin:0 auto 10px}
+.ecod-pay-comment b{font-size:15px}
+.ecod-pay-comment p{font-size:12.5px;color:var(--text-3);margin:6px 0 12px}
+.ecod-pay-comment .mask{height:52px;margin:0 -18px -16px;position:relative;overflow:hidden;
+  background:linear-gradient(180deg,transparent,var(--ecod-card-surface) 78%)}
+.ecod-pay-comment .mask::after{content:"";position:absolute;inset:0;
+  background:repeating-linear-gradient(180deg,rgba(148,158,178,.16) 0 8px,transparent 8px 20px);
+  mask:linear-gradient(180deg,transparent,#000 60%)}
+.ecod-pay-comment .row{display:flex;gap:8px;margin-top:6px}
+.ecod-pay-comment input{flex:1;border:1px solid var(--ecod-card-border);border-radius:10px;padding:9px 12px;font-size:13px;outline:none;background:transparent;color:inherit}
+.ecod-pay-comment input:focus{border-color:var(--ecod-accent)}
+.ecod-pay-comment button{border:none;border-radius:10px;background:var(--ecod-accent);color:#fff;font-size:13px;font-weight:600;padding:0 18px;cursor:pointer}
+.ecod-tokens.dark .ecod-pay-comment p{color:#7e879c}
+
+/* 已解锁态 */
+.ecod-pay-done{width:min(560px,100%);border:1px dashed #9ad8bd;border-radius:var(--ecod-card-radius);background:#f0fbf6;padding:14px 18px;font-size:13px;color:#0a8f68;display:flex;gap:8px;align-items:center}
+
+/* 动效演示卡 */
+.ecod-motion{width:180px;background:var(--ecod-card-surface);border:1px solid var(--ecod-card-border);border-radius:var(--ecod-card-radius);
+  box-shadow:var(--ecod-card-shadow);overflow:hidden;cursor:pointer;
+  transition:box-shadow var(--ecod-dur-fast) var(--ecod-card-motion),transform var(--ecod-dur-fast) var(--ecod-card-motion)}
+.ecod-motion:hover{box-shadow:var(--ecod-card-shadow-hover);transform:translateY(var(--ecod-card-lift))}
+.ecod-motion .ph{height:100px;background:linear-gradient(135deg,#b9c6ff,#e3d5ff)}
+.ecod-motion .in{padding:12px 14px}
+.ecod-motion .in b{font-size:13px;display:block}
+.ecod-motion .in small{font-size:11.5px;color:var(--text-3)}
+.ecod-tokens.dark .ecod-motion .in small{color:#7e879c}
+.fade-demo{width:180px;border-radius:var(--ecod-card-radius);overflow:hidden;box-shadow:var(--ecod-card-shadow);cursor:pointer}
+.fade-demo img{width:100%;height:120px;object-fit:cover;display:block;opacity:0;transition:opacity var(--ecod-dur-slow) ease}
+.fade-demo img.on{opacity:1}
+.fade-demo .cap{background:var(--ecod-card-surface);font-size:11.5px;color:var(--text-3);padding:8px 12px}
+.fade-demo{border:1px solid var(--ecod-card-border)}
+@keyframes shimmer{0%{background-position:-200% 0}100%{background-position:200% 0}}
+.fade-demo.wait .cap::after{content:"… 图片渐入中";animation:shimmer 1.4s linear infinite;background:linear-gradient(90deg,#98a1ad 40%,#4f6ef2 50%,#98a1ad 60%);background-size:200% 100%;-webkit-background-clip:text;background-clip:text;color:transparent}
+
+/* ==== v2 组件：热门榜周期Tab / 付费资源卡 / 聚合Tab卡 ==== */
+.ecod-hot .tabs{display:flex;gap:2px;margin-left:auto}
+.ecod-hot .tabs button{border:none;background:transparent;font-size:11.5px;color:var(--text-3);padding:3px 9px;border-radius:999px;cursor:pointer;font-family:inherit}
+.ecod-hot .tabs button.on{background:var(--ecod-accent-soft);color:var(--ecod-accent);font-weight:700}
+.ecod-tokens.dark .ecod-hot .tabs button{color:#7e879c}
+.ecod-tokens.dark .ecod-hot .tabs button.on{background:#262c42;color:#6d87ff}
+
+.ecod-pay-card{display:flex;width:min(560px,100%);background:var(--ecod-card-surface);border:1px solid var(--ecod-card-border);border-radius:var(--ecod-card-radius);box-shadow:var(--ecod-card-shadow);overflow:hidden}
+.ecod-pay-card .thumb{width:186px;min-height:132px;flex-shrink:0;position:relative;background:linear-gradient(135deg,#8fa3ff,#d8b7ff);cursor:zoom-in}
+.ecod-pay-card .thumb::after{content:"⤢ 点击预览";position:absolute;left:8px;bottom:8px;font-size:10.5px;color:#fff;background:rgba(0,0,0,.35);border-radius:999px;padding:2px 9px;backdrop-filter:blur(4px)}
+.ecod-pay-card .body{flex:1;min-width:0;padding:13px 16px;display:flex;flex-direction:column;gap:7px}
+.ecod-pay-card .badges{display:flex;gap:6px;flex-wrap:wrap}
+.ecod-pay-card .bg1{font-size:10.5px;font-weight:700;color:#8a5800;background:linear-gradient(135deg,#ffe9b8,#ffd77e);border-radius:4px;padding:1px 8px}
+.ecod-pay-card .bg2{font-size:10.5px;color:var(--text-3);border:1px solid var(--ecod-card-border);border-radius:4px;padding:1px 8px}
+.ecod-pay-card .price{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}
+.ecod-pay-card .price .now{font-size:24px;font-weight:800;color:#f59e0b;font-family:ui-monospace,Menlo,monospace;line-height:1}
+.ecod-pay-card .price .old{font-size:12.5px;color:var(--text-3);text-decoration:line-through}
+.ecod-pay-card .price .vip{font-size:10.5px;font-weight:600;color:var(--ecod-accent);background:var(--ecod-accent-soft);border-radius:4px;padding:1px 6px}
+.ecod-pay-card .buyrow{display:flex;gap:10px;align-items:center}
+.ecod-pay-card .buy{border:none;cursor:pointer;color:#fff;font-size:13px;font-weight:700;padding:7px 22px;border-radius:10px;background:linear-gradient(135deg,#f59e0b,#f0654a);box-shadow:0 4px 12px rgba(240,101,74,.35);font-family:inherit}
+.ecod-pay-card .buy:active{transform:translateY(1px)}
+.ecod-pay-card .sold{font-size:11.5px;color:var(--text-3)}
+.ecod-pay-card .meta{display:grid;grid-template-columns:1fr 1fr;gap:4px 20px;font-size:11.5px;border-top:1px dashed var(--ecod-card-border);padding-top:8px}
+.ecod-pay-card .meta div{display:flex;justify-content:space-between;gap:8px;color:var(--text-3)}
+.ecod-pay-card .meta b{font-weight:500}
+.ecod-tokens.dark .ecod-pay-card .bg1{background:#3d3116;color:#f7b64c}
+.ecod-tokens.dark .ecod-pay-card .bg2{color:#7e879c;border-color:#2c3142}
+.ecod-tokens.dark .ecod-pay-card .meta b{color:#c6ccda}
+
+.ecod-tabcard{width:min(560px,100%);background:var(--ecod-card-surface);border:1px solid var(--ecod-card-border);border-radius:var(--ecod-card-radius);box-shadow:var(--ecod-card-shadow);padding:0 18px}
+.ecod-tabcard .hd{display:flex;align-items:center;border-bottom:1px solid var(--ecod-card-border)}
+.ecod-tabcard .tab{padding:11px 2px 9px;margin-right:18px;font-size:13.5px;color:var(--text-3);cursor:pointer;border-bottom:2px solid transparent;white-space:nowrap;user-select:none}
+.ecod-tabcard .tab.on{color:var(--ecod-accent);border-bottom-color:var(--ecod-accent);font-weight:700}
+.ecod-tabcard .sort{margin-left:auto;display:flex;gap:2px;padding:6px 0}
+.ecod-tabcard .sort span{font-size:11.5px;color:var(--text-3);padding:3px 10px;border-radius:999px;cursor:pointer;user-select:none}
+.ecod-tabcard .sort span.on{background:var(--ecod-accent-soft);color:var(--ecod-accent);font-weight:600}
+.ecod-tabcard .pane{display:none;grid-template-columns:1fr 1fr;gap:14px;padding:14px 0 16px}
+.ecod-tabcard .pane.on{display:grid}
+.ecod-tabcard .item{display:flex;gap:10px;cursor:pointer;min-width:0}
+.ecod-tabcard .item .ph{width:64px;height:48px;border-radius:8px;flex-shrink:0}
+.ecod-tabcard .item .ph.g1{background:linear-gradient(135deg,#8fa3ff,#c9b3ff)}
+.ecod-tabcard .item .ph.g2{background:linear-gradient(135deg,#7fd8b7,#5aa9e6)}
+.ecod-tabcard .item .ph.g3{background:linear-gradient(135deg,#ffc38a,#ff8a8a)}
+.ecod-tabcard .item .ph.g4{background:linear-gradient(135deg,#b3c7ff,#e3d5ff)}
+.ecod-tabcard .item b{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;font-size:12.5px;line-height:1.5;font-weight:500;transition:color var(--ecod-dur-fast) ease}
+.ecod-tabcard .item:hover b{color:var(--ecod-accent)}
+.ecod-tabcard .item small{display:block;margin-top:4px;font-size:11px;color:var(--text-3)}
+.ecod-tokens.dark .ecod-tabcard .tab{color:#7e879c}
+.ecod-tokens.dark .ecod-tabcard .sort span{color:#7e879c}
+.ecod-tokens.dark .ecod-tabcard .item small{color:#7e879c}
+
+/* 深浅对照小方块 */
+.sw{display:flex;flex-direction:column;gap:10px;width:min(220px,100%)}
+.sw .row{display:flex;gap:8px;align-items:center;font-size:12px}
+.sw .chip{width:26px;height:26px;border-radius:8px;border:1px solid rgba(0,0,0,.08);flex-shrink:0}
+
+/* 键位/标签 */
+.kbd{font-family:"SF Mono",ui-monospace,monospace;font-size:11.5px;border:1px solid var(--border);border-bottom-width:2px;border-radius:5px;padding:1px 6px;background:var(--surface-2)}
+ul.ticks{list-style:none;margin:8px 0 14px}
+ul.ticks li{padding:4px 0 4px 24px;position:relative;font-size:13.5px}
+ul.ticks li::before{content:"✓";position:absolute;left:2px;color:var(--success);font-weight:700}
+ul.cross li::before{content:"✕";color:var(--danger)}
+ol.steps{margin:8px 0 14px 20px;font-size:13.5px}
+ol.steps li{margin:6px 0}
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <div class="in">
+    <span class="kicker">ECOD THEME · DESIGN PROPOSAL</span>
+    <h1>瓜奇 / Zibll 参考功能 · 设计与集成方案</h1>
+    <p>来源：guaqi.com（2026-10-30）+ demo.zibll.com（2026-10-31）｜范围：AI 摘要 / 评论解锁付费 / 热门榜 / 磁贴快捷区 / 动效令牌 / 付费资源卡 / 聚合Tab卡</p>
+    <div class="meta">文档版本 v2 · 2026-10-31 · 仅设计稿，非主题产物 · §05 全组件可交互渲染</div>
+  </div>
+</div>
+
+<div class="layout">
+  <aside class="sidenav">
+    <h6>01 总览</h6>
+    <a href="#s-bg">1.1 背景与范围</a>
+    <a href="#s-list">1.2 功能清单与优先级</a>
+    <h6>02 UI 设计规范</h6>
+    <a href="#t-token">2.1 设计令牌</a>
+    <a href="#t-color">2.2 色彩</a>
+    <a href="#t-type">2.3 字号与字重</a>
+    <a href="#t-space">2.4 间距 · 圆角 · 阴影</a>
+    <a href="#t-motion">2.5 动效</a>
+    <h6>03 功能设计</h6>
+    <a href="#f1">F1 AI 摘要卡</a>
+    <a href="#f2">F2 评论解锁付费</a>
+    <a href="#f3">F3 热门榜 Widget</a>
+    <a href="#f4">F4 磁贴快捷区 Widget</a>
+    <a href="#f5">F5 卡片动效令牌化</a>
+    <a href="#f6">F6 付费资源卡</a>
+    <a href="#f7">F7 聚合 Tab 卡</a>
+    <h6>04 组件设置</h6>
+    <a href="#c-params">4.1 Widget 参数总表</a>
+    <a href="#c-hooks">4.2 开关与钩子</a>
+    <h6>05 设计样式 Demo</h6>
+    <a href="#d-light">5.1 浅色渲染样例</a>
+    <a href="#d-dark">5.2 深色渲染样例</a>
+    <a href="#d-motion">5.3 动效演示</a>
+    <h6>06 落地</h6>
+    <a href="#p-order">6.1 排期与验收标准</a>
+  </aside>
+
+  <main class="main">
+
+  <!-- ========== 01 总览 ========== -->
+  <section id="s-bg">
+    <span class="sec-tag">01 · 总览</span>
+    <h2>背景与范围</h2>
+    <p class="sec-desc">瓜奇（guaqi.com）= Nuxt 3 无头 WordPress + 低代码模块前台。本稿只吸收与其现有体系兼容、Typecho 单机可实现的部分，形成 5 个功能包。</p>
+
+    <div class="card">
+      <h4>吸收原则</h4>
+      <ul class="ticks">
+        <li><b>令牌先行</b>：所有新组件消费统一卡片令牌（§2.1），不各自声明圆角/阴影——对齐瓜奇 <code>gq-card-*</code> 体系。</li>
+        <li><b>Widget 化</b>：榜单、磁贴区全部做成 EWidgets 模块类型，走现有管理台 + 自由投放，不加区域白名单。</li>
+        <li><b>复用已有内核</b>：付费解锁挂进现有 paywall 四层门禁；图标选择复用 <code>ECOD_NAV.iconSvg</code> 可视化网格。</li>
+        <li><b>PJAX 安全</b>：所有新组件仅在 <code>#ecod-shell</code> 内渲染，无 shell 外常驻 UI。</li>
+      </ul>
+      <ul class="ticks cross">
+        <li>不做：拖拽式可视化构建器、多语言、商城/优惠券、签到积分（依赖用户体系，暂缓）。</li>
+      </ul>
+    </div>
+  </section>
+
+  <section id="s-list">
+    <span class="sec-tag">01 · 总览</span>
+    <h2>功能清单与优先级</h2>
+    <p class="sec-desc">按「与现有体系契合度 × 实现成本」排序。</p>
+    <table>
+      <tr><th>#</th><th>功能包</th><th>参考来源</th><th>优先级</th><th>涉及文件</th></tr>
+      <tr><td>F1</td><td>AI 摘要卡（文章页）</td><td>瓜奇帖子 AI 摘要（流式 + 字数）</td><td><span class="b b-red">P0</span></td><td><code>post.php</code> / <code>core/</code> 新增渲染器</td></tr>
+      <tr><td>F2</td><td>评论解锁付费</td><td>帖子「评论后方可解锁阅读」</td><td><span class="b b-red">P0</span></td><td><code>core/</code> paywall 分支 / <code>post.php</code></td></tr>
+      <tr><td>F3</td><td>热门榜 Widget</td><td>右栏「热门帖子」（浏览+评论双指标）</td><td><span class="b b-red">P0</span></td><td>EWidgets 新模块 <code>hot_posts</code></td></tr>
+      <tr><td>F4</td><td>磁贴快捷区 Widget</td><td>首页 tileZone icon 磁贴</td><td><span class="b b-amber">P1</span></td><td>EWidgets 新模块 <code>tile_zone</code></td></tr>
+      <tr><td>F5</td><td>卡片动效令牌化</td><td><code>gq-card-motion</code> + <code>fade-in-image</code></td><td><span class="b b-red">P0</span></td><td>主题 CSS 变量层 / <code>ecod_render_block()</code></td></tr>
+      <tr><td>F6</td><td>付费资源卡</td><td>Zibll 付费下载卡（三档价 + 元数据表）</td><td><span class="b b-amber">P1</span></td><td><code>paywall</code> 展示层 / <code>post.php</code></td></tr>
+      <tr><td>F7</td><td>聚合 Tab 卡 Widget</td><td>Zibll 聚合文章卡（多 tab + 排序）</td><td><span class="b b-amber">P1</span></td><td>EWidgets 新模块 <code>tab_posts</code></td></tr>
+    </table>
+  </section>
+
+  <!-- ========== 02 UI 设计规范 ========== -->
+  <section id="t-token">
+    <span class="sec-tag">02 · UI 设计规范</span>
+    <h2>设计令牌</h2>
+    <p class="sec-desc">一处声明，全站消费。新增变量挂在 <code>:root</code> 与 <code>.dark</code>（或现有主题暗色钩子）上，所有 §05 组件只引用不覆写。</p>
+
+    <pre><span class="c">/* 卡片令牌 —— 参考 guaqi gq-card-surface/radius/padding/motion 收敛 */</span>
+<span class="k">:root</span> {
+  --ecod-card-radius: <span class="s">14px</span>;        <span class="c">/* 外层卡片 */</span>
+  --ecod-card-radius-sm: <span class="s">10px</span>;     <span class="c">/* 内嵌块 / 磁贴 */</span>
+  --ecod-card-pad: <span class="s">16px 18px</span>;
+  --ecod-card-surface: <span class="s">#fff</span>;
+  --ecod-card-border: <span class="s">#e8ebf1</span>;
+  --ecod-card-shadow: <span class="s">0 1px 3px rgba(24,32,52,.05), 0 6px 20px rgba(24,32,52,.05)</span>;
+  --ecod-card-shadow-hover: <span class="s">0 6px 16px rgba(24,32,52,.10), 0 16px 40px rgba(24,32,52,.10)</span>;
+  --ecod-card-lift: <span class="s">-2px</span>;          <span class="c">/* hover 上浮距离 */</span>
+  --ecod-card-motion: <span class="s">cubic-bezier(.33,.12,.15,1)</span>;
+  --ecod-dur-fast: <span class="s">.22s</span>;           <span class="c">/* hover / 按钮 */</span>
+  --ecod-dur-slow: <span class="s">.45s</span>;           <span class="c">/* 图片渐入 */</span>
+}
+<span class="k">.dark</span> {
+  --ecod-card-surface: <span class="s">#1d212e</span>;
+  --ecod-card-border: <span class="s">#2c3142</span>;
+  --ecod-card-shadow: <span class="s">0 1px 3px rgba(0,0,0,.3), 0 6px 20px rgba(0,0,0,.22)</span>;
+  --ecod-card-shadow-hover: <span class="s">0 6px 16px rgba(0,0,0,.4), 0 16px 40px rgba(0,0,0,.35)</span>;
+}</pre>
+
+    <div class="note"><b>迁移约定</b>：现有 <code>data-shell</code> 注入的模块壳、paywall 卡、AI 摘要卡、热门榜、磁贴全部改引上述变量；允许组件级微调 padding，禁止覆写 radius/shadow。</div>
+  </section>
+
+  <section id="t-color">
+    <span class="sec-tag">02 · UI 设计规范</span>
+    <h2>色彩</h2>
+    <p class="sec-desc">新增 3 个功能色 + 1 组榜单序号色，均给出浅/深双值。</p>
+    <table>
+      <tr><th>令牌</th><th>浅色</th><th>深色</th><th>用途</th></tr>
+      <tr><td><code>--ecod-accent</code></td><td>#4f6ef2</td><td>#6d87ff</td><td>AI 摘要、磁贴 hover、主按钮</td></tr>
+      <tr><td><code>--ecod-accent-soft</code></td><td>#eef1fe</td><td>#262c42</td><td>图标底、渐变起色</td></tr>
+      <tr><td><code>--ecod-lock</code></td><td>#f59e0b</td><td>#f7b64c</td><td>付费/解锁语义色</td></tr>
+      <tr><td><code>--ecod-hot-1/2/3</code></td><td>#fdeeee / #fef3e4 / #fdf6e0</td><td>同步提亮 8%</td><td>热门榜 Top3 序号底</td></tr>
+    </table>
+    <div class="note warn"><b>对比度红线</b>：正文对底色 ≥ 4.5:1；<code>--ecod-accent</code> 白字按钮在浅色下 #4f6ef2 实测 4.6:1 达标；深色下正文用 #e6e9f2，次级信息 #7e879c 只用于 ≥12px。</div>
+  </section>
+
+  <section id="t-type">
+    <span class="sec-tag">02 · UI 设计规范</span>
+    <h2>字号与字重</h2>
+    <table>
+      <tr><th>层级</th><th>字号/行高</th><th>字重</th><th>场景</th></tr>
+      <tr><td>组件标题</td><td>14.5px / 1.5</td><td>700</td><td>热门榜头、磁贴区标题</td></tr>
+      <tr><td>正文</td><td>13.5px / 1.8</td><td>400</td><td>AI 摘要正文</td></tr>
+      <tr><td>列表条目</td><td>13px / 1.6</td><td>400</td><td>热门榜条目（单行截断）</td></tr>
+      <tr><td>元信息</td><td>11.5px / 1.4</td><td>400</td><td>浏览/评论数、免责声明、字数</td></tr>
+      <tr><td>磁贴标签</td><td>12px / 1.3</td><td>400</td><td>磁贴文字，hover 变 <code>--ecod-accent</code></td></tr>
+    </table>
+  </section>
+
+  <section id="t-space">
+    <span class="sec-tag">02 · UI 设计规范</span>
+    <h2>间距 · 圆角 · 阴影</h2>
+    <div class="grid3">
+      <div class="card tight"><h4>间距（4 基数）</h4><p style="font-size:13px;color:var(--text-2)">组件内边距 <code>16px 18px</code>；条目行距 <code>8px 0</code>；图标-文字 <code>gap:8px</code>；磁贴网格 <code>gap:10px</code>；分区块间距 <code>24px</code>。</p></div>
+      <div class="card tight"><h4>圆角</h4><p style="font-size:13px;color:var(--text-2)">卡片 14px；磁贴/内嵌块 10px；图标底 12px（38px 方块）；徽章 999px；序号块 5px。</p></div>
+      <div class="card tight"><h4>阴影</h4><p style="font-size:13px;color:var(--text-2)">静态双层极淡；hover 双层加深 + <code>translateY(-2px)</code>；禁止 scale 大于 1.01，避免文字发虚。</p></div>
+    </div>
+  </section>
+
+  <section id="t-motion">
+    <span class="sec-tag">02 · UI 设计规范</span>
+    <h2>动效</h2>
+    <p class="sec-desc">只保留两类动效 + 一条 PJAX 约束（对应 F5）。</p>
+    <table>
+      <tr><th>动效</th><th>参数</th><th>触发</th></tr>
+      <tr><td>卡片 hover</td><td>shadow→hover 态 + <code>translateY(-2px)</code>，<code>.22s cubic-bezier(.33,.12,.15,1)</code></td><td>可点击卡片 hover</td></tr>
+      <tr><td>图片渐入</td><td><code>opacity 0→1</code>，<code>.45s ease</code>；占位底色 #eef0f5（深色 #1f2330）</td><td><code>img.onload</code> 加 <code>.on</code></td></tr>
+      <tr><td>PJAX 约束</td><td>过渡只在 <code>#ecod-shell</code> 内容层做，组件不得自带入场动画，避免 PJAX 切页闪跳</td><td>—</td></tr>
+    </table>
+    <div class="note"><b>降级</b>：<code>@media (prefers-reduced-motion: reduce)</code> 下 hover 仅保留阴影变化，渐入时长归零。</div>
+  </section>
+
+  <!-- ========== 03 功能设计 ========== -->
+  <section id="f1">
+    <span class="sec-tag">03 · 功能设计</span>
+    <h2>F1 · AI 摘要卡</h2>
+    <p class="sec-desc">文章正文前展示预生成摘要；瓜奇为运行时流式生成，Typecho 单机改为「后台预生成 + 前台静态渲染」，可选前端打字机回放。</p>
+
+    <div class="flow">
+      <div class="step"><b>① 写作端</b><small>文章自定义字段 <code>ai_summary</code> 存摘要文本；可选 <code>ai_summary_model</code> 存模型名</small></div>
+      <div class="arr">→</div>
+      <div class="step"><b>② 渲染层</b><small><code>post.php</code> content 输出前检测字段，非空则渲染摘要卡；空则整卡不输出</small></div>
+      <div class="arr">→</div>
+      <div class="step"><b>③ 交互</b><small>默认全文直出；开关开启时打字机回放（rAF 驱动，尊重 reduced-motion）；点击「展开原文」滚动至正文</small></div>
+    </div>
+
+    <div class="grid2">
+      <div class="card">
+        <h4>结构</h4>
+        <ul class="ticks">
+          <li>头部：渐变 logo 块（22px/圆角7）+「AI 摘要」+ 圆点标签（生成模型名）</li>
+          <li>正文：≤ 200 字，超长折叠「展开」</li>
+          <li>底部：免责声明「由 AI 生成，仅供参考」+ 字数 <code>{n} 字</code></li>
+          <li>底色：<code>accent-soft</code> 135° 渐变叠 <code>card-surface</code></li>
+        </ul>
+      </div>
+      <div class="card">
+        <h4>边界情况</h4>
+        <ul class="ticks cross">
+          <li>付费文章：摘要卡在门禁 <b>外</b>（摘要可读，正文锁）——门禁顺序：AI 卡 → 试读 → 解锁卡</li>
+          <li>feed / 搜索 / excerpt：不输出摘要卡（沿用 <code>ecod_pay_feed_guard</code> 剥除思路，避免重复内容）</li>
+          <li>PJAX：字段随文章 HTML 一起到达，无额外请求</li>
+        </ul>
+      </div>
+    </div>
+
+    <pre><span class="c">/* 渲染伪代码 —— core/ 内新增，禁止引用主题模板局部变量（独立闭包） */</span>
+<span class="k">function</span> <span class="f">ecod_ai_summary_render</span>($cid, $fields) {
+  <span class="k">if</span> (empty($fields['ai_summary'])) <span class="k">return</span> '';   <span class="c">// 无字段零输出</span>
+  <span class="k">return</span> <span class="s">'&lt;div class="ecod-ai-sum"&gt;…&lt;/div&gt;'</span>;      <span class="c">// 结构见 §05</span>
+}</pre>
+  </section>
+
+  <section id="f2">
+    <span class="sec-tag">03 · 功能设计</span>
+    <h2>F2 · 评论解锁付费</h2>
+    <p class="sec-desc">paywall 新增解锁模式 <code>comment</code>：发表任意一条过审评论即解锁当前文章付费内容。与现有「购买解锁 / VIP 解锁」并列。</p>
+
+    <div class="flow">
+      <div class="step"><b>① 门禁判定</b><small><code>ecod_pay_teaser_balance()</code> 判断链新增分支：文章 paywall_mode 为 comment 时，检查解锁凭证</small></div>
+      <div class="arr">→</div>
+      <div class="step"><b>② 凭证</b><small>评论入库成功后种 cookie <code>ecod_pay_c_{cid}</code> = HMAC(cid+uid+ts)；读取时服务端验签，<b>不信任纯前端状态</b></small></div>
+      <div class="arr">→</div>
+      <div class="step"><b>③ 解锁反馈</b><small>验签通过 → 门禁放行；页面顶部显示一次性提示条「已解锁」，2s 后淡出</small></div>
+    </div>
+
+    <div class="grid2">
+      <div class="card">
+        <h4>解锁卡 UI（未解锁时替换购买卡）</h4>
+        <ul class="ticks">
+          <li>锁形图标底 40px/圆角12/lock 色</li>
+          <li>文案主标「评论后解锁全文」+ 副标「发表评论即可阅读付费内容」</li>
+          <li>内置迷你评论框：输入框 + 提交按钮（复用 <code>api.php</code> 现有评论接口，验证码逻辑照旧）</li>
+          <li>试读尾部保留渐隐遮罩（高度 52px，向上渐隐 + 横纹），暗示下文</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h4>门禁四层适配</h4>
+        <table style="margin:0">
+          <tr><th>层</th><th>改动</th></tr>
+          <tr><td>post.php 硬门禁</td><td>验签通过则放行 content</td></tr>
+          <tr><td>ecod_excerpt 列表层</td><td>不变（列表永远摘要）</td></tr>
+          <tr><td>ecod_pay_feed_guard</td><td>不变（feed 永剥除）</td></tr>
+          <tr><td>搜索剥除</td><td>不变</td></tr>
+        </table>
+      </div>
+    </div>
+
+    <div class="note danger"><b>安全红线</b>：① HMAC 密钥用站点 authCode 派生；② cookie 仅本站 + httpOnly + 30 天；③ 评论进待审时 <b>不</b>发凭证，过审才发；④ 删除该评论不回收凭证（简化，文档明示）。绝对禁止改动 <code>EWidgets</code> 行存 JSON 相关代码。</div>
+  </section>
+
+  <section id="f3">
+    <span class="sec-tag">03 · 功能设计</span>
+    <h2>F3 · 热门榜 Widget</h2>
+    <p class="sec-desc">对应瓜奇右栏「热门帖子」。作为 EWidgets 新模块 <code>hot_posts</code>，自由投放到任意区域。</p>
+
+    <div class="grid2">
+      <div class="card">
+        <h4>数据口径</h4>
+        <ul class="ticks">
+          <li>指标单选：浏览 / 评论 / 加权（默认加权：<code>views + comments×20</code>）</li>
+          <li>周期：近 7 天 / 近 30 天 / 全部（默认 7 天）</li>
+          <li>排序后取前 N（默认 5，上限 10）；排除付费文章外的加密/隐藏内容</li>
+          <li>缓存：结果缓存 10 分钟（option 行时间戳比对），避免每 PV 聚合查询</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h4>渲染</h4>
+        <ul class="ticks">
+          <li>头部：icon 点 +「热门文章」+ 可选「更多」链接</li>
+          <li>条目：序号块（Top3 专用色）+ 标题单行截断 + 右侧元信息（浏览 · 评论）</li>
+          <li>序号计数器用 CSS <code>counter-reset/counter-increment</code>，不写死序号文本</li>
+          <li><b>v2</b>：头部可选周期 Tab <code>rangeTab</code>（7天/30天/全部，吸收 Zibll 排行榜交互），三组结果一次性预渲染、纯前端切换，无二次请求</li>
+          <li>整卡走 §2.1 令牌；区域密度 <code>data-density</code> 照常生效</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <section id="f4">
+    <span class="sec-tag">03 · 功能设计</span>
+    <h2>F4 · 磁贴快捷区 Widget</h2>
+    <p class="sec-desc">对应瓜奇首页 tileZone。一排 icon 磁贴，跳转导航/分类/外链，适合首页顶部或侧栏。</p>
+
+    <div class="grid2">
+      <div class="card">
+        <h4>条目模型（管理台可增删、拖拽排序）</h4>
+        <table style="margin:0">
+          <tr><th>字段</th><th>说明</th></tr>
+          <tr><td><code>icon</code></td><td>SVG，复用构建器可视化图标网格（<code>ECOD_NAV.iconSvg</code>）</td></tr>
+          <tr><td><code>label</code></td><td>文字，≤6 字建议</td></tr>
+          <tr><td><code>href</code></td><td>内链/外链；外链自动 <code>rel="nofollow"</code></td></tr>
+          <tr><td><code>color</code></td><td>图标底色，预设 6 色（accent/green/amber/red/violet/gray）</td></tr>
+          <tr><td><code>badge</code></td><td>可选角标文本（如「新」「HOT」），红/绿两色</td></tr>
+        </table>
+      </div>
+      <div class="card">
+        <h4>版式参数</h4>
+        <ul class="ticks">
+          <li>列数：3–6（默认 5）；≤640px 自动 <code>min(3, n)</code></li>
+          <li>样式：卡片（默认）/ 无框；无框模式仅图标+文字，用于透明底</li>
+          <li>每区上限 20 条目，与 EWidgets 区域上限一致</li>
+          <li>磁贴为 <code>&lt;a&gt;</code>，整块可点；hover 走 §2.5 卡片动效</li>
+        </ul>
+      </div>
+    </div>
+    <div class="note"><b>payload 规范</b>：style/列数等字段必须进构建器 <code>payload()</code>（吸取导航套 style 静默丢失的教训）；字段白名单若涉及导航复用，两处白名单（<code>ecod_nav_norm_item</code> / <code>ecod_nav_resolve_item</code>）同步。</div>
+  </section>
+
+  <section id="f5">
+    <span class="sec-tag">03 · 功能设计</span>
+    <h2>F5 · 卡片动效令牌化</h2>
+    <p class="sec-desc">改造点集中在渲染层与 CSS，模板零改动。</p>
+    <ol class="steps">
+      <li><code>ecod_render_block()</code> 的 ob 缓冲注入逻辑扩展：模块根节点补 <code>class="ecod-card-motion"</code>（与现有 <code>data-shell</code> 注入同点，不加新钩子）。</li>
+      <li>CSS 新增令牌（§2.1）+ 两条规则：<code>.ecod-card-motion:hover</code> 与 <code>.fade-in-image</code>。</li>
+      <li>列表缩略图统一加 <code>fade-in-image</code>：<code>onload</code> 置 <code>.on</code>；PJAX 换页后由 shell 内事件委托对 <code>img[complete]</code> 立即补类，防止缓存图永远透明。</li>
+      <li><code>prefers-reduced-motion</code> 降级（§2.5）。</li>
+    </ol>
+    <div class="note ok"><b>验收口径</b>：浅/深主题下卡片 hover 阴影、上浮距离一致；图片渐入在 PJAX 往返后无闪烁；无任何 scale ≥ 1.01 的动效。</div>
+  </section>
+
+  <section id="f6">
+    <span class="sec-tag">03 · 功能设计</span>
+    <h2>F6 · 付费资源卡</h2>
+    <p class="sec-desc">来源：Zibll 付费下载卡。paywall 展示层升级——purchase 门禁用本卡，comment 门禁用 F2 解锁卡，两者占据试读尾部同一位置。</p>
+
+    <div class="grid2">
+      <div class="card">
+        <h4>结构（左图右文）</h4>
+        <ul class="ticks">
+          <li>预览图 186×130（文章首图或自定义字段），hover 显「点击预览」，点击灯箱放大</li>
+          <li>徽章行：金底「付费资源」+ 语义附加（支持退款 / 会员免费）</li>
+          <li>价格行：现价 24px 加粗 + 划线原价 + 会员档位标签</li>
+          <li>CTA：渐变购买按钮 → 跳转 <code>page-cashier.php</code> 现有收银台；旁挂已售/浏览数</li>
+          <li>元数据表：两列虚线分隔 grid（大小/更新时间/系统/语言/退款/有效期）</li>
+          <li>已购态：整卡替换为绿色已购条 + 下载按钮</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h4>字段来源</h4>
+        <table style="margin:0">
+          <tr><th>数据</th><th>来源</th></tr>
+          <tr><td>价格 / 原价 / 会员档</td><td>paywall 配置（真源 <code>docs/paywall-design.md</code>）</td></tr>
+          <tr><td>资源大小 / 系统 / 语言 / 退款</td><td>自定义字段 <code>pay_meta_*</code>，缺失项整行隐藏</td></tr>
+          <tr><td>预览图</td><td>自定义字段 <code>pay_preview</code>，缺省回退文章首图</td></tr>
+          <tr><td>已售次数</td><td>订单聚合（可选，无则不显示）</td></tr>
+        </table>
+      </div>
+    </div>
+
+    <div class="note"><b>降级原则</b>：所有元数据字段可缺省——全缺省时自动退化为现有解锁卡版式，保证老文章无需补字段。展示层只读 paywall 状态，<b>不改门禁判定逻辑</b>（四层门禁零改动）。</div>
+  </section>
+
+  <section id="f7">
+    <span class="sec-tag">03 · 功能设计</span>
+    <h2>F7 · 聚合 Tab 卡 Widget</h2>
+    <p class="sec-desc">来源：Zibll 首页聚合文章卡。一个模块内多个 tab 按分类/标签聚合，信息密度约为普通列表 widget 的 3-4 倍，适合首页大区块。</p>
+
+    <div class="grid2">
+      <div class="card">
+        <h4>结构</h4>
+        <ul class="ticks">
+          <li>头部：tab 行（下划线 active，3-5 个）+ 右侧排序 pills（最新/热门/评论）</li>
+          <li>内容：双列图卡（64×48 圆角 8）+ 标题两行截断 + meta（浏览 · 评论）</li>
+          <li>hover：标题变 <code>--ecod-accent</code>，图片走 F5 渐入</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h4>数据与交互</h4>
+        <ul class="ticks">
+          <li>每个 tab = 一个分类/标签查询，条数 ≤ 8；<b>全部 tab 一次性预渲染</b>，切换纯前端 display，无二次请求</li>
+          <li>空分类 tab 自动隐藏；tab 全空则整卡隐藏</li>
+          <li>排序 v1 仅「最新」生效，热门/评论为预留态（数据已含计数，后续可切）</li>
+          <li>PJAX：预渲染 DOM 随 shell 到达，切换事件用 shell 内事件委托</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== 04 组件设置 ========== -->  <section id="c-params">
+    <span class="sec-tag">04 · 组件设置</span>
+    <h2>Widget 参数总表</h2>
+    <p class="sec-desc">管理台（§31 widget 管理台）表单字段定义。所有参数走行存 JSON 文档 + 乐观锁 rev，保存后 <code>ecod_widgets_flush()</code>。</p>
+
+    <h3>hot_posts · 热门榜</h3>
+    <table>
+      <tr><th>参数</th><th>类型</th><th>默认</th><th>取值</th></tr>
+      <tr><td><code>title</code></td><td>text</td><td>热门文章</td><td>空则不渲染头部</td></tr>
+      <tr><td><code>metric</code></td><td>select</td><td>weighted</td><td>views / comments / weighted</td></tr>
+      <tr><td><code>range</code></td><td>select</td><td>7d</td><td>7d / 30d / all</td></tr>
+      <tr><td><code>count</code></td><td>number</td><td>5</td><td>1–10</td></tr>
+      <tr><td><code>showMeta</code></td><td>switch</td><td>on</td><td>元信息（浏览/评论数）</td></tr>
+      <tr><td><code>moreHref</code></td><td>link</td><td>—</td><td>头部「更多」链接</td></tr>
+      <tr><td><code>rangeTab</code></td><td>switch</td><td>off</td><td>头部 7d/30d/all 前端切换；开启时 <code>range</code> 为默认态</td></tr>
+    </table>
+
+    <h3>tile_zone · 磁贴快捷区</h3>
+    <table>
+      <tr><th>参数</th><th>类型</th><th>默认</th><th>取值</th></tr>
+      <tr><td><code>title</code></td><td>text</td><td>快捷入口</td><td>—</td></tr>
+      <tr><td><code>cols</code></td><td>number</td><td>5</td><td>3–6</td></tr>
+      <tr><td><code>style</code></td><td>select</td><td>card</td><td>card / plain</td></tr>
+      <tr><td><code>items[]</code></td><td>repeat</td><td>—</td><td>icon / label / href / color / badge（≤20）</td></tr>
+    </table>
+
+    <h3>tab_posts · 聚合 Tab 卡</h3>
+    <table>
+      <tr><th>参数</th><th>类型</th><th>默认</th><th>取值</th></tr>
+      <tr><td><code>title</code></td><td>text</td><td>—</td><td>为空则不渲染模块头</td></tr>
+      <tr><td><code>tabs[]</code></td><td>repeat</td><td>—</td><td>label + 分类/标签 id（3–5 个，≤8 条/tab）</td></tr>
+      <tr><td><code>cols</code></td><td>number</td><td>2</td><td>1–2；≤640px 自动 1 列</td></tr>
+      <tr><td><code>showSort</code></td><td>switch</td><td>on</td><td>排序 pills（v1 仅「最新」生效）</td></tr>
+      <tr><td><code>showMeta</code></td><td>switch</td><td>on</td><td>条目浏览/评论数</td></tr>
+    </table>
+
+    <div class="note warn"><b>白名单提醒</b>：新模块类型需登记进 EWidgets 模块注册表（类型 → 渲染器映射 + 管理台表单 schema），缺一处则保存后前台渲染空。</div>
+  </section>
+
+  <section id="c-hooks">
+    <span class="sec-tag">04 · 组件设置</span>
+    <h2>开关与钩子</h2>
+    <table>
+      <tr><th>开关</th><th>作用域</th><th>默认</th></tr>
+      <tr><td><code>EAIHelper</code></td><td>AI 摘要卡总开关（关 = 全站不渲染）</td><td>off</td></tr>
+      <tr><td><code>EAIMotion</code></td><td>AI 摘要打字机回放</td><td>off（默认直出）</td></tr>
+      <tr><td><code>EPayCommentUnlock</code></td><td>评论解锁模式入口（文章级仍以 paywall_mode 为准）</td><td>off</td></tr>
+      <tr><td><code>ECardMotion</code></td><td>卡片 hover 动效 + 图片渐入总开关</td><td>on</td></tr>
+    </table>
+    <div class="note">前台开关沿用现有 <code>E*</code> 前缀惯例（ELikers / EQuickBar 同族），functions.php 统一注册。</div>
+  </section>
+
+  <!-- ========== 05 Demo ========== -->
+  <section id="d-light">
+    <span class="sec-tag">05 · 设计样式 Demo</span>
+    <h2>浅色渲染样例</h2>
+    <p class="sec-desc">以下即 §2 令牌下的目标视觉，覆盖 F1-F7 全部组件。hover 磁贴/卡片、点击 Tab 均可交互。</p>
+
+    <div class="stage ecod-tokens">
+      <div class="cap">TILE_ZONE · 磁贴快捷区（5 列 / card / badge）</div>
+      <div class="ecod-tile-zone">
+        <a class="ecod-tile"><span class="tb" style="background:#e05252">新</span><span class="ic" style="background:#eef1fe;color:#4f6ef2">💬</span>社区</a>
+        <a class="ecod-tile"><span class="ic" style="background:#e7f8f1;color:#0a8f68">⬇️</span>下载</a>
+        <a class="ecod-tile"><span class="ic" style="background:#fef4e2;color:#b26a00">✍️</span>博客</a>
+        <a class="ecod-tile"><span class="tb" style="background:#10b981">HOT</span><span class="ic" style="background:#f1edfe;color:#7c5cf0">🛍️</span>小店</a>
+        <a class="ecod-tile"><span class="ic" style="background:#eef0f4;color:#5b6472">🧭</span>导航</a>
+      </div>
+
+      <div class="cap" style="margin-top:8px">HOT_POSTS · 热门榜（加权 / 7d / count=5）</div>
+      <div class="ecod-hot">
+        <div class="h"><span class="dot">🔥</span>热门文章</div>
+        <ol>
+          <li><span class="no"></span><span class="t">瓜奇主题 1.8.5 更新：MCP 架构与智能体正式落地</span><span class="m">12k · 86</span></li>
+          <li><span class="no"></span><span class="t">低代码构建器发布：拖拽编排你的首页模块</span><span class="m">9.6k · 64</span></li>
+          <li><span class="no"></span><span class="t">从 WordPress 换个活法：无头模式实践总结</span><span class="m">7.2k · 51</span></li>
+          <li><span class="no"></span><span class="t">导航套样式拓展：mega-group 全宽面板解析</span><span class="m">5.1k · 40</span></li>
+          <li><span class="no"></span><span class="t">widget 自由投放：区域上限与乐观锁设计</span><span class="m">4.3k · 33</span></li>
+        </ol>
+      </div>
+
+      <div class="cap" style="margin-top:8px">AI_SUM · AI 摘要卡（post content 前）</div>
+      <div class="ecod-ai-sum">
+        <div class="head"><span class="logo">AI</span><b>AI 摘要</b><span class="tag">deepseek-v3</span></div>
+        <p>本文梳理 guaqi.com 的模块化前台架构：以设计令牌统一卡片外观，用「模块注册表 + 通用壳」支撑低代码页面构建；并评估其中 AI 摘要、评论解锁、热门榜等组件在 Typecho 单机环境下的可行移植方案。</p>
+        <div class="foot"><span class="k">◉ 由 AI 生成，仅供参考</span><span>86 字</span></div>
+      </div>
+
+      <div class="cap" style="margin-top:8px">PAYWALL · 评论解锁卡（未解锁 → 已解锁）</div>
+      <div class="ecod-pay-comment">
+        <span class="lock">🔒</span>
+        <b>评论后解锁全文</b>
+        <p>本文剩余 60% 为付费内容，发表评论即可阅读</p>
+        <div class="mask"></div>
+        <div class="row" style="margin-top:-14px;position:relative">
+          <input placeholder="友善评论，发表后立即解锁…">
+          <button>发表并解锁</button>
+        </div>
+      </div>
+      <div class="ecod-pay-done">✓ 评论成功，全文已解锁 — 凭证有效期 30 天</div>
+
+      <div class="cap" style="margin-top:8px">HOT_POSTS v2 · 头部周期 Tab（7天/30天/全部，点击切换）</div>
+      <div class="ecod-hot">
+        <div class="h"><span class="dot">🔥</span>热门文章
+          <div class="tabs"><button class="on">7天</button><button>30天</button><button>全部</button></div>
+        </div>
+        <ol>
+          <li><span class="no"></span><span class="t">瓜奇主题 1.8.5 更新：MCP 架构与智能体正式落地</span><span class="m">12k · 86</span></li>
+          <li><span class="no"></span><span class="t">低代码构建器发布：拖拽编排你的首页模块</span><span class="m">9.6k · 64</span></li>
+          <li><span class="no"></span><span class="t">从 WordPress 换个活法：无头模式实践总结</span><span class="m">7.2k · 51</span></li>
+          <li><span class="no"></span><span class="t">导航套样式拓展：mega-group 全宽面板解析</span><span class="m">5.1k · 40</span></li>
+          <li><span class="no"></span><span class="t">widget 自由投放：区域上限与乐观锁设计</span><span class="m">4.3k · 33</span></li>
+        </ol>
+      </div>
+
+      <div class="cap" style="margin-top:8px">PAY_CARD F6 · 付费资源卡（purchase 门禁形态，未购 → 已购）</div>
+      <div class="ecod-pay-card">
+        <div class="thumb"></div>
+        <div class="body">
+          <div class="badges"><span class="bg1">付费资源</span><span class="bg2">支持退款</span><span class="bg2">会员免费</span></div>
+          <div class="price"><span class="now">¥0.03</span><span class="old">¥9.9</span><span class="vip">会员 / 钻石免费</span></div>
+          <div class="buyrow"><button class="buy">立即购买</button><span class="sold">已售 1,286 · 浏览 5.4W</span></div>
+          <div class="meta">
+            <div>资源大小<b>0.1M</b></div><div>更新时间<b>2026-10-29</b></div>
+            <div>适用系统<b>Windows</b></div><div>语言<b>中文 / 英文</b></div>
+            <div>是否可退款<b>可</b></div><div>有效期<b>永久</b></div>
+          </div>
+        </div>
+      </div>
+      <div class="ecod-pay-done">✓ 已购买 — 凭证有效，点击下载资源包（12.8 MB）</div>
+
+      <div class="cap" style="margin-top:8px">TAB_POSTS F7 · 聚合 Tab 卡（多分类 tab + 排序，点击可切换）</div>
+      <div class="ecod-tabcard" data-tabs>
+        <div class="hd">
+          <span class="tab on" data-pane="tp1">推荐文章</span><span class="tab" data-pane="tp2">科技新闻</span><span class="tab" data-pane="tp3">智能硬件</span>
+          <div class="sort"><span class="on">最新</span><span>热门</span><span>评论</span></div>
+        </div>
+        <div class="pane on" data-pane-name="tp1">
+          <div class="item"><div class="ph g1"></div><div style="min-width:0"><b>优越的支付系统：始终提供极致的用户付费功能</b><small>8.2k · 64 评论</small></div></div>
+          <div class="item"><div class="ph g2"></div><div style="min-width:0"><b>低代码模块布局：导入导出与模板复用详解</b><small>6.4k · 51 评论</small></div></div>
+          <div class="item"><div class="ph g3"></div><div style="min-width:0"><b>付费下载卡设计：三档会员价与元数据表</b><small>5.1k · 40 评论</small></div></div>
+          <div class="item"><div class="ph g4"></div><div style="min-width:0"><b>聚合 Tab 卡：一个模块聚合多个分类内容</b><small>4.3k · 33 评论</small></div></div>
+        </div>
+        <div class="pane" data-pane-name="tp2">
+          <div class="item"><div class="ph g2"></div><div style="min-width:0"><b>流盾 WAF 正式发布：开源免费的网站防护应用</b><small>1.7k · 47 评论</small></div></div>
+          <div class="item"><div class="ph g1"></div><div style="min-width:0"><b>请立即更新 WordPress、PHP 到最新版</b><small>7.0k · 78 评论</small></div></div>
+          <div class="item"><div class="ph g4"></div><div style="min-width:0"><b>DNS 解析设置方法：域名解析新手教程</b><small>1.5k · 42 评论</small></div></div>
+          <div class="item"><div class="ph g3"></div><div style="min-width:0"><b>使用 Redis 和 opcache 为网站加速</b><small>10.1k · 395 评论</small></div></div>
+        </div>
+        <div class="pane" data-pane-name="tp3">
+          <div class="item"><div class="ph g3"></div><div style="min-width:0"><b>《超能陆战队》预告片：大白“三难三赞”</b><small>3.2k · 28 评论</small></div></div>
+          <div class="item"><div class="ph g2"></div><div style="min-width:0"><b>智能硬件新品月报：10 月值得关注的设备</b><small>2.6k · 19 评论</small></div></div>
+          <div class="item"><div class="ph g1"></div><div style="min-width:0"><b>桌面工具链实践：gpui 生态初体验</b><small>1.9k · 12 评论</small></div></div>
+          <div class="item"><div class="ph g4"></div><div style="min-width:0"><b>下载引擎选型：gopeed 内核与自建 HLS</b><small>2.2k · 17 评论</small></div></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="d-dark">
+    <span class="sec-tag">05 · 设计样式 Demo</span>
+    <h2>深色渲染样例</h2>
+    <p class="sec-desc">同一套 DOM，仅切换令牌组（含 F6/F7/F3v2）。验证跨主题 padding / 阴影 / 对比度一致性。</p>
+
+    <div class="stage dark ecod-tokens dark">
+      <div class="cap" style="color:#7e879c">DARK · 磁贴 + 热门榜 + AI 摘要</div>
+      <div class="ecod-tile-zone">
+        <a class="ecod-tile"><span class="ic" style="background:#262c42;color:#6d87ff">💬</span>社区</a>
+        <a class="ecod-tile"><span class="ic" style="background:#1d2b26;color:#2fbf8f">⬇️</span>下载</a>
+        <a class="ecod-tile"><span class="ic" style="background:#2d251a;color:#f7b64c">✍️</span>博客</a>
+        <a class="ecod-tile"><span class="ic" style="background:#28223f;color:#9d85f5">🛍️</span>小店</a>
+        <a class="ecod-tile"><span class="ic" style="background:#262c42;color:#9aa3ba">🧭</span>导航</a>
+      </div>
+      <div class="ecod-hot">
+        <div class="h"><span class="dot">🔥</span>热门文章</div>
+        <ol>
+          <li><span class="no"></span><span class="t">瓜奇主题 1.8.5 更新：MCP 架构与智能体正式落地</span><span class="m">12k · 86</span></li>
+          <li><span class="no"></span><span class="t">低代码构建器发布：拖拽编排你的首页模块</span><span class="m">9.6k · 64</span></li>
+          <li><span class="no"></span><span class="t">从 WordPress 换个活法：无头模式实践总结</span><span class="m">7.2k · 51</span></li>
+          <li><span class="no"></span><span class="t">导航套样式拓展：mega-group 全宽面板解析</span><span class="m">5.1k · 40</span></li>
+        </ol>
+      </div>
+      <div class="ecod-ai-sum">
+        <div class="head"><span class="logo">AI</span><b>AI 摘要</b><span class="tag" style="color:#6d87ff">deepseek-v3</span></div>
+        <p>本文梳理 guaqi.com 的模块化前台架构：以设计令牌统一卡片外观，用「模块注册表 + 通用壳」支撑低代码页面构建；并评估其中 AI 摘要、评论解锁、热门榜等组件在 Typecho 单机环境下的可行移植方案。</p>
+        <div class="foot"><span class="k">◉ 由 AI 生成，仅供参考</span><span>86 字</span></div>
+      </div>
+
+      <div class="cap" style="margin-top:8px;color:#7e879c">DARK · HOT_POSTS v2 + PAY_CARD F6 + TAB_POSTS F7</div>
+      <div class="ecod-hot">
+        <div class="h"><span class="dot">🔥</span>热门文章
+          <div class="tabs"><button class="on">7天</button><button>30天</button><button>全部</button></div>
+        </div>
+        <ol>
+          <li><span class="no"></span><span class="t">瓜奇主题 1.8.5 更新：MCP 架构与智能体正式落地</span><span class="m">12k · 86</span></li>
+          <li><span class="no"></span><span class="t">低代码构建器发布：拖拽编排你的首页模块</span><span class="m">9.6k · 64</span></li>
+          <li><span class="no"></span><span class="t">从 WordPress 换个活法：无头模式实践总结</span><span class="m">7.2k · 51</span></li>
+          <li><span class="no"></span><span class="t">导航套样式拓展：mega-group 全宽面板解析</span><span class="m">5.1k · 40</span></li>
+        </ol>
+      </div>
+      <div class="ecod-pay-card">
+        <div class="thumb" style="background:linear-gradient(135deg,#5a6bd8,#8a5cc8)"></div>
+        <div class="body">
+          <div class="badges"><span class="bg1">付费资源</span><span class="bg2">支持退款</span><span class="bg2">会员免费</span></div>
+          <div class="price"><span class="now">¥0.03</span><span class="old">¥9.9</span><span class="vip">会员 / 钻石免费</span></div>
+          <div class="buyrow"><button class="buy">立即购买</button><span class="sold">已售 1,286 · 浏览 5.4W</span></div>
+          <div class="meta">
+            <div>资源大小<b>0.1M</b></div><div>更新时间<b>2026-10-29</b></div>
+            <div>适用系统<b>Windows</b></div><div>语言<b>中文 / 英文</b></div>
+            <div>是否可退款<b>可</b></div><div>有效期<b>永久</b></div>
+          </div>
+        </div>
+      </div>
+      <div class="ecod-pay-done">✓ 已购买 — 凭证有效，点击下载资源包（12.8 MB）</div>
+      <div class="ecod-tabcard" data-tabs>
+        <div class="hd">
+          <span class="tab on" data-pane="tp1">推荐文章</span><span class="tab" data-pane="tp2">科技新闻</span><span class="tab" data-pane="tp3">智能硬件</span>
+          <div class="sort"><span class="on">最新</span><span>热门</span><span>评论</span></div>
+        </div>
+        <div class="pane on" data-pane-name="tp1">
+          <div class="item"><div class="ph g1"></div><div style="min-width:0"><b>优越的支付系统：始终提供极致的用户付费功能</b><small>8.2k · 64 评论</small></div></div>
+          <div class="item"><div class="ph g2"></div><div style="min-width:0"><b>低代码模块布局：导入导出与模板复用详解</b><small>6.4k · 51 评论</small></div></div>
+          <div class="item"><div class="ph g3"></div><div style="min-width:0"><b>付费下载卡设计：三档会员价与元数据表</b><small>5.1k · 40 评论</small></div></div>
+          <div class="item"><div class="ph g4"></div><div style="min-width:0"><b>聚合 Tab 卡：一个模块聚合多个分类内容</b><small>4.3k · 33 评论</small></div></div>
+        </div>
+        <div class="pane" data-pane-name="tp2">
+          <div class="item"><div class="ph g2"></div><div style="min-width:0"><b>流盾 WAF 正式发布：开源免费的网站防护应用</b><small>1.7k · 47 评论</small></div></div>
+          <div class="item"><div class="ph g1"></div><div style="min-width:0"><b>请立即更新 WordPress、PHP 到最新版</b><small>7.0k · 78 评论</small></div></div>
+          <div class="item"><div class="ph g4"></div><div style="min-width:0"><b>DNS 解析设置方法：域名解析新手教程</b><small>1.5k · 42 评论</small></div></div>
+          <div class="item"><div class="ph g3"></div><div style="min-width:0"><b>使用 Redis 和 opcache 为网站加速</b><small>10.1k · 395 评论</small></div></div>
+        </div>
+        <div class="pane" data-pane-name="tp3">
+          <div class="item"><div class="ph g3"></div><div style="min-width:0"><b>《超能陆战队》预告片：大白“三难三赞”</b><small>3.2k · 28 评论</small></div></div>
+          <div class="item"><div class="ph g2"></div><div style="min-width:0"><b>智能硬件新品月报：10 月值得关注的设备</b><small>2.6k · 19 评论</small></div></div>
+          <div class="item"><div class="ph g1"></div><div style="min-width:0"><b>桌面工具链实践：gpui 生态初体验</b><small>1.9k · 12 评论</small></div></div>
+          <div class="item"><div class="ph g4"></div><div style="min-width:0"><b>下载引擎选型：gopeed 内核与自建 HLS</b><small>2.2k · 17 评论</small></div></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="d-motion">
+    <span class="sec-tag">05 · 设计样式 Demo</span>
+    <h2>动效演示</h2>
+    <p class="sec-desc">左：卡片 hover（阴影 + 上浮 -2px，无缩放）。右：图片渐入（点击重播）。</p>
+
+    <div class="stage ecod-tokens">
+      <div class="cap">CARD_MOTION · hover 我</div>
+      <div class="ecod-motion">
+        <div class="ph"></div>
+        <div class="in"><b>卡片标题占位</b><small>hover: shadow-hover + translateY(-2px)</small></div>
+      </div>
+      <div class="fade-demo wait" id="fadeDemo" onclick="replayFade()">
+        <img id="fadeImg" alt="" onerror="this.classList.add('on')">
+        <div class="cap">fade-in-image · 点击重播渐入</div>
+      </div>
+      <div class="cap" style="margin-top:6px">令牌值：--ecod-dur-fast:.22s · --ecod-dur-slow:.45s · cubic-bezier(.33,.12,.15,1)</div>
+    </div>
+
+    <script>
+    (function(){
+      var svg='<svg xmlns="http://www.w3.org/2000/svg" width="360" height="240">'+
+        '<defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1">'+
+        '<stop offset="0" stop-color="#b9c6ff"/><stop offset="1" stop-color="#e3d5ff"/></linearGradient></defs>'+
+        '<rect width="360" height="240" fill="url(#g)"/>'+
+        '<circle cx="270" cy="70" r="34" fill="#fff" opacity=".55"/>'+
+        '<path d="M0 190 L120 120 L220 200 L360 140 L360 240 L0 240 Z" fill="#8fa3ff" opacity=".7"/></svg>';
+      var img=document.getElementById('fadeImg');
+      img.src='data:image/svg+xml;charset=utf-8,'+encodeURIComponent(svg);
+      img.onload=function(){ requestAnimationFrame(function(){ img.classList.add('on'); }); };
+      window.replayFade=function(){
+        img.classList.remove('on');
+        void img.offsetWidth;
+        requestAnimationFrame(function(){ img.classList.add('on'); });
+      };
+    })();
+    </script>
+
+    <script>
+    /* F7 聚合 Tab 卡 + F3 周期 Tab 切换（demo 用，事件委托版落地时进主题 JS） */
+    document.querySelectorAll('[data-tabs]').forEach(function(card){
+      card.querySelectorAll('.tab').forEach(function(t){
+        t.addEventListener('click',function(){
+          card.querySelectorAll('.tab').forEach(function(x){x.classList.remove('on')});
+          card.querySelectorAll('.pane').forEach(function(x){x.classList.remove('on')});
+          t.classList.add('on');
+          var p=card.querySelector('[data-pane-name="'+t.dataset.pane+'"]');
+          if(p)p.classList.add('on');
+        });
+      });
+      card.querySelectorAll('.sort span').forEach(function(s){
+        s.addEventListener('click',function(){
+          card.querySelectorAll('.sort span').forEach(function(x){x.classList.remove('on')});
+          s.classList.add('on');
+        });
+      });
+    });
+    document.querySelectorAll('.ecod-hot .tabs button').forEach(function(b){
+      b.addEventListener('click',function(){
+        b.parentElement.querySelectorAll('button').forEach(function(x){x.classList.remove('on')});
+        b.classList.add('on');
+      });
+    });
+    </script>
+  </section>
+
+  <!-- ========== 06 落地 ========== -->
+  <section id="p-order">
+    <span class="sec-tag">06 · 落地</span>
+    <h2>排期与验收标准</h2>
+    <table>
+      <tr><th>批次</th><th>内容</th><th>验收标准</th></tr>
+      <tr>
+        <td><span class="b b-red">P0-1</span></td>
+        <td>F5 动效令牌 + <code>ECardMotion</code></td>
+        <td>令牌入 CSS 变量层；模块壳注入 <code>ecod-card-motion</code>；PJAX 往返渐入无闪烁；深浅主题 hover 一致</td>
+      </tr>
+      <tr>
+        <td><span class="b b-red">P0-2</span></td>
+        <td>F1 AI 摘要卡 + <code>EAIHelper</code></td>
+        <td>无字段零输出；位于付费门禁外；feed/搜索无泄漏；深浅双主题截图比对通过</td>
+      </tr>
+      <tr>
+        <td><span class="b b-red">P0-3</span></td>
+        <td>F2 评论解锁 + <code>EPayCommentUnlock</code></td>
+        <td>HMAC 验签通过才放行；待审评论不发凭证；四层门禁其余三层行为不变；试读余额逻辑不受影响</td>
+      </tr>
+      <tr>
+        <td><span class="b b-amber">P1-1</span></td>
+        <td>F3 热门榜 widget</td>
+        <td>注册表登记完整；加权/周期/条数参数生效；结果缓存 10 分钟；空数据整卡隐藏</td>
+      </tr>
+      <tr>
+        <td><span class="b b-amber">P1-2</span></td>
+        <td>F4 磁贴区 widget</td>
+        <td>icon 网格选择器复用；badge/颜色/列数生效；payload 保存后样式不丢失；≤640px 列数自动降为 3</td>
+      </tr>
+      <tr>
+        <td><span class="b b-amber">P1-3</span></td>
+        <td>F6 付费资源卡</td>
+        <td>字段全缺省退化为现有解锁卡；深浅主题一致；购买按钮对接 page-cashier；四层门禁判定零改动</td>
+      </tr>
+      <tr>
+        <td><span class="b b-amber">P1-4</span></td>
+        <td>F7 聚合 Tab 卡 widget</td>
+        <td>tab 一次性预渲染、切换无请求；空 tab 隐藏；PJAX 往返后事件委托正常</td>
+      </tr>
+    </table>
+    <div class="note ok"><b>通用验收流程</b>：每项完成后 → 本机站点实测（PHP 改动记得 <code>kill -USR2</code> 重载 php-fpm）→ 浅/深主题截图 → PJAX 往返验证 → 移动端 390px 量测。</div>
+  </section>
+
+  </main>
+</div>
+
+</body>
+</html>

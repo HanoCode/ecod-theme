@@ -130,6 +130,70 @@ function ecod_pages_blueprint(): array
             'desc'     => '会员 / 超级会员的套餐列表，点击直接进收银台',
             'icon'     => 'medal',
         ],
+        'contribute' => [
+            'title'    => '投稿',
+            'slug'     => 'contribute',
+            'template' => 'page-contribute.php',
+            'text'     => '前端投稿页：登录用户提交文章进入待审核，管理员在后台点发布。正文内容不会显示。',
+            'desc'     => '配合「设置 → 互动 → 前端投稿」开关使用，建议放入导航',
+            'icon'     => 'edit',
+        ],
+        'ai' => [
+            'title'    => 'AI 助手',
+            'slug'     => 'ai',
+            'template' => 'page-ai.php',
+            'text'     => 'AI 对话页：登录用户按次消耗 Credit 与站内接入的大模型对话。正文内容不会显示。',
+            'desc'     => '配合「设置 → 互动 → 积分与 AI」开关使用，需要先配好 AI 接口',
+            'icon'     => 'zap',
+        ],
+        'lottery' => [
+            'title'    => '抽奖',
+            'slug'     => 'lottery',
+            'template' => 'page-lottery.php',
+            'text'     => '站点抽奖页：消耗 Credit 抽奖，积分与会员奖品自动到账。正文内容不会显示。',
+            'desc'     => '配合「设置 → 变现 → 站点抽奖」使用；恰好 8 个奖品时显示九宫格',
+            'icon'     => 'medal',
+        ],
+        'shop' => [
+            'title'    => '兑换商城',
+            'slug'     => 'shop',
+            'template' => 'page-shop.php',
+            'text'     => '积分兑换商城：用 Credit 兑换会员、单篇解锁与定制权益，vip 类即时到账。正文内容不会显示。',
+            'desc'     => '配合「设置 → 变现 → 兑换商城」使用，商品池在设置里维护',
+            'icon'     => 'medal',
+        ],
+        'ads' => [
+            'title'    => '广告投放',
+            'slug'     => 'ads',
+            'template' => 'page-ads.php',
+            'text'     => '自助广告投放页：在线选位、按天下单，支付并审核后自动上线。正文内容不会显示。',
+            'desc'     => '配合「设置 → 变现 → 自助广告」使用，审核在付费管理台进行',
+            'icon'     => 'radio',
+        ],
+        'flash' => [
+            'title'    => '快讯',
+            'slug'     => 'flash',
+            'template' => 'flash.php',
+            'text'     => '按日期分组的时间流快讯页；页面自定义字段 flash_cat 可限定分类，文章自定义字段 source 可带来源外链。正文内容不会显示。',
+            'desc'     => '短讯的完整回看页，首页「快讯」模块的「更多」会指向这里',
+            'icon'     => 'zap',
+        ],
+        'sites' => [
+            'title'    => '网址导航',
+            'slug'     => 'sites',
+            'template' => 'sites.php',
+            'text'     => '分组式的工具站点导航；站点数据在「设置 → 站点 → 网址导航数据」里维护，这里的正文会显示为导航页说明。',
+            'desc'     => '工具书签页，与友链互不占用',
+            'icon'     => 'link',
+        ],
+        'tags' => [
+            'title'    => '标签归档',
+            'slug'     => 'tags',
+            'template' => 'page-tags.php',
+            'text'     => '全站标签墙，按文章数排序、字号随热度渐变，正文内容不会显示。',
+            'desc'     => '按话题浏览的入口，配合侧栏标签云使用',
+            'icon'     => 'tag',
+        ],
     ];
 }
 
@@ -143,6 +207,46 @@ function ecod_pages_url(string $slug): string
     } catch (\Throwable $e) {
         return '';
     }
+}
+
+/**
+ * 按模板查页面地址（取最早创建的已发布页面）
+ *
+ * 「个人中心 / 登录 / 投稿」这类功能页的共同形态：后台建页选模板，
+ * 前端按模板名找地址。找不到（未建页）返回空串，调用方自行降级。
+ */
+function ecod_template_page_url(string $template): string
+{
+    static $cache = [];
+
+    if (isset($cache[$template])) {
+        return $cache[$template];
+    }
+    $cache[$template] = '';
+    try {
+        $db = \Typecho\Db::get();
+        $row = $db->fetchRow(
+            $db->select('slug')->from('table.contents')
+                ->where('type = ?', 'page')
+                ->where('status = ?', 'publish')
+                ->where('template = ?', $template)
+                ->order('cid', \Typecho\Db::SORT_ASC)
+                ->limit(1)
+        );
+        if ($row) {
+            $cache[$template] = (string) \Typecho\Router::url('page', ['slug' => $row['slug']], \Widget\Options::alloc()->index);
+        }
+    } catch (\Throwable $e) {
+    }
+    return $cache[$template];
+}
+
+/**
+ * 投稿页地址（未建页返回空串）
+ */
+function ecod_contribute_url(): string
+{
+    return ecod_template_page_url('page-contribute.php');
 }
 
 /**

@@ -414,8 +414,23 @@ code { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 12px; b
 .wgt-toggle span { font-size: 12.5px; color: var(--tx2); }
 
 .wgt-img { display: flex; gap: 6px; align-items: flex-start; }
-.wgt-img .wgt-input { flex: 1; }
+.wgt-img__row { display: flex; gap: 6px; align-items: center; width: 100%; }
+.wgt-img__row .wgt-input { flex: 1; min-width: 0; }
+.wgt-img__row .wgt-btn { flex: none; }
 .wgt-img__pv { margin-top: 6px; width: 100%; height: 84px; border: 1px solid var(--bd); border-radius: var(--r-sm); background: var(--sf2) center/cover no-repeat; }
+
+/* 媒体库选图弹层（第 11 轮） */
+.wgt-media { position: fixed; inset: 0; z-index: 1000; background: rgba(15, 18, 25, .55); display: flex; align-items: center; justify-content: center; padding: 24px; }
+.wgt-media__panel { width: min(640px, 100%); max-height: 76vh; display: flex; flex-direction: column; background: var(--sf); border: 1px solid var(--bd); border-radius: var(--r); box-shadow: 0 18px 50px rgba(0, 0, 0, .25); overflow: hidden; }
+.wgt-media__hd { display: flex; align-items: center; gap: 8px; padding: 12px 14px; border-bottom: 1px solid var(--bd); }
+.wgt-media__hd b { font-size: 14px; margin-right: auto; }
+.wgt-media__search { width: 180px; }
+.wgt-media__grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 8px; padding: 12px 14px; overflow-y: auto; }
+.wgt-media__cell { aspect-ratio: 4 / 3; border: 1px solid var(--bd); border-radius: var(--r-sm); background: var(--sf2) center/cover no-repeat; cursor: pointer; padding: 0; }
+.wgt-media__cell:hover { border-color: var(--c); box-shadow: 0 0 0 2px color-mix(in srgb, var(--c) 25%, transparent); }
+.wgt-media__empty { padding: 26px 14px; text-align: center; color: var(--tx2); font-size: 13px; }
+.wgt-media__ft { display: flex; align-items: center; gap: 10px; padding: 10px 14px; border-top: 1px solid var(--bd); }
+.wgt-media__num { flex: 1; text-align: center; font-size: 12px; color: var(--tx2); font-variant-numeric: tabular-nums; }
 
 /* 幻灯片编辑器 */
 .wgt-slides { display: flex; flex-direction: column; gap: 8px; }

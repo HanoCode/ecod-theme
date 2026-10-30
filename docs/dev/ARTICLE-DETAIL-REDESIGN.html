@@ -1,0 +1,1433 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>文章内页 · 组件精美化设计稿 · 参考 guaqi.com</title>
+<style>
+:root{
+  color-scheme: light;
+  --primary:#4f6ef2; --primary-deep:#3d5be0; --primary-soft:#eef1fe;
+  --accent:#f59e0b; --success:#10b981; --danger:#ef4444;
+  --bg:#f5f6f9; --surface:#fff; --surface-2:#fafbfc;
+  --line:#eef0f5; --line-2:#e4e7ee; --line-strong:#d3d9e4;
+  --ink:#12161d; --ink-2:#5b6472; --ink-3:#8a929f;
+  --r-xs:4px; --r-sm:8px; --r:12px; --r-full:999px;
+  --shadow:0 1px 3px rgba(31,36,48,.06),0 4px 16px rgba(31,36,48,.05);
+  --shadow-pop:0 8px 28px rgba(18,22,29,.10),0 2px 6px rgba(18,22,29,.06);
+  --fs-2xs:11px; --fs-xs:12px; --fs-sm:13px; --fs-md:14px; --fs-base:16px;
+  --fs-lg:18px; --fs-xl:20px; --fs-2xl:24px; --fs-3xl:27px; --fs-4xl:36px;
+  --dur-fast:140ms; --dur:200ms; --dur-slow:320ms; --ease:cubic-bezier(.4,0,.2,1);
+  --font:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+  --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+}
+*,*::before,*::after{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--font);
+  font-size:var(--fs-base);line-height:1.75;-webkit-font-smoothing:antialiased}
+h1,h2,h3,h4{margin:0;font-weight:600;line-height:1.35;text-wrap:balance}
+p{margin:0 0 .8em}
+ul,ol{margin:0;padding:0;list-style:none}
+a{color:inherit;text-decoration:none}
+button{font-family:inherit;font-size:inherit;cursor:pointer;border:0;background:none;color:inherit}
+code{font-family:var(--mono);font-size:.9em;background:var(--surface-2);border:1px solid var(--line-2);
+  border-radius:var(--r-xs);padding:.08em .38em;color:#3b4a63;white-space:nowrap}
+
+.wrap{max-width:1320px;margin:0 auto;padding:0 28px 120px}
+.masthead{background:linear-gradient(180deg,#fff 0%,#f7f8fc 100%);border-bottom:1px solid var(--line-2);padding:52px 0 40px}
+.masthead-inner{max-width:1320px;margin:0 auto;padding:0 28px}
+.eyebrow{display:inline-flex;align-items:center;gap:8px;font-size:var(--fs-xs);
+  letter-spacing:.08em;text-transform:uppercase;color:var(--primary);font-weight:600;margin-bottom:14px}
+.eyebrow::before{content:"";width:18px;height:2px;background:var(--primary);border-radius:2px}
+.masthead h1{font-size:32px;letter-spacing:-.01em}
+.masthead .lede{margin-top:12px;max-width:800px;color:var(--ink-2);font-size:var(--fs-md)}
+.meta-row{display:flex;flex-wrap:wrap;gap:8px;margin-top:22px}
+.chip{display:inline-flex;align-items:center;gap:6px;height:28px;padding:0 12px;
+  background:var(--surface);border:1px solid var(--line-2);border-radius:var(--r-full);
+  font-size:var(--fs-xs);color:var(--ink-2)}
+.chip b{color:var(--ink);font-weight:600}
+
+.layout{display:grid;grid-template-columns:200px minmax(0,1fr);gap:44px;margin-top:40px}
+.toc-doc{position:sticky;top:24px;align-self:start;font-size:var(--fs-sm);max-height:calc(100vh - 48px);overflow-y:auto;padding-right:4px}
+.toc-doc .t{font-size:var(--fs-2xs);letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3);margin-bottom:10px;font-weight:600}
+.toc-doc a{display:block;padding:5px 0 5px 12px;color:var(--ink-2);border-left:2px solid transparent;transition:color var(--dur),border-color var(--dur)}
+.toc-doc a:hover{color:var(--primary);border-left-color:var(--primary)}
+
+.sec{margin-bottom:60px;scroll-margin-top:24px}
+.sec-head{display:flex;align-items:baseline;gap:12px;margin-bottom:10px}
+.sec-num{font-family:var(--mono);font-size:var(--fs-sm);color:var(--primary);font-weight:600}
+.sec-head h2{font-size:var(--fs-3xl)}
+.sec-sub{color:var(--ink-2);font-size:var(--fs-md);margin-bottom:24px;max-width:880px}
+h3.sub{font-size:var(--fs-lg);margin:32px 0 12px;display:flex;align-items:center;gap:8px}
+h3.sub .tag{font-size:var(--fs-2xs);font-family:var(--mono);color:var(--primary);background:var(--primary-soft);padding:1px 7px;border-radius:var(--r-xs);font-weight:600}
+h4.mini{font-size:var(--fs-md);margin:20px 0 8px;color:var(--ink)}
+
+.verdict{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}
+.vcard{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:20px}
+.vcard h3{font-size:var(--fs-md);display:flex;align-items:center;gap:8px;margin-bottom:12px}
+.dot{width:8px;height:8px;border-radius:50%;flex:none}
+.dot-g{background:var(--success)} .dot-a{background:var(--accent)} .dot-b{background:var(--primary)}
+.vcard li{font-size:var(--fs-sm);color:var(--ink-2);padding:5px 0;display:flex;gap:8px;line-height:1.55}
+.vcard li::before{content:"·";color:var(--ink-3);font-weight:700}
+.vcard li b{color:var(--ink);font-weight:600;flex:none}
+
+table{width:100%;border-collapse:collapse;background:var(--surface);border:1px solid var(--line-2);
+  border-radius:var(--r);overflow:hidden;font-size:var(--fs-sm);margin:6px 0 18px}
+th,td{text-align:left;padding:9px 13px;border-bottom:1px solid var(--line-2);vertical-align:top}
+th{background:var(--surface-2);font-size:var(--fs-xs);color:var(--ink-2);font-weight:600;white-space:nowrap}
+tr:last-child td{border-bottom:0}
+td b{font-weight:600;color:var(--ink)}
+.num{font-family:var(--mono);font-size:var(--fs-xs);color:var(--ink-2)}
+.bad{color:var(--danger);font-weight:600}
+.good{color:var(--success);font-weight:600}
+
+.note{display:flex;gap:12px;padding:14px 16px;border-radius:var(--r);background:#fffbf0;
+  border:1px solid #f6e3b8;font-size:var(--fs-sm);color:#7a5b12;line-height:1.65;margin:16px 0}
+.note b{color:#5c4409}
+.note code{white-space:normal;overflow-wrap:anywhere}
+.note{flex-wrap:wrap}
+.note.info{background:var(--primary-soft);border-color:#d9e0fb;color:#31418c}
+.note.info b{color:#26327a}
+
+/* 法则卡 */
+.laws{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.law{background:var(--surface);border:1px solid var(--line-2);border-radius:var(--r);padding:18px 18px 16px;position:relative}
+.law .no{font-family:var(--mono);font-size:var(--fs-2xs);color:#fff;background:var(--primary);
+  border-radius:var(--r-xs);padding:1px 6px;margin-right:8px}
+.law h4{display:inline;font-size:var(--fs-md)}
+.law p{font-size:var(--fs-sm);color:var(--ink-2);margin:8px 0 0}
+.law .from{display:block;margin-top:8px;font-size:var(--fs-xs);color:var(--ink-3)}
+
+/* 线框 */
+.wire{background:var(--surface);border:1px solid var(--line-2);border-radius:var(--r);padding:20px}
+.wire-row{display:flex;gap:10px}
+.wire-box{border:1px dashed var(--line-strong);border-radius:var(--r-sm);padding:10px 12px;
+  font-size:var(--fs-xs);color:var(--ink-2);background:#fcfdff;position:relative}
+.wire-box b{display:block;color:var(--ink);font-size:var(--fs-sm);margin-bottom:2px}
+.wire-box .idx{position:absolute;top:-9px;left:10px;background:var(--primary);color:#fff;
+  font-family:var(--mono);font-size:10px;padding:0 5px;border-radius:3px}
+.wire-main{flex:1;display:flex;flex-direction:column;gap:8px}
+.wire-side{width:250px;flex:none;min-width:0;display:flex;flex-direction:column;gap:8px}
+.wire-box.hero{min-height:86px}
+.wire-box.body{min-height:150px}
+.wire-box.group{border-style:solid;border-color:#cfd8f5;background:#f8faff}
+
+/* 规格演示：真实组件样例 */
+.demo{background:var(--bg);border:1px solid var(--line-2);border-radius:var(--r);
+  padding:24px;margin:14px 0 6px}
+.demo .demobox{background:var(--surface);border:1px solid var(--line);border-radius:var(--r)}
+.demo-cap{font-size:var(--fs-xs);color:var(--ink-3);margin-bottom:10px;font-family:var(--mono)}
+.spec{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin:12px 0 4px}
+.spec-card{background:var(--surface);border:1px solid var(--line-2);border-radius:var(--r-sm);padding:14px 16px;min-width:0}
+.spec-card code{white-space:normal;overflow-wrap:anywhere}
+.law code,.vcard code,.dd code{white-space:normal;overflow-wrap:anywhere}
+.spec-card h4{font-size:var(--fs-xs);color:var(--ink-3);letter-spacing:.04em;text-transform:uppercase;margin-bottom:8px;font-weight:600}
+.spec-card li{font-size:var(--fs-sm);color:var(--ink-2);padding:4px 0;display:grid;
+  grid-template-columns:64px minmax(0,1fr);gap:10px;line-height:1.6;align-items:start}
+.spec-card li em{font-style:normal;color:var(--ink);font-weight:600}
+.spec-card li span{min-width:0;word-break:break-word}
+.kv{font-family:var(--mono);font-size:var(--fs-xs);color:#3b4a63;background:var(--surface-2);
+  border:1px solid var(--line-2);border-radius:var(--r-xs);padding:0 5px}
+.scale{display:flex;align-items:flex-end;gap:10px;padding:6px 0 2px}
+.scale .bar{background:linear-gradient(180deg,#c9d6ff,#8fa6f7);border-radius:3px 3px 0 0;min-width:26px;position:relative}
+.scale .bar span{position:absolute;bottom:-22px;left:0;width:100%;text-align:center;font-family:var(--mono);font-size:10px;color:var(--ink-3)}
+.scale-wrap{padding-bottom:26px}
+.swatch{display:flex;gap:0;border-radius:var(--r-sm);overflow:hidden;border:1px solid var(--line-2)}
+.swatch div{flex:1;height:44px;display:flex;align-items:flex-end;justify-content:center;
+  padding-bottom:4px;font-family:var(--mono);font-size:10px}
+.ramp{display:flex;flex-direction:column;gap:6px}
+.ramp .r{display:flex;align-items:center;gap:9px;font-family:var(--mono);font-size:var(--fs-2xs);color:var(--ink-3)}
+.ramp .r .b{height:10px;flex:1;background:var(--line-2);border-radius:3px;overflow:hidden}
+.ramp .r .b i{display:block;height:100%;background:#9fb0f5}
+
+.pill{display:inline-flex;align-items:center;gap:5px;height:22px;padding:0 9px;border-radius:var(--r-full);
+  font-size:var(--fs-2xs);background:var(--primary-soft);color:var(--primary-deep);font-weight:600}
+.pill.amber{background:#fef4e2;color:#a5670c}
+.pill.gray{background:#f2f4f8;color:var(--ink-2)}
+.pill.green{background:#e8f7f1;color:#0c7a5a}
+.strike{text-decoration:line-through}
+
+.do-dont{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.dd{border-radius:var(--r);padding:16px;font-size:var(--fs-sm);border:1px solid}
+.dd.do{background:#f4fbf7;border-color:#cfe9db}
+.dd.dont{background:#fef6f6;border-color:#f2d5d5}
+.dd h4{font-size:var(--fs-sm);margin-bottom:8px;display:flex;gap:7px;align-items:center}
+.dd.do h4{color:#0c7a5a} .dd.dont h4{color:#b03434}
+.dd li{color:var(--ink-2);padding:3px 0;display:flex;gap:7px;line-height:1.6}
+.dd li::before{content:"→";color:var(--ink-3);flex:none}
+
+footer.doc{border-top:1px solid var(--line-2);padding-top:22px;font-size:var(--fs-xs);color:var(--ink-3)}
+
+@media (max-width:1100px){
+  .layout{grid-template-columns:1fr}
+  .toc-doc{position:static;max-height:none;display:flex;flex-wrap:wrap;gap:2px 10px;margin-bottom:8px}
+  .verdict,.laws,.spec,.do-dont{grid-template-columns:1fr}
+  .wire-row{flex-direction:column}.wire-side{width:auto}
+}
+</style>
+</head>
+<body>
+
+<div class="masthead">
+  <div class="masthead-inner">
+    <div class="eyebrow">Ecod Theme · 设计稿 · 2026-10-30</div>
+    <h1>文章内页 · 模块化与组件精美化设计稿</h1>
+    <p class="lede">以 <b>guaqi.com</b> 文章内页为参考样本，实测其排版、卡片、间距与色彩规律，
+      提炼 5 条可迁移法则；对照本项目 <code>post.php</code> / <code>assets/css/ecod.css</code> 现状，
+      给出文章内页的信息架构、组件规格、模块壳规范与实施顺序。<b>本文只定义规格，不改代码。</b></p>
+    <div class="meta-row">
+      <span class="chip">参考源 <b>guaqi.com（Nuxt + Element Plus）</b></span>
+      <span class="chip">实测视口 <b>1440 × 1057</b></span>
+      <span class="chip">对照页 <b>archives/37</b></span>
+      <span class="chip">现状 token <b>ecod.css :root</b></span>
+      <span class="chip">范围 <b>文章内页 + 模块壳 + 通用组件</b></span>
+    </div>
+  </div>
+</div>
+
+<div class="wrap">
+<div class="layout">
+
+<nav class="toc-doc">
+  <div class="t">目录</div>
+  <a href="#s00">00 · 结论摘要</a>
+  <a href="#s01">01 · 参考站实测</a>
+  <a href="#s02">02 · 现状诊断</a>
+  <a href="#s03">03 · 内页信息架构</a>
+  <a href="#s04">04 · 视觉规格</a>
+  <a href="#s05">05 · 组件规格（含样例）</a>
+  <a href="#s06">06 · 模块化设计</a>
+  <a href="#s07">07 · 其他页面组件</a>
+  <a href="#s08">08 · 实施顺序</a>
+  <a href="#s09">09 · 明确不做</a>
+</nav>
+
+<main>
+
+<!-- ============ 00 ============ -->
+<section class="sec" id="s00">
+  <div class="sec-head"><span class="sec-num">00</span><h2>结论摘要</h2></div>
+  <p class="sec-sub">先说判断：本项目的<b>结构不缺</b>（文章头 / 元信息 / 正文 / 标签 / 相关 / 互动 / 上下篇 / 评论 / 侧栏全都有），
+    缺的是<b>层级、节奏与克制</b>。guaqi 的做法不是加东西，而是减装饰、加秩序。</p>
+
+  <div class="verdict">
+    <div class="vcard">
+      <h3><span class="dot dot-a"></span>核心问题</h3>
+      <ul>
+        <li><b>无层级</b>元信息 5 个等重胶囊并列，标题与正文比例 1.46 倍</li>
+        <li><b>无节奏</b>间距实测出现 4/5/6/7/8/9/10px 七种，无 4pt 网格</li>
+        <li><b>无克制</b>卡片描边 <code>#e4e7ee</code> 过重，浮层又叠双阴影</li>
+        <li><b>无主角</b>每个区块视觉权重相同，读者不知道先看哪</li>
+      </ul>
+    </div>
+    <div class="vcard">
+      <h3><span class="dot dot-b"></span>参考站手法</h3>
+      <ul>
+        <li><b>极浅描边</b><code>#f2f2f9</code> 1px，卡片<b>零阴影</b></li>
+        <li><b>分组卡</b>同义区块用负 margin 拼接成一整块</li>
+        <li><b>三档字号</b>16 / 14 / 12，阶跃即层级，不靠颜色</li>
+        <li><b>单品牌色</b>#4945FF 独占，正文纯黑 + 60% 黑</li>
+      </ul>
+    </div>
+    <div class="vcard">
+      <h3><span class="dot dot-g"></span>预期收益</h3>
+      <ul>
+        <li>正文可读性：字号 15→16、行高 1.75、行宽 640~700</li>
+        <li>信息层级：元信息拆主次两组，减少 3 枚胶囊</li>
+        <li>模块辨识：统一 head + 三档密度，侧栏不再同质堆叠</li>
+        <li>成本可控：纯 CSS + 模板局部改，不动数据层</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="note info">
+    <b>一句话方向：</b>把文章页从「一张大白卡 + 若干同样重的模块」改写为
+    <b>「头 / 身 / 反馈 / 关联」四段式分组卡</b>，用间距和字号建立层级，描边与阴影只保留一套最轻的。
+  </div>
+</section>
+
+<!-- ============ 01 ============ -->
+<section class="sec" id="s01">
+  <div class="sec-head"><span class="sec-num">01</span><h2>参考站实测</h2></div>
+  <p class="sec-sub">不是看图说话：用 CDP 取 computed style，得到 guaqi 文章页（<code>/article/77150</code>）的真实数值，
+    并标注每个数值背后的意图。</p>
+
+  <h3 class="sub"><span class="tag">1.1</span>实测度量</h3>
+  <table>
+    <thead><tr><th>项目</th><th>实测值</th><th>推断意图</th></tr></thead>
+    <tbody>
+      <tr><td>正文列宽</td><td class="num">658px（容器 960 / 内容区 936）</td><td>比常见的 720 更窄，中文长文更易回行</td></tr>
+      <tr><td>文章标题</td><td class="num">24px / 600 / lh 32px</td><td>与正文 16px 形成 1.5 倍，桌面偏移阅读</td></tr>
+      <tr><td>正文</td><td class="num">16px / 400 / lh 24px(1.5) / 段距 16px</td><td>字号够大，行高偏紧 → 靠段距补呼吸，密而不挤</td></tr>
+      <tr><td>卡片圆角</td><td class="num">12px（大卡）4~6px（内件）</td><td>两级：容器 12 / 控件 4–6，不混用</td></tr>
+      <tr><td>卡片描边</td><td class="num">1px solid #F2F2F9</td><td>≈ 背景明度差 3%，只做「面」的边界提示</td></tr>
+      <tr><td>卡片阴影</td><td class="num">none（全页卡片）</td><td>阴影只留给真正的浮层，静态卡不用</td></tr>
+      <tr><td>卡片内边距</td><td class="num">16px（常规）/ 24px（头卡、评论）</td><td>两档密度，不出现 20/18/22 这类中间值</td></tr>
+      <tr><td>间距频率</td><td class="num">8(54) &gt; 4(34) &gt; 12(30) &gt; 2(25) &gt; 16(19)</td><td>8 为主刻度、4 为半刻度、2 为紧贴</td></tr>
+      <tr><td>字号频率</td><td class="num">16/400(94) &gt; 14/400(69) &gt; 12/400(35)</td><td>只有三档正文级字号，其余靠粗细区分</td></tr>
+      <tr><td>文字色</td><td class="num">#000(185) / rgba(0,0,0,.6)(82)</td><td>两级中性色，不引入第三第四级灰</td></tr>
+      <tr><td>品牌色</td><td class="num">#4945FF，浅底 #EDEDFF，出现 13 次</td><td>单一强调色，且只出现在可点击/关键数据上</td></tr>
+      <tr><td>分组拼接</td><td class="num">头卡 <code>margin-bottom:-16px</code>、打赏卡 <code>-16px</code></td><td>同义区块贴合，视觉上合成「一张卡」</td></tr>
+    </tbody>
+  </table>
+
+  <h3 class="sub"><span class="tag">1.2</span>五条可迁移法则</h3>
+  <div class="laws">
+    <div class="law"><span class="no">L1</span><h4>单品牌色 + 两级中性色</h4>
+      <p>强调色只承担「可点 / 关键数字 / 状态」，正文用 100% 与 62% 两档墨色。第三档灰只用于「标注」而非「内容」。</p>
+      <span class="from">本项目现状：主色 + 琥珀强调 + 三级灰，且 gray 被大量用于正文级信息 → 需要收敛。</span></div>
+    <div class="law"><span class="no">L2</span><h4>描边代替阴影</h4>
+      <p>静态容器一律 <code>1px</code> 极浅描边、零阴影；阴影只给 popover / 抽屉 / 吸顶条。</p>
+      <span class="from">现状：卡片 <code>#e4e7ee</code> 偏重，同时浮层用双阴影 → 同屏两套层次语言。</span></div>
+    <div class="law"><span class="no">L3</span><h4>4pt 网格 + 两档密度</h4>
+      <p>间距只取 4 的倍数（4/8/12/16/20/24/32），内边距只给 compact 12 与 regular 16（大块 24）两档。</p>
+      <span class="from">现状实测：4/5/6/7/8/9/10 七种间距并存，等效于没有刻度。</span></div>
+    <div class="law"><span class="no">L4</span><h4>同义区块拼接成组</h4>
+      <p>头 + 正文 + 反馈同属「这篇文章」，用负 1px 边距共享边框，只保留外侧圆角；关联与评论另起新组。</p>
+      <span class="from">现状：10 个模块各自独立成卡、各自 12px 圆角 → 页面像「卡片墙」。</span></div>
+    <div class="law"><span class="no">L5</span><h4>每屏一个视觉主角</h4>
+      <p>文章页主角只有一个：标题（+ 封面）。其余元素从属于它——元信息降级、按钮弱化为 ghost、数据用 mono 小字。</p>
+      <span class="from">现状：标题 22px 与 5 枚胶囊 + 橙色朗读条争抢注意力。</span></div>
+    <div class="law" style="background:linear-gradient(180deg,#fff,#fafbff)"><span class="no" style="background:var(--ink-3)">S</span><h4>不可照搬的部分</h4>
+      <p>参考站是 SaaS 内容站，正文以「更新日志 + 短段」为主；本站是长文博客，<b>行高、段距、目录、脚注</b>必须比它更宽松，
+        不能直接抄 1.5 行高与 658px 列宽。</p>
+      <span class="from">结论：抄「秩序」而不抄「密度」。</span></div>
+  </div>
+</section>
+
+<!-- ============ 02 ============ -->
+<section class="sec" id="s02">
+  <div class="sec-head"><span class="sec-num">02</span><h2>现状诊断</h2></div>
+  <p class="sec-sub">对照同视口下 <code>archives/37</code> 的实测值。右侧「目标」列即本稿 §04 的规格。</p>
+
+  <table>
+    <thead><tr><th>维度</th><th>Ecod 现状（实测）</th><th>guaqi</th><th>目标</th></tr></thead>
+    <tbody>
+      <tr><td>内容列宽</td><td class="num">693px</td><td class="num">658px</td><td class="num">700px（正文 660–700 区间）</td></tr>
+      <tr><td>文章标题</td><td class="num">实测 27px / lh 39.15（源码一致；早前「22px 被覆盖」为探针误报，已排除）</td><td class="num">24px / lh 32</td><td class="num bad">27px 桌面 / 22px 移动，lh 1.4</td></tr>
+      <tr><td>正文字号</td><td class="num">15px / lh 26.25（1.75）</td><td class="num">16px / lh 24（1.5）</td><td class="num good">16px / lh 28（1.75）</td></tr>
+      <tr><td>段距</td><td class="num">18px</td><td class="num">16px</td><td class="num">20px（16 字 + 1.75 行高的配套值）</td></tr>
+      <tr><td>卡片描边</td><td class="num">#e4e7ee（ΔL≈9%）</td><td class="num">#f2f2f9（ΔL≈3%）</td><td class="num bad">#eef0f5 常规 / #e4e7ee 分隔线</td></tr>
+      <tr><td>卡片内边距</td><td class="num">实测 30/32（源码一致）、16 侧栏、24/28 评论</td><td class="num">16 / 24 两档</td><td class="num">16 侧栏 / 24 常规 / 28 正文（仅三档）</td></tr>
+      <tr><td>间距种类</td><td class="num bad">4,5,6,7,8,9,10 共 7 种</td><td class="num">2,4,8,12,16</td><td class="num good">4,8,12,16,20,24,32 共 7 档（4 的倍数）</td></tr>
+      <tr><td>字号档位</td><td class="num bad">11,12,13,14,15,16（密集）</td><td class="num">12,14,16</td><td class="num good">12,13,14,16,18,20,24,27 阶跃 ≥2</td></tr>
+      <tr><td>阴影</td><td class="num">卡片 0，浮层双阴影</td><td class="num">均 0</td><td class="num">卡片 0；浮层单层柔和阴影</td></tr>
+      <tr><td>元信息</td><td class="num bad">5 枚同权重胶囊 + 2 徽标</td><td class="num">作者行 + 一行小字</td><td class="num good">主信息（作者/日期/阅读）+ 次信息（字数/分类）两组</td></tr>
+      <tr><td>作者身份</td><td class="num">authorbox 在文末</td><td class="num">标题下方常驻 + 关注按钮</td><td class="num good">标题下方常驻作者条</td></tr>
+      <tr><td>反馈模块</td><td class="num">点赞/收藏/分享/赞赏 4 枚幽灵按钮</td><td class="num">5 等分动作条 + 评分卡 + 打赏条</td><td class="num good">动作条 5 等分 + 可选评分卡</td></tr>
+    </tbody>
+  </table>
+
+  <h3 class="sub"><span class="tag">2.1</span>七条病灶（按影响排序）</h3>
+
+  <div class="spec">
+    <div class="spec-card" style="grid-column:1/-1;border-color:#f2d5d5;background:#fefbfb">
+      <h4 style="color:#1c7c46">已排除 · 「critical CSS 摊平媒体查询」经复核为探针误报</h4>
+      <ul>
+        <li><em>复核</em><span>2026-10-30 用 CDP 实时页重测：1440 视口下 h1 = <b>27px</b>、<code>.ecod_article</code> padding = <b>30px 32px</b>、正文 15px —— 与源码完全一致；
+          critical 产物内 <code>@media</code> 包裹完好（此前「22px / 26 24」来自一次探针测量错误）。</span></li>
+        <li><em>沉淀</em><span>仍在 <code>build/build.mjs</code> 加了 <b>花括号平衡断言</b>（源码与关键 CSS 抽取各一次）——防「少写一个 }」把媒体查询后半段泄漏到顶层这类静默事故；本稿其余结论不受影响。</span></li>
+      </ul>
+      </ul>
+    </div>
+    <div class="spec-card">
+      <h4>P1 · 元信息失去层级</h4>
+      <ul>
+        <li><em>证据</em><span><code>.ecod_article__meta &gt; *</code> 给每一项都套胶囊：边框 + 底片 + 4/11 内边距</span></li>
+        <li><em>后果</em><span>「1k 阅读」和「后端开发」和「9 评论」视觉等重，读者无法快速抓关键</span></li>
+        <li><em>修法</em><span>拆两组：主信息无边框一行（图标 + 文字，gap 12）；次信息 12px 墨三档；状态徽标保留胶囊</span></li>
+      </ul>
+    </div>
+    <div class="spec-card">
+      <h4>P1 · 标题与正文比例过近</h4>
+      <ul>
+        <li><em>证据</em><span>标题 22px vs 正文 15px = 1.47 倍；h2 22px 与标题同号</span></li>
+        <li><em>后果</em><span>h2 与文章标题分不清，正文起点没有「入口感」</span></li>
+        <li><em>修法</em><span>标题 27 / h2 22 / h3 18 / 正文 16，四档拉开；h2 距上 40、距下 12</span></li>
+      </ul>
+    </div>
+    <div class="spec-card">
+      <h4>P2 · 装饰性分隔线过量</h4>
+      <ul>
+        <li><em>证据</em><span>全文 <code>dashed</code> 虚线大量用于 widget 标题、列表项、动作条、版权卡</span></li>
+        <li><em>后果</em><span>虚线密集出现 → 噪声；与实线混用 → 语义不明</span></li>
+        <li><em>修法</em><span>实线<b>只用于</b>「分隔不同语义」；虚线<b>只用于</b>「同组内条目」。动作条不用线，用间距</span></li>
+      </ul>
+    </div>
+    <div class="spec-card">
+      <h4>P2 · 侧栏模块同质化</h4>
+      <ul>
+        <li><em>证据</em><span>关于本站 / 最新文章 / 最新评论 / 标签云 全是 <code>.ecod_widget</code>：同 padding、同虚线头</span></li>
+        <li><em>后果</em><span>侧栏成「四张一样的白卡」，模块难辨识</span></li>
+        <li><em>修法</em><span>统一 head 加图标块；列表项统一 3 行结构（标题/摘要/元）；首屏模块用 loose 密度</span></li>
+      </ul>
+    </div>
+    <div class="spec-card">
+      <h4>P3 · 正文元素规格不齐</h4>
+      <ul>
+        <li><em>证据</em><span>h2/h3/h4 各用一套标记（竖条 / 短竖条 / 圆点）；图片无 figure/caption；表格恒横滚</span></li>
+        <li><em>后果</em><span>三种标题装饰互相打架，长文越读越乱</span></li>
+        <li><em>修法</em><span>标题只保留 h2 一根竖条，h3/h4 靠字号与留白；补 figure + figcaption 规范</span></li>
+      </ul>
+    </div>
+    <div class="spec-card">
+      <h4>P3 · 交互态缺失</h4>
+      <ul>
+        <li><em>证据</em><span>多数按钮只有 <code>:hover</code> 变色，无 <code>:active</code> 位移、无 <code>:focus-visible</code> 环</span></li>
+        <li><em>后果</em><span>键盘用户无焦点提示；点击无反馈</span></li>
+        <li><em>修法</em><span>统一三态：hover 加深 / active 下沉 1px + scale .98 / focus-visible 2px 环</span></li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 03 ============ -->
+<section class="sec" id="s03">
+  <div class="sec-head"><span class="sec-num">03</span><h2>内页信息架构</h2></div>
+  <p class="sec-sub">四段式：<b>头</b>（我是谁）→ <b>身</b>（读什么）→ <b>反馈</b>（我觉得怎样）→ <b>关联</b>（接下来读什么）。
+    每段内部共享边框拼成一张卡，段与段之间留 16px 呼吸。</p>
+
+  <div class="wire">
+    <div class="wire-row">
+      <div class="wire-main">
+        <div class="wire-box"><span class="idx">0</span><b>面包屑</b>浮在卡外，无边框、12px 墨三档，左右 4px 缩进</div>
+        <div class="wire-box hero"><span class="idx">1</span><b>头卡 · 上半：封面（可选）</b>16/7 比例，仅顶部圆角；右上浮「分享 / 收藏」圆形玻璃按钮；无封面时直接进 2</div>
+        <div class="wire-box group"><span class="idx">2</span><b>头卡 · 标题区</b>标题 27px + 状态徽标（会员 / 付费 / 密码）→ 作者条（头像 36 + 名字 + 一句简介 + 关注）→ 元信息两行分组</div>
+        <div class="wire-box group"><span class="idx">3</span><b>身卡 · 工具条</b>左：目录锚点 / 朗读 / 字号；右：阅读进度条（细线）——吸顶时变为紧凑横条</div>
+        <div class="wire-box body"><span class="idx">4</span><b>身卡 · 正文</b>700px 列宽，16/28；h2 竖条 + 上 40 下 12；代码块、图片、表格、提示块各自规格（§04.6）</div>
+        <div class="wire-box group"><span class="idx">5</span><b>身卡 · 尾标签</b>轻量 # 前缀 chips，无底片，hover 才出底</div>
+        <div class="wire-box group"><span class="idx">6</span><b>反馈卡 · 动作条</b>5 等分：赞 / 藏 / 享 / 评 / 报；数字用 mono 小字；分隔线只在上边框</div>
+        <div class="wire-box group"><span class="idx">7</span><b>反馈卡 · 补充位</b>评分（可选）/ 打赏条 / 版权声明，均为「组内条」而非独立卡</div>
+        <div class="wire-box"><span class="idx">8</span><b>关联卡 · 相关阅读</b>标题 2 行 + 摘要 2 行 + 96×64 缩略图；行高 12，条目间 1px 实线</div>
+        <div class="wire-box"><span class="idx">9</span><b>关联卡 · 上下篇</b>双列，方向标签 11px 墨三档，标题 14/600 两行截断</div>
+        <div class="wire-box body"><span class="idx">10</span><b>评论卡</b>编辑器（无边框 textarea + 工具条 + 主按钮）→ 「N 讨论 + 热门/最新」→ 条目</div>
+      </div>
+      <div class="wire-side">
+        <div class="wire-box"><b>侧栏 · 名片卡</b>loose 密度：头像 / 一句签名 / 4 宫格入口 / 统计行 / 主按钮</div>
+        <div class="wire-box"><b>侧栏 · 列表模块</b>regular 密度：head 图标 + 标题 + more；条目 3 行</div>
+        <div class="wire-box"><b>侧栏 · 数据模块</b>compact：2×2 数字格，数字 20/600 mono</div>
+        <div class="wire-box"><b>侧栏 · 标签模块</b>compact：# 前缀、12px、无边框</div>
+        <div class="wire-box" style="border-style:dotted"><b>右侧浮动</b>目录环（&gt;1200px 显示）+ 回顶 + 主题切换，间距 8</div>
+      </div>
+    </div>
+  </div>
+
+  <h3 class="sub"><span class="tag">3.1</span>模块顺序与容纳关系</h3>
+  <table>
+    <thead><tr><th>#</th><th>区块</th><th>归属</th><th>现状落点</th><th>可关</th></tr></thead>
+    <tbody>
+      <tr><td class="num">0</td><td>面包屑</td><td>框架</td><td><code>post.php</code> L44–55 保留，改样式</td><td>否</td></tr>
+      <tr><td class="num">1–2</td><td>头卡</td><td>框架</td><td><code>post.php</code> L57–95 重构</td><td>封面按有无缩略图</td></tr>
+      <tr><td class="num">3</td><td>阅读工具条</td><td>框架</td><td>新增；吸收现有 <code>.ecod_tts</code> 朗读条</td><td><code>EReadBar</code></td></tr>
+      <tr><td class="num">4</td><td>正文</td><td>框架</td><td><code>.ecod_content</code> 规格调整</td><td>否</td></tr>
+      <tr><td class="num">5</td><td>标签</td><td>框架</td><td><code>.ecod_article__tags</code> 去底片</td><td>跟随文章有无标签</td></tr>
+      <tr><td class="num">6</td><td>动作条</td><td>模块区 <code>bottom_content</code></td><td><code>components/post/act.php</code></td><td>已有模块开关</td></tr>
+      <tr><td class="num">7</td><td>评分 / 打赏 / 版权</td><td>模块区 <code>bottom_content</code></td><td>新增评分模块；打赏合并进动作条</td><td>模块开关</td></tr>
+      <tr><td class="num">8</td><td>相关阅读</td><td>模块区 <code>bottom_content</code></td><td><code>components/post/related.php</code></td><td>模块开关</td></tr>
+      <tr><td class="num">9</td><td>上下篇</td><td>模块区 <code>bottom_content</code></td><td><code>components/post/postnav.php</code></td><td>模块开关</td></tr>
+      <tr><td class="num">10</td><td>评论</td><td>框架</td><td><code>comments.php</code></td><td><code>EComment</code></td></tr>
+      <tr><td class="num">—</td><td>作者卡（文末）</td><td>模块区</td><td><code>authorbox.php</code>：头卡已常驻作者条，此处降级为「作者其它文章」或关闭</td><td>模块开关</td></tr>
+    </tbody>
+  </table>
+
+  <div class="note">
+    <b>不破坏现有机制：</b>模块区（<code>top_content</code> / <code>bottom_content</code>）与「自由投放 + 上限 20」的规则不变，
+    本稿只改<b>默认投放顺序</b>与<b>卡壳样式</b>。已有的 <code>.ecod_ai</code> 摘要、<code>.ecod_stale</code> 过期提示、
+    <code>.ecod_locknote</code> 锁定提示全部保留，位置统一归入「身卡开头」。
+  </div>
+</section>
+
+<!-- ============ 04 ============ -->
+<section class="sec" id="s04">
+  <div class="sec-head"><span class="sec-num">04</span><h2>视觉规格</h2></div>
+  <p class="sec-sub">以下数值全部落在 <code>assets/css/ecod.css :root</code> 的现有 token 体系内；新增变量用
+    <code>--ecod-line*</code> / <code>--ecod-ink*</code> 命名，与旧变量并存，避免一次性改名带来的全站回归。</p>
+
+  <h3 class="sub"><span class="tag">4.1</span>间距刻度</h3>
+  <div class="demo">
+    <div class="demo-cap">唯一允许的间距值（4pt 网格）；现状的 5/6/7/9/10/18/22 一律替换为下表最近值</div>
+    <div class="scale scale-wrap">
+      <div class="bar" style="height:4px;width:26px"><span>4</span></div>
+      <div class="bar" style="height:8px;width:30px"><span>8</span></div>
+      <div class="bar" style="height:12px;width:34px"><span>12</span></div>
+      <div class="bar" style="height:16px;width:38px"><span>16</span></div>
+      <div class="bar" style="height:20px;width:42px"><span>20</span></div>
+      <div class="bar" style="height:24px;width:46px"><span>24</span></div>
+      <div class="bar" style="height:28px;width:50px"><span>28</span></div>
+      <div class="bar" style="height:32px;width:54px"><span>32</span></div>
+      <div class="bar" style="height:40px;width:58px"><span>40</span></div>
+      <div class="bar" style="height:48px;width:62px"><span>48</span></div>
+    </div>
+  </div>
+  <div class="spec">
+    <div class="spec-card">
+      <h4>语义映射</h4>
+      <ul>
+        <li><em>4 / 8</em><span>同行元素（图标与文字、徽标与标题）</span></li>
+        <li><em>12</em><span>列表项之间、表单控件之间</span></li>
+        <li><em>16</em><span>模块之间（侧栏卡间距）、卡内小节之间</span></li>
+        <li><em>20 / 28</em><span>正文段落距 / 正文块级元素（图、表）上下</span></li>
+        <li><em>24 / 32</em><span>卡内边距 / 头卡上边距</span></li>
+        <li><em>40 / 48</em><span>正文 h2 上距 / 大区块（关联→评论）之间</span></li>
+      </ul>
+    </div>
+    <div class="spec-card">
+      <h4>新增变量（建议）</h4>
+      <ul>
+        <li><em>间距</em><span><code>--ecod-sp-1..12</code> 映射上表，模板只引用变量</span></li>
+        <li><em>禁则</em><span>新代码不得出现裸 <code>5px/7px/9px/10px/18px/22px</code></span></li>
+        <li><em>例外</em><span>1px 描边、图标内部几何（optical 微调）不受限</span></li>
+      </ul>
+    </div>
+  </div>
+
+  <h3 class="sub"><span class="tag">4.2</span>字号阶梯与行高配对</h3>
+  <p style="font-size:var(--fs-sm);color:var(--ink-2);margin-bottom:10px">
+    下表是 <code>ecod.css :root</code> 的<b>真实 11 档</b>（此前文档里若干档值有误，以本表为准）。现状问题是
+    15 / 16 / 18 三档挤在一起，且 <code>3xl</code> 注释写「文章标题」却用于 h2、<code>4xl</code> 注释写「页面主标题」却被文章标题占用——<b>命名与用途错位</b>。</p>
+  <table>
+    <thead><tr><th>Token</th><th>现值</th><th>建议值</th><th>行高</th><th>正名后的用途</th><th>变化</th></tr></thead>
+    <tbody>
+      <tr><td class="num">--ecod-fs-2xs</td><td class="num">11</td><td class="num">11</td><td class="num">16 (1.45)</td><td>角标、微标签、方向词（上一篇 / 下一篇）</td><td>不变</td></tr>
+      <tr><td class="num">--ecod-fs-xs</td><td class="num">12</td><td class="num">12</td><td class="num">18 (1.5)</td><td>元信息、列表元数据、字数统计</td><td>不变</td></tr>
+      <tr><td class="num">--ecod-fs-sm</td><td class="num">13</td><td class="num">13</td><td class="num">20 (1.55)</td><td>按钮、标签 chips、卡片摘要</td><td>不变</td></tr>
+      <tr><td class="num">--ecod-fs-md</td><td class="num">14</td><td class="num">14</td><td class="num">22 (1.6)</td><td>列表标题、相关阅读标题、表单</td><td>不变</td></tr>
+      <tr><td class="num">--ecod-fs-base</td><td class="num">15</td><td class="num"><b>16</b></td><td class="num"><b>28 (1.75)</b></td><td><b>正文</b></td><td class="bad">15 → 16（唯一改值）</td></tr>
+      <tr><td class="num">--ecod-fs-lg</td><td class="num">16</td><td class="num">16</td><td class="num">26 (1.6)</td><td>微小标题、按钮大号；与 base 同号，靠字重区分</td><td>值不变，<b>正名</b></td></tr>
+      <tr><td class="num">--ecod-fs-xl</td><td class="num">18</td><td class="num">18</td><td class="num">28 (1.55)</td><td>h3、作者名</td><td>不变</td></tr>
+      <tr><td class="num">--ecod-fs-2xl</td><td class="num">20</td><td class="num">20</td><td class="num">28 (1.4)</td><td>卡片大标题、统计数字</td><td>不变</td></tr>
+      <tr><td class="num">--ecod-fs-3xl</td><td class="num">22</td><td class="num">22</td><td class="num">32 (1.45)</td><td><b>h2 小节标题</b>（原注释「文章标题」需正名）</td><td>不变</td></tr>
+      <tr><td class="num">--ecod-fs-4xl</td><td class="num">27</td><td class="num">27</td><td class="num">38 (1.4)</td><td><b>文章 / 页面主标题</b></td><td>不变</td></tr>
+      <tr><td class="num">--ecod-fs-5xl</td><td class="num">36</td><td class="num">36</td><td class="num">40 (1.1)</td><td>展示数字（评分、统计）</td><td>不变</td></tr>
+    </tbody>
+  </table>
+  <div class="note info">
+    <b>关键改动只有一处：</b>正文 <code>--ecod-fs-base</code> 15 → 16。
+    文章标题在源码里已是 27px（<code>--ecod-fs-4xl</code>），不需要再放大——层级靠<b>正文与 h2 之间的距离</b>建立，不是靠标题变粗。<br>
+    <b>标题 27px 源码与线上一致</b>（早前「22px 被覆盖」为探针误报，已复核排除，详见 §02）。本节标题规格无需改字号，只改间距与行高。
+  </div>
+
+  <h3 class="sub"><span class="tag">4.3</span>颜色：两级墨色 + 一条线</h3>
+  <div class="demo">
+    <div class="demo-cap">中性色阶梯（左→右）与描边三档</div>
+    <div class="swatch" style="margin-bottom:14px">
+      <div style="background:#12161d;color:#fff">ink</div>
+      <div style="background:#5b6472;color:#fff">ink-2</div>
+      <div style="background:#8a929f;color:#fff">ink-3</div>
+      <div style="background:#eef0f5;color:#5b6472">line</div>
+      <div style="background:#e4e7ee;color:#5b6472">line-2</div>
+      <div style="background:#d3d9e4;color:#3d4757">line-strong</div>
+    </div>
+    <div class="demo-cap">语义色只承担这四类含义，其余一律中性</div>
+    <div class="swatch">
+      <div style="background:#4f6ef2;color:#fff;flex:1.4">primary 可点/关键</div>
+      <div style="background:#f59e0b;color:#fff">accent 评分/奖章</div>
+      <div style="background:#10b981;color:#fff">success 在线/成功</div>
+      <div style="background:#ef4444;color:#fff">danger 删除/错误</div>
+    </div>
+  </div>
+  <div class="spec">
+    <div class="spec-card">
+      <h4>使用规则</h4>
+      <ul>
+        <li><em>标题</em><span><code>--ecod-ink</code>（原 <code>--ecod-text</code>，可原地别名映射）</span></li>
+        <li><em>正文</em><span><code>--ecod-ink</code>；引文与次要段用 <code>ink-2</code></span></li>
+        <li><em>元信息</em><span><code>ink-3</code> 只用于「标注别人」，不用于读者要读的内容</span></li>
+        <li><em>accent</em><span>仅评分星、徽章、价格；<b>不用于正文链接与图标</b></span></li>
+      </ul>
+    </div>
+    <div class="spec-card">
+      <h4>描边与阴影</h4>
+      <ul>
+        <li><em>卡片</em><span><code>1px solid var(--ecod-line)</code>，阴影 <code>none</code></span></li>
+        <li><em>卡内分隔</em><span><code>1px solid var(--ecod-line-2)</code>（略深，才分得开）</span></li>
+        <li><em>悬停</em><span>描边 → <code>line-strong</code>，不加位移、不加阴影</span></li>
+        <li><em>浮层</em><span>唯一允许阴影处：<code>0 8px 28px rgba(18,22,29,.10)</code></span></li>
+      </ul>
+    </div>
+  </div>
+
+  <h3 class="sub"><span class="tag">4.4</span>圆角与密度</h3>
+  <div class="spec">
+    <div class="spec-card">
+      <h4>圆角四档（现有，不改）</h4>
+      <ul>
+        <li><em>4px</em><span>徽标、代码内联、小方块</span></li>
+        <li><em>8px</em><span>缩略图、输入框、内层小块</span></li>
+        <li><em>12px</em><span>所有卡面（含分组卡的首尾）</span></li>
+        <li><em>999px</em><span>按钮、chips、头像环</span></li>
+      </ul>
+    </div>
+    <div class="spec-card">
+      <h4>密度三档</h4>
+      <ul>
+        <li><em>compact</em><span>pad 12 / gap 8 —— 侧栏数据、标签、目录</span></li>
+        <li><em>regular</em><span>pad 16 / gap 12 —— 侧栏列表、评论条目</span></li>
+        <li><em>loose</em><span>pad 24 / gap 16 —— 文章身卡、头卡、评论编辑器</span></li>
+      </ul>
+    </div>
+  </div>
+
+  <h3 class="sub"><span class="tag">4.5</span>分组卡（本稿最关键的机制）</h3>
+  <div class="demo">
+    <div class="demo-cap">同一语义组内：只有首卡有上圆角、末卡有下圆角，相邻边共享 1px（避免双线）</div>
+    <div style="max-width:420px">
+      <div style="border:1px solid var(--line);border-bottom:0;border-radius:12px 12px 0 0;padding:16px 20px;background:#fff;font-size:13px;color:#5b6472">① 头卡 · 标题 + 作者</div>
+      <div style="border:1px solid var(--line);border-bottom:0;padding:16px 20px;background:#fff;font-size:13px;color:#5b6472">② 身卡 · 正文</div>
+      <div style="border:1px solid var(--line);border-radius:0 0 12px 12px;padding:16px 20px;background:#fff;font-size:13px;color:#5b6472">③ 尾卡 · 标签 + 动作条</div>
+    </div>
+    <div class="demo-cap" style="margin-top:16px">组与组之间：16px 间距，各自完整圆角</div>
+    <div style="max-width:420px;margin-top:8px;border:1px solid var(--line);border-radius:12px;padding:16px 20px;background:#fff;font-size:13px;color:#5b6472">④ 关联卡（相关阅读 / 上下篇）</div>
+    <div style="max-width:420px;margin-top:16px;border:1px solid var(--line);border-radius:12px;padding:16px 20px;background:#fff;font-size:13px;color:#5b6472">⑤ 评论卡</div>
+  </div>
+  <div class="note">
+    <b>实现要点：</b>用 <code>.ecod_stack</code> 包裹组内成员，子项 <code>border-radius:0; border-bottom:0</code>，
+    首尾用 <code>:first-child / :last-child</code> 还原圆角与下边线。<b>不要</b>用 <code>margin-bottom:-16px</code> 重叠——
+    那是参考站的做法，会让吸顶工具条的 sticky 定位失效（本项目有 <code>.ecod_floattoc</code> 与进度条）。
+  </div>
+
+  <h3 class="sub"><span class="tag">4.6</span>正文元素规格</h3>
+  <table>
+    <thead><tr><th>元素</th><th>规格</th><th>说明</th></tr></thead>
+    <tbody>
+      <tr><td>p</td><td class="num">16/28，段距 20</td><td>段距大于行高差，段落边界清晰</td></tr>
+      <tr><td>h2</td><td class="num">22/32，上 40 下 12，左 16 竖条 5×1.02em</td><td>唯一保留的标题装饰</td></tr>
+      <tr><td>h3</td><td class="num">18/30，上 32 下 8，无装饰</td><td>去掉短竖条，避免与 h2 打架</td></tr>
+      <tr><td>h4</td><td class="num">16/28，上 24 下 6，600 加粗</td><td>去掉琥珀圆点</td></tr>
+      <tr><td>blockquote</td><td class="num">左 3px primary，底 primary-soft，pad 16 20，字号 16/28</td><td>引文不缩字号，保持阅读连贯</td></tr>
+      <tr><td>figure</td><td class="num">上 28 下 28；图圆角 8；figcaption 12/18 墨三档，居中，上 8</td><td>新增：图片说明与图库统一</td></tr>
+      <tr><td>pre</td><td class="num">圆角 8，pad 16 20，13/24，深底 #1e2230</td><td>现状 1.85 行高偏松，改 24px</td></tr>
+      <tr><td>table</td><td class="num">13/20，th 底 surface-2，单元格 pad 8 12，容器圆角 8 + 横向滚动</td><td>滚动条只出现在表格自身</td></tr>
+      <tr><td>提示块</td><td class="num">左 3px 语义色 + 8% 底色，pad 14 16，13/20</td><td>新增 <code>.ecod_c-tip</code>（info/tip/warn/danger 四态）</td></tr>
+      <tr><td>脚注</td><td class="num">12/18 墨三档，上标 <code>[n]</code> primary</td><td>长文引用密度提高后可加</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- ============ 05 ============ -->
+<section class="sec" id="s05">
+  <div class="sec-head"><span class="sec-num">05</span><h2>组件规格</h2></div>
+  <p class="sec-sub">11 个组件，每个给出「结构 / 尺寸 / 状态 / 实现要点」，并附<b>真实渲染样例</b>（下方灰底区就是按本规格写出来的）。
+    样例里的数字全部来自上表，可直接对照实现。</p>
+
+<style>
+/* —— 本文档的组件样例样式（前缀 ex-），独立于文档自身样式 —— */
+.ex{background:var(--bg);border:1px solid var(--line-2);border-radius:var(--r);padding:26px;margin:14px 0 8px}
+.ex *{box-sizing:border-box}
+.ex-card{background:#fff;border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.ex-stack>*{border-bottom:1px solid var(--line)}
+.ex-stack>*:last-child{border-bottom:0}
+.ex-cover{position:relative;height:190px;background:
+  radial-gradient(120% 120% at 20% 0%,#dbe4ff 0%,#eef2ff 40%,#f7f9ff 100%)}
+.ex-cover .ex-cover-img{position:absolute;inset:0;background:
+  radial-gradient(60% 90% at 70% 30%,rgba(79,110,242,.20),transparent 60%),
+  radial-gradient(50% 70% at 30% 80%,rgba(245,158,11,.14),transparent 60%)}
+.ex-glass{position:absolute;top:14px;right:14px;display:flex;gap:8px}
+.ex-glass button{width:34px;height:34px;border-radius:999px;background:rgba(255,255,255,.72);
+  border:1px solid rgba(255,255,255,.9);backdrop-filter:blur(10px);display:grid;place-items:center;
+  color:#3d4757;transition:transform 200ms cubic-bezier(.4,0,.2,1),background 200ms}
+.ex-glass button:hover{background:#fff}
+.ex-glass button:active{transform:scale(.94)}
+.ex-pad{padding:22px 24px}
+.ex-title{font-size:27px;line-height:1.4;font-weight:600;letter-spacing:.1px;margin:0 0 14px;color:#12161d}
+.ex-badges{display:flex;gap:8px;margin-bottom:14px}
+.ex-b{display:inline-flex;align-items:center;gap:4px;height:22px;padding:0 8px;border-radius:999px;
+  font-size:11px;font-weight:600;letter-spacing:.02em}
+.ex-b.vip{background:#fef4e2;color:#a5670c}
+.ex-b.pay{background:#eef1fe;color:#3d5be0}
+.ex-b.lock{background:#f2f4f8;color:#5b6472}
+.ex-author{display:flex;align-items:center;gap:10px;padding:12px 0 14px;border-bottom:1px solid var(--line-2);margin-bottom:14px}
+.ex-ava{width:36px;height:36px;border-radius:999px;flex:none;display:grid;place-items:center;
+  font-size:14px;font-weight:600;color:#fff;background:linear-gradient(135deg,#6b8afd,#4f6ef2)}
+.ex-author .who{min-width:0;flex:1}
+.ex-author .nm{font-size:14px;font-weight:600;color:#12161d;display:flex;align-items:center;gap:6px}
+.ex-author .bio{font-size:12px;color:#8a929f;margin-top:1px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ex-follow{flex:none;height:30px;padding:0 14px;border-radius:999px;border:1px solid var(--line-strong);
+  background:#fff;font-size:13px;font-weight:500;color:#3d4757;transition:all 200ms}
+.ex-follow:hover{border-color:#4f6ef2;color:#4f6ef2;background:#f7f9ff}
+.ex-follow:active{transform:scale(.97)}
+.ex-follow.on{background:#4f6ef2;border-color:#4f6ef2;color:#fff}
+.ex-meta{display:flex;flex-wrap:wrap;align-items:center;gap:6px 14px;font-size:12px;color:#5b6472}
+.ex-meta>span,.ex-meta>a{display:inline-flex;align-items:center;gap:5px}
+.ex-meta .dotsep{color:#d3d9e4}
+.ex-metasec{display:flex;flex-wrap:wrap;gap:6px 12px;font-size:12px;color:#8a929f;margin-top:8px}
+.ex-toolbar{display:flex;align-items:center;gap:4px;padding:8px 10px;background:#fcfdff;border-bottom:1px solid var(--line)}
+.ex-tool{display:inline-flex;align-items:center;gap:6px;height:30px;padding:0 10px;border-radius:8px;
+  font-size:12px;color:#5b6472;transition:background 200ms,color 200ms}
+.ex-tool:hover{background:#f2f4f8;color:#12161d}
+.ex-tool.on{background:#eef1fe;color:#3d5be0}
+.ex-progress{margin-left:auto;display:flex;align-items:center;gap:8px;font-size:11px;color:#8a929f}
+.ex-progress .line{width:110px;height:3px;border-radius:999px;background:#eef0f5;overflow:hidden}
+.ex-progress .line i{display:block;height:100%;width:34%;background:#4f6ef2;border-radius:999px}
+.ex-body{padding:24px 26px;font-size:16px;line-height:28px;color:#12161d}
+.ex-body p{margin:0 0 20px}
+.ex-body h2{position:relative;padding-left:16px;font-size:22px;line-height:32px;margin:40px 0 12px}
+.ex-body h2::before{content:"";position:absolute;left:0;top:.14em;width:5px;height:1.02em;border-radius:4px;background:#4f6ef2}
+.ex-body h3{font-size:18px;line-height:30px;margin:32px 0 8px}
+.ex-quote{margin:20px 0;padding:16px 20px;border-left:3px solid #4f6ef2;border-radius:0 8px 8px 0;
+  background:#eef1fe;color:#3d4757}
+.ex-tip{display:flex;gap:10px;margin:20px 0;padding:14px 16px;border-left:3px solid #f59e0b;
+  border-radius:0 8px 8px 0;background:#fffbf0;font-size:13px;line-height:20px;color:#7a5b12}
+.ex-tags{display:flex;flex-wrap:wrap;gap:4px;padding:4px 26px 18px}
+.ex-tag{display:inline-flex;align-items:center;height:26px;padding:0 9px;border-radius:999px;
+  font-size:12px;color:#5b6472;transition:background 200ms,color 200ms}
+.ex-tag:hover{background:#f2f4f8;color:#12161d}
+.ex-tag::before{content:"#";color:#8a929f;margin-right:2px}
+.ex-actbar{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));border-top:1px solid var(--line-2);background:#fcfdff}
+.ex-act{display:flex;flex-direction:column;align-items:center;gap:4px;padding:14px 8px;
+  font-size:12px;color:#5b6472;transition:background 200ms,color 200ms;position:relative}
+.ex-act+.ex-act::before{content:"";position:absolute;left:0;top:50%;transform:translateY(-50%);
+  width:1px;height:22px;background:var(--line-2)}
+.ex-act:hover{background:#f7f9ff;color:#3d5be0}
+.ex-act:active{transform:scale(.98)}
+.ex-act b{font-weight:600;font-size:12px}
+.ex-act.on{color:#3d5be0}
+.ex-act.on svg{fill:rgba(79,110,242,.12)}
+.ex-rate{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:20px;align-items:center;padding:22px 24px}
+.ex-stars{display:flex;gap:4px;margin-bottom:14px}
+.ex-stars svg{color:#f59e0b}
+.ex-dist{display:flex;flex-direction:column;gap:6px;font-size:11px;color:#8a929f}
+.ex-dist .row{display:flex;align-items:center;gap:8px}
+.ex-dist .bar{flex:1;height:6px;border-radius:999px;background:#eef0f5;overflow:hidden}
+.ex-dist .bar i{display:block;height:100%;background:#f59e0b;border-radius:999px}
+.ex-score{text-align:right}
+.ex-score b{display:block;font-family:var(--mono);font-size:36px;line-height:40px;font-weight:600;color:#12161d}
+.ex-score small{font-size:11px;color:#8a929f}
+.ex-rel{padding:4px 24px 8px}
+.ex-rel-item{display:flex;gap:14px;padding:14px 0;border-bottom:1px solid var(--line-2)}
+.ex-rel-item:last-child{border-bottom:0}
+.ex-rel-thumb{width:96px;height:64px;border-radius:8px;flex:none;background:
+  radial-gradient(100% 100% at 30% 20%,#dbe4ff,#eef2ff)}
+.ex-rel-main{min-width:0;flex:1}
+.ex-rel-t{font-size:14px;line-height:22px;font-weight:600;color:#12161d;display:-webkit-box;
+  -webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.ex-rel-d{font-size:12px;line-height:18px;color:#8a929f;margin-top:4px;display:-webkit-box;
+  -webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.ex-cmt{padding:20px 24px}
+.ex-editor{border:1px solid var(--line-2);border-radius:12px;background:#fff;transition:border-color 200ms,box-shadow 200ms}
+.ex-editor:focus-within{border-color:#a9b8f9;box-shadow:0 0 0 3px rgba(79,110,242,.10)}
+.ex-editor textarea{width:100%;min-height:76px;border:0;outline:none;resize:none;background:transparent;
+  padding:14px 16px;font-size:14px;line-height:22px;font-family:inherit;color:#12161d}
+.ex-editor textarea::placeholder{color:#a8afba}
+.ex-edbar{display:flex;align-items:center;gap:2px;padding:8px 10px;border-top:1px solid var(--line)}
+.ex-ebtn{width:30px;height:30px;border-radius:8px;display:grid;place-items:center;color:#8a929f;transition:background 200ms,color 200ms}
+.ex-ebtn:hover{background:#f2f4f8;color:#12161d}
+.ex-count{margin-left:auto;font-size:11px;color:#8a929f;font-family:var(--mono)}
+.ex-btn-primary{height:32px;padding:0 16px;border-radius:999px;background:#4f6ef2;color:#fff;
+  font-size:13px;font-weight:500;transition:background 200ms,transform 200ms}
+.ex-btn-primary:hover{background:#3d5be0}
+.ex-btn-primary:active{transform:scale(.97)}
+.ex-cmt-head{display:flex;align-items:center;justify-content:space-between;margin:22px 0 12px}
+.ex-cmt-head h4{font-size:16px;font-weight:600}
+.ex-seg{display:inline-flex;background:#f2f4f8;border-radius:999px;padding:2px;font-size:12px}
+.ex-seg span{height:24px;padding:0 12px;display:inline-flex;align-items:center;border-radius:999px;color:#5b6472}
+.ex-seg .cur{background:#fff;color:#12161d;font-weight:600;box-shadow:0 1px 2px rgba(18,22,29,.06)}
+.ex-ai{margin:0 0 16px;padding:14px 16px;border-radius:12px;background:#f7f9ff;border:1px solid #e3e9fd}
+.ex-ai .h{display:flex;align-items:center;gap:6px;font-size:12px;font-weight:600;color:#3d5be0;margin-bottom:6px}
+.ex-ai p{font-size:13px;line-height:21px;color:#3d4757;margin:0}
+.ex-citem{display:flex;gap:10px;padding:14px 0;border-bottom:1px solid var(--line)}
+.ex-citem:last-child{border-bottom:0}
+.ex-cava{width:28px;height:28px;border-radius:999px;flex:none;display:grid;place-items:center;font-size:11px;
+  font-weight:600;color:#fff;background:linear-gradient(135deg,#94a8f8,#6b85f5)}
+.ex-cmain{min-width:0;flex:1}
+.ex-cname{font-size:13px;font-weight:600;color:#12161d}
+.ex-ctext{font-size:14px;line-height:22px;color:#3d4757;margin-top:2px}
+.ex-cmeta{display:flex;align-items:center;gap:8px;font-size:11px;color:#8a929f;margin-top:6px}
+.ex-clike{margin-left:auto;display:inline-flex;align-items:center;gap:4px;font-size:11px;color:#8a929f}
+.ex-nav{display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:0 24px 20px}
+.ex-navbox{border:1px solid var(--line-2);border-radius:12px;padding:12px 14px;transition:border-color 200ms,background 200ms}
+.ex-navbox:hover{border-color:#c9d6ff;background:#fcfdff}
+.ex-navbox .dir{font-size:11px;color:#8a929f;display:flex;align-items:center;gap:4px}
+.ex-navbox .t{font-size:14px;line-height:22px;font-weight:600;margin-top:4px;color:#12161d;
+  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.ex-navbox.next{text-align:right}
+.ex-navbox.next .dir{justify-content:flex-end}
+.ex-side{width:300px}
+.ex-wcard{background:#fff;border:1px solid var(--line);border-radius:12px;padding:16px}
+.ex-whead{display:flex;align-items:center;gap:8px;margin-bottom:12px}
+.ex-wicon{width:22px;height:22px;border-radius:6px;background:#eef1fe;color:#3d5be0;display:grid;place-items:center;flex:none}
+.ex-whead b{font-size:14px;font-weight:600;color:#12161d}
+.ex-whead .more{margin-left:auto;font-size:12px;color:#8a929f}
+.ex-whead .more:hover{color:#3d5be0}
+.ex-wli{display:flex;gap:9px;padding:9px 0;border-bottom:1px solid var(--line)}
+.ex-wli:first-of-type{padding-top:0}
+.ex-wli:last-child{border-bottom:0;padding-bottom:0}
+.ex-wli .n{font-family:var(--mono);font-size:11px;color:#a8afba;flex:none;width:14px;padding-top:2px}
+.ex-wli .t{font-size:13px;line-height:20px;color:#3d4757;display:-webkit-box;-webkit-line-clamp:2;
+  -webkit-box-orient:vertical;overflow:hidden;flex:1}
+.ex-wli:hover .t{color:#3d5be0}
+.ex-wli .m{font-size:11px;color:#a8afba;margin-top:3px}
+.ex-stat{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--line);border-radius:8px;overflow:hidden}
+.ex-stat div{background:#fff;padding:12px 8px;text-align:center}
+.ex-stat b{display:block;font-family:var(--mono);font-size:20px;line-height:24px;font-weight:600;color:#12161d}
+.ex-stat span{font-size:11px;color:#8a929f}
+.ex-namecard{padding:20px;text-align:center}
+.ex-namecard .big{width:48px;height:48px;border-radius:999px;margin:0 auto 10px;display:grid;place-items:center;
+  font-size:18px;font-weight:600;color:#fff;background:linear-gradient(135deg,#6b8afd,#4f6ef2)}
+.ex-namecard .sig{font-size:12px;line-height:18px;color:#8a929f;margin:4px 0 14px}
+.ex-quick{display:grid;grid-template-columns:repeat(4,1fr);gap:4px;margin-bottom:14px}
+.ex-quick a{padding:10px 2px;border-radius:8px;font-size:11px;color:#5b6472;display:flex;
+  flex-direction:column;align-items:center;gap:5px;transition:background 200ms,color 200ms}
+.ex-quick a:hover{background:#f7f9ff;color:#3d5be0}
+.ex-btn-ghost{display:inline-flex;align-items:center;justify-content:center;width:100%;height:32px;
+  border:1px solid var(--line-strong);border-radius:999px;font-size:13px;color:#3d4757;background:#fff;transition:all 200ms}
+.ex-btn-ghost:hover{border-color:#4f6ef2;color:#4f6ef2}
+</style>
+
+  <h3 class="sub"><span class="tag">C1</span>文章头卡（含封面 / 标题 / 作者 / 元信息）</h3>
+  <div class="ex">
+    <div class="ex-card">
+      <div class="ex-cover">
+        <div class="ex-cover-img"></div>
+        <div class="ex-glass">
+          <button title="收藏"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h12a1 1 0 0 1 1 1v17l-7-4-7 4V4a1 1 0 0 1 1-1z"/></svg></button>
+          <button title="分享"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v7a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-7"/><path d="M12 15V4"/><path d="m8 8 4-4 4 4"/></svg></button>
+        </div>
+      </div>
+      <div class="ex-pad">
+        <div class="ex-badges">
+          <span class="ex-b vip">★ 会员</span>
+          <span class="ex-b pay">¥ 付费</span>
+        </div>
+        <h1 class="ex-title">重新理解边界：把「模块化」当成一套约束，而不是一份清单</h1>
+        <div class="ex-author">
+          <div class="ex-ava">E</div>
+          <div class="who">
+            <div class="nm">Ecod <span style="font-size:11px;color:#8a929f;font-weight:400">站长</span></div>
+            <div class="bio">写主题、拆组件、偶尔研究排版的人</div>
+          </div>
+          <button class="ex-follow">+ 关注</button>
+        </div>
+        <div class="ex-meta">
+          <span><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M8 3v4M16 3v4M3 11h18"/></svg>2026 年 10 月 30 日</span>
+          <span><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="2.6"/></svg>1.2k 阅读</span>
+          <span><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M21 12a8 8 0 0 1-8 8H7l-4 3v-6a8 8 0 0 1 8-8h2a8 8 0 0 1 8 3z"/></svg>9 评论</span>
+        </div>
+        <div class="ex-metasec">
+          <span>2.3k 字</span><span>·</span><span>约 6 分钟</span><span>·</span><span>分类：后端开发</span><span>·</span><span>更新于 10-30</span>
+        </div>
+      </div>
+    </div>
+    <div class="demo-cap" style="margin-top:12px">① 封面仅在有缩略图时输出；无封面时标题区直接作为卡片首段，上圆角保留</div>
+  </div>
+  <div class="spec">
+    <div class="spec-card">
+      <h4>结构</h4>
+      <ul>
+        <li><em>顺序</em><span>封面 → 徽标组 → 标题 → 作者条 → 主元信息 → 次元信息</span></li>
+        <li><em>封面</em><span>16:7，高 190–240，仅 <code>border-radius:12px 12px 0 0</code></span></li>
+        <li><em>标题</em><span>27/38 桌面 · 22/32 移动，<code>text-wrap:balance</code></span></li>
+        <li><em>元信息</em><span>主行 12px <code>ink-2</code>（作者已在作者条，不再重复）→ 次行 12px <code>ink-3</code></span></li>
+      </ul>
+    </div>
+    <div class="spec-card">
+      <h4>要点与坑</h4>
+      <ul>
+        <li><em>封面</em><span>用 <code>.ecod_article__thumb</code>；PJAX 换页要清空，避免残留上一篇封面</span></li>
+        <li><em>玻璃按钮</em><span><code>backdrop-filter:blur(10px)</code>，需 <code>@supports</code> 降级为 85% 白底</span></li>
+        <li><em>徽标</em><span>最多 2 枚，第 3 枚起合并为「+1」；付费与会员互斥时只留优先级高的</span></li>
+        <li><em>作者条</em><span>只在 <code>authorbox</code> 模块未启用时显示关注按钮，避免双入口</span></li>
+      </ul>
+    </div>
+  </div>
+
+  <h3 class="sub"><span class="tag">C2</span>元信息：从 5 枚胶囊到两行分组</h3>
+  <div class="do-dont">
+    <div class="dd dont">
+      <h4>✕ 现状：等重胶囊</h4>
+      <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:10px">
+        <span style="display:inline-flex;align-items:center;gap:5px;padding:4px 11px;border:1px solid #e4e7ee;border-radius:999px;background:#fafbfc;font-size:12px;color:#6d7581">📅 2026年08月18日</span>
+        <span style="display:inline-flex;align-items:center;gap:5px;padding:4px 11px;border:1px solid #e4e7ee;border-radius:999px;background:#fafbfc;font-size:12px;color:#6d7581">👤 Ecod</span>
+        <span style="display:inline-flex;align-items:center;gap:5px;padding:4px 11px;border:1px solid #e4e7ee;border-radius:999px;background:#fafbfc;font-size:12px;color:#6d7581">👁 1k 阅读</span>
+        <span style="display:inline-flex;align-items:center;gap:5px;padding:4px 11px;border:1px solid #e4e7ee;border-radius:999px;background:#fafbfc;font-size:12px;color:#6d7581">📄 235 字 · 约 1 分钟</span>
+        <span style="display:inline-flex;align-items:center;gap:5px;padding:4px 11px;border:1px solid #e4e7ee;border-radius:999px;background:#fafbfc;font-size:12px;color:#6d7581">💬 9 评论</span>
+      </div>
+      <ul>
+        <li>5 个胶囊 + 边框 + 底片 ≈ 10 条视觉边线</li>
+        <li>「1 分钟」和「9 评论」权重一样，读者无从取舍</li>
+        <li>作者重复：面包屑后已有作者，此处再来一次</li>
+      </ul>
+    </div>
+    <div class="dd do">
+      <h4>✓ 目标：主 / 次两行</h4>
+      <div class="ex-meta" style="margin-bottom:8px">
+        <span>📅 2026 年 8 月 18 日</span><span class="dotsep">·</span><span>👁 1k 阅读</span><span class="dotsep">·</span><span>💬 9 评论</span>
+      </div>
+      <div class="ex-metasec" style="margin-top:0">235 字 · 约 1 分钟 · 后端开发</div>
+      <ul>
+        <li>零边框、零底片，只留 3 条信息 → 视觉噪声降 70%</li>
+        <li>作者上移到作者条，元信息不再重复</li>
+        <li>状态（会员/付费/密码）用徽标，仍与普通信息区分</li>
+      </ul>
+    </div>
+  </div>
+
+  <h3 class="sub"><span class="tag">C3</span>阅读工具条（吸收现有朗读条）</h3>
+  <div class="ex">
+    <div class="ex-card">
+      <div class="ex-toolbar">
+        <button class="ex-tool on"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M4 6h16M4 12h16M4 18h10"/></svg>目录</button>
+        <button class="ex-tool"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M4 9v6h4l5 4V5L8 9H4z"/><path d="M17 8a5 5 0 0 1 0 8"/></svg>朗读</button>
+        <button class="ex-tool">A<small style="font-size:10px;color:#8a929f">−</small></button>
+        <button class="ex-tool">A<small style="font-size:12px;color:#8a929f">+</small></button>
+        <div class="ex-progress"><span>已读 34%</span><span class="line"><i></i></span></div>
+      </div>
+      <div class="ex-body">
+        <p>工具条只在「有目录」（≥3 个 h2）或「有朗读」时出现；两者皆无则整条不输出，避免空条占位。</p>
+      </div>
+    </div>
+  </div>
+  <div class="spec">
+    <div class="spec-card">
+      <h4>尺寸与状态</h4>
+      <ul>
+        <li><em>高度</em><span>46px（8 + 30 + 8），底部 1px <code>line</code></span></li>
+        <li><em>按钮</em><span>30px 高，圆角 8，图标 15，字 12；激活底 <code>primary-soft</code></span></li>
+        <li><em>吸顶</em><span>滚动过标题后 <code>position:sticky; top:var(--ecod-header-h)</code>，背景 92% 白 + blur</span></li>
+        <li><em>进度</em><span>3px 细线 + 百分比文字；口径复用 <code>Ecod.readProgress()</code>，不另算</span></li>
+      </ul>
+    </div>
+    <div class="spec-card">
+      <h4>实现要点</h4>
+      <ul>
+        <li><em>字号</em><span>改 <code>--ecod-fs-base</code> 局部变量即可（14/16/18 三档），存 localStorage</span></li>
+        <li><em>朗读</em><span>合并 <code>components/post/tts.php</code>，不再单独占一条横幅</span></li>
+        <li><em>开关</em><span><code>EReadBar</code>，默认 on；移动端隐藏字号与目录，只留朗读</span></li>
+      </ul>
+    </div>
+  </div>
+
+  <h3 class="sub"><span class="tag">C4</span>动作条（5 等分）</h3>
+  <div class="ex">
+    <div class="ex-card">
+      <div class="ex-actbar">
+        <button class="ex-act on"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M7 11v9H4a1 1 0 0 1-1-1v-7a1 1 0 0 1 1-1h3z"/><path d="M7 11l4-7a2 2 0 0 1 3 2l-1 4h5a2 2 0 0 1 2 2.3l-1.3 7A2 2 0 0 1 16.7 21H7"/></svg><b>128</b></button>
+        <button class="ex-act"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h12a1 1 0 0 1 1 1v17l-7-4-7 4V4a1 1 0 0 1 1-1z"/></svg><b>收藏</b></button>
+        <button class="ex-act"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v7a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-7"/><path d="M12 15V4"/><path d="m8 8 4-4 4 4"/></svg><b>分享</b></button>
+        <button class="ex-act"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a8 8 0 0 1-8 8H7l-4 3v-6a8 8 0 0 1 8-8h2a8 8 0 0 1 8 3z"/></svg><b>9 讨论</b></button>
+        <button class="ex-act"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 8v4"/><path d="M12 16h.01"/></svg><b>报错</b></button>
+      </div>
+    </div>
+    <div class="demo-cap" style="margin-top:10px">图标 20 描边 1.6 → 标签 12px → 上下 14；竖向分隔只出现在相邻项之间，高 22</div>
+  </div>
+  <div class="spec">
+    <div class="spec-card">
+      <h4>规格</h4>
+      <ul>
+        <li><em>栅格</em><span><code>grid-template-columns:repeat(5,1fr)</code>，等分不用 flex 平均</span></li>
+        <li><em>图标</em><span>20px，<code>stroke-width:1.6</code>，与全文图标统一</span></li>
+        <li><em>数字</em><span><code>ecod_num_short()</code> 输出（1.2k / 128）</span></li>
+        <li><em>激活</em><span>文字与图标转 primary，图标内填充 12% 同色；不动布局</span></li>
+      </ul>
+    </div>
+    <div class="spec-card">
+      <h4>状态与坑</h4>
+      <ul>
+        <li><em>未登录点赞</em><span>弹登录浮层，不跳转（现 <code>Ecod.initAct</code> 已具备）</span></li>
+        <li><em>报错</em><span>打开轻量弹层（4 个原因单选），复用现有 popover 定位</span></li>
+        <li><em>移动端</em><span>保留 5 等分但去掉标签文字（只留数字），高 52</span></li>
+      </ul>
+    </div>
+  </div>
+
+  <h3 class="sub"><span class="tag">C5</span>评分卡（可选模块）</h3>
+  <div class="ex">
+    <div class="ex-card ex-rate">
+      <div>
+        <div class="ex-stars">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="m12 3.6 2.5 5.3 5.8.8-4.2 4 1 5.7-5.1-2.8-5.1 2.8 1-5.7-4.2-4 5.8-.8z"/></svg>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="m12 3.6 2.5 5.3 5.8.8-4.2 4 1 5.7-5.1-2.8-5.1 2.8 1-5.7-4.2-4 5.8-.8z"/></svg>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="m12 3.6 2.5 5.3 5.8.8-4.2 4 1 5.7-5.1-2.8-5.1 2.8 1-5.7-4.2-4 5.8-.8z"/></svg>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="m12 3.6 2.5 5.3 5.8.8-4.2 4 1 5.7-5.1-2.8-5.1 2.8 1-5.7-4.2-4 5.8-.8z"/></svg>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="m12 3.6 2.5 5.3 5.8.8-4.2 4 1 5.7-5.1-2.8-5.1 2.8 1-5.7-4.2-4 5.8-.8z"/></svg>
+        </div>
+        <div class="ex-dist">
+          <div class="row"><span>5★</span><span class="bar"><i style="width:62%"></i></span><span>3 人</span></div>
+          <div class="row"><span>4★</span><span class="bar"><i style="width:22%"></i></span><span>1 人</span></div>
+          <div class="row"><span>3★</span><span class="bar"><i style="width:0"></i></span><span>0 人</span></div>
+        </div>
+      </div>
+      <div class="ex-score"><b>4.6</b><small>4 人综合评分</small></div>
+    </div>
+  </div>
+  <div class="spec">
+    <div class="spec-card">
+      <h4>规格</h4>
+      <ul>
+        <li><em>星</em><span>20px，accent 实心；半星用 <code>linear-gradient</code> 裁切</span></li>
+        <li><em>分布条</em><span>6px 高，full 圆角，底 <code>line</code>，填充 accent</span></li>
+        <li><em>总分</em><span>36px mono 600，右侧对齐，下附 11px 说明</span></li>
+      </ul>
+    </div>
+    <div class="spec-card">
+      <h4>取舍</h4>
+      <ul>
+        <li><em>默认关</em><span>博客文章评分易被刷，建议 <code>ERating</code> 默认 off，仅教程/评测类开启</span></li>
+        <li><em>数据</em><span>新增表 <code>ecod_ratings(cid, uid, score)</code>，与点赞表同构</span></li>
+        <li><em>降级</em><span>少于 3 人评分时只显示「我要打分」，不显示分数</span></li>
+      </ul>
+    </div>
+  </div>
+
+  <h3 class="sub"><span class="tag">C6</span>相关阅读</h3>
+  <div class="ex">
+    <div class="ex-card"><div class="ex-rel">
+      <div class="ex-rel-item">
+        <div class="ex-rel-thumb"></div>
+        <div class="ex-rel-main">
+          <div class="ex-rel-t">模块化不是拆得更多，而是约束得更准</div>
+          <div class="ex-rel-d">从卡片、区域、密度三个维度重新定义「一个模块」的边界条件</div>
+        </div>
+      </div>
+      <div class="ex-rel-item">
+        <div class="ex-rel-thumb" style="background:radial-gradient(100% 100% at 30% 20%,#fde8c8,#fff7ec)"></div>
+        <div class="ex-rel-main">
+          <div class="ex-rel-t">排版的三条暗线：字号、行高、段距</div>
+          <div class="ex-rel-d">为什么 16/28 比 15/26 更好读，以及段距为什么必须大于行高差</div>
+        </div>
+      </div>
+    </div></div>
+  </div>
+  <div class="spec">
+    <div class="spec-card">
+      <h4>规格</h4>
+      <ul>
+        <li><em>缩略图</em><span>96×64（3:2），圆角 8，无边框</span></li>
+        <li><em>标题</em><span>14/22 600，最多 2 行</span></li>
+        <li><em>摘要</em><span>12/18 <code>ink-3</code>，最多 2 行；与标题间距 4</span></li>
+        <li><em>条目</em><span>上下 14，条目间 1px <code>line-2</code>，末条无线</span></li>
+      </ul>
+    </div>
+    <div class="spec-card">
+      <h4>要点</h4>
+      <ul>
+        <li><em>无图降级</em><span>无缩略图时左侧换成「编号 + 1px 竖线」占位，不留空洞</span></li>
+        <li><em>数量</em><span>3–4 条；&gt;4 条折叠为「查看更多」</span></li>
+        <li><em>现有差距</em><span><code>related.php</code> 目前是 3 列大卡，在 700px 列宽下过密，改列表式</span></li>
+      </ul>
+    </div>
+  </div>
+
+  <h3 class="sub"><span class="tag">C7</span>标签（去底片）</h3>
+  <div class="ex">
+    <div class="ex-card" style="padding:4px 0"><div class="ex-tags" style="padding:14px 22px">
+      <a class="ex-tag" href="#">Typecho</a><a class="ex-tag" href="#">CSS</a>
+      <a class="ex-tag" href="#">排版</a><a class="ex-tag" href="#">模块化</a>
+      <a class="ex-tag" href="#">设计系统</a>
+    </div></div>
+    <div class="demo-cap" style="margin-top:10px">默认无底无框；hover 出 <code>surface-2</code> 底 + 墨色加深。# 号由 CSS 伪元素提供，模板不重复写</div>
+  </div>
+
+  <h3 class="sub"><span class="tag">C8</span>评论：编辑器 + 讨论头 + 条目</h3>
+  <div class="ex">
+    <div class="ex-card">
+      <div class="ex-cmt">
+        <div class="ex-editor">
+          <textarea placeholder="说点什么…支持 Markdown，Ctrl + Enter 发送"></textarea>
+          <div class="ex-edbar">
+            <button class="ex-ebtn" title="表情"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M8.5 14.5a4.5 4.5 0 0 0 7 0"/><path d="M9 9.5h.01M15 9.5h.01"/></svg></button>
+            <button class="ex-ebtn" title="图片"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="8.5" cy="9.5" r="1.5"/><path d="m21 16-5-5-6 6"/></svg></button>
+            <button class="ex-ebtn" title="代码"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="m9 8-4 4 4 4M15 8l4 4-4 4"/></svg></button>
+            <span class="ex-count">0 / 600</span>
+            <button class="ex-btn-primary" style="margin-left:8px">发表</button>
+          </div>
+        </div>
+
+        <div class="ex-cmt-head">
+          <h4>9 讨论</h4>
+          <div class="ex-seg"><span class="cur">热门</span><span>最新</span></div>
+        </div>
+
+        <div class="ex-ai">
+          <div class="h"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M18.4 5.6l-2.1 2.1M7.7 16.3l-2.1 2.1"/></svg>讨论总结</div>
+          <p>评论整体集中在「字号变大后阅读更舒服」，也有读者希望侧栏模块再多一档更紧凑的密度。</p>
+        </div>
+
+        <div class="ex-citem">
+          <div class="ex-cava">路</div>
+          <div class="ex-cmain">
+            <div class="ex-cname">路人甲</div>
+            <div class="ex-ctext">16px 确实比 15px 舒服，尤其长文。侧栏如果再来一档 12px 内边距就更省地方了。</div>
+            <div class="ex-cmeta"><span>2 小时前</span><span>·</span><span>广东</span><span class="ex-clike">♡ 3</span></div>
+          </div>
+        </div>
+        <div class="ex-citem">
+          <div class="ex-cava" style="background:linear-gradient(135deg,#f7c98b,#f59e0b)">A</div>
+          <div class="ex-cmain">
+            <div class="ex-cname">Ahao</div>
+            <div class="ex-ctext">动作条改成 5 等分之后确实不像工具栏了。</div>
+            <div class="ex-cmeta"><span>昨天</span><span>·</span><span>浙江</span><span class="ex-clike">♡ 1</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="spec">
+    <div class="spec-card">
+      <h4>规格</h4>
+      <ul>
+        <li><em>编辑器</em><span>无内边框 textarea，min-h 76；聚焦整卡 3px 主色 10% 光环</span></li>
+        <li><em>工具条</em><span>图标 16，30×30，圆角 8；字数 mono 11 右对齐</span></li>
+        <li><em>排序</em><span>分段控件：底 <code>surface-2</code>、选中白底 + 1px 阴影</span></li>
+        <li><em>条目</em><span>头像 28，名字 13/600，正文 14/22，元信息 11 <code>ink-3</code></span></li>
+      </ul>
+    </div>
+    <div class="spec-card">
+      <h4>要点</h4>
+      <ul>
+        <li><em>AI 总结</em><span>仅 ≥5 条评论时出现；失败静默移除，不留空框</span></li>
+        <li><em>楼层</em><span>回复缩进 40（=28 头像 + 12 gap），左侧 1px 线连到父级</span></li>
+        <li><em>现有差距</em><span><code>comments.php</code> 表单是竖排字段，改单框 + 工具条可少 2 行高度</span></li>
+      </ul>
+    </div>
+  </div>
+
+  <h3 class="sub"><span class="tag">C9</span>上下篇</h3>
+  <div class="ex">
+    <div class="ex-card" style="padding-top:20px"><div class="ex-nav">
+      <a class="ex-navbox" href="#"><div class="dir">← 上一篇</div><div class="t">测试：更新日志（时间线 / 版本记录）</div></a>
+      <a class="ex-navbox next" href="#"><div class="dir">下一篇 →</div><div class="t">测试：数据对比（宽表格 / 数字列）</div></a>
+    </div></div>
+  </div>
+
+  <h3 class="sub"><span class="tag">C10</span>侧栏：名片卡 + 列表模块</h3>
+  <div class="ex" style="display:flex;gap:16px;flex-wrap:wrap">
+    <div class="ex-side">
+      <div class="ex-wcard ex-namecard">
+        <div class="big">E</div>
+        <div style="font-size:14px;font-weight:600">Ecod</div>
+        <div class="sig">写主题、拆组件、偶尔研究排版</div>
+        <div class="ex-quick">
+          <a href="#"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M4 19.5V6a2 2 0 0 1 2-2h12v16H6a2 2 0 0 0-2 1.5z"/><path d="M8 8h7"/></svg>文章</a>
+          <a href="#"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M21 12a8 8 0 0 1-8 8H7l-4 3v-6a8 8 0 0 1 8-8h2a8 8 0 0 1 8 3z"/></svg>留言</a>
+          <a href="#"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h10"/></svg>归档</a>
+          <a href="#"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1-1.1a5.5 5.5 0 1 0-7.8 7.8L12 21l8.8-8.6a5.5 5.5 0 0 0 0-7.8z"/></svg>关于</a>
+        </div>
+        <div class="ex-stat" style="margin-bottom:12px">
+          <div><b>37</b><span>文章</span></div>
+          <div><b>13</b><span>评论</span></div>
+        </div>
+        <button class="ex-btn-ghost">订阅更新</button>
+      </div>
+    </div>
+    <div class="ex-side" style="flex:1;min-width:260px">
+      <div class="ex-wcard">
+        <div class="ex-whead">
+          <span class="ex-wicon"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><path d="M13 2 4 14h7l-1 8 9-12h-7l1-8z"/></svg></span>
+          <b>热门文章</b><a class="more" href="#">更多</a>
+        </div>
+        <div class="ex-wli"><span class="n">1</span><div style="flex:1"><div class="t">重新理解边界：把模块化当成约束</div><div class="m">1.2k 阅读 · 9 评论</div></div></div>
+        <div class="ex-wli"><span class="n">2</span><div style="flex:1"><div class="t">排版的三条暗线：字号、行高、段距</div><div class="m">860 阅读 · 4 评论</div></div></div>
+        <div class="ex-wli"><span class="n">3</span><div style="flex:1"><div class="t">卡片为什么越做越多，却越来越难读</div><div class="m">520 阅读 · 2 评论</div></div></div>
+      </div>
+    </div>
+  </div>
+  <div class="spec">
+    <div class="spec-card">
+      <h4>模块头统一</h4>
+      <ul>
+        <li><em>图标块</em><span>22×22，圆角 6，底 <code>primary-soft</code>，图标 13 主色</span></li>
+        <li><em>标题</em><span>14/22 600，与图标 gap 8，不再用「竖条 + 虚线」</span></li>
+        <li><em>更多</em><span>12px <code>ink-3</code>，右对齐；hover 转主色</span></li>
+      </ul>
+    </div>
+    <div class="spec-card">
+      <h4>列表项三行</h4>
+      <ul>
+        <li><em>行一</em><span>序号 mono 11 <code>ink-3</code>（仅榜单类）</span></li>
+        <li><em>行二</em><span>标题 13/20，2 行截断，hover 主色</span></li>
+        <li><em>行三</em><span>元信息 11 <code>ink-3</code>；条目间 1px 实线，末条无线</span></li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 06 ============ -->
+<section class="sec" id="s06">
+  <div class="sec-head"><span class="sec-num">06</span><h2>模块化设计</h2></div>
+  <p class="sec-sub">现状的问题不是「模块不够多」，而是<b>模块没有统一的壳语言</b>：每个模块自带一套头、一套间距、一套分隔线。
+    参考站的做法是——所有模块共用同一个 <code>.container-box</code>（12 圆角 + 1px 浅边 + 两档 padding），
+    模块之间只有<b>内容</b>不同。这条要抄。</p>
+
+  <h3 class="sub"><span class="tag">6.1</span>一个模块的五个属性</h3>
+  <table>
+    <thead><tr><th>属性</th><th>取值</th><th>作用</th></tr></thead>
+    <tbody>
+      <tr><td><b>shell</b> 壳</td><td class="num">plain / card / member</td><td>plain 插在正文里不画卡；card 独立成卡；member 属于某个分组卡</td></tr>
+      <tr><td><b>density</b> 密度</td><td class="num">compact / regular / loose</td><td>pad 12/16/24、gap 8/12/16，一套变量三档</td></tr>
+      <tr><td><b>head</b> 头</td><td class="num">icon / plain / none</td><td>icon 带图标块（列表类）；plain 纯标题；none 无头（广告、通栏）</td></tr>
+      <tr><td><b>grid</b> 列</td><td class="num">1 / 2 / 3 / auto</td><td>由所在区域决定，模块自己不自适应乱变列</td></tr>
+      <tr><td><b>empty</b> 空态</td><td class="num">hide / hint</td><td>默认 hide（不渲染）；hint 只在后台预览时显示占位</td></tr>
+    </tbody>
+  </table>
+
+  <h3 class="sub"><span class="tag">6.2</span>壳语言：一张表定全部</h3>
+  <div class="ex" style="display:flex;gap:14px;flex-wrap:wrap;align-items:flex-start">
+    <div style="flex:1;min-width:220px">
+      <div class="demo-cap">card · loose（文章内模块）</div>
+      <div style="background:#fff;border:1px solid var(--line);border-radius:12px;padding:24px">
+        <div class="ex-whead" style="margin-bottom:14px"><span class="ex-wicon">◆</span><b>相关阅读</b><a class="more" href="#">全部</a></div>
+        <div style="height:34px;border-radius:8px;background:var(--surface-2);border:1px dashed var(--line-strong)"></div>
+      </div>
+    </div>
+    <div style="flex:1;min-width:200px">
+      <div class="demo-cap">card · regular（侧栏模块）</div>
+      <div style="background:#fff;border:1px solid var(--line);border-radius:12px;padding:16px">
+        <div class="ex-whead" style="margin-bottom:12px"><span class="ex-wicon">◆</span><b>热门文章</b></div>
+        <div style="height:26px;border-radius:6px;background:var(--surface-2);border:1px dashed var(--line-strong)"></div>
+      </div>
+    </div>
+    <div style="flex:1;min-width:200px">
+      <div class="demo-cap">card · compact（数据/标签）</div>
+      <div style="background:#fff;border:1px solid var(--line);border-radius:12px;padding:12px">
+        <div class="ex-whead" style="margin-bottom:8px"><span class="ex-wicon">◆</span><b>标签云</b></div>
+        <div style="height:20px;border-radius:6px;background:var(--surface-2);border:1px dashed var(--line-strong)"></div>
+      </div>
+    </div>
+    <div style="flex:1;min-width:200px">
+      <div class="demo-cap">member（分组卡内）</div>
+      <div style="background:#fff;border:1px solid var(--line);border-radius:0 0 12px 12px;padding:16px 24px;border-top:0">
+        <div style="font-size:13px;color:var(--ink-2)">组内成员：无独立圆角、无左右外边线</div>
+      </div>
+    </div>
+  </div>
+
+  <h3 class="sub"><span class="tag">6.3</span>模块头三型</h3>
+  <div class="spec">
+    <div class="spec-card">
+      <h4>icon 型（默认）</h4>
+      <ul>
+        <li><em>结构</em><span>图标块 22 + 标题 14/600 + 右侧 more</span></li>
+        <li><em>图标</em><span>13px 线性图标，语义化（榜单=奖杯、评论=气泡）</span></li>
+        <li><em>下距</em><span>12（regular）/ 8（compact）</span></li>
+        <li><em>适用于</em><span>热门、最新、评论、相关、排行榜</span></li>
+      </ul>
+    </div>
+    <div class="spec-card">
+      <h4>plain / none 型</h4>
+      <ul>
+        <li><em>plain</em><span>只有标题（16/600），用于正文内的「延伸阅读」</span></li>
+        <li><em>none</em><span>广告位、通栏 CTA、订阅框，不加头避免抢注意力</span></li>
+        <li><em>禁用</em><span>同一卡里出现两种头型（既有图标头又有加粗小标题）</span></li>
+      </ul>
+    </div>
+  </div>
+
+  <h3 class="sub"><span class="tag">6.4</span>现有模块 → 新属性映射</h3>
+  <table>
+    <thead><tr><th>模块文件</th><th>shell</th><th>density</th><th>head</th><th>调整点</th></tr></thead>
+    <tbody>
+      <tr><td><code>aside/wstats.php</code></td><td class="num">card</td><td class="num">compact</td><td class="num">icon</td><td>数字 20 mono + 2×2 格，合并进名片卡</td></tr>
+      <tr><td><code>aside/hot.php</code> / <code>rank.php</code></td><td class="num">card</td><td class="num">regular</td><td class="num">icon</td><td>加序号 mono，摘要换元信息行</td></tr>
+      <tr><td><code>aside/comments.php</code></td><td class="num">card</td><td class="num">regular</td><td class="num">icon</td><td>头像 24，正文 13/20 两行截断</td></tr>
+      <tr><td><code>aside/tags.php</code></td><td class="num">card</td><td class="num">compact</td><td class="num">icon</td><td>去胶囊底，改 # 前缀</td></tr>
+      <tr><td><code>aside/about.php</code></td><td class="num">card</td><td class="num">loose</td><td class="num">none</td><td>升级为名片卡（C10）</td></tr>
+      <tr><td><code>post/act.php</code></td><td class="num">member</td><td class="num">regular</td><td class="num">none</td><td>改 5 等分动作条</td></tr>
+      <tr><td><code>post/related.php</code></td><td class="num">member</td><td class="num">regular</td><td class="num">icon</td><td>3 列大卡 → 列表式 96×64</td></tr>
+      <tr><td><code>post/copyright.php</code></td><td class="num">member</td><td class="num">compact</td><td class="num">plain</td><td>虚线改实线，去掉独立圆角</td></tr>
+      <tr><td><code>home/list.php</code></td><td class="num">card</td><td class="num">regular</td><td class="num">none</td><td>见 §07.1</td></tr>
+    </tbody>
+  </table>
+
+  <div class="note">
+    <b>实现方式：</b>模块模板开头设 <code>$ecodBlock['shell'|'density'|'head']</code> 默认值（管理台不改 UI，用默认值 + 每模块内置），
+    外壳输出 <code>&lt;section class="ecod_widget" data-shell="card" data-density="regular"&gt;</code>，
+    样式全部挂在属性选择器上。这样<b>不需要改 20 个模板的 class 名</b>，只改 <code>ecod_render_block()</code> 的包裹层。
+  </div>
+</section>
+
+<!-- ============ 07 ============ -->
+<section class="sec" id="s07">
+  <div class="sec-head"><span class="sec-num">07</span><h2>其他页面组件</h2></div>
+  <p class="sec-sub">同一套壳语言扩到首页、归档、搜索、移动端。原则不变：一处刻度、一套描边、两级墨色。</p>
+
+  <h3 class="sub"><span class="tag">7.1</span>首页信息流卡</h3>
+  <div class="ex">
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px">
+      <div style="background:#fff;border:1px solid var(--line);border-radius:12px;overflow:hidden">
+        <div style="height:104px;background:radial-gradient(100% 100% at 30% 20%,#dbe4ff,#f2f5ff)"></div>
+        <div style="padding:14px 16px 16px">
+          <div style="font-size:14px;line-height:22px;font-weight:600;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">模块化不是拆得更多，而是约束得更准</div>
+          <div style="font-size:12px;line-height:18px;color:#8a929f;margin-top:6px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">从卡片、区域、密度三个维度重新定义「一个模块」的边界条件。</div>
+          <div style="display:flex;align-items:center;gap:8px;margin-top:10px;font-size:11px;color:#a8afba">
+            <span>10-30</span><span>·</span><span>1.2k 阅读</span><span>·</span><span>9 评论</span>
+          </div>
+        </div>
+      </div>
+      <div style="background:#fff;border:1px solid var(--line);border-radius:12px;overflow:hidden">
+        <div style="height:104px;background:radial-gradient(100% 100% at 30% 20%,#fde8c8,#fff7ec)"></div>
+        <div style="padding:14px 16px 16px">
+          <div style="font-size:14px;line-height:22px;font-weight:600;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">排版的三条暗线：字号、行高、段距</div>
+          <div style="font-size:12px;line-height:18px;color:#8a929f;margin-top:6px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">为什么 16/28 比 15/26 更好读。</div>
+          <div style="display:flex;align-items:center;gap:8px;margin-top:10px;font-size:11px;color:#a8afba"><span>10-29</span><span>·</span><span>860 阅读</span></div>
+        </div>
+      </div>
+      <div style="background:#fff;border:1px solid var(--line);border-radius:12px;overflow:hidden">
+        <div style="height:104px;background:radial-gradient(100% 100% at 30% 20%,#e6f7f1,#f4fcf9)"></div>
+        <div style="padding:14px 16px 16px">
+          <div style="font-size:14px;line-height:22px;font-weight:600;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">卡片为什么越做越多，却越来越难读</div>
+          <div style="font-size:12px;line-height:18px;color:#8a929f;margin-top:6px">密度不是信息量的问题，是刻度的问题。</div>
+          <div style="display:flex;align-items:center;gap:8px;margin-top:10px;font-size:11px;color:#a8afba"><span>10-28</span><span>·</span><span>520 阅读</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="spec">
+    <div class="spec-card">
+      <h4>规格</h4>
+      <ul>
+        <li><em>封面</em><span>16:9 或固定 104px 高，卡片顶部圆角随卡</span></li>
+        <li><em>内容区</em><span>pad 14 16 16；标题 14/22 clamp2；摘要 12/18 clamp2</span></li>
+        <li><em>meta</em><span>11px，用 <code>·</code> 分隔，不用图标（省 4 个 icon 的噪声）</span></li>
+        <li><em>hover</em><span>只border → line-strong + 标题转主色，<b>不位移、不投影</b></span></li>
+      </ul>
+    </div>
+    <div class="spec-card">
+      <h4>为什么去掉悬浮抬升</h4>
+      <ul>
+        <li><em>理由</em><span>一屏 9 张卡同时 hover 抬升会抖动；参考站全站无卡片位移</span></li>
+        <li><em>替代</em><span>用标题变色 + 图片 scale(1.02)（内层裁切，不动布局）</span></li>
+        <li><em>例外</em><span>只有「专题卡」「封面卡」允许 2px 位移</span></li>
+      </ul>
+    </div>
+  </div>
+
+  <h3 class="sub"><span class="tag">7.2</span>分类工具条与搜索</h3>
+  <div class="ex">
+    <div style="background:#fff;border:1px solid var(--line);border-radius:12px;padding:12px 16px;display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+      <div style="display:flex;align-items:center;gap:6px;height:32px;padding:0 10px;border:1px solid var(--line-2);border-radius:8px;background:#fcfdff;flex:1;min-width:180px">
+        <span style="color:#a8afba">⌕</span><span style="font-size:13px;color:#a8afba">在「后端开发」中搜索…</span>
+      </div>
+      <div class="ex-seg"><span class="cur">最新</span><span>热门</span><span>随机</span></div>
+      <span style="font-size:12px;color:#8a929f">共 37 篇</span>
+    </div>
+  </div>
+  <div class="spec">
+    <div class="spec-card">
+      <h4>工具条</h4>
+      <ul>
+        <li><em>高度</em><span>56（12+32+12），比现状矮 8</span></li>
+        <li><em>搜索框</em><span>1fr 弹性，8 圆角（不是 999 胶囊，避免与按钮抢形）</span></li>
+        <li><em>排序</em><span>分段控件，选中白底 + 微阴影；不再用下拉</span></li>
+      </ul>
+    </div>
+    <div class="spec-card">
+      <h4>搜索面板</h4>
+      <ul>
+        <li><em>结果项</em><span>标题 14/22 clamp1 + 摘要 12/18 clamp2 + 分类·日期</span></li>
+        <li><em>空态</em><span>一句提示 + 4 个热词 chips，不要把标签云整个塞进来</span></li>
+        <li><em>加载</em><span>3 条骨架行，高 56，非跳转 spinner</span></li>
+      </ul>
+    </div>
+  </div>
+
+  <h3 class="sub"><span class="tag">7.3</span>移动端一致性</h3>
+  <table>
+    <thead><tr><th>组件</th><th>桌面</th><th>≤680px</th></tr></thead>
+    <tbody>
+      <tr><td>文章头</td><td class="num">pad 22 24，标题 27</td><td class="num">pad 16 18，标题 22，封面高 150</td></tr>
+      <tr><td>正文</td><td class="num">16/28，列宽 700</td><td class="num">16/28（<b>不缩字号</b>），左右 18</td></tr>
+      <tr><td>动作条</td><td class="num">图标 20 + 文字 12</td><td class="num">图标 20 + 数字（去文字），高 52</td></tr>
+      <tr><td>相关阅读</td><td class="num">列表 96×64</td><td class="num">缩略图 72×48，标题 clamp2</td></tr>
+      <tr><td>评论编辑器</td><td class="num">工具条 3 图标 + 主按钮</td><td class="num">只留 1 图标 + 主按钮，避免溢出</td></tr>
+      <tr><td>侧栏</td><td class="num">300px 固定</td><td class="num">沉底为单列，模块 gap 12（不是 16）</td></tr>
+      <tr><td>工具条</td><td class="num">目录 / 朗读 / 字号 / 进度</td><td class="num">只留朗读与进度线</td></tr>
+    </tbody>
+  </table>
+  <div class="note info">
+    <b>移动端唯一允许缩字号的地方是「标题」，正文永远 16px。</b>现状 <code>≤680px</code> 把正文降到 15，是这次要改的。
+  </div>
+</section>
+
+<!-- ============ 08 ============ -->
+<section class="sec" id="s08">
+  <div class="sec-head"><span class="sec-num">08</span><h2>实施顺序</h2></div>
+  <p class="sec-sub">按「先规格、再结构、最后补件」三段推进。每段都能独立上线、独立验收，不出现半成品状态。</p>
+
+  <h3 class="sub"><span class="tag">P1</span>规格层（无结构变更，纯 CSS）</h3>
+  <table>
+    <thead><tr><th>动作</th><th>文件</th><th>验收</th></tr></thead>
+    <tbody>
+      <tr><td><del>修 critical 抽取</del>（复核为误报，已排除）；改为构建期花括号平衡断言</td><td><code>build/build.mjs</code></td><td>构建通过；1440 下 h1=27px、<code>.ecod_article</code> padding=30 32（已实测达标）</td></tr>
+      <tr><td>新增 <code>--ecod-ink*</code> / <code>--ecod-line*</code> / <code>--ecod-sp-*</code>，旧变量别名映射</td><td><code>assets/css/ecod.css</code> :root</td><td>全站视觉零回归（截图 diff）</td></tr>
+      <tr><td>正文 15→16、段距 18→20、lh 1.75；h3/h4 去装饰；figure/figcaption 规格</td><td>同上 §8</td><td>长文页行宽 60–72 字符，无横向溢出</td></tr>
+      <tr><td>卡片描边 <code>#e4e7ee</code> → <code>#eef0f5</code>；浮层阴影收敛为单层</td><td>同上</td><td>暗色下对比度仍 ≥ 1.2:1</td></tr>
+      <tr><td>按钮三态补齐（hover / active / focus-visible）</td><td>同上 §8–9</td><td>Tab 键遍历全站控件均有焦点环</td></tr>
+    </tbody>
+  </table>
+
+  <h3 class="sub"><span class="tag">P2</span>结构层（文章内页）</h3>
+  <table>
+    <thead><tr><th>动作</th><th>文件</th><th>验收</th></tr></thead>
+    <tbody>
+      <tr><td>头卡重排：封面 + 徽标 + 作者条 + 元信息两行；移除重复作者</td><td><code>post.php</code> L44–95</td><td>有/无封面、锁定/付费四种状态齐全</td></tr>
+      <tr><td>分组卡包裹 <code>.ecod_stack</code>（头/身/尾）</td><td><code>post.php</code> + CSS</td><td>共享边框无双线，sticky 工具条正常</td></tr>
+      <tr><td>阅读工具条（吸收 tts）</td><td><code>post.php</code> + <code>post/tts.php</code></td><td>无目录无朗读时不输出空条</td></tr>
+      <tr><td>动作条 5 等分</td><td><code>components/post/act.php</code></td><td>未登录点赞弹登录层；报错弹层可关</td></tr>
+      <tr><td>相关阅读改列表式</td><td><code>components/post/related.php</code></td><td>无图降级有占位，不出现空洞</td></tr>
+      <tr><td>标签去底片 + 上下篇换样式</td><td><code>post.php</code> / <code>post/postnav.php</code></td><td>hover 才出底，触屏可点面积 ≥ 32</td></tr>
+    </tbody>
+  </table>
+
+  <h3 class="sub"><span class="tag">P3</span>模块壳与补件</h3>
+  <table>
+    <thead><tr><th>动作</th><th>文件</th><th>验收</th></tr></thead>
+    <tbody>
+      <tr><td><code>data-shell / data-density</code> 包裹层</td><td><code>core/admin/blocks.php</code> <code>ecod_render_block()</code></td><td>20 个模板无需改 class 即生效</td></tr>
+      <tr><td>侧栏 9 个模块换成 icon 头 + 三行列表</td><td><code>components/aside/*</code></td><td>侧栏高度整体下降 ≥ 8%</td></tr>
+      <tr><td>名片卡（about 升级）</td><td><code>components/aside/about.php</code></td><td>4 宫格在 300px 内不换行</td></tr>
+      <tr><td>评论编辑器单框化 + 讨论头 + AI 总结</td><td><code>comments.php</code></td><td>≤680px 不溢出；AI 失败静默</td></tr>
+      <tr><td>评分模块（默认关）</td><td>新增 <code>components/post/rating.php</code></td><td>少 3 人不显示分数</td></tr>
+      <tr><td>首页信息流卡规整</td><td><code>components/home/list.php</code></td><td>3 列 / 2 列 / 1 列断点无文字截断错位</td></tr>
+    </tbody>
+  </table>
+
+  <div class="note">
+    <b>顺序理由：</b>P1 只动 token，可全站一次性验证；P2 改 <code>post.php</code> 单文件，风险局部；
+    P3 才动模块壳——因为它影响所有页面，必须等 P1 的 token 稳定后再铺。
+    <b>每段结束都要更新 <code>docs/dev/design-proposal.html</code> 对应小节</b>（§08 排版 / §31 模块管理台），保持文档真源一致。
+  </div>
+</section>
+
+<!-- ============ 09 ============ -->
+<section class="sec" id="s09">
+  <div class="sec-head"><span class="sec-num">09</span><h2>明确不做</h2></div>
+  <p class="sec-sub">划清边界，避免「精美化」变成「加东西」。</p>
+  <div class="do-dont">
+    <div class="dd dont">
+      <h4>不做</h4>
+      <ul>
+        <li>不引入 Tailwind / Element Plus / 任何 UI 框架（参考站用了，本站不引）</li>
+        <li>不做大范围暗色重做（现有暗色覆盖够用，只补新增变量）</li>
+        <li>不加动画库，不加滚动进场特效（<code>MOTION-TASKS.md</code> 已有既定范围）</li>
+        <li>不改数据结构：评分表是唯一新增，且默认关闭</li>
+        <li>不做无限盖楼评论（保持两级）</li>
+        <li>不为「精细化」重命名现有 class（用属性选择器与别名映射）</li>
+      </ul>
+    </div>
+    <div class="dd do">
+      <h4>要做（复述目标，便于对照验收）</h4>
+      <ul>
+        <li>正文 16/28、段距 20、列宽 700</li>
+        <li>文章页四段式分组卡，模块间 16 呼吸</li>
+        <li>元信息两行分组，去掉 5 枚等重胶囊</li>
+        <li>动作条 5 等分，替代 4 枚幽灵按钮</li>
+        <li>模块统一壳：12 圆角 + 1px 浅边 + 三档密度 + icon 头</li>
+        <li>间距只取 4 的倍数，字号阶跃 ≥ 2px</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="note info" style="margin-top:24px">
+    <b>待确认（开工前需要你拍板的两点）：</b><br>
+    ① 评分模块是否要做——它需要新表与后台开关，默认关闭；不想要可以从 P3 剔除，不影响其余。<br>
+    ② 作者条与文末 <code>authorbox</code> 的关系——头卡常驻作者条后，文末作者卡是「关闭」还是改为「作者其它文章」。
+  </div>
+</section>
+</main>
+</div>
+</div>
+<footer class="doc" style="max-width:1320px;margin:0 auto;padding:0 28px 60px">
+  Ecod Theme 设计稿 · 文章内页模块化与组件精美化 · 2026-10-30 · 规格先行，未改代码
+</footer>
+</body>
+</html>

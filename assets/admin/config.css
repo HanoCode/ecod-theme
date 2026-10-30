@@ -100,23 +100,133 @@
 .ecod-admin__nav {
     display: flex;
     flex-direction: column;
-    gap: 2px;
+    gap: 4px;
+    overflow-y: auto;
+    scrollbar-width: thin;
+}
+
+/* 分组（手风琴）：头永远可见，点开才露子面板 */
+.ecod-admin__group {
+    border-radius: var(--ea-radius-sm);
+}
+
+.ecod-admin__grouphd {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    width: 100%;
+    padding: 8px 10px;
+    border: 0;
+    border-radius: var(--ea-radius-sm);
+    background: transparent;
+    color: #4a5065;
+    text-align: left;
+    cursor: pointer;
+    transition: background .16s, color .16s;
+}
+
+.ecod-admin__grouphd:hover {
+    background: #eef0f9;
+    color: var(--ea-ink);
+}
+
+.ecod-admin__grouphd.is-active {
+    color: var(--ea-ink);
+}
+
+.ecod-admin__gicon {
+    display: grid;
+    place-items: center;
+    flex: none;
+    width: 26px;
+    height: 26px;
+    border-radius: 7px;
+    background: #e8ebf6;
+    color: #6b7390;
+    transition: background .16s, color .16s;
+}
+
+.ecod-admin__grouphd.is-active .ecod-admin__gicon,
+.ecod-admin__group.is-open .ecod-admin__gicon {
+    background: var(--ea-brand-soft);
+    color: var(--ea-brand);
+}
+
+.ecod-admin__gname {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    min-width: 0;
+    flex: 1;
+    line-height: 1.3;
+}
+
+.ecod-admin__gname b {
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.ecod-admin__gname small {
+    color: var(--ea-sub);
+    font-size: 10.5px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.ecod-admin__gchev {
+    flex: none;
+    display: grid;
+    place-items: center;
+    color: #a6adc4;
+    transition: transform .2s ease;
+}
+
+.ecod-admin__group.is-open .ecod-admin__gchev {
+    transform: rotate(90deg);
+}
+
+/* 子面板列表：grid-rows 过渡展开 */
+.ecod-admin__grouplst {
+    display: grid;
+    grid-template-rows: 0fr;
+    transition: grid-template-rows .22s ease;
+}
+
+.ecod-admin__group.is-open .ecod-admin__grouplst {
+    grid-template-rows: 1fr;
+}
+
+.ecod-admin__grouplst-in {
+    min-height: 0;
+    overflow: hidden;
+    padding: 2px 0 2px 10px;
 }
 
 .ecod-admin__navitem {
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    gap: 8px;
-    padding: 9px 12px;
+    gap: 7px;
+    width: 100%;
+    padding: 7px 11px;
     border: 0;
     border-radius: var(--ea-radius-sm);
     background: transparent;
-    color: #4a5065;
-    font-size: 13px;
+    color: #565d75;
+    font-size: 12.5px;
     text-align: left;
     cursor: pointer;
     transition: background .16s, color .16s;
+}
+
+.ecod-admin__navitem::before {
+    content: "";
+    flex: none;
+    width: 4px;
+    height: 4px;
+    border-radius: 50%;
+    background: #b9bfd3;
+    transition: background .16s;
 }
 
 .ecod-admin__navitem:hover {
@@ -131,21 +241,8 @@
     box-shadow: 0 1px 2px rgba(23, 32, 63, .06), 0 0 0 1px rgba(79, 110, 242, .12);
 }
 
-.ecod-admin__navitem em {
-    min-width: 20px;
-    padding: 0 6px;
-    border-radius: var(--ea-radius-full);
-    background: #e8ebf6;
-    color: #6b7390;
-    font-size: 11px;
-    font-style: normal;
-    line-height: 18px;
-    text-align: center;
-}
-
-.ecod-admin__navitem.is-active em {
-    background: var(--ea-brand-soft);
-    color: var(--ea-brand);
+.ecod-admin__navitem.is-active::before {
+    background: var(--ea-brand);
 }
 
 .ecod-admin__sidefoot {
@@ -237,6 +334,329 @@ body {
 
 .ecod-pane.is-active {
     display: block;
+}
+
+/* ---------------- 面板内小节：带标题的字段分组 ---------------- */
+.ecod-sect {
+    margin-top: 22px;
+}
+
+.ecod-sect:first-child {
+    margin-top: 10px;
+}
+
+.ecod-sect__hd {
+    display: flex;
+    align-items: baseline;
+    flex-wrap: wrap;
+    gap: 4px 10px;
+    padding-bottom: 9px;
+    margin-bottom: 3px;
+    border-bottom: 1px solid var(--ea-line);
+}
+
+.ecod-sect__t {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    color: var(--ea-ink);
+    font-size: 13.5px;
+    font-weight: 700;
+}
+
+.ecod-sect__t::before {
+    content: "";
+    width: 3px;
+    height: 12px;
+    border-radius: 2px;
+    background: var(--ea-brand);
+}
+
+.ecod-sect__d {
+    color: var(--ea-sub);
+    font-size: 11.5px;
+}
+
+/* 沉底小节（隐藏字段等，无标题）：只留间隔 */
+.ecod-sect--rest {
+    margin-top: 0;
+}
+
+.ecod-sect--rest .ecod-sect__hd {
+    display: none;
+}
+
+/* ---------------- 「开始」引导页 ---------------- */
+.ecod-start {
+    max-width: 860px;
+    padding-top: 8px;
+}
+
+.ecod-start__hero {
+    padding: 20px 22px;
+    border: 1px solid #dfe6ff;
+    border-radius: var(--ea-radius);
+    background: linear-gradient(135deg, #f2f5ff, #fafbff);
+}
+
+.ecod-start__hero b {
+    display: block;
+    margin-bottom: 6px;
+    color: var(--ea-ink);
+    font-size: 16px;
+}
+
+.ecod-start__hero p {
+    margin: 0;
+    color: #57607c;
+    font-size: 12.5px;
+    line-height: 1.75;
+}
+
+.ecod-start__hero kbd {
+    padding: 1px 6px;
+    border: 1px solid #d5daf0;
+    border-bottom-width: 2px;
+    border-radius: 5px;
+    background: #fff;
+    color: #41508a;
+    font-family: inherit;
+    font-size: 11px;
+}
+
+.ecod-start__steps {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    margin-top: 14px;
+}
+
+.ecod-start__step {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 3px;
+    padding: 14px 16px;
+    border: 1px solid var(--ea-line);
+    border-radius: var(--ea-radius);
+    background: #fff;
+    text-align: left;
+    cursor: pointer;
+    transition: border-color .16s, box-shadow .16s, transform .16s;
+}
+
+.ecod-start__step:hover {
+    border-color: #b9c6ff;
+    box-shadow: 0 6px 18px rgba(23, 32, 63, .08);
+    transform: translateY(-1px);
+}
+
+.ecod-start__step em {
+    display: grid;
+    place-items: center;
+    width: 20px;
+    height: 20px;
+    margin-bottom: 5px;
+    border-radius: 50%;
+    background: var(--ea-brand-soft);
+    color: var(--ea-brand);
+    font-size: 11px;
+    font-style: normal;
+    font-weight: 700;
+}
+
+.ecod-start__step b {
+    color: var(--ea-ink);
+    font-size: 13px;
+}
+
+.ecod-start__step small {
+    color: var(--ea-sub);
+    font-size: 11.5px;
+    line-height: 1.5;
+}
+
+.ecod-start__tasks {
+    margin-top: 22px;
+    border: 1px solid var(--ea-line);
+    border-radius: var(--ea-radius);
+    background: #fff;
+    overflow: hidden;
+}
+
+.ecod-start__taskshd {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--ea-line);
+    background: var(--ea-soft);
+}
+
+.ecod-start__taskshd b {
+    color: var(--ea-ink);
+    font-size: 13px;
+}
+
+.ecod-start__taskshd span {
+    color: var(--ea-brand);
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.ecod-start__tasklst {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+}
+
+.ecod-start__task {
+    display: flex;
+    align-items: center;
+    gap: 11px;
+    padding: 12px 16px;
+    border: 0;
+    border-bottom: 1px dashed var(--ea-line);
+    background: transparent;
+    text-align: left;
+    cursor: pointer;
+    transition: background .16s;
+}
+
+.ecod-start__task:nth-child(odd) {
+    border-right: 1px dashed var(--ea-line);
+}
+
+.ecod-start__task:nth-last-child(-n + 2) {
+    border-bottom: 0;
+}
+
+.ecod-start__task:hover {
+    background: #f8f9ff;
+}
+
+.ecod-start__tdot {
+    display: grid;
+    place-items: center;
+    flex: none;
+    width: 20px;
+    height: 20px;
+    border: 1.5px solid #c3c9dd;
+    border-radius: 50%;
+    background: #fff;
+    color: transparent;
+    transition: background .16s, border-color .16s, color .16s;
+}
+
+.ecod-start__task.is-done .ecod-start__tdot {
+    border-color: #2fa463;
+    background: #2fa463;
+    color: #fff;
+}
+
+.ecod-start__tmain {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    flex: 1;
+    min-width: 0;
+    line-height: 1.35;
+}
+
+.ecod-start__tmain b {
+    color: var(--ea-ink);
+    font-size: 12.5px;
+}
+
+.ecod-start__tmain small {
+    color: var(--ea-sub);
+    font-size: 11px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.ecod-start__task em {
+    flex: none;
+    color: var(--ea-brand);
+    font-size: 11.5px;
+    font-style: normal;
+    white-space: nowrap;
+}
+
+.ecod-start__task.is-done em {
+    color: #2fa463;
+}
+
+.ecod-start__quick {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    margin-top: 22px;
+}
+
+.ecod-start__qlink {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+    padding: 14px 16px;
+    border: 1px solid var(--ea-line);
+    border-radius: var(--ea-radius);
+    background: #fff;
+    text-align: left;
+    text-decoration: none;
+    cursor: pointer;
+    transition: border-color .16s, box-shadow .16s;
+}
+
+.ecod-start__qlink:hover {
+    border-color: #b9c6ff;
+    box-shadow: 0 6px 18px rgba(23, 32, 63, .08);
+}
+
+.ecod-start__qlink > svg {
+    color: var(--ea-brand);
+}
+
+.ecod-start__qlink span {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.ecod-start__qlink b {
+    color: var(--ea-ink);
+    font-size: 12.5px;
+}
+
+.ecod-start__qlink small {
+    color: var(--ea-sub);
+    font-size: 11px;
+    line-height: 1.5;
+}
+
+.ecod-start__qlink em {
+    color: var(--ea-brand);
+    font-size: 11.5px;
+    font-style: normal;
+}
+
+/* 窄面板：引导页降级为单列 */
+.ecod-admin.is-narrow .ecod-start__steps,
+.ecod-admin.is-narrow .ecod-start__quick {
+    grid-template-columns: 1fr;
+}
+
+.ecod-admin.is-narrow .ecod-start__tasklst {
+    grid-template-columns: 1fr;
+}
+
+.ecod-admin.is-narrow .ecod-start__task:nth-child(odd) {
+    border-right: 0;
+}
+
+.ecod-admin.is-narrow .ecod-start__task:last-child {
+    border-bottom: 0;
 }
 
 .ecod-pane__bar {
@@ -802,6 +1222,55 @@ body {
     font-size: 12px;
 }
 
+/* 站内公告：整宽排版，输入在说明文字下方 */
+.ecod-tool--broadcast {
+    align-items: flex-start;
+    flex-wrap: wrap;
+}
+.ecod-broadcast {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    width: 100%;
+    min-width: 260px;
+    max-width: 560px;
+    margin-top: 10px;
+}
+.ecod-broadcast__title,
+.ecod-broadcast__link {
+    height: 34px;
+    padding: 0 10px;
+    border: 1px solid var(--ea-line);
+    border-radius: var(--ea-radius);
+    font-size: 12.5px;
+    color: var(--ea-ink);
+    background: #fff;
+}
+.ecod-broadcast__body {
+    padding: 8px 10px;
+    border: 1px solid var(--ea-line);
+    border-radius: var(--ea-radius);
+    font-size: 12.5px;
+    line-height: 1.7;
+    color: var(--ea-ink);
+    background: #fff;
+    resize: vertical;
+}
+.ecod-broadcast__title:focus,
+.ecod-broadcast__body:focus,
+.ecod-broadcast__link:focus {
+    outline: none;
+    border-color: var(--ea-brand);
+}
+.ecod-broadcast__send {
+    align-self: flex-start;
+    margin-top: 2px;
+}
+.ecod-broadcast__send:disabled {
+    opacity: .6;
+    cursor: not-allowed;
+}
+
 @keyframes ecodDrawerIn {
     from {
         transform: translateX(18px);
@@ -1042,13 +1511,61 @@ textarea.ecod-input {
         padding: 12px;
     }
 
+    /* 手风琴在横排侧栏降级为胶囊行：分组一行，展开的子面板换行铺开 */
     .ecod-admin__nav {
         flex-direction: row;
+        flex-wrap: wrap;
+        align-items: flex-start;
+        gap: 6px;
+        overflow: visible;
+    }
+
+    .ecod-admin__grouphd {
+        width: auto;
+        padding: 7px 12px;
+        border: 1px solid var(--ea-line);
+        border-radius: var(--ea-radius-full);
+        background: #fff;
+    }
+
+    .ecod-admin__grouphd.is-active {
+        border-color: rgba(79, 110, 242, .45);
+    }
+
+    .ecod-admin__gname small,
+    .ecod-admin__gchev,
+    .ecod-admin__navitem::before {
+        display: none;
+    }
+
+    .ecod-admin__grouplst {
+        display: none;
+    }
+
+    .ecod-admin__group.is-open .ecod-admin__grouplst {
+        display: flex;
+        flex: 1 1 100%;
+        flex-wrap: wrap;
         gap: 6px;
     }
 
+    .ecod-admin__grouplst-in {
+        display: contents;
+        padding: 0;
+    }
+
     .ecod-admin__navitem {
+        width: auto;
+        flex: none;
+        padding: 6px 12px;
+        border: 1px solid var(--ea-line);
+        border-radius: var(--ea-radius-full);
+        background: #fff;
         white-space: nowrap;
+    }
+
+    .ecod-admin__navitem.is-active {
+        border-color: rgba(79, 110, 242, .45);
     }
 
     .ecod-admin__sidefoot {
@@ -1820,6 +2337,61 @@ textarea.ecod-input {
     flex: none;
     white-space: nowrap;
     min-height: 38px;
+}
+
+/* 窄容器同样把手风琴降级为胶囊行（与 ≤900px 视口的处理一致） */
+.ecod-admin.is-narrow .ecod-admin__nav {
+    flex-wrap: wrap;
+    align-items: flex-start;
+    gap: 6px;
+    overflow: visible;
+}
+
+.ecod-admin.is-narrow .ecod-admin__grouphd {
+    width: auto;
+    min-height: 38px;
+    padding: 7px 12px;
+    border: 1px solid var(--ea-line);
+    border-radius: var(--ea-radius-full);
+    background: #fff;
+}
+
+.ecod-admin.is-narrow .ecod-admin__grouphd.is-active {
+    border-color: rgba(79, 110, 242, .45);
+}
+
+.ecod-admin.is-narrow .ecod-admin__gname small,
+.ecod-admin.is-narrow .ecod-admin__gchev,
+.ecod-admin.is-narrow .ecod-admin__navitem::before {
+    display: none;
+}
+
+.ecod-admin.is-narrow .ecod-admin__grouplst {
+    display: none;
+}
+
+.ecod-admin.is-narrow .ecod-admin__group.is-open .ecod-admin__grouplst {
+    display: flex;
+    flex: 1 1 100%;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.ecod-admin.is-narrow .ecod-admin__grouplst-in {
+    display: contents;
+    padding: 0;
+}
+
+.ecod-admin.is-narrow .ecod-admin__navitem {
+    width: auto;
+    padding: 6px 12px;
+    border: 1px solid var(--ea-line);
+    border-radius: var(--ea-radius-full);
+    background: #fff;
+}
+
+.ecod-admin.is-narrow .ecod-admin__navitem.is-active {
+    border-color: rgba(79, 110, 242, .45);
 }
 
 .ecod-admin.is-narrow .ecod-admin__sidefoot {

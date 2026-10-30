@@ -109,7 +109,9 @@ $ecodConfig = [
 window.ECOD_EDITOR = <?php echo json_encode($ecodConfig, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE); ?>;
 window.ECOD_MEDIA = {
     api: <?php echo json_encode($ecodAssetUrl('media.php'), JSON_UNESCAPED_SLASHES); ?>,
-    upload: <?php echo json_encode($ecodConfig['upload'], JSON_UNESCAPED_SLASHES); ?>
+    upload: <?php echo json_encode($ecodConfig['upload'], JSON_UNESCAPED_SLASHES); ?>,
+    token: <?php echo json_encode($security->getToken('ecod-media')); ?>,
+    cid: <?php echo (int) $ecodCid; ?>
 };
 </script>
 <script src="<?php echo htmlspecialchars($ecodAssetUrl('assets/admin/media.js') . $ecodVer('assets/admin/media.js')); ?>"></script>

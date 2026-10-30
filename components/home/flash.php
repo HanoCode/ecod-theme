@@ -29,7 +29,7 @@ if (!$ecodFlashQ->have()) {
     return;
 }
 
-/* 指定分类时给出「查看全部」入口 */
+/* 指定分类时给出「查看全部」入口；未指定分类且建了快讯页时指向快讯页 */
 $ecodFlashMore = '';
 $ecodFlashMoreName = '';
 if ($ecodFlashMid > 0) {
@@ -44,6 +44,9 @@ if ($ecodFlashMid > 0) {
         $ecodFlashMoreName = (string) $ecodFlashCats->name;
         break;
     }
+} elseif (function_exists('ecod_template_page_url')) {
+    $ecodFlashMore = ecod_template_page_url('flash.php');
+    $ecodFlashMoreName = '快讯页';
 }
 ?>
 <section class="ecod_section">

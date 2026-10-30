@@ -57,8 +57,9 @@ $ecodMailReady = function_exists('ecod_mail_ready') && ecod_mail_ready();
     <?php /* 模块 · 内容区上方（模块管理台） */ ecod_widgets_render("top_content", $this); ?>
 
     <nav class="ecod_crumb" aria-label="面包屑">
+        <a class="ecod_crumb__back" href="javascript:history.back()" aria-label="返回"><?php echo ecod_icon('chevron', 13); ?></a>
         <a href="<?php $this->options->siteUrl(); ?>"><?php echo ecod_icon('home', 12); ?>首页</a>
-        <span class="ecod_crumb__sep" aria-hidden="true"><?php echo ecod_icon('chevron', 11); ?></span>
+        <span class="ecod_crumb__sep" aria-hidden="true">/</span>
         <span aria-current="page"><?php $this->title(); ?></span>
     </nav>
 
@@ -74,22 +75,27 @@ $ecodMailReady = function_exists('ecod_mail_ready') && ecod_mail_ready();
                 ?>
                 <a class="ecod_friend" href="<?php echo htmlspecialchars($ecodFriend['url'], ENT_QUOTES, 'UTF-8'); ?>"
                    target="_blank" rel="noopener nofollow" title="<?php echo $ecodName; ?>">
-                    <span class="ecod_friend__avatar" style="background:<?php echo $ecodTint; ?>">
-                        <span aria-hidden="true"><?php echo mb_substr($ecodFriend['name'], 0, 1, 'UTF-8'); ?></span>
-                        <?php if (!empty($ecodFriend['avatar'])): ?>
-                            <img src="<?php echo htmlspecialchars($ecodFriend['avatar'], ENT_QUOTES, 'UTF-8'); ?>"
-                                 alt="<?php echo $ecodName; ?>" width="42" height="42" loading="lazy"
-                                 onerror="this.remove()">
-                        <?php endif; ?>
+                    <span class="ecod_friend__top">
+                        <span class="ecod_friend__avatar" style="background:<?php echo $ecodTint; ?>">
+                            <span aria-hidden="true"><?php echo mb_substr($ecodFriend['name'], 0, 1, 'UTF-8'); ?></span>
+                            <?php if (!empty($ecodFriend['avatar'])): ?>
+                                <img src="<?php echo htmlspecialchars($ecodFriend['avatar'], ENT_QUOTES, 'UTF-8'); ?>"
+                                     alt="<?php echo $ecodName; ?>" width="56" height="56" loading="lazy"
+                                     onerror="this.remove()">
+                            <?php endif; ?>
+                        </span>
+                        <span class="ecod_friend__info">
+                            <strong class="ecod_friend__name"><?php echo $ecodName; ?></strong>
+                            <?php if (!empty($ecodFriend['desc'])): ?>
+                                <span class="ecod_friend__desc"
+                                      title="<?php echo htmlspecialchars($ecodFriend['desc'], ENT_QUOTES, 'UTF-8'); ?>"><?php echo htmlspecialchars($ecodFriend['desc'], ENT_QUOTES, 'UTF-8'); ?></span>
+                            <?php endif; ?>
+                        </span>
                     </span>
-                    <span class="ecod_friend__main">
-                        <strong class="ecod_friend__name"><?php echo $ecodName; ?></strong>
+                    <span class="ecod_friend__latest" aria-hidden="true">
+                        <?php echo ecod_icon('link', 13); ?>
                         <span class="ecod_friend__host"><?php echo htmlspecialchars($ecodHost, ENT_QUOTES, 'UTF-8'); ?></span>
-                        <?php if (!empty($ecodFriend['desc'])): ?>
-                            <span class="ecod_friend__desc"><?php echo htmlspecialchars($ecodFriend['desc'], ENT_QUOTES, 'UTF-8'); ?></span>
-                        <?php endif; ?>
                     </span>
-                    <span class="ecod_friend__go" aria-hidden="true"><?php echo ecod_icon('arrow-up-right', 14); ?></span>
                 </a>
             <?php endforeach; ?>
         </div>

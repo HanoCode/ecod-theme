@@ -13,6 +13,14 @@
     var CFG = window.ECOD || {};
     var root = document.documentElement;
 
+    /* ---------- 控制台主题信息 ---------- */
+    console.log(
+        '\n %c Ecod Theme %c v' + (CFG.version || '?') + ' %c https://ecod.cc \n',
+        'color:#fff;background:#2f6bff;padding:3px 8px;font-size:12px;border-radius:2px 0 0 2px;',
+        'color:#2f6bff;background:#f5f6f9;padding:3px 8px;font-size:12px;',
+        'color:#8a93a6;background:transparent;padding:3px 0;font-size:12px;'
+    );
+
     /* ---------- 内联图标 ---------- */
     var ICON_PATHS = {
         moon: '<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>',
@@ -191,12 +199,17 @@
             if (old) old.remove();
             btn.insertAdjacentHTML('afterbegin', Ecod.icon(mode === 'dark' ? 'sun' : 'moon', size));
         });
-        /* 代码高亮配色跟随明暗（后台选「跟随明暗模式」时输出两套样式） */
+        /* 代码高亮配色跟随明暗（后台选「跟随明暗模式」时输出两套样式）。
+           浅色套是 media="print" 异步形态，启用（解除 disabled）时必须把
+           media 拉回 all——若它加载完成前就被 disable，onload 不会触发 */
         var prismLight = document.getElementById('ecod-prism-light');
         var prismDark = document.getElementById('ecod-prism-dark');
         if (prismLight && prismDark) {
             prismLight.disabled = mode === 'dark';
             prismDark.disabled = mode !== 'dark';
+            if (mode !== 'dark') {
+                prismLight.media = 'all';
+            }
         }
     }
 
@@ -287,6 +300,51 @@
             if (y > 160 && y > last + 4) header.classList.add('is-hidden');
             else if (y < last - 4) header.classList.remove('is-hidden');
             last = y;
+            /* 隐藏态镜像到 <html>：header 收起后，文章卡内吸顶的工具条
+               不能再按「header 高度 + 8」锚定——那会在视口顶部留一条 70px 的悬空，
+               看起来像没吸顶。CSS 侧 html.is-hd-off .ecod_readbar 上移贴顶 */
+            document.documentElement.classList.toggle('is-hd-off', header.classList.contains('is-hidden'));
+        });
+    };
+
+    /* ---------- 导航二级：点击固定展开（悬停之外的桌面/键盘兜底） ---------- */
+    Ecod.initNavPin = function () {
+        var nav = document.querySelector('.ecod_nav__links');
+        if (!nav) return;
+        document.addEventListener('click', function (e) {
+            var a = e.target && e.target.closest ? e.target.closest('.ecod_nav__links li.has-sub > a') : null;
+            if (!a) return;
+            var li = a.parentNode;
+            var href = a.getAttribute('href') || '';
+            var onCaret = !!(e.target && e.target.closest && e.target.closest('.ecod_nav__caret'));
+            if (!onCaret && href.charAt(0) !== '#' && href !== '' && href !== 'javascript:;') return;
+            e.preventDefault();
+            var wasOpen = li.classList.contains('is-open');
+            document.querySelectorAll('.ecod_nav__links li.has-sub.is-open').forEach(function (x) {
+                x.classList.remove('is-open');
+                var xa = x.querySelector(':scope > a');
+                if (xa) xa.classList.remove('is-open');
+            });
+            if (!wasOpen) {
+                li.classList.add('is-open');
+                a.classList.add('is-open');
+            }
+        }, true);
+        document.addEventListener('click', function (e) {
+            if (e.target && e.target.closest && e.target.closest('.ecod_nav__links li.has-sub')) return;
+            document.querySelectorAll('.ecod_nav__links li.has-sub.is-open').forEach(function (x) {
+                x.classList.remove('is-open');
+                var xa = x.querySelector(':scope > a');
+                if (xa) xa.classList.remove('is-open');
+            });
+        });
+        document.addEventListener('keydown', function (e) {
+            if (e.key !== 'Escape') return;
+            document.querySelectorAll('.ecod_nav__links li.has-sub.is-open').forEach(function (x) {
+                x.classList.remove('is-open');
+                var xa = x.querySelector(':scope > a');
+                if (xa) xa.classList.remove('is-open');
+            });
         });
     };
 
@@ -329,7 +387,30 @@
 
     /* ---------- 站点公告 ---------- */
     var NKEY = 'ecod-notice-closed';
+    var NPKEY = 'ecod-notice-pop';
     Ecod.initNotice = function () {
+        /* 弹窗公告：内容变化后每个访客弹一次（关闭记忆按内容 hash） */
+        var pop = document.querySelector('[data-ecod-noticepop]');
+        if (pop && pop.dataset.noticePopReady !== '1') {
+            pop.dataset.noticePopReady = '1';
+            var popHash = pop.dataset.ecodNoticeHash || '';
+            var popSeen = '';
+            try { popSeen = localStorage.getItem(NPKEY) || ''; } catch (e) {}
+            if (popSeen !== popHash) {
+                setTimeout(function () {
+                    pop.classList.add('is-open');
+                    pop.setAttribute('aria-hidden', 'false');
+                }, 350);
+            }
+            once(pop, 'noticePopClose', 'click', function (e) {
+                var closer = e.target.closest ? e.target.closest('[data-ecod-noticepop-close]') : null;
+                if (!closer) return;
+                pop.classList.remove('is-open');
+                pop.setAttribute('aria-hidden', 'true');
+                try { localStorage.setItem(NPKEY, popHash); } catch (err) {}
+            });
+        }
+
         var bar = document.querySelector('[data-ecod-notice]');
         if (!bar) return;
         var hash = bar.dataset.ecodNoticeHash || '';
@@ -349,6 +430,31 @@
                 setTimeout(function () { bar.hidden = true; }, 240);
                 try { if (hash) localStorage.setItem(NKEY, hash); } catch (e) {}
             });
+        }
+
+        /* 多条轮播：公告横幅在 PJAX 壳之外，refresh 会重复进入，这里按实例只挂一次 */
+        if (bar.dataset.ecodNoticeMode === 'rotate' && bar.dataset.noticeRotateReady !== '1') {
+            var slides = bar.querySelectorAll('[data-ecod-notice-slide]');
+            if (slides.length > 1) {
+                bar.dataset.noticeRotateReady = '1';
+                var link = bar.querySelector('[data-ecod-notice-link]');
+                var counter = bar.querySelector('[data-ecod-notice-count]');
+                var idx = 0;
+                setInterval(function () {
+                    idx = (idx + 1) % slides.length;
+                    slides.forEach(function (s, i) { s.classList.toggle('is-active', i === idx); });
+                    if (link) {
+                        var href = slides[idx].dataset.link || '';
+                        if (href) {
+                            link.href = href;
+                            link.hidden = false;
+                        } else {
+                            link.hidden = true;
+                        }
+                    }
+                    if (counter) counter.textContent = (idx + 1) + '/' + slides.length;
+                }, 5000);
+            }
         }
     };
 
@@ -770,6 +876,74 @@
                 });
             });
         }
+
+        /* 我的会员：卡密直兑（api.php?action=pay_redeem），成功后刷新状态卡 */
+        if (!root.dataset.ecodVip) {
+            root.dataset.ecodVip = '1';
+            var vipBox = root.querySelector('[data-ecod-vip]');
+            if (vipBox) {
+                var vipRedeemBox = vipBox.querySelector('[data-ecod-vip-redeem]');
+                var vipToggle = vipBox.querySelector('[data-ecod-vip-redeem-toggle]');
+                var vipCode = vipBox.querySelector('[data-ecod-vip-code]');
+                var vipBtn = vipBox.querySelector('[data-ecod-vip-redeem]');
+                var vipMsg = vipBox.querySelector('[data-ecod-vip-msg]');
+
+                var vipShowMsg = function (text, bad) {
+                    if (!vipMsg) return;
+                    vipMsg.hidden = false;
+                    vipMsg.textContent = text;
+                    vipMsg.classList.toggle('is-error', !!bad);
+                };
+
+                if (vipToggle && vipRedeemBox) {
+                    vipToggle.addEventListener('click', function () {
+                        vipRedeemBox.hidden = !vipRedeemBox.hidden;
+                        if (!vipRedeemBox.hidden && vipCode) vipCode.focus();
+                    });
+                }
+
+                var vipSubmit = function () {
+                    var code = vipCode ? vipCode.value.trim() : '';
+                    if (!code) {
+                        vipShowMsg('请输入卡密', true);
+                        return;
+                    }
+                    if (vipBtn) vipBtn.disabled = true;
+                    var form = new FormData();
+                    form.append('code', code);
+                    form.append('token', vipBox.dataset.token || '');
+                    fetch((vipBox.dataset.api || '') + '?action=pay_redeem', {
+                        method: 'POST',
+                        body: form,
+                        credentials: 'same-origin'
+                    }).then(function (res) {
+                        return res.json().catch(function () { throw new Error('请求失败，请稍后重试'); });
+                    }).then(function (data) {
+                        if (data && data.ok) {
+                            vipShowMsg(data.message || '兑换成功，正在刷新…', false);
+                            if (vipCode) vipCode.value = '';
+                            window.setTimeout(function () { window.location.reload(); }, 1200);
+                        } else {
+                            vipShowMsg((data && data.error) || '兑换失败', true);
+                        }
+                    }).catch(function (e) {
+                        vipShowMsg(e && e.message ? e.message : '网络异常，请重试', true);
+                    }).then(function () {
+                        if (vipBtn) vipBtn.disabled = false;
+                    });
+                };
+
+                if (vipBtn) vipBtn.addEventListener('click', vipSubmit);
+                if (vipCode) {
+                    vipCode.addEventListener('keydown', function (e) {
+                        if (e.key === 'Enter') {
+                            e.preventDefault();
+                            vipSubmit();
+                        }
+                    });
+                }
+            }
+        }
     };
 
     /* ---------- 浮层：点空白处 / Esc 收起 ----------
@@ -779,7 +953,7 @@
         if (Ecod._popDismiss) return;
         Ecod._popDismiss = 1;
 
-        var SEL = 'details.ecod_nav__user[open], details.ecod_share[open],'
+        var SEL = 'details.ecod_nav__user[open], details.ecod_nav__bell[open], details.ecod_share[open],'
             + ' details.ecod_reward[open], .ecod_nav__more details[open]';
 
         function closeAll(except) {
@@ -841,6 +1015,63 @@
             btn.classList.toggle('has-num', count > 0);
         });
     }
+
+    /* 同步某篇文章的收藏总数（动作条；服务端在 fav_toggle 里回传最新值）。
+       只动带 data-ecod-fav-num 的按钮，卡片星标（无计数标签）不参与 */
+    function setFavNum(cid, count) {
+        count = parseInt(count, 10) || 0;
+        document.querySelectorAll('[data-ecod-act="fav"]').forEach(function (btn) {
+            var el = btn.querySelector('[data-ecod-fav-num]');
+            if (!el) return;
+            var card = btn.closest('[data-cid]');
+            var id = btn.dataset.cid || (card ? card.dataset.cid : '');
+            if (String(id) !== String(cid)) return;
+            el.textContent = count > 0 ? shortNum(count) : '收藏';
+            btn.classList.toggle('has-num', count > 0);
+        });
+    }
+
+    /* D2 点赞头像堆叠：点赞成功后即时刷新「@xx 觉得不错」行（服务端返回 likers），
+       与 components/post/act.php 的服务端渲染同构；likers 为空时整行撤下 */
+    Ecod.renderLikers = function (cid, likers, likeNum) {
+        if (!Array.isArray(likers)) return;
+        document.querySelectorAll('[data-ecod-postact]').forEach(function (bar) {
+            if (String(bar.dataset.cid || '') !== String(cid)) return;
+            var row = bar.querySelector('.ecod_likers');
+            if (!likers.length) {
+                if (row) row.remove();
+                return;
+            }
+            var esc = function (s) {
+                return String(s).replace(/[&<>"]/g, function (c) {
+                    return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c];
+                });
+            };
+            var av = likers.map(function (liker) {
+                if (liker.avatar) {
+                    return '<img src="' + esc(liker.avatar) + '" alt="" width="24" height="24" loading="lazy" decoding="async">';
+                }
+                return '<i>' + esc(String(liker.name || '').slice(0, 1)) + '</i>';
+            }).join('');
+            var text = '@' + esc(likers[0].name) + ' 觉得不错';
+            if (likers.length > 1) {
+                text = '@' + esc(likers[0].name) + ' 等 <b>' + (parseInt(likeNum, 10) || 0) + '</b> 人觉得不错';
+            }
+
+            if (!row) {
+                var btn = document.createElement('button');
+                btn.type = 'button';
+                btn.className = 'ecod_likers';
+                btn.dataset.ecodLikers = '';
+                btn.setAttribute('aria-label', '跳到评论区');
+                btn.innerHTML = '<span class="ecod_likers__av" aria-hidden="true"></span><span class="ecod_likers__text"></span>';
+                bar.insertBefore(btn, bar.firstElementChild);
+                row = btn;
+            }
+            row.querySelector('.ecod_likers__av').innerHTML = av;
+            row.querySelector('.ecod_likers__text').innerHTML = text;
+        });
+    };
 
     /* 卡片操作组移入缩略图内定位（与角标同基准，随图片尺寸自适应） */
     Ecod.initCardAct = function () {
@@ -932,6 +1163,7 @@
                         /* 服务端为准 */
                         setFavBtn(btn, data.fav);
                         applyFavState(cid, data.fav);
+                        if (typeof data.count === 'number') setFavNum(cid, data.count);
                         if (favRemoteSet) favRemoteSet[String(cid)] = data.fav ? 1 : 0;
                         localSetFav(item, data.fav);
                         if (data.fav) pop();
@@ -964,6 +1196,7 @@
                         btn.setAttribute('aria-pressed', 'true');
                     }
                     if (typeof data.count === 'number') setLikeNum(cid, data.count);
+                    if (data.likers) Ecod.renderLikers(cid, data.likers, data.count);
                     if (data.liked) {
                         btn.classList.add('is-pop');
                         setTimeout(function () { btn.classList.remove('is-pop'); }, 320);
@@ -1554,7 +1787,18 @@
         }
 
         function renderResults(items, q) {
-            var html = '<div class="ecod_spanel__rowlabel">搜索结果 · 回车全站搜索</div>';
+            /* 命中的历史记录作为推荐置顶（不含与当前输入完全相同的词） */
+            var matched = histMatch(q);
+            var html = '';
+            if (matched.length) {
+                html += '<div class="ecod_spanel__row is-hist"><div class="ecod_spanel__rowlabel">来自历史</div><div class="ecod_spanel__chips">';
+                matched.forEach(function (h) {
+                    html += '<a class="ecod_spanel__chip ecod_spanel__item is-hist" href="' + esc(searchHref(h)) + '" data-ecod-spanel-q="' + esc(h) + '">'
+                        + Ecod.icon('clock', 12) + '<span>' + esc(h) + '</span></a>';
+                });
+                html += '</div></div>';
+            }
+            html += '<div class="ecod_spanel__rowlabel">搜索结果 · 回车全站搜索</div>';
             if (items.length) {
                 html += '<div class="ecod_spanel__results">';
                 items.forEach(function (it) {
@@ -1645,9 +1889,21 @@
     }
 
     function pushHist(q) {
-        var list = readHist().filter(function (x) { return x !== q; });
+        /* 大小写不敏感去重：同名不同写法（ES6 / es6）只留最新一条 */
+        var nq = String(q).toLowerCase();
+        var list = readHist().filter(function (x) { return x.toLowerCase() !== nq; });
         list.unshift(q);
         try { localStorage.setItem(SKEY, JSON.stringify(list.slice(0, 8))); } catch (e) {}
+    }
+
+    /* 历史 → 推荐：输入时把「包含当前关键词」的历史记录顶上来（搜索面板与导航下拉共用） */
+    function histMatch(q) {
+        var nq = String(q).toLowerCase();
+        if (!nq) return [];
+        return readHist().filter(function (h) {
+            var nh = String(h).toLowerCase();
+            return nh !== nq && nh.indexOf(nq) > -1;
+        }).slice(0, 4);
     }
 
     function highlightTitle(title, q) {
@@ -1675,6 +1931,15 @@
 
             function renderList(items, q) {
                 var html = '';
+                /* 命中的历史记录作为推荐置顶（点按 → 回填并搜索） */
+                var matched = histMatch(q);
+                if (q && matched.length) {
+                    html += '<div class="ecod_suggest__label">来自历史</div>';
+                    matched.forEach(function (h) {
+                        html += '<a class="ecod_suggest__item is-hist" href="#" data-ecod-suggest-hist="' + esc(h) + '">'
+                            + Ecod.icon('clock', 13) + '<span>' + esc(h) + '</span></a>';
+                    });
+                }
                 if (q && items.length) {
                     html += '<div class="ecod_suggest__label">搜索结果</div>';
                     items.forEach(function (it) {
@@ -1749,6 +2014,27 @@
                 if (!form.contains(e.target)) drop.hidden = true;
             });
         });
+    };
+
+    /* ---------- 搜索结果页落点补记历史 ---------- */
+    /* 任何途径落到搜索结果页（书签 / 分享链接 / 表单回车直达）都补记一次，
+       不依赖搜索面板、导航下拉的提交时点；与 pushHist 的去重天然幂等 */
+    Ecod.initSearchRecord = function () {
+        var q = '';
+        var path = location.pathname || '';
+        try {
+            var params = new URLSearchParams(location.search);
+            q = String(params.get('s') || params.get('keywords') || '').trim();
+        } catch (e) {
+            /* 老引擎没有 URLSearchParams 则不做查询串解析 */
+        }
+        if (!q) {
+            var m = path.match(/\/search\/([^/]+)\/?$/);
+            if (m) {
+                try { q = decodeURIComponent(m[1]).trim(); } catch (e) { q = ''; }
+            }
+        }
+        if (q) pushHist(q);
     };
 
     /* ---------- 首页轮播 ---------- */
@@ -2310,50 +2596,87 @@
         document.addEventListener('ecod:cssready', run, { once: true });
     };
 
+    /* 解除启动期过渡禁用（.ecod-booting 见 header.php / ecod.css §1）。
+       关键 CSS 与异步换入的完整样式表在链接色、按钮底色等属性上取值不同，
+       完整表到位时这些属性会变一次；此时 transition 若已生效就会整站渐变，
+       表现为刷新时「文字/色块闪一下」。等完整样式应用且完成一次绘制后
+       （双 rAF）再放开，属性值已落到终态，不会触发过渡。
+       1.5s 兜底：完整表迟迟不到也不能永久禁用过渡。 */
+    function ecodUnboot() {
+        var el = document.documentElement;
+        var done = false;
+        var unboot = function () {
+            if (done) return;
+            done = true;
+            requestAnimationFrame(function () {
+                requestAnimationFrame(function () {
+                    el.classList.remove('ecod-booting');
+                });
+            });
+        };
+        if (el.getAttribute('data-ecod-cssready') === '1') {
+            unboot();
+        } else {
+            document.addEventListener('ecod:cssready', unboot, { once: true });
+        }
+        setTimeout(unboot, 1500);
+    }
+
     function ecodAnimateRun() {
         var mode = document.documentElement.getAttribute('data-anim');
         if (!mode || mode === 'none' || !('IntersectionObserver' in window)) {
             return;
         }
 
-        var list = document.querySelectorAll('.ecod_cards > *, .ecod_main > section, .ecod_aside > *');
+        var list = document.querySelectorAll('.ecod_cards > *, .ecod_main > section, .ecod_friendgrid > .ecod_friend, .ecod_aside > *');
         if (!list.length) {
             return;
         }
 
+        /* 级联按「同一帧进入视口的批次」计算序号，而非全列表序号：
+           首批六七张卡依次踩点入场；往下滚动时单独进屏的卡片不再背着
+           全列表的旧序号（最多 270ms）冷场，批次内 60ms 步长封顶 180ms */
         var io = new IntersectionObserver(function (entries) {
-            entries.forEach(function (entry) {
-                if (entry.isIntersecting) {
-                    entry.target.classList.add('is-in');
-                    io.unobserve(entry.target);
+            var batch = 0;
+            Array.prototype.forEach.call(entries, function (entry) {
+                if (!entry.isIntersecting) {
+                    return;
                 }
+                var el = entry.target;
+                var delay = Math.min(batch * 60, 180);
+                batch++;
+                io.unobserve(el);
+
+                /* delay 必须在同类改动（is-in）同帧写入：两处样式变更同属一次
+                   重算，过渡才按该 delay 启动 */
+                el.style.transitionDelay = delay + 'ms';
+                el.classList.add('is-in');
+
+                /* 入场结束后必须清掉 inline transition-delay：
+                   transition-delay 作用于该元素的「所有」过渡，残留会让卡片 hover 的
+                   transform / 阴影最多等 180ms 才响应，手感发钝。 */
+                var cleared = false;
+                var clearDelay = function () {
+                    if (cleared) return;
+                    cleared = true;
+                    el.style.transitionDelay = '';
+                    el.removeEventListener('transitionend', onEnd);
+                };
+                var onEnd = function (e) {
+                    if (e.target === el && e.propertyName === 'opacity') clearDelay();
+                };
+                el.addEventListener('transitionend', onEnd);
+                /* 兜底：过渡可能不触发（reduced-motion / 元素瞬间出视口），定时清。
+                    余量按最长位移档（blur 位移 .74s）+ 帧余量计 */
+                setTimeout(clearDelay, delay + 840);
             });
         }, { rootMargin: '0px 0px -6% 0px', threshold: 0.04 });
 
-        Array.prototype.forEach.call(list, function (el, index) {
+        Array.prototype.forEach.call(list, function (el) {
             if (el.classList.contains('is-in') || el.hasAttribute('data-ecod-noanim')) {
                 return;
             }
             el.classList.add('ecod-reveal');
-            var delay = Math.min(index, 6) * 45;
-            el.style.transitionDelay = delay + 'ms';
-
-            /* 入场结束后必须清掉 inline transition-delay：
-               transition-delay 作用于该元素的「所有」过渡，残留会让卡片 hover 的
-               transform / 阴影最多等 270ms 才响应，手感发钝。 */
-            var cleared = false;
-            var clearDelay = function () {
-                if (cleared) return;
-                cleared = true;
-                el.style.transitionDelay = '';
-                el.removeEventListener('transitionend', onEnd);
-            };
-            var onEnd = function (e) {
-                if (e.target === el && e.propertyName === 'opacity') clearDelay();
-            };
-            el.addEventListener('transitionend', onEnd);
-            /* 兜底：过渡可能不触发（reduced-motion / 元素瞬间出视口），定时清 */
-            setTimeout(clearDelay, delay + 520);
             io.observe(el);
         });
     }
@@ -3005,6 +3328,161 @@
         }
     };
 
+    /* ---------- 站内消息：header 铃铛 + 个人中心「我的消息」 ---------- */
+    /* 登录用户才有铃铛（header 模板判定）；角标轮询 notif_unread，展开拉 notif_list。
+       轮询间隔 90s，够及时又不打扰；个人中心面板复用同一个渲染器。 */
+    Ecod.initNotifs = function () {
+        var bell = document.querySelector('[data-ecod-bell]');
+        var notifListHosts = document.querySelectorAll('[data-ecod-notif-list]');
+        if (!bell && !notifListHosts.length) return;
+        if (bell && bell.dataset.notifReady === '1') return;
+        if (bell) bell.dataset.notifReady = '1';
+
+        var ICONS = { reply: 'comment', friend: 'link', like: 'heart', fav: 'star', notice: 'bell' };
+        var api = CFG.api || '';
+
+        function fmtTime(ts) {
+            var d = Date.now() / 1000 - (Number(ts) || 0);
+            if (!isFinite(d) || d < 0) d = 0;
+            if (d < 60) return '刚刚';
+            if (d < 3600) return Math.floor(d / 60) + ' 分钟前';
+            if (d < 86400) return Math.floor(d / 3600) + ' 小时前';
+            if (d < 86400 * 30) return Math.floor(d / 86400) + ' 天前';
+            var t = new Date((Number(ts) || Date.now() / 1000) * 1000);
+            return (t.getMonth() + 1) + '-' + t.getDate();
+        }
+
+        function setBadge(n) {
+            Array.prototype.forEach.call(document.querySelectorAll('[data-ecod-bell-badge]'), function (b) {
+                if (!n) {
+                    b.hidden = true;
+                    b.textContent = '';
+                    return;
+                }
+                b.hidden = false;
+                b.textContent = n > 99 ? '99+' : String(n);
+            });
+        }
+
+        /* 未读数同步到个人中心 tab 的角标 */
+        function setTabCount(n) {
+            Array.prototype.forEach.call(document.querySelectorAll('[data-ecod-uc-count="notifs"]'), function (em) {
+                if (!n) {
+                    em.hidden = true;
+                    em.textContent = '0';
+                    return;
+                }
+                em.hidden = false;
+                em.textContent = n > 99 ? '99+' : String(n);
+            });
+        }
+
+        function renderItems(items) {
+            if (!items.length) {
+                return '<div class="ecod_notif__empty">还没有消息收到回复、点赞或公告时会出现在这里</div>';
+            }
+            var html = '';
+            items.forEach(function (it) {
+                var unread = Number(it.is_read) ? '' : ' is-unread';
+                var link = it.link || '';
+                html += '<a class="ecod_notif__item' + unread + '"'
+                    + (link ? ' href="' + esc(link) + '"' : ' href="javascript:void(0)"')
+                    + ' data-ecod-notif-item="' + Number(it.id) + '">'
+                    + '<span class="ecod_notif__ic">' + Ecod.icon(ICONS[it.type] || 'bell', 14) + '</span>'
+                    + '<span class="ecod_notif__main">'
+                    + '<b class="ecod_notif__title">' + escHtml(it.title) + '</b>'
+                    + (it.body ? '<span class="ecod_notif__body">' + escHtml(it.body) + '</span>' : '')
+                    + '</span>'
+                    + '<time class="ecod_notif__time">' + fmtTime(it.created) + '</time>'
+                    + '</a>';
+            });
+            return html;
+        }
+
+        function fetchList() {
+            fetch(api + '?action=notif_list&limit=20', { credentials: 'same-origin' })
+                .then(function (r) { return r.json(); })
+                .then(function (data) {
+                    if (!data || !data.ok) return;
+                    var html = renderItems(data.list || []);
+                    Array.prototype.forEach.call(notifListHosts.length ? notifListHosts : document.querySelectorAll('[data-ecod-notif-list]'), function (host) {
+                        host.innerHTML = html;
+                    });
+                    setBadge(data.unread || 0);
+                    setTabCount(data.unread || 0);
+                })
+                .catch(function () {});
+        }
+
+        function post(action, params) {
+            var body = new URLSearchParams(params || {});
+            return fetch(api + '?action=' + action, {
+                method: 'POST',
+                body: body,
+                credentials: 'same-origin'
+            }).then(function (r) { return r.json(); }).catch(function () { return null; });
+        }
+
+        function refreshBadge() {
+            fetch(api + '?action=notif_unread', { credentials: 'same-origin' })
+                .then(function (r) { return r.json(); })
+                .then(function (data) {
+                    if (data && data.ok) {
+                        setBadge(data.unread || 0);
+                        setTabCount(data.unread || 0);
+                    }
+                })
+                .catch(function () {});
+        }
+
+        /* 铃铛：展开拉列表 + 顶栏轮询 */
+        if (bell) {
+            bell.addEventListener('toggle', function () {
+                if (bell.open) fetchList();
+            });
+
+            refreshBadge();
+            setInterval(refreshBadge, 90000);
+        }
+
+        /* 消息条目点击 / 全部已读 / 清空：文档级委托一次注册，
+           铃铛下拉与个人中心「我的消息」面板两处通用 */
+        if (!Ecod._notifDoc) {
+            Ecod._notifDoc = 1;
+            document.addEventListener('click', function (e) {
+                var readAll = e.target.closest ? e.target.closest('[data-ecod-notif-readall]') : null;
+                if (readAll) {
+                    e.preventDefault();
+                    post('notif_read', { all: 1 }).then(function (data) {
+                        if (data && data.ok) { setBadge(0); fetchList(); }
+                    });
+                    return;
+                }
+                var clear = e.target.closest ? e.target.closest('[data-ecod-notif-clear]') : null;
+                if (clear) {
+                    e.preventDefault();
+                    post('notif_clear', {}).then(function () { fetchList(); refreshBadge(); });
+                    return;
+                }
+                var item = e.target.closest ? e.target.closest('[data-ecod-notif-item]') : null;
+                if (item && item.classList.contains('is-unread')) {
+                    item.classList.remove('is-unread');
+                    post('notif_read', { id: item.getAttribute('data-ecod-notif-item') }).then(function (data) {
+                        if (data && data.ok) setBadge(data.unread);
+                    });
+                }
+            });
+        }
+
+        /* 个人中心「我的消息」面板：进入页面就拉一次（tab 隐藏不影响） */
+        Array.prototype.forEach.call(document.querySelectorAll('[data-ecod-uc-panel="notifs"]'), function (panel) {
+            fetchList();
+        });
+
+        /* PJAX 换页后 DOM 可能是新的：重取手势 */
+        notifListHosts = [];
+    };
+
     /* ---------- 首次 / 切换后初始化 ---------- */
     /* ---------- 导航高亮：按当前 URL 算，挂到 <a> 上 ---------- */
     Ecod.initNavActive = function () {
@@ -3055,7 +3533,8 @@
         btn.type = 'button';
         btn.className = 'ecod_loadmore';
         btn.textContent = '加载更多';
-        btn.setAttribute('aria-label', '加载下一页文章');
+        /* 可访问名须包含可见文字（WCAG 2.5.3）：文字各状态变化时同步更新 */
+        btn.setAttribute('aria-label', '加载更多文章');
         pager.parentNode.insertBefore(btn, pager.nextSibling);
 
         btn.addEventListener('click', function () {
@@ -3064,6 +3543,7 @@
             }
             btn.disabled = true;
             btn.textContent = '加载中…';
+            btn.setAttribute('aria-label', '加载中');
 
             /* 阅读起点锚点：点击瞬间视口里第一张卡（可能被上边界裁掉一半），
                记下它的文档坐标。追加完成后只抵消「布局位移」，
@@ -3132,9 +3612,11 @@
                         next.href = newNext.href;
                         btn.disabled = false;
                         btn.textContent = '加载更多';
+                        btn.setAttribute('aria-label', '加载更多文章');
                     } else {
                         next = null;
                         btn.textContent = '已经到底了';
+                        btn.setAttribute('aria-label', '已经到底了');
                         btn.classList.add('is-end');
                     }
 
@@ -3196,6 +3678,148 @@
         });
     };
 
+    /* ---------- 我的积分（个人中心 credits 面板） ----------
+       余额 / 今日签到 / 流水都来自 credits_state，服务端只渲染骨架 */
+    Ecod.initCredits = function () {
+        var root = document.querySelector('[data-ecod-credits]');
+        if (!root || root.dataset.creditsReady === '1') return;
+        root.dataset.creditsReady = '1';
+        var api = root.dataset.api || CFG.api || '';
+        if (!api) return;
+
+        var btn = root.querySelector('[data-ecod-credits-signin]');
+        var msg = root.querySelector('[data-ecod-credits-msg]');
+        var balEl = root.querySelector('[data-ecod-credits-balance]');
+        var logEl = root.querySelector('[data-ecod-credits-log]');
+        var LABELS = {
+            checkin: '每日签到', comment: '发表评论', like_recv: '文章被赞', post: '发布文章',
+            ai: 'AI 对话', lottery: '抽奖消耗', lottery_win: '抽奖中奖', vip_gift: '开通会员赠送',
+            shop: '积分兑换', referral: '推广返佣', admin: '管理员调整'
+        };
+
+        function say(text) {
+            if (!msg) return;
+            msg.textContent = text || '';
+            msg.hidden = !text;
+        }
+
+        function day(ts) {
+            var d = new Date(ts * 1000);
+            return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+        }
+
+        if (btn) {
+            once(btn, 'creditsSignin', 'click', function () {
+                if (btn.disabled) return;
+                btn.disabled = true;
+                var fd = new FormData();
+                fd.append('token', root.dataset.token || '');
+                fetch(api + '?action=signin', {
+                    method: 'POST',
+                    credentials: 'same-origin',
+                    body: fd,
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                }).then(function (r) { return r.json(); }).then(function (res) {
+                    if (res && res.ok) {
+                        btn.textContent = '今日已签到';
+                        if (balEl) balEl.textContent = res.balance;
+                        say('签到成功' + (res.delta > 0 ? ' +' + res.delta : '')
+                            + (res.streak > 1 ? '，已连续 ' + res.streak + ' 天' : ''));
+                    } else {
+                        if (res && res.signed) btn.textContent = '今日已签到';
+                        else btn.disabled = false;
+                        say((res && res.error) || '签到失败，请稍后重试');
+                    }
+                }).catch(function () {
+                    btn.disabled = false;
+                    say('网络异常，请稍后重试');
+                });
+            });
+        }
+
+        fetch(api + '?action=credits_state', {
+            credentials: 'same-origin',
+            headers: { 'X-Requested-With': 'XMLHttpRequest' }
+        }).then(function (r) { return r.json(); }).then(function (data) {
+            if (!data || !data.ok) return;
+            var nameEl = root.querySelector('[data-ecod-credits-name]');
+            if (nameEl) nameEl.textContent = data.name || 'Credit';
+            if (balEl) balEl.textContent = data.balance;
+            if (btn) {
+                if (data.signed) {
+                    btn.textContent = '今日已签到';
+                    btn.disabled = true;
+                } else {
+                    btn.disabled = false;
+                }
+            }
+
+            if (logEl) {
+                var rows = data.log || [];
+                if (!rows.length) {
+                    logEl.innerHTML = '<p class="ecod_credits__empty">还没有积分记录，点上面的「每日签到」开始赚 ' + esc(data.name || 'Credit') + '。</p>';
+                } else {
+                    var html = '';
+                    rows.forEach(function (row) {
+                        var label = LABELS[row.type] || row.note || row.type;
+                        html += '<div class="ecod_credits__row' + (row.delta < 0 ? ' is-out' : '') + '">'
+                            + '<span class="ecod_credits__why">' + esc(label) + '</span>'
+                            + (row.note ? '<span class="ecod_credits__note">' + esc(row.note) + '</span>' : '')
+                            + '<b class="ecod_credits__delta">' + (row.delta > 0 ? '+' : '') + row.delta + '</b>'
+                            + '<time>' + day(row.created) + '</time>'
+                            + '</div>';
+                    });
+                    logEl.innerHTML = html;
+                }
+            }
+        }).catch(function () {});
+    };
+
+    /* ---------- 头部用户菜单的积分 / 签到直达（guaqi 式） ----------
+       余额与已签状态服务端直出；这里只接管签到点击 */
+    Ecod.initCreditsQuick = function () {
+        var row = document.querySelector('[data-ecod-credits-quick]');
+        if (!row || row.dataset.quickReady === '1') return;
+        row.dataset.quickReady = '1';
+
+        var btn = row.querySelector('[data-ecod-credits-quick-signin]');
+        var bal = row.querySelector('[data-ecod-credits-quick-balance]');
+        if (!btn || btn.dataset.signed === '1') return;
+
+        once(btn, 'creditsQuick', 'click', function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+            if (btn.disabled) return;
+            btn.disabled = true;
+            var fd = new FormData();
+            fd.append('token', row.dataset.token || '');
+            fetch((row.dataset.api || CFG.api || '') + '?action=signin', {
+                method: 'POST',
+                credentials: 'same-origin',
+                body: fd,
+                headers: { 'X-Requested-With': 'XMLHttpRequest' }
+            }).then(function (r) { return r.json(); }).then(function (res) {
+                if (res && res.ok) {
+                    btn.textContent = '已签到';
+                    btn.dataset.signed = '1';
+                    if (bal && typeof res.balance === 'number') bal.textContent = res.balance;
+                    live('签到成功' + (res.delta > 0 ? ' +' + res.delta : ''));
+                } else {
+                    if (res && res.signed) {
+                        btn.textContent = '已签到';
+                        btn.dataset.signed = '1';
+                    } else {
+                        btn.disabled = false;
+                    }
+                    live((res && res.error) || '签到失败，请稍后重试');
+                }
+            }).catch(function () {
+                btn.disabled = false;
+                live('网络异常，请稍后重试');
+            });
+        });
+    };
+
     Ecod.refresh = function () {
         /* 换页时先停掉上一页的朗读，避免声音延续到新页面 */
         Ecod.runPost('stopTts');
@@ -3203,8 +3827,11 @@
         Ecod.initNavActive();
         Ecod.initHistory();
         Ecod.renderUserCenter();
+        Ecod.initCredits();
+        Ecod.initCreditsQuick();
         Ecod.resetScroll();
         Ecod.initHeader();
+        Ecod.initNavPin();
         Ecod.initToTop();
         Ecod.initProgress();
         Ecod.runPost('initToc');
@@ -3220,6 +3847,7 @@
         Ecod.runPost('initQuickBar');
         Ecod.runPost('initShareCard');
         Ecod.runPost('initTts');
+        Ecod.runPost('initReadbar');
         Ecod.runPost('initComment');
         Ecod.runPost('initCommentFold');
         Ecod.runPost('initTurnstile');
@@ -3242,12 +3870,20 @@
         Ecod.runPost('initFriendApply');
         Ecod.initSearchSuggest();
         Ecod.initSearchPanel();
+        Ecod.initSearchRecord();
+        Ecod.initNotifs();
         Ecod.initSlider();
         Ecod.initCardAct();
         Ecod.initLikeState();
         Ecod.initStream();
         Ecod.initLoadMore();
         Ecod.runPost('initAi');
+        Ecod.runPost('initShowMore');
+        Ecod.runPost('initPoll');
+        Ecod.runPost('initAiChat');
+        Ecod.runPost('initLottery');
+        Ecod.runPost('initAdSelf');
+        Ecod.runPost('initShop');
         Ecod.initAnimate();
         Ecod.initCursor();
         Ecod.runPost('initPrism');
@@ -3315,5 +3951,7 @@
         Ecod.refresh();
         /* 首屏初始化完毕：此后的 refresh（PJAX 换页）与加载更多才铺入场动效 */
         Ecod._animArmed = true;
+        /* 完整样式到位后解除启动期过渡禁用 */
+        ecodUnboot();
     });
 })();

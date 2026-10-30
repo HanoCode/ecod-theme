@@ -24,8 +24,9 @@ $ecodWallMeta = '<span>' . ecod_icon('image', 13) . count($ecodWalls) . ' 张图
     <?php /* 模块 · 内容区上方（模块管理台） */ ecod_widgets_render("top_content", $this); ?>
 
     <nav class="ecod_crumb" aria-label="面包屑">
+        <a class="ecod_crumb__back" href="javascript:history.back()" aria-label="返回"><?php echo ecod_icon('chevron', 13); ?></a>
         <a href="<?php $this->options->siteUrl(); ?>"><?php echo ecod_icon('home', 12); ?>首页</a>
-        <span class="ecod_crumb__sep" aria-hidden="true"><?php echo ecod_icon('chevron', 11); ?></span>
+        <span class="ecod_crumb__sep" aria-hidden="true">/</span>
         <span aria-current="page"><?php $this->title(); ?></span>
     </nav>
 
@@ -45,7 +46,7 @@ $ecodWallMeta = '<span>' . ecod_icon('image', 13) . count($ecodWalls) . ' 张图
                             data-src="<?php echo htmlspecialchars($ecodWall['src'], ENT_QUOTES, 'UTF-8'); ?>"
                             aria-label="查看大图">
                         <img src="<?php echo htmlspecialchars($ecodWall['src'], ENT_QUOTES, 'UTF-8'); ?>"
-                             alt="<?php echo htmlspecialchars($ecodWall['alt'], ENT_QUOTES, 'UTF-8'); ?>" loading="lazy" decoding="async"<?php echo $ecodWallDims; ?>>
+                             alt="<?php echo htmlspecialchars($ecodWall['alt'], ENT_QUOTES, 'UTF-8'); ?>" loading="lazy" decoding="async" data-ecod-img<?php echo $ecodWallDims; ?>>
                     </button>
                     <figcaption class="ecod_wall__cap">
                         <span><?php echo htmlspecialchars($ecodWall['alt'] ?: '未命名图片', ENT_QUOTES, 'UTF-8'); ?></span>

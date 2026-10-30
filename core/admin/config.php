@@ -3,13 +3,18 @@
  * Ecod Theme · 后台设置页
  *
  * 由 functions.php 的 themeConfig($form) 载入，$form 在当前作用域可用。
- * 结构：左侧分组导航 + 右侧面板；字段用 data-ecod-pane 标记归组，
- * 由 assets/admin/config.js 搬运到对应面板，保存逻辑仍走 Typecho 原生表单。
+ * 信息架构三层递进：8 个分组（侧栏手风琴）→ 14 个面板 → 面板内小节。
+ *   - 分组/面板/小节定义见下方 $ecodGroups / $ecodPanes / $ecodSections；
+ *   - 字段用 data-ecod-pane 标记归组，config.js 搬进对应面板并按
+ *     $ecodSections 的字段名清单分发进带标题的小节（保存逻辑不动，
+ *     走 Typecho 原生表单）；
+ *   - 「开始」是默认面板的上手引导页：三步卡、任务清单（完成态由
+ *     字段值 / 面板访问记录 / 操作标记判定）与快捷入口。
  *
  * @package Ecod Theme
  * @author  Ecod
  * @since   2026-10-29
- * @version 2.0.0
+ * @version 2.1.0
  * @link    https://ecod.cc
  * @copyright Copyright (c) 2026 Ecod. All Rights Reserved.
  */
@@ -19,44 +24,169 @@ if (!defined('__TYPECHO_ROOT_DIR__')) {
 }
 
 /* ------------------------------------------------------------------
- * 分组
+ * 信息架构：8 个分组（手风琴）→ 14 个面板
+ *
+ * 侧栏只露 8 个带图标的分组，点开才见子面板；
+ * 面板内部再由 $ecodSections 切成带标题的小节，三层递进：
+ * 分组（是什么方面）→ 面板（具体页面/功能）→ 小节（一件事一组字段）。
  * ---------------------------------------------------------------- */
-$ecodPanes = [
-    'site'       => ['站点', '标识、图标、配色与备案'],
-    'nav'        => ['导航', '一级与二级菜单：拖拽排序、缩进成二级'],
-    'topics'     => ['专题', '跨分类的策展合集：列表、封面与挑稿'],
-    'appearance' => ['外观', '深色模式、导航、背景与动效'],
-    'home'       => ['首页', 'Banner、标语与模块布局'],
-    'layout'     => ['版式', '侧栏位置、卡片样式与摘要'],
-    'aside'      => ['侧栏', '侧栏模块与顺序'],
-    'post'       => ['文章页', '正文模块与阅读体验'],
-    'footer'     => ['页脚', '版权、链接与浮动控件'],
-    'interact'   => ['互动', '点赞、邮件通知与审核规则'],
-    'pay'        => ['付费', '付费阅读与会员：定价、支付通道与展示'],
-    'comments'   => ['评论', '嵌套折叠、第三方评论、人机验证与反垃圾'],
-    'ai'         => ['AI 助手', '智能摘要：OpenAI 兼容接口，按文章生成摘要'],
-    'seo'        => ['收录与性能', '搜索收录、懒加载与自定义代码'],
-    'search'     => ['搜索', '快捷搜索面板：热词、标签与实时联想'],
-    'tools'      => ['工具', '配置备份、导入与恢复'],
+$ecodGroups = [
+    'start'    => ['zap',    '开始',       '三步上手与常用任务'],
+    'look'     => ['image',  '外观',       '品牌门面、明暗与动效'],
+    'layout'   => ['layers', '布局',       '列表卡片、导航与搜索'],
+    'content'  => ['file',   '内容',       '文章页阅读体验与专题'],
+    'social'   => ['comment','互动',       '评论、点赞与投稿'],
+    'connect'  => ['mail',   '通知与登录', '邮件发信与第三方登录'],
+    'pay'      => ['medal',  '变现',       '付费阅读与会员'],
+    'webmaster'=> ['chart',  '站长',       '收录、性能与工具备份'],
 ];
 
+$ecodGroupPanes = [
+    'start'    => ['start'],
+    'look'     => ['brand', 'appearance'],
+    'layout'   => ['layout', 'nav', 'search'],
+    'content'  => ['post', 'topics'],
+    'social'   => ['comments', 'interact', 'credits'],
+    'connect'  => ['mail', 'oauth'],
+    'pay'      => ['pay', 'lottery', 'shop', 'ads'],
+    'webmaster'=> ['seo', 'tools'],
+];
 
-/* 由块系统接管的分组（模块已迁到独立管理台，这里只剩常规字段与入口卡） */
-$ecodBlockPanes = ['home', 'aside', 'post', 'footer'];
+/* 面板元信息：标题 + 一句话引导（顶栏与搜索索引用） */
+$ecodPanes = [
+    'start'      => ['上手引导', '三步把站点调教成形；做完一项勾掉一项'],
+    'brand'      => ['品牌与首页', '名字、Logo、图标、主色，以及首页大图与标语'],
+    'appearance' => ['视觉与动效', '深色模式、背景、入场动效与自定义样式'],
+    'layout'     => ['列表与卡片', '侧栏位置、卡片模式、缩略图与摘要'],
+    'media'      => ['媒体资源库', '对象存储驱动、WebP 上传转换与格式白名单'],
+    'nav'        => ['导航菜单', '拖拽搭建一二级菜单，配置折叠与搜索面板'],
+    'search'     => ['搜索面板', '⌘K 快捷搜索：热词、标签与实时联想'],
+    'post'       => ['文章页', '阅读体验、代码嵌入、版权与 AI 摘要'],
+    'topics'     => ['专题与分类页', '策展合集的挑稿与展示，分类页页头'],
+    'comments'   => ['评论', '评论服务、嵌套折叠、反垃圾与人机验证'],
+    'interact'   => ['点赞与投稿', '卡片点赞、阅读量、友链申请与前端投稿'],
+    'credits'    => ['积分与 AI', 'Credit 积分、签到任务与 AI 助手对话计费'],
+    'mail'       => ['邮件通知', 'SMTP 发信、回复提醒与友链通知模板'],
+    'oauth'      => ['第三方登录', 'GitHub / 微信 / QQ / 微博 / Gitee 快捷登录'],
+    'pay'        => ['付费与会员', '付费阅读、支付通道与会员档位定价'],
+    'lottery'    => ['站点抽奖', '奖品池、消耗与每日次数'],
+    'shop'       => ['兑换商城', '积分当钱花：兑换会员、单篇解锁与定制权益'],
+    'ads'        => ['自助广告', '广告位定价、审核与投放页'],
+    'seo'        => ['收录与性能', '懒加载、CDN、自定义代码与百度推送'],
+    'tools'      => ['工具与备份', '配置快照、导入导出、sitemap 与特色页'],
+];
+
+/* 面板内小节：[标题, 说明, [字段名…]]，由 config.js 把字段行分发进对应小节 */
+$ecodSections = [
+    'brand' => [
+        ['站点标识', '名字、Logo 与浏览器标签上的图标', ['ELogo', 'ELogoImage', 'ELogoBoth', 'EFavicon']],
+        ['品牌主色', '按钮、链接、高亮全部跟随', ['EPrimary']],
+        ['首页门面', '首屏大图与一句话标语，留空即关闭', ['ESlogan', 'EBanner']],
+        ['备案与信息', '页脚备案标识、站点年龄与网址导航数据', ['EICP', 'EPolice', 'EBirth', 'ESites']],
+    ],
+    'appearance' => [
+        ['明暗与背景', '深色模式与整页背景渐变', ['EDark', 'EBackdrop']],
+        ['动效与光标', '列表入场动画与鼠标跟随，触屏自动不加载', ['EAnimate', 'ECursor']],
+        ['浏览体验', '无刷新跳转、外链中转与右键菜单', ['EPjax', 'ELinkGo', 'ECtxMenu']],
+        ['字体与自定义样式', '自定义字体、自定义 CSS 与登录页背景', ['EFont', 'ECustomCss', 'ELoginBg']],
+    ],
+    'layout' => [
+        ['侧栏位置', '全站默认值，可按页面类型在模块管理台覆盖', ['EAside']],
+        ['列表与卡片', '文章列表的卡片形态、每页篇数与新文章角标', ['EListPerPage', 'ECardMode', 'EThumbSide', 'ENewDays']],
+        ['缩略图与摘要', '封面池、服务端裁剪与摘要长度', ['EThumbnail', 'EThumbServer', 'EExcerpt']],
+    ],
+    'media' => [
+        ['存储驱动', '媒体库上传通道：本地或对象存储', ['EMediaStorage', 'EMediaDualWrite', 'EMediaMaxBytes']],
+        ['阿里云 OSS', 'AccessKey、Bucket 与 Endpoint，选 OSS 驱动时填写', ['EMediaOssKey', 'EMediaOssSecret', 'EMediaOssBucket', 'EMediaOssEndpoint', 'EMediaOssDomain']],
+        ['腾讯云 COS', 'SecretId、存储桶与地域，选 COS 驱动时填写', ['EMediaCosKey', 'EMediaCosSecret', 'EMediaCosBucket', 'EMediaCosRegion', 'EMediaCosDomain']],
+        ['S3 兼容', 'MinIO / Cloudflare R2 / 七牛等 S3 协议存储', ['EMediaS3Key', 'EMediaS3Secret', 'EMediaS3Bucket', 'EMediaS3Region', 'EMediaS3Endpoint', 'EMediaS3Domain']],
+        ['WebP 转换', '上传时自动转存为 WebP，动图与矢量图跳过', ['EWebpConvert', 'EWebpQuality', 'EWebpKeepOriginal']],
+        ['格式白名单', 'SVG 与额外扩展名的放行开关', ['EMediaAllowSvg', 'EMediaAllowExt']],
+    ],
+    'nav' => [
+        ['菜单行为', '超出折叠进「更多」，以及菜单为空时的兜底链接', ['ENavMax', 'ENavLinks']],
+    ],
+    'post' => [
+        ['阅读体验', '过期提醒、浮动目录与图片灯箱', ['EStale', 'EFloatToc', 'ETocProgress', 'ELightbox']],
+        ['显示更多', '长文按高度折叠 + 展开按钮；正文仍在 HTML 里，不影响 SEO', ['EShowMore', 'EShowMoreH', 'EShowMoreText']],
+        ['代码与嵌入', '代码高亮与视频 / 社交卡片自动嵌入', ['ECode', 'ECodeTheme', 'EOembed', 'EOembedSocial']],
+        ['互动与版权', '点赞头像、快速评论条与版权声明', ['ELikers', 'EQuickBar', 'ECopyrightSet']],
+        ['AI 摘要', 'OpenAI 兼容接口，按文章异步生成摘要卡片', ['EAI', 'EAIProvider', 'EAIEndpoint', 'EAIKey', 'EAIModel', 'EAIPrompt']],
+    ],
+    'topics' => [
+        ['专题墙展示', '专题列表页的卡片形态与密度', ['ETopicWallStyle', 'ETopicWallCols', 'ETopicPerPage', 'ETopicMoreCount', 'ETopicCardChip']],
+        ['分类页头', '分类页顶部的名称、封面与相关专题', ['ECatHead', 'ECatHeadBg', 'ECatHeadStats', 'ECatHeadTopics', 'ECatTools']],
+    ],
+    'comments' => [
+        ['评论服务', '全站开关与评论系统：原生或 Twikoo / Waline 等第三方', ['EComment', 'ECommentProvider', 'ECommentTwikoo', 'ECommentWaline', 'ECommentArtalk', 'ECommentGiscusRepo', 'ECommentGiscusRepoId', 'ECommentGiscusCategory', 'ECommentGiscusCategoryId', 'ECommentGiscusMapping']],
+        ['嵌套与展开', '长讨论怎么折叠、怎么展开', ['ECommentFold', 'ECommentExpandMode']],
+        ['反垃圾与人机验证', '敏感词、中文限制、Turnstile 与 Akismet', ['ESensitive', 'ECnOnly', 'EMaxLen', 'ETurnstile', 'ETurnstileSite', 'ETurnstileSecret', 'EAkismet', 'EAkismetKey']],
+        ['表情', '评论框旁的表情选择', ['EEmojiStyle', 'EEmojiCdn']],
+    ],
+    'interact' => [
+        ['点赞与数据', '卡片与评论的点赞、在线点与阅读量统计', ['ELike', 'ECLike', 'EAuthorOnline', 'EViews']],
+        ['友链与投稿', '友链一键申请与登录用户前端投稿', ['EFriendApply', 'EContribute', 'EContributeGroup', 'EContributeCats', 'EContributeNote']],
+    ],
+    'credits' => [
+        ['积分基础', '总开关与积分名称，关闭后签到 / AI 计费全部停用', ['ECrOn', 'ECrName', 'ECrTicker']],
+        ['任务奖励', '签到、评论、被赞与投稿的单次奖励与每日上限', ['ECrCheckin', 'ECrComment', 'ECrCommentCap', 'ECrLikeRecv', 'ECrLikeCap', 'ECrPost', 'ECrPostCap', 'ECrVipGift']],
+        ['AI 助手', '对话页开关、每条消息的积分消耗与系统提示词', ['EAIChat', 'ECrAICost', 'EAIChatCtx', 'EAIChatPrompt', 'EAIChatWelcome']],
+        ['推广返佣', '推荐注册归因与订单返积分', ['ECrRefOn', 'ECrRefPercent']],
+    ],
+    'mail' => [
+        ['发信服务器（SMTP）', '全站邮件都走这套账号：评论提醒、回复通知、验证码', ['ECommentMail', 'ECommentMailHost', 'ECommentMailPort', 'ECommentMailSecure', 'ECommentMailVerify', 'ECommentMailAccount', 'ECommentMailPassword', 'ECommentMailFrom', 'ECommentMailTo']],
+        ['评论推送', '新评论推到微信 / 企业微信 / Server酱 / Bark / 自建 webhook，响应结束后异步发送', ['EPush', 'EPushChannel', 'EPushKey', 'EPushExtra']],
+        ['通知范围', '回复提醒与账户验证码邮件', ['EReplyMail', 'EAccountMail']],
+        ['友链通知模板', '申请送达与审核通过的邮件文案，支持变量', ['EFriendMailSubject', 'EFriendMailBody', 'EFriendPassSubject', 'EFriendPassBody']],
+    ],
+    'oauth' => [
+        ['通用行为', '邮箱自动绑定与自动建号', ['EOAuthBindMail', 'EOAuthRegister']],
+        ['GitHub', '个人开发者最友好的登录渠道', ['EOAuthGithub', 'EOAuthGithubId', 'EOAuthGithubSecret']],
+        ['微信（开放平台扫码）', '需企业资质的网站应用', ['EOAuthWeixin', 'EOAuthWeixinId', 'EOAuthWeixinSecret']],
+        ['QQ', 'QQ 互联创建应用', ['EOAuthQQ', 'EOAuthQQId', 'EOAuthQQSecret']],
+        ['微博', '微博开放平台网站接入', ['EOAuthWeibo', 'EOAuthWeiboId', 'EOAuthWeiboSecret']],
+        ['Gitee', '个人开发者零门槛', ['EOAuthGitee', 'EOAuthGiteeId', 'EOAuthGiteeSecret']],
+    ],
+    'pay' => [
+        ['付费基础', '总开关、货币、试读与付费卡位置', ['EPay', 'EPayCurrency', 'EPayAuthorFree', 'EPayBox', 'EPayTeaser', 'EPayDays', 'EPayAdminUrl']],
+        ['支付通道', '手动确认、卡密或易支付', ['EPayChannel', 'EPayManualDoc', 'EPayEpayUrl', 'EPayEpayPid', 'EPayEpayKey', 'EPayEpayType']],
+        ['会员档位', '两档会员的名称与周期定价，留空即不提供', ['EVip1Name', 'EVip1Month', 'EVip1Quarter', 'EVip1Year', 'EVip1Forever', 'EVip2Name', 'EVip2Month', 'EVip2Quarter', 'EVip2Year', 'EVip2Forever']],
+    ],
+    'lottery' => [
+        ['抽奖基础', '总开关、标题、单次消耗、每日次数与保底 / 直接兑换', ['ELottery', 'ELotteryTitle', 'ELotteryCost', 'ELotteryDaily', 'ELotteryPity', 'ELotteryExchange', 'ELotteryNote']],
+        ['奖品池', '一行一个奖品：名称|权重|库存|类型|值', ['ELotteryPrizes']],
+    ],
+    'shop' => [
+        ['兑换商城', '总开关与说明，依赖 Credit 积分', ['EShop', 'EShopNote']],
+        ['商品列表', '一行一个商品：名称|价格|类型|值|库存|限购', ['EShopItems']],
+    ],
+    'ads' => [
+        ['自助广告', '总开关、审核开关与投放须知', ['EAdSelf', 'EAdSelfReview', 'EAdSelfNote']],
+        ['广告位定价', '每个位置的单日价格（元/天），留空即不开放该位', ['EAdSelfPriceHomeTop', 'EAdSelfPriceSidebar', 'EAdSelfPricePostBottom']],
+        ['天数限制', '单次投放的天数范围', ['EAdSelfMinDays', 'EAdSelfMaxDays']],
+    ],
+    'seo' => [
+        ['性能与资源', '图片懒加载与静态资源 CDN', ['ELazy', 'ECdn', 'EAssetMode']],
+        ['自定义代码与推送', 'head / body 注入与百度推送 Token', ['ECustomHead', 'ECustomBody', 'EBaidu', 'EBaiduAuto']],
+        ['关键词内链', '正文关键词自动挂链接：内部词库 + 分类标签名，DOM 级替换不碰代码块', ['EKeywords', 'EKeywordsList', 'EKeywordsLimit', 'EKeywordsAuto']],
+    ],
+];
+
+/* 由块系统接管的分组（模块已迁到独立管理台）：面板顶部出现管理台入口卡 */
+$ecodBlockPanes = [
+    'layout' => '首页、侧栏、文章页、页脚的模块都在「模块管理台」摆放',
+    'post'   => '文章页的模块（相关文章、作者卡、浮动控件等）也在「模块管理台」摆放',
+];
 
 /* 模块管理台入口（独立页面，不在后台菜单里）
    注意：basename(__DIR__ . '/..') 会得到 ".."，必须用 dirname() 取主题目录名 */
 $ecodWidgetUrl = rtrim((string) \Widget\Options::alloc()->siteUrl, '/')
     . '/usr/themes/' . basename(dirname(dirname(__DIR__))) . '/widget.php';
 
-/* 分组级条件：整组因外部开关失效时，顶部出现提示条
-   结构：[条件表达式, 提示文案, 跳转目标「分组:字段」] */
-$ecodPaneConds = [
-    'comments' => ['EComment:on', '全站评论已关闭，本组设置暂不生效', 'interact:EComment'],
-    'aside'    => ['EAside:!=none', '侧栏位置为「无侧栏」，本组模块不会输出', 'layout:EAside'],
-];
+/* 分组级条件已不再使用：总开关（如全站评论）都放进了对应面板内部，
+   字段级显隐（data-ecod-show-when）配合「另有 N 项已隐藏」提示负责引导 */
 
-/* 默认激活的分组：取第一个，避免引用不存在的键导致首屏空白 */
+/* 默认激活的面板：取第一个（「开始」引导页），避免引用不存在的键导致首屏空白 */
 $ecodFirstPane = array_key_first($ecodPanes);
 
 /**
@@ -142,11 +272,32 @@ if (!function_exists('ecod_admin_media')) {
         </div>
 
         <nav class="ecod-admin__nav" aria-label="设置分组">
-            <?php foreach ($ecodPanes as $key => $pane): ?>
-                <button type="button" class="ecod-admin__navitem<?php echo $key === $ecodFirstPane ? ' is-active' : ''; ?>"
-                        data-pane="<?php echo $key; ?>">
-                    <?php echo htmlspecialchars($pane[0]); ?>
-                </button>
+            <?php foreach ($ecodGroups as $gkey => $group): ?>
+                <?php
+                $ecodGFirst = $ecodGroupPanes[$gkey][0];
+                $ecodGActive = in_array($ecodFirstPane, $ecodGroupPanes[$gkey], true);
+                ?>
+                <div class="ecod-admin__group<?php echo $ecodGActive ? ' is-open' : ''; ?>" data-group="<?php echo $gkey; ?>">
+                    <button type="button" class="ecod-admin__grouphd<?php echo $ecodGActive ? ' is-active' : ''; ?>"
+                            data-group-toggle="<?php echo $gkey; ?>" aria-expanded="<?php echo $ecodGActive ? 'true' : 'false'; ?>">
+                        <span class="ecod-admin__gicon" aria-hidden="true"><?php echo ecod_icon($group[0], 15); ?></span>
+                        <span class="ecod-admin__gname">
+                            <b><?php echo htmlspecialchars($group[1]); ?></b>
+                            <small><?php echo htmlspecialchars($group[2]); ?></small>
+                        </span>
+                        <span class="ecod-admin__gchev" aria-hidden="true"><?php echo ecod_icon('chevron', 13); ?></span>
+                    </button>
+                    <div class="ecod-admin__grouplst">
+                        <div class="ecod-admin__grouplst-in">
+                            <?php foreach ($ecodGroupPanes[$gkey] as $pkey): ?>
+                                <button type="button" class="ecod-admin__navitem<?php echo $pkey === $ecodFirstPane ? ' is-active' : ''; ?>"
+                                        data-pane="<?php echo $pkey; ?>" data-group="<?php echo $gkey; ?>">
+                                    <?php echo htmlspecialchars($ecodPanes[$pkey][0]); ?>
+                                </button>
+                            <?php endforeach; ?>
+                        </div>
+                    </div>
+                </div>
             <?php endforeach; ?>
         </nav>
 
@@ -171,15 +322,68 @@ if (!function_exists('ecod_admin_media')) {
                 <?php if ($key === 'tools') {
                     continue;
                 } ?>
-                <?php $ecodPaneCond = $ecodPaneConds[$key] ?? null; ?>
-                <section class="ecod-pane<?php echo $key === $ecodFirstPane ? ' is-active' : ''; ?>" data-pane-panel="<?php echo $key; ?>"<?php if ($ecodPaneCond): ?> data-ecod-pane-when="<?php echo htmlspecialchars($ecodPaneCond[0], ENT_QUOTES, 'UTF-8'); ?>" data-ecod-pane-note="<?php echo htmlspecialchars($ecodPaneCond[1], ENT_QUOTES, 'UTF-8'); ?>" data-ecod-pane-jump="<?php echo htmlspecialchars($ecodPaneCond[2], ENT_QUOTES, 'UTF-8'); ?>"<?php endif; ?>>
-                    <?php if (in_array($key, $ecodBlockPanes, true)): ?>
-                        <?php /* 块管理已迁到独立模块管理台，这里只留常规字段与入口卡 */ ?>
+                <section class="ecod-pane<?php echo $key === $ecodFirstPane ? ' is-active' : ''; ?>" data-pane-panel="<?php echo $key; ?>">
+                    <?php if ($key === 'start'): ?>
+                        <?php /* 引导页：三步上手 + 任务清单 + 快捷入口；勾选状态由 config.js 按字段值与访问记录计算 */ ?>
+                        <div class="ecod-start">
+                            <div class="ecod-start__hero">
+                                <b>把站点调教成你想要的样子</b>
+                                <p>配置分四步走：先在「外观」定品牌门面，再到「布局」挑列表版式、搭导航，然后按需开启评论、付费与登录，最后在「站长」做一次备份。想找某个具体设置，直接按 <kbd>/</kbd> 搜索，或点下面的任务卡直达。</p>
+                            </div>
+
+                            <div class="ecod-start__steps" aria-label="三步上手">
+                                <button type="button" class="ecod-start__step" data-start-jump="brand">
+                                    <em>1</em>
+                                    <b>定品牌门面</b>
+                                    <small>Logo、图标、主色与首页大图</small>
+                                </button>
+                                <button type="button" class="ecod-start__step" data-start-jump="layout">
+                                    <em>2</em>
+                                    <b>挑列表版式</b>
+                                    <small>卡片模式、侧栏位置与缩略图</small>
+                                </button>
+                                <button type="button" class="ecod-start__step" data-start-jump="comments">
+                                    <em>3</em>
+                                    <b>按需开功能</b>
+                                    <small>评论、付费、AI 摘要与第三方登录</small>
+                                </button>
+                            </div>
+
+                            <div class="ecod-start__tasks">
+                                <div class="ecod-start__taskshd">
+                                    <b>上手清单</b>
+                                    <span data-start-progress>0 / 7</span>
+                                </div>
+                                <div class="ecod-start__tasklst" data-start-tasks>
+                                    <?php /* 任务项由 config.js 生成，保证勾选状态与字段联动 */ ?>
+                                </div>
+                            </div>
+
+                            <div class="ecod-start__quick">
+                                <a class="ecod-start__qlink" href="<?php echo htmlspecialchars($ecodWidgetUrl, ENT_QUOTES, 'UTF-8'); ?>" target="_blank" rel="noopener" data-start-flag="widgets">
+                                    <?php echo ecod_icon('layers', 15); ?>
+                                    <span><b>模块管理台</b><small>首页、侧栏、文章页、页脚的模块摆放</small></span>
+                                    <em>打开 →</em>
+                                </a>
+                                <button type="button" class="ecod-start__qlink" data-start-jump="tools" data-start-flag="tools">
+                                    <?php echo ecod_icon('check-circle', 15); ?>
+                                    <span><b>特色页一键创建</b><small>友链、投稿、网址导航、专题页</small></span>
+                                    <em>前往 →</em>
+                                </button>
+                                <button type="button" class="ecod-start__qlink" data-start-export data-start-flag="backup">
+                                    <?php echo ecod_icon('download', 15); ?>
+                                    <span><b>导出配置备份</b><small>全部设置存成 JSON，随存随恢复</small></span>
+                                    <em>下载 →</em>
+                                </button>
+                            </div>
+                        </div>
+                    <?php elseif (isset($ecodBlockPanes[$key])): ?>
+                        <?php /* 模块摆放已迁到独立管理台，这里只留常规字段与入口卡 */ ?>
                         <a class="ecod-wgt-entry" href="<?php echo htmlspecialchars($ecodWidgetUrl, ENT_QUOTES, 'UTF-8'); ?>" target="_blank" rel="noopener">
                             <span class="ecod-wgt-entry__ic"><?php echo ecod_icon('layers', 16); ?></span>
                             <span class="ecod-wgt-entry__text">
-                                <b>本分组的模块在「模块管理台」里摆放</b>
-                                <small>拖拽排序、开关、改参数，改完即存，不再占用设置页</small>
+                                <b><?php echo htmlspecialchars($ecodBlockPanes[$key]); ?></b>
+                                <small>拖拽排序、开关、改参数，改完即存，不占用设置页</small>
                             </span>
                             <span class="ecod-wgt-entry__go">打开 →</span>
                         </a>
@@ -204,6 +408,17 @@ if (!function_exists('ecod_admin_media')) {
                             <label class="ecod-navb__setfield ecod-navb__setfield--wide">
                                 <span>备注</span>
                                 <input type="text" data-set-note maxlength="60" placeholder="只存后台，例如「春节活动期用」，可留空">
+                            </label>
+                            <label class="ecod-navb__setfield">
+                                <span>二级菜单样式</span>
+                                <select data-set-style>
+                                    <option value="">跟随全局设置</option>
+                                    <option value="auto">自动（有图标显示图标卡片）</option>
+                                    <option value="list">纯文字列表</option>
+                                    <option value="icons">图标卡片（无图标用首字）</option>
+                                    <option value="mega">宽幅图标卡片（两列）</option>
+                                    <option value="mega-group">分组宽面板（栏标题 + 描述）</option>
+                                </select>
                             </label>
                             <button type="button" class="ecod-admin__ghost" data-set-cancel>取消</button>
                             <button type="button" class="ecod-btn ecod-btn--sm" data-set-save>应用</button>
@@ -342,9 +557,55 @@ if (!function_exists('ecod_admin_media')) {
                 <div class="ecod-tool">
                     <div class="ecod-tool__text">
                         <b>百度主动推送</b>
-                        <p>把最近 20 篇文章地址推给百度，加快收录。Token 在「收录与性能」分组里填，每天配额有限，不要反复点。</p>
+                        <p>把最近 20 篇文章地址推给百度，加快收录。Token 在「站长 → 收录与性能」里填，每天配额有限，不要反复点；24 小时内推过的文章会自动跳过。</p>
                     </div>
                     <button type="button" class="ecod-btn ecod-btn--ghost" data-ecod-build="baidu">推送</button>
+                </div>
+
+                <div class="ecod-tool">
+                    <div class="ecod-tool__text">
+                        <b>自定义短链</b>
+                        <p>把固定的推荐 / 活动链接变成 <code>?go=短码</code>。正文里目标地址完全一致的链接会自动改用短码，访问走外链中转页并统计点击。</p>
+                    </div>
+                </div>
+
+                <div class="ecod-broadcast" data-ecod-golink-form>
+                    <input type="text" class="ecod-broadcast__title" data-ecod-golink-key placeholder="短码（留空自动生成，3-32 位字母数字）" maxlength="32">
+                    <input type="text" class="ecod-broadcast__link" data-ecod-golink-target placeholder="目标地址，https:// 开头" maxlength="190">
+                    <button type="button" class="ecod-btn ecod-broadcast__send" data-ecod-golink-add>保存短链</button>
+                </div>
+
+                <div class="ecod-snaplist" data-ecod-golink-list>
+                    <?php $ecodGolinks = function_exists('ecod_golink_all') ? ecod_golink_all() : []; ?>
+                    <?php if (!$ecodGolinks): ?>
+                        <p class="ecod-snaplist__empty">还没有自定义短链。填好目标地址后点「保存短链」创建第一份。</p>
+                    <?php else: ?>
+                        <?php foreach ($ecodGolinks as $ecodGolink): ?>
+                            <div class="ecod-snap" data-key="<?php echo htmlspecialchars((string) $ecodGolink['skey'], ENT_QUOTES, 'UTF-8'); ?>">
+                                <div class="ecod-snap__main">
+                                    <b>?go=<?php echo htmlspecialchars((string) $ecodGolink['skey'], ENT_QUOTES, 'UTF-8'); ?></b>
+                                    <small>→ <?php echo htmlspecialchars((string) $ecodGolink['target'], ENT_QUOTES, 'UTF-8'); ?> · <?php echo (int) $ecodGolink['count']; ?> 次点击</small>
+                                </div>
+                                <div class="ecod-snap__act">
+                                    <button type="button" class="ecod-admin__ghost" data-ecod-golink-copy>复制</button>
+                                    <button type="button" class="ecod-admin__ghost is-danger" data-ecod-golink-del>删除</button>
+                                </div>
+                            </div>
+                        <?php endforeach; ?>
+                    <?php endif; ?>
+                </div>
+
+                <div class="ecod-tool ecod-tool--broadcast">
+                    <div class="ecod-tool__text">
+                        <b>站内公告</b>
+                        <p>给全部注册用户的站内消息发一条公告，出现在头部铃铛与个人中心「我的消息」。每人一条，不要频繁发送。</p>
+                    </div>
+                    <div class="ecod-broadcast">
+                        <input type="text" class="ecod-broadcast__title" data-ecod-broadcast-title placeholder="公告标题，例如：今晚 23:00 ~ 24:00 停机维护" maxlength="80">
+                        <textarea class="ecod-broadcast__body" data-ecod-broadcast-body rows="3" placeholder="正文（可选），支持多行"></textarea>
+                        <input type="text" class="ecod-broadcast__link" data-ecod-broadcast-link placeholder="跳转链接（可选，https:// 或站内 /path）">
+                        <button type="button" class="ecod-btn ecod-broadcast__send" data-ecod-broadcast-send>发送公告</button>
+                    </div>
                 </div>
 
                 <div class="ecod-tool">
@@ -404,23 +665,24 @@ if (!function_exists('ecod_admin_media')) {
  * 字段注册
  * ---------------------------------------------------------------- */
 
-/* 站点 */
-ecod_admin_field($form, 'text', 'ELogo', 'Ecod', '站点标识', '导航栏左侧显示的文字，留空则使用站点标题', [], 'site');
-ecod_admin_media($form, 'text', 'ELogoImage', '', 'Logo 图片', '从媒体库选图或粘贴地址；填了就代替上面的文字', 'site');
+/* 品牌与首页（原「站点」+「首页」两组合并） */
+ecod_admin_field($form, 'text', 'ELogo', 'Ecod', '站点标识', '导航栏左侧显示的文字，留空则使用站点标题', [], 'brand');
+ecod_admin_media($form, 'text', 'ELogoImage', '', 'Logo 图片', '从媒体库选图或粘贴地址；填了就代替上面的文字', 'brand');
 ecod_admin_field($form, 'select', 'ELogoBoth', 'off', '图片旁同时显示文字', '只在填了 Logo 图片时生效，适合「图形 + 站名」并排的排布', [
     'off' => '只显示图片',
     'on'  => '图片 + 文字',
-], 'site', ['data-ecod-show-when' => 'ELogoImage:!empty']);
-ecod_admin_field($form, 'text', 'ESlogan', '', '副标题 / 一句话', '首页大图与搜索盒下方显示，留空则不显示', [], 'home');
-ecod_admin_media($form, 'text', 'EBanner', '', '首页大图', '从媒体库选图，或直接粘贴图片 URL；留空则关闭首页大图', 'home');
-ecod_admin_media($form, 'text', 'EFavicon', '', '站点图标（Favicon）', '建议 32×32 以上的 PNG / SVG；留空则用主色生成的占位图标', 'site');
-$ecodPrimaryField = ecod_admin_field($form, 'text', 'EPrimary', '#4f6ef2', '主题主色', '六位十六进制色值，按钮、链接、高亮等全部跟随；留空恢复 #4f6ef2', [], 'site');
+], 'brand', ['data-ecod-show-when' => 'ELogoImage:!empty']);
+ecod_admin_media($form, 'text', 'EFavicon', '', '站点图标（Favicon）', '建议 32×32 以上的 PNG / SVG；留空则用主色生成的占位图标', 'brand');
+$ecodPrimaryField = ecod_admin_field($form, 'text', 'EPrimary', '#4f6ef2', '主题主色', '六位十六进制色值，按钮、链接、高亮等全部跟随；留空恢复 #4f6ef2', [], 'brand');
 $ecodPrimaryField->input->setAttribute('data-ecod-color', '1');
-ecod_admin_field($form, 'text', 'EICP', '', 'ICP 备案号', '例如「京ICP备12345678号-1」；填写后页脚自动显示并链接到工信部', [], 'site');
-ecod_admin_field($form, 'text', 'EPolice', '', '公安备案号', '例如「京公网安备 11010502030123号」；填写后页脚显示并链接到公安备案查询', [], 'site');
+ecod_admin_field($form, 'text', 'ESlogan', '', '副标题 / 一句话', '首页大图与搜索盒下方显示，留空则不显示', [], 'brand');
+ecod_admin_media($form, 'text', 'EBanner', '', '首页大图', '从媒体库选图，或直接粘贴图片 URL；留空则关闭首页大图', 'brand');
+ecod_admin_field($form, 'text', 'EICP', '', 'ICP 备案号', '例如「京ICP备12345678号-1」；填写后页脚自动显示并链接到工信部', [], 'brand');
+ecod_admin_field($form, 'text', 'EPolice', '', '公安备案号', '例如「京公网安备 11010502030123号」；填写后页脚显示并链接到公安备案查询', [], 'brand');
+ecod_admin_field($form, 'text', 'EBirth', '', '站点成立日期', '例如 2021-01-01；填写后「数据概览」块会显示已运行天数', [], 'brand');
+ecod_admin_field($form, 'textarea', 'ESites', '', '网址导航数据', '「网址导航」页的站点数据。空行分隔分组，每组第一行为「组名丨组描述」，之后每行一个站点：「名称丨链接丨一句话描述」，第 4 段可选（站点图标地址）。需先用「站长 → 工具与备份」创建网址导航页', [], 'brand');
 
-/* 外观：登录页 */
-ecod_admin_media($form, 'text', 'ELoginBg', '', '登录页背景图', '从媒体库选图或粘贴图片 URL；设置后登录页整页铺满该图并加深色遮罩，留空则用默认浅色背景', 'appearance');
+/* 视觉与动效（原「外观」组）：登录页背景 */
 
 /* 版式（侧栏位置、卡片、缩略图、摘要） */
 ecod_admin_field($form, 'select', 'EAside', 'right', '侧栏位置（全站默认）', '所有页面类型的默认值；在「模块管理台」里可以按页面类型单独覆盖，文章 / 页面还能用自定义字段 aside 单独覆盖', [
@@ -444,8 +706,16 @@ ecod_admin_field($form, 'select', 'EThumbSide', 'right', '缩略图位置', '列
     'left'  => '左图',
 ], 'layout', ['data-ecod-show-when' => 'ECardMode:default|feature']);
 ecod_admin_field($form, 'number', 'ENewDays', '7', '「新」角标天数', '文章发布后多少天内显示「新」角标，填 0 关闭该角标', [], 'layout', ['min' => 0, 'max' => 90, 'step' => 1]);
+ecod_admin_field($form, 'number', 'EListPerPage', '0', '每页文章数', '首页 / 分类 / 标签 / 作者 / 搜索列表一次加载几篇，分页与「加载更多」按此计算；填 0 跟随 Typecho 后台「阅读 → 每页文章数」', [], 'layout', ['min' => 0, 'max' => 60, 'step' => 1, 'placeholder' => '0 = 跟随后台设置']);
 ecod_admin_field($form, 'number', 'EExcerpt', '110', '摘要长度', '单位：字符，默认 110；文章里填了「自定义摘要」时以手填内容为准', [], 'layout', ['min' => 40, 'max' => 200, 'step' => 5, 'data-ecod-show-when' => 'ECardMode:!=bare|title|compact']);
 ecod_admin_field($form, 'text', 'EStale', '180', '文章过期提醒', '文章超过这么多天未更新时，正文上方提示内容可能已过时；填 0 关闭', [], 'post');
+ecod_admin_field($form, 'select', 'EShowMore', 'off', '显示更多', '长文先折叠到指定高度（底部渐隐遮罩 + 「展开全文」按钮），点击后展开全文。正文始终完整输出在 HTML 里，搜索引擎可正常抓取；密码 / 付费截断的文章不叠加此效果', [
+    'off'    => '关闭（默认）',
+    'mobile' => '仅移动端',
+    'all'    => '全部设备',
+], 'post');
+ecod_admin_field($form, 'number', 'EShowMoreH', '1200', '折叠高度（px）', '正文超过「折叠高度 + 200px」才启用折叠，短文不受影响', [], 'post', ['min' => 400, 'max' => 6000, 'step' => 100, 'data-ecod-show-when' => 'EShowMore:mobile|all']);
+ecod_admin_field($form, 'text', 'EShowMoreText', '展开全文', '按钮文案', '折叠时显示在正文底部的按钮文字', [], 'post', ['data-ecod-show-when' => 'EShowMore:mobile|all']);
 ecod_admin_field($form, 'select', 'EFloatToc', 'on', '浮动目录', '文章页目录以浮动弹窗呈现，位置与侧栏互斥：侧栏在右则目录浮在左，侧栏在左则浮在右，不再遮挡侧栏；关闭后回退为侧栏里的静态目录卡', [
     'on'  => '开启（默认）',
     'off' => '关闭',
@@ -454,6 +724,11 @@ ecod_admin_field($form, 'select', 'ETocProgress', 'on', '目录进度条', '浮�
     'on'  => '开启（默认）',
     'off' => '关闭',
 ], 'post');
+ecod_admin_field($form, 'select', 'ETocEntry', 'float', '目录入口', '文章页目录的常驻入口取其一：「浮目录胶囊」是悬浮在侧栏对面边的胶囊按钮；「工具条目录按钮」把入口收进阅读工具条（浮目录胶囊隐藏，弹层仍由它弹出）；选「两者都显示」则两处入口并存。需先开启「浮动目录」，其关闭时两者都不显示、目录退回侧栏静态卡', [
+    'float' => '浮目录胶囊（默认）',
+    'bar'   => '工具条目录按钮',
+    'both'  => '两者都显示',
+], 'post');
 ecod_admin_field($form, 'select', 'ELikers', 'on', '点赞头像堆叠', '互动条点赞按钮下方展示最近点赞的注册用户头像（最多 5 个，超出并入「等 N 人」）；还没有注册用户点赞时自动不输出，只保留数字', [
     'on'  => '开启（默认）',
     'off' => '关闭',
@@ -461,6 +736,10 @@ ecod_admin_field($form, 'select', 'ELikers', 'on', '点赞头像堆叠', '互动
 ecod_admin_field($form, 'select', 'EQuickBar', 'on', '快速评论条', '移动端滚过一屏正文且评论区还在下方时，视口底部淡入胶囊条；点击平滑滚到评论区并聚焦输入框。桌面不显示', [
     'on'  => '开启（默认）',
     'off' => '关闭',
+], 'post');
+ecod_admin_field($form, 'select', 'EReadBarMode', 'top', '阅读工具条形态', '文章页「阅读工具条」（目录 / 朗读 / 字号 / 进度）的呈现形态：吸顶横条常驻正文上方，滚动时自动吸顶；侧栏竖栏固定悬浮在侧栏一侧垂直居中，与浮动目录互斥成对（浮目录在侧栏对面边）。窄屏（<900px）两种形态都回落为吸顶横条', [
+    'top'  => '吸顶横条（默认）',
+    'side' => '侧栏竖栏',
 ], 'post');
 ecod_admin_field($form, 'select', 'EDark', 'auto', '深色模式', '关闭后不加载切换按钮与首帧脚本', [
     'auto' => '跟随系统',
@@ -472,6 +751,58 @@ ecod_admin_field($form, 'select', 'EThumbServer', 'on', '服务端缩略图裁�
     'on'  => '开启',
     'off' => '关闭',
 ], 'layout', ['data-ecod-show-when' => 'ECardMode:!=bare|title|compact']);
+
+/* 媒体资源库：存储驱动 / WebP / 格式白名单（设计文档 docs/dev/MEDIA-STORAGE.md） */
+$ecodMediaTypesWarn = '';
+if (function_exists('ecod_media_missing_global_types')) {
+    $ecodMissingTypes = ecod_media_missing_global_types();
+    if ($ecodMissingTypes) {
+        $ecodMediaTypesWarn = '；⚠ Typecho 全局附件类型缺少 ' . implode(' / ', $ecodMissingTypes)
+            . '，请到「设置 → 基本」的允许上传类型里补勾，否则部分格式仍会被拒';
+    }
+}
+ecod_admin_field($form, 'select', 'EMediaStorage', 'local', '存储驱动', '媒体库上传与编辑器粘贴统一走主题自建通道：local 落本站 /usr/uploads/（与原生一致）；oss / cos / s3 直传对象存储，正文引用与后台列表零改动；配置不完整自动回退 local' . $ecodMediaTypesWarn, [
+    'local' => '本地（默认）',
+    'oss'   => '阿里云 OSS',
+    'cos'   => '腾讯云 COS',
+    's3'    => 'S3 兼容（MinIO / R2 / 七牛等）',
+], 'media');
+ecod_admin_field($form, 'select', 'EMediaDualWrite', 'off', '云端+本地双写', '开启后本地保留一份拷贝，方便回退与本地缩略图裁剪；代价是双倍磁盘', [
+    'off' => '关闭（默认）',
+    'on'  => '开启',
+], 'media', ['data-ecod-show-when' => 'EMediaStorage:!=local']);
+ecod_admin_field($form, 'text', 'EMediaMaxBytes', '16777216', '单文件上限（字节）', '媒体库上传接口的硬上限，默认 16MB；Typecho / PHP 自身的上传限制依然生效', [], 'media');
+ecod_admin_field($form, 'select', 'EWebpConvert', 'on', '上传即转 WebP', 'JPG / PNG / BMP / TIFF 上传时自动转存为 WebP（需 PHP GD）；GIF 动图、SVG、AVIF 跳过；转换失败自动回落原格式', [
+    'on'  => '开启（默认）',
+    'off' => '关闭',
+], 'media');
+ecod_admin_field($form, 'text', 'EWebpQuality', '82', 'WebP 质量', '1-100，默认 82（与服务端缩略图一致）', [], 'media', ['data-ecod-show-when' => 'EWebpConvert:on']);
+ecod_admin_field($form, 'select', 'EWebpKeepOriginal', 'off', '保留原图', '开启后转换时额外保留一份原图（-orig 后缀），便于回退；多占一份存储', [
+    'off' => '不保留（默认）',
+    'on'  => '保留',
+], 'media', ['data-ecod-show-when' => 'EWebpConvert:on']);
+ecod_admin_field($form, 'select', 'EMediaAllowSvg', 'off', '允许上传 SVG', 'SVG 是文本格式、可能携带脚本，默认拒绝；开启后仅编辑器角色可上传，前台不做内联渲染', [
+    'off' => '拒绝（默认）',
+    'on'  => '允许',
+], 'media');
+ecod_admin_field($form, 'text', 'EMediaAllowExt', '', '追加允许的扩展名', '逗号分隔，如 heic,heif；仅媒体库生效，仍需在 Typecho「设置 → 基本」补全局附件类型', [], 'media');
+/* OSS / COS / S3 凭据（按驱动条件显示） */
+ecod_admin_field($form, 'text', 'EMediaOssKey', '', 'AccessKeyId', '阿里云 RAM 访问密钥', [], 'media', ['data-ecod-show-when' => 'EMediaStorage:oss']);
+ecod_admin_field($form, 'text', 'EMediaOssSecret', '', 'AccessKeySecret', '阿里云访问密钥；建议使用仅含 OSS 写权限的 RAM 子账号', [], 'media', ['data-ecod-show-when' => 'EMediaStorage:oss']);
+ecod_admin_field($form, 'text', 'EMediaOssBucket', '', 'Bucket', '存储桶名称', [], 'media', ['data-ecod-show-when' => 'EMediaStorage:oss']);
+ecod_admin_field($form, 'text', 'EMediaOssEndpoint', '', 'Endpoint', '如 oss-cn-hangzhou.aliyuncs.com（不带 https:// 与 Bucket 前缀）', [], 'media', ['data-ecod-show-when' => 'EMediaStorage:oss']);
+ecod_admin_field($form, 'text', 'EMediaOssDomain', '', '自定义 CDN 域名', '留空用 https://Bucket.Endpoint；填写后缩略图会带上 x-oss-process 图片处理参数', [], 'media', ['data-ecod-show-when' => 'EMediaStorage:oss']);
+ecod_admin_field($form, 'text', 'EMediaCosKey', '', 'SecretId', '腾讯云访问密钥', [], 'media', ['data-ecod-show-when' => 'EMediaStorage:cos']);
+ecod_admin_field($form, 'text', 'EMediaCosSecret', '', 'SecretKey', '腾讯云访问密钥；建议使用仅含 COS 权限的子账号', [], 'media', ['data-ecod-show-when' => 'EMediaStorage:cos']);
+ecod_admin_field($form, 'text', 'EMediaCosBucket', '', '存储桶', '格式：名称-appid，如 blog-1250000000', [], 'media', ['data-ecod-show-when' => 'EMediaStorage:cos']);
+ecod_admin_field($form, 'text', 'EMediaCosRegion', '', '地域', '如 ap-guangzhou / ap-shanghai', [], 'media', ['data-ecod-show-when' => 'EMediaStorage:cos']);
+ecod_admin_field($form, 'text', 'EMediaCosDomain', '', '自定义 CDN 域名', '留空用默认桶域名；填写后缩略图会带上 imageMogr2 图片处理参数', [], 'media', ['data-ecod-show-when' => 'EMediaStorage:cos']);
+ecod_admin_field($form, 'text', 'EMediaS3Key', '', 'Access Key', 'S3 兼容存储的访问密钥', [], 'media', ['data-ecod-show-when' => 'EMediaStorage:s3']);
+ecod_admin_field($form, 'text', 'EMediaS3Secret', '', 'Secret Key', 'S3 兼容存储的私有密钥', [], 'media', ['data-ecod-show-when' => 'EMediaStorage:s3']);
+ecod_admin_field($form, 'text', 'EMediaS3Bucket', '', 'Bucket', '存储桶名称', [], 'media', ['data-ecod-show-when' => 'EMediaStorage:s3']);
+ecod_admin_field($form, 'text', 'EMediaS3Region', '', 'Region', '如 auto（R2）/ us-east-1（AWS）/ 自定义（MinIO）', [], 'media', ['data-ecod-show-when' => 'EMediaStorage:s3']);
+ecod_admin_field($form, 'text', 'EMediaS3Endpoint', '', 'Endpoint', '如 xxx.r2.cloudflarestorage.com 或 minio.example.com:9000（不带 https://）', [], 'media', ['data-ecod-show-when' => 'EMediaStorage:s3']);
+ecod_admin_field($form, 'text', 'EMediaS3Domain', '', '自定义域名', '留空用 https://Bucket.Endpoint；S3 系无统一图片处理，缩略图回退原图', [], 'media', ['data-ecod-show-when' => 'EMediaStorage:s3']);
 ecod_admin_field($form, 'select', 'ELike', 'on', '列表卡片点赞', '首页 / 归档卡片右上角的点赞按钮；文章页互动条在「文章页 → 互动按钮」里单独控制', [
     'on'  => '显示',
     'off' => '隐藏',
@@ -489,7 +820,7 @@ ecod_admin_field($form, 'select', 'ECLike', 'on', '评论点赞', '每条评论�
     'off' => '关闭',
 ], 'interact');
 ecod_admin_field($form, 'textarea', 'ECopyrightSet', '', '版权模板', '多套版权声明的快捷切换。每行一套：「名称丨声明文本」，文章自定义字段 copyright 填名称即选用对应文本；没填字段的文章仍用「文章页 → 版权声明」模块里的通用说明', [], 'post');
-ecod_admin_field($form, 'select', 'EContribute', 'off', '前端投稿', '登录用户在「投稿」页提交文章，进入后台「待审核」列表，管理员点发布即上线。需先用「工具 → 特色页」创建投稿页并放入导航', [
+ecod_admin_field($form, 'select', 'EContribute', 'off', '前端投稿', '登录用户在「投稿」页提交文章，进入后台「待审核」列表，管理员点发布即上线。需先用「站长 → 工具与备份」创建投稿页并放入导航', [
     'off' => '关闭',
     'on'  => '开启',
 ], 'interact');
@@ -538,104 +869,123 @@ ecod_admin_field($form, 'select', 'EViews', 'on', '阅读量统计', '关闭后�
     'on'  => '统计',
     'off' => '停止统计',
 ], 'interact');
-ecod_admin_field($form, 'text', 'EBirth', '', '站点成立日期', '例如 2021-01-01；填写后「数据概览」块会显示已运行天数', [], 'site');
-ecod_admin_field($form, 'textarea', 'ESites', '', '网址导航数据', '「网址导航」页的站点数据。空行分隔分组，每组第一行为「组名丨组描述」，之后每行一个站点：「名称丨链接丨一句话描述」，第 4 段可选（站点图标地址）。需先用「工具 → 特色页」创建网址导航页', [], 'site');
+/* EBirth / ESites 已并入上方「品牌与首页」组 */
 
-/* 互动（评论 / 点赞 / 阅读量） */
+/* 互动（点赞 / 投稿 / 友链）；评论开关与审核规则见下方「评论」组 */
+/* ---------------- 互动 → 评论：全站开关与审核规则（并入「评论」面板） ---------------- */
 ecod_admin_field($form, 'select', 'EComment', 'on', '全站评论', '关闭后所有文章与页面的评论表单、评论列表都不再输出', [
     'on'  => '开启',
     'off' => '关闭',
-], 'interact');
-ecod_admin_field($form, 'textarea', 'ESensitive', '', '敏感词', '命中任意一个就把评论转为「待审核」。一行一个，也支持用 || 分隔', [], 'interact', ['data-ecod-show-when' => 'EComment:on']);
+], 'comments');
+ecod_admin_field($form, 'textarea', 'ESensitive', '', '敏感词', '命中任意一个就把评论转为「待审核」。一行一个，也支持用 || 分隔', [], 'comments', ['data-ecod-show-when' => 'EComment:on']);
 ecod_admin_field($form, 'select', 'ECnOnly', 'off', '必须包含中文', '不含中文的评论转待审，用来挡纯英文机器人广告', [
     'off' => '不限制',
     'on'  => '必须含中文',
-], 'interact', ['data-ecod-show-when' => 'EComment:on']);
-ecod_admin_field($form, 'number', 'EMaxLen', '', '评论字数上限', '超出上限的评论转待审；填 0 或留空不限制', [], 'interact', ['min' => 0, 'max' => 3000, 'step' => 50, 'data-ecod-show-when' => 'EComment:on']);
+], 'comments', ['data-ecod-show-when' => 'EComment:on']);
+ecod_admin_field($form, 'number', 'EMaxLen', '', '评论字数上限', '超出上限的评论转待审；填 0 或留空不限制', [], 'comments', ['min' => 0, 'max' => 3000, 'step' => 50, 'data-ecod-show-when' => 'EComment:on']);
+
+/* ---------------- 通知与登录 → 邮件：SMTP 与通知模板（原属「互动」组） ---------------- */
 ecod_admin_field($form, 'select', 'ECommentMail', 'off', '邮件通知总开关', '控制全站发信：评论提醒、回复通知、账户验证码、友链通知都走这里的 SMTP；关闭后以上邮件都不发，发送失败只写日志，不影响评论与申请提交', [
     'off' => '关闭',
     'on'  => '开启',
-], 'interact');
+], 'mail');
 $ecodMailWhen = ['data-ecod-show-when' => 'ECommentMail:on'];
-ecod_admin_field($form, 'text', 'ECommentMailHost', '', 'SMTP 服务器', '例如 smtp.qq.com', [], 'interact', $ecodMailWhen);
-ecod_admin_field($form, 'text', 'ECommentMailPort', '465', 'SMTP 端口', 'SSL 一般 465，STARTTLS 一般 587', [], 'interact', $ecodMailWhen);
+ecod_admin_field($form, 'text', 'ECommentMailHost', '', 'SMTP 服务器', '例如 smtp.qq.com', [], 'mail', $ecodMailWhen);
+ecod_admin_field($form, 'text', 'ECommentMailPort', '465', 'SMTP 端口', 'SSL 一般 465，STARTTLS 一般 587', [], 'mail', $ecodMailWhen);
 ecod_admin_field($form, 'select', 'ECommentMailSecure', 'ssl', '加密方式', '按邮箱服务商的要求选择', [
     'ssl'  => 'SSL',
     'tls'  => 'STARTTLS',
     'none' => '不加密',
-], 'interact', $ecodMailWhen);
+], 'mail', $ecodMailWhen);
 ecod_admin_field($form, 'select', 'ECommentMailVerify', 'on', '校验 SMTP 证书', '开启后验证邮件服务器的 TLS 证书（防中间人窃取授权码）；个别邮箱中继证书链不全、连不上时再关', [
     'on'  => '校验（推荐）',
     'off' => '不校验',
-], 'interact', $ecodMailWhen);
-ecod_admin_field($form, 'text', 'ECommentMailAccount', '', '发件邮箱', '例如 yourname@qq.com', [], 'interact', $ecodMailWhen);
-ecod_admin_field($form, 'text', 'ECommentMailPassword', '', '邮箱授权码', '注意是授权码，不是邮箱登录密码', [], 'interact', $ecodMailWhen);
-ecod_admin_field($form, 'text', 'ECommentMailFrom', '', '发件人昵称', '留空则使用站点标题', [], 'interact', $ecodMailWhen);
-ecod_admin_field($form, 'text', 'ECommentMailTo', '', '接收提醒的邮箱', '留空则发给上面填的发件邮箱', [], 'interact', $ecodMailWhen);
+], 'mail', $ecodMailWhen);
+ecod_admin_field($form, 'text', 'ECommentMailAccount', '', '发件邮箱', '例如 yourname@qq.com', [], 'mail', $ecodMailWhen);
+ecod_admin_field($form, 'text', 'ECommentMailPassword', '', '邮箱授权码', '注意是授权码，不是邮箱登录密码', [], 'mail', $ecodMailWhen);
+ecod_admin_field($form, 'text', 'ECommentMailFrom', '', '发件人昵称', '留空则使用站点标题', [], 'mail', $ecodMailWhen);
+ecod_admin_field($form, 'text', 'ECommentMailTo', '', '接收提醒的邮箱', '留空则发给上面填的发件邮箱', [], 'mail', $ecodMailWhen);
+
+/* 评论推送：与邮件提醒并行的旁路通知，响应结束后异步发送（core/site/push.php） */
+ecod_admin_field($form, 'select', 'EPush', 'off', '评论推送', '收到新评论时推送到微信或自建接口；发送在评论提交响应结束之后进行，不拖慢评论。失败只写日志不重试', [
+    'off' => '关闭',
+    'on'  => '开启',
+], 'mail');
+$ecodPushWhen = ['data-ecod-show-when' => 'EPush:on'];
+ecod_admin_field($form, 'select', 'EPushChannel', 'wecom', '推送通道', '企业微信机器人最常用（群里建个机器人拿 webhook 地址）；WxPusher 需再填 UID；通用 webhook 收到 POST JSON {title, body, url, site}', [
+    'wecom'      => '企业微信群机器人',
+    'wxpusher'   => 'WxPusher（微信）',
+    'serverchan' => 'Server酱',
+    'bark'       => 'Bark（iOS）',
+    'webhook'    => '通用 webhook',
+], 'mail', $ecodPushWhen);
+ecod_admin_field($form, 'text', 'EPushKey', '', '通道密钥 / 地址', '企业微信 = 机器人 webhook 完整地址；WxPusher = appToken；Server酱 = SendKey；Bark = 设备 key 或自建服务器完整地址；webhook = 接收地址', [], 'mail', $ecodPushWhen);
+ecod_admin_field($form, 'text', 'EPushExtra', '', 'WxPusher UID', '仅 WxPusher 通道需要：关注应用后在用户列表里复制自己的 UID', [], 'mail', ['data-ecod-show-when' => 'EPush:on,EPushChannel:wxpusher']);
 ecod_admin_field($form, 'select', 'EReplyMail', 'off', '回复通知评论者', '评论收到回复时，用同一套 SMTP 给被回复者发邮件；自己回复自己不发送', [
     'off' => '关闭',
     'on'  => '开启',
-], 'interact', $ecodMailWhen);
+], 'mail', $ecodMailWhen);
 ecod_admin_field($form, 'select', 'EAccountMail', 'off', '账户邮件（注册 / 找回密码）', '复用上面的 SMTP 账号给用户发验证码邮件；开启后登录页才会出现「找回密码」入口', [
     'off' => '关闭',
     'on'  => '开启',
-], 'interact', $ecodMailWhen);
+], 'mail', $ecodMailWhen);
 /* 友链通知模板：变量 {站点名称} {站点地址} {一句话简介} {联系邮箱} {头像地址} {本站名称} {本站地址} */
 $ecodFriendMailWhen = ['data-ecod-show-when' => 'ECommentMail:on,EFriendApply:on'];
-ecod_admin_field($form, 'text', 'EFriendMailSubject', '【友链申请】{站点名称}', '友链申请通知 · 主题', '有人提交友链申请时发给博主自己；需先开启上方「邮件通知总开关」并填好 SMTP。可用变量：{站点名称} {站点地址} {本站名称}', [], 'interact', $ecodFriendMailWhen);
-ecod_admin_field($form, 'textarea', 'EFriendMailBody', "收到一条新的友链申请。\n\n站点名称：{站点名称}\n站点地址：{站点地址}\n一句话简介：{一句话简介}\n联系邮箱：{联系邮箱}\n\n到友链页的「待审核申请」面板可以一键通过。", '友链申请通知 · 正文', '纯文本即可，空行分段、链接自动可点。可用变量：{站点名称} {站点地址} {一句话简介} {联系邮箱} {头像地址} {本站名称} {本站地址}', [], 'interact', ['rows' => 8, 'data-ecod-show-when' => 'ECommentMail:on,EFriendApply:on']);
-ecod_admin_field($form, 'text', 'EFriendPassSubject', '友链申请已通过 · {本站名称}', '审核通过通知 · 主题', '审核通过时发给申请人填的邮箱。可用变量同上', [], 'interact', $ecodFriendMailWhen);
-ecod_admin_field($form, 'textarea', 'EFriendPassBody', "你好，「{站点名称}」的友链申请已通过审核。\n\n站点地址：{站点地址}\n\n已经加入友链列表，感谢分享，欢迎常来。\n{本站地址}", '审核通过通知 · 正文', '发给申请人；留空或某个模板为空时使用内置默认文案', [], 'interact', ['rows' => 6, 'data-ecod-show-when' => 'ECommentMail:on,EFriendApply:on']);
+ecod_admin_field($form, 'text', 'EFriendMailSubject', '【友链申请】{站点名称}', '友链申请通知 · 主题', '有人提交友链申请时发给博主自己；需先开启上方「邮件通知总开关」并填好 SMTP。可用变量：{站点名称} {站点地址} {本站名称}', [], 'mail', $ecodFriendMailWhen);
+ecod_admin_field($form, 'textarea', 'EFriendMailBody', "收到一条新的友链申请。\n\n站点名称：{站点名称}\n站点地址：{站点地址}\n一句话简介：{一句话简介}\n联系邮箱：{联系邮箱}\n\n到友链页的「待审核申请」面板可以一键通过。", '友链申请通知 · 正文', '纯文本即可，空行分段、链接自动可点。可用变量：{站点名称} {站点地址} {一句话简介} {联系邮箱} {头像地址} {本站名称} {本站地址}', [], 'mail', ['rows' => 8, 'data-ecod-show-when' => 'ECommentMail:on,EFriendApply:on']);
+ecod_admin_field($form, 'text', 'EFriendPassSubject', '友链申请已通过 · {本站名称}', '审核通过通知 · 主题', '审核通过时发给申请人填的邮箱。可用变量同上', [], 'mail', $ecodFriendMailWhen);
+ecod_admin_field($form, 'textarea', 'EFriendPassBody', "你好，「{站点名称}」的友链申请已通过审核。\n\n站点地址：{站点地址}\n\n已经加入友链列表，感谢分享，欢迎常来。\n{本站地址}", '审核通过通知 · 正文', '发给申请人；留空或某个模板为空时使用内置默认文案', [], 'mail', ['rows' => 6, 'data-ecod-show-when' => 'ECommentMail:on,EFriendApply:on']);
+/* ---------------- 通知与登录 → 第三方登录（原属「互动」组） ---------------- */
 ecod_admin_field($form, 'select', 'EOAuthGithub', 'off', 'GitHub 登录', '登录页显示「使用 GitHub 登录」；需先在 GitHub 注册 OAuth App（回调地址填：站点地址 + /usr/themes/ecod-theme/api.php?action=oauth_callback&platform=github）', [
     'off' => '关闭',
     'on'  => '开启',
-], 'interact');
+], 'oauth');
 $ecodOAuthWhen = ['data-ecod-show-when' => 'EOAuthGithub:on'];
-ecod_admin_field($form, 'text', 'EOAuthGithubId', '', 'GitHub Client ID', 'GitHub OAuth App 的 Client ID', [], 'interact', $ecodOAuthWhen);
-ecod_admin_field($form, 'text', 'EOAuthGithubSecret', '', 'GitHub Client Secret', 'GitHub OAuth App 的 Client Secret，注意保密', [], 'interact', $ecodOAuthWhen);
+ecod_admin_field($form, 'text', 'EOAuthGithubId', '', 'GitHub Client ID', 'GitHub OAuth App 的 Client ID', [], 'oauth', $ecodOAuthWhen);
+ecod_admin_field($form, 'text', 'EOAuthGithubSecret', '', 'GitHub Client Secret', 'GitHub OAuth App 的 Client Secret，注意保密', [], 'oauth', $ecodOAuthWhen);
 
 /* 第三方登录各平台：开关 + Id + Secret，端点协议与 Zibll 一致（docs/social-login.md） */
 ecod_admin_field($form, 'select', 'EOAuthWeixin', 'off', '微信登录（开放平台扫码）', '需企业资质的微信开放平台「网站应用」；回调地址填：站点地址 + /usr/themes/ecod-theme/api.php?action=oauth_callback&platform=weixin', [
     'off' => '关闭',
     'on'  => '开启',
-], 'interact');
+], 'oauth');
 $ecodOAuthWeixinWhen = ['data-ecod-show-when' => 'EOAuthWeixin:on'];
-ecod_admin_field($form, 'text', 'EOAuthWeixinId', '', '微信 AppID', '微信开放平台网站应用的 AppID', [], 'interact', $ecodOAuthWeixinWhen);
-ecod_admin_field($form, 'text', 'EOAuthWeixinSecret', '', '微信 AppSecret', '微信开放平台网站应用的 AppSecret，注意保密', [], 'interact', $ecodOAuthWeixinWhen);
+ecod_admin_field($form, 'text', 'EOAuthWeixinId', '', '微信 AppID', '微信开放平台网站应用的 AppID', [], 'oauth', $ecodOAuthWeixinWhen);
+ecod_admin_field($form, 'text', 'EOAuthWeixinSecret', '', '微信 AppSecret', '微信开放平台网站应用的 AppSecret，注意保密', [], 'oauth', $ecodOAuthWeixinWhen);
 
 ecod_admin_field($form, 'select', 'EOAuthQQ', 'off', 'QQ 登录', '需在 QQ 互联创建应用；回调地址填：站点地址 + /usr/themes/ecod-theme/api.php?action=oauth_callback&platform=qq', [
     'off' => '关闭',
     'on'  => '开启',
-], 'interact');
+], 'oauth');
 $ecodOAuthQQWhen = ['data-ecod-show-when' => 'EOAuthQQ:on'];
-ecod_admin_field($form, 'text', 'EOAuthQQId', '', 'QQ 互联 APP ID', 'QQ 互联应用的 APP ID', [], 'interact', $ecodOAuthQQWhen);
-ecod_admin_field($form, 'text', 'EOAuthQQSecret', '', 'QQ 互联 APP Key', 'QQ 互联应用的 APP Key，注意保密', [], 'interact', $ecodOAuthQQWhen);
+ecod_admin_field($form, 'text', 'EOAuthQQId', '', 'QQ 互联 APP ID', 'QQ 互联应用的 APP ID', [], 'oauth', $ecodOAuthQQWhen);
+ecod_admin_field($form, 'text', 'EOAuthQQSecret', '', 'QQ 互联 APP Key', 'QQ 互联应用的 APP Key，注意保密', [], 'oauth', $ecodOAuthQQWhen);
 
 ecod_admin_field($form, 'select', 'EOAuthWeibo', 'off', '微博登录', '需在微博开放平台做网站接入；回调地址填：站点地址 + /usr/themes/ecod-theme/api.php?action=oauth_callback&platform=weibo', [
     'off' => '关闭',
     'on'  => '开启',
-], 'interact');
+], 'oauth');
 $ecodOAuthWeiboWhen = ['data-ecod-show-when' => 'EOAuthWeibo:on'];
-ecod_admin_field($form, 'text', 'EOAuthWeiboId', '', '微博 App Key', '微博开放平台应用的 App Key', [], 'interact', $ecodOAuthWeiboWhen);
-ecod_admin_field($form, 'text', 'EOAuthWeiboSecret', '', '微博 App Secret', '微博开放平台应用的 App Secret，注意保密', [], 'interact', $ecodOAuthWeiboWhen);
+ecod_admin_field($form, 'text', 'EOAuthWeiboId', '', '微博 App Key', '微博开放平台应用的 App Key', [], 'oauth', $ecodOAuthWeiboWhen);
+ecod_admin_field($form, 'text', 'EOAuthWeiboSecret', '', '微博 App Secret', '微博开放平台应用的 App Secret，注意保密', [], 'oauth', $ecodOAuthWeiboWhen);
 
 ecod_admin_field($form, 'select', 'EOAuthGitee', 'off', 'Gitee 登录', '个人开发者即可在 Gitee 创建第三方应用，零门槛；回调地址填：站点地址 + /usr/themes/ecod-theme/api.php?action=oauth_callback&platform=gitee', [
     'off' => '关闭',
     'on'  => '开启',
-], 'interact');
+], 'oauth');
 $ecodOAuthGiteeWhen = ['data-ecod-show-when' => 'EOAuthGitee:on'];
-ecod_admin_field($form, 'text', 'EOAuthGiteeId', '', 'Gitee Client ID', 'Gitee 第三方应用的 Client ID', [], 'interact', $ecodOAuthGiteeWhen);
-ecod_admin_field($form, 'text', 'EOAuthGiteeSecret', '', 'Gitee Client Secret', 'Gitee 第三方应用的 Client Secret，注意保密', [], 'interact', $ecodOAuthGiteeWhen);
+ecod_admin_field($form, 'text', 'EOAuthGiteeId', '', 'Gitee Client ID', 'Gitee 第三方应用的 Client ID', [], 'oauth', $ecodOAuthGiteeWhen);
+ecod_admin_field($form, 'text', 'EOAuthGiteeSecret', '', 'Gitee Client Secret', 'Gitee 第三方应用的 Client Secret，注意保密', [], 'oauth', $ecodOAuthGiteeWhen);
 
 /* 公共开关：对全部平台生效，不再挂 GitHub 条件显隐 */
 ecod_admin_field($form, 'select', 'EOAuthBindMail', 'on', '按邮箱自动绑定', '第三方账号的邮箱与本站用户邮箱一致时，首次登录自动绑定（关闭后需账号密码登录一次才能绑定）；仅 GitHub 等能拿到邮箱的平台生效', [
     'off' => '关闭',
     'on'  => '开启',
-], 'interact');
+], 'oauth');
 ecod_admin_field($form, 'select', 'EOAuthRegister', 'on', '第三方自动建号', '第三方账号没有匹配到本站用户时自动创建 subscriber 账号', [
     'off' => '关闭',
     'on'  => '开启',
-], 'interact');
+], 'oauth');
 
 /* ============================================================
  * 评论：嵌套展示 + 外部服务
@@ -692,12 +1042,13 @@ ecod_admin_field($form, 'select', 'EEmojiStyle', 'unicode', '评论表情', 'Emo
 ecod_admin_field($form, 'text', 'EEmojiCdn', '', '表情包 CDN 前缀', '填了就走外部 CDN，例如 https://cdn.example.com/smiley/；留空用主题本地 assets/img/smiley/', [], 'comments', ['data-ecod-show-when' => 'EEmojiStyle:smiley']);
 
 /* ============================================================
- * AI 助手（文章页异步生成摘要，结果按正文 hash 缓存；见 core/content/ai.php）
+ * 内容 → 文章页：AI 摘要（原「AI 助手」面板并入文章页）
+ * 文章页异步生成摘要，结果按正文 hash 缓存；见 core/content/ai.php
  * ========================================================== */
 ecod_admin_field($form, 'select', 'EAI', 'off', 'AI 智能摘要', '总开关。开启后文章页顶部会显示 AI 生成的摘要卡片，摘要按正文内容缓存，正文更新后自动重新生成', [
     'on'  => '开启',
     'off' => '关闭（默认）',
-], 'ai');
+], 'post');
 $ecodAiWhen = ['data-ecod-show-when' => 'EAI:on'];
 ecod_admin_field($form, 'select', 'EAIProvider', 'openai', '接口协议', '均走 OpenAI 兼容的 chat/completions 协议，选「自定义」时按下面的 API 地址原样请求', [
     'openai'   => 'OpenAI 兼容',
@@ -705,11 +1056,47 @@ ecod_admin_field($form, 'select', 'EAIProvider', 'openai', '接口协议', '均�
     'qwen'     => '通义千问',
     'zhipu'    => '智谱',
     'custom'   => '自定义',
-], 'ai', $ecodAiWhen);
-ecod_admin_field($form, 'text', 'EAIEndpoint', '', 'API 地址', '例如 https://api.deepseek.com/v1/chat/completions', [], 'ai', $ecodAiWhen);
-ecod_admin_field($form, 'text', 'EAIKey', '', 'API Key', '在服务方控制台获取；仅保存在站点配置里，不会输出到前台页面', [], 'ai', $ecodAiWhen);
-ecod_admin_field($form, 'text', 'EAIModel', '', '模型名称', '例如 deepseek-chat、qwen-plus、glm-4-flash', [], 'ai', $ecodAiWhen);
-ecod_admin_field($form, 'textarea', 'EAIPrompt', '', '摘要提示词', '留空使用主题内置提示词；接入后可在这里控制摘要的语气与长度', [], 'ai', $ecodAiWhen);
+], 'post', $ecodAiWhen);
+ecod_admin_field($form, 'text', 'EAIEndpoint', '', 'API 地址', '例如 https://api.deepseek.com/v1/chat/completions', [], 'post', $ecodAiWhen);
+ecod_admin_field($form, 'text', 'EAIKey', '', 'API Key', '在服务方控制台获取；仅保存在站点配置里，不会输出到前台页面', [], 'post', $ecodAiWhen);
+ecod_admin_field($form, 'text', 'EAIModel', '', '模型名称', '例如 deepseek-chat、qwen-plus、glm-4-flash', [], 'post', $ecodAiWhen);
+ecod_admin_field($form, 'textarea', 'EAIPrompt', '', '摘要提示词', '留空使用主题内置提示词；接入后可在这里控制摘要的语气与长度', [], 'post', $ecodAiWhen);
+
+/* ============================================================
+ * 互动 → 积分与 AI：Credit 流水（core/user/credits.php）
+ * + AI 对话页计费（page-ai.php，复用上面的 EAI* 接口配置）
+ * ========================================================== */
+ecod_admin_field($form, 'select', 'ECrOn', 'off', 'Credit 积分', '总开关。开启后用户可通过签到、评论、被赞等任务赚取积分，用于 AI 对话与抽奖', [
+    'on'  => '开启',
+    'off' => '关闭（默认）',
+], 'credits');
+$ecodCrWhen = ['data-ecod-show-when' => 'ECrOn:on'];
+ecod_admin_field($form, 'text', 'ECrName', 'Credit', '积分名称', '全站展示口径，例如 Credit / 积分 / 金币', [], 'credits', $ecodCrWhen);
+ecod_admin_field($form, 'select', 'ECrTicker', 'off', '动态播报', '开启后「更新动态」挂件可对外滚动展示最新的积分奖励事件（谁签到 / 中奖 / 被赞，含用户名）；关闭时挂件自动隐藏', [
+    'on'  => '开启',
+    'off' => '关闭（默认）',
+], 'credits', $ecodCrWhen);
+ecod_admin_field($form, 'number', 'ECrCheckin', '5', '签到奖励', '每日签到一次；连续天数只做展示，奖励金额固定', [], 'credits', ['min' => 0, 'max' => 100, 'step' => 1] + $ecodCrWhen);
+ecod_admin_field($form, 'number', 'ECrComment', '2', '评论奖励', '登录用户发表评论通过后发放', [], 'credits', ['min' => 0, 'max' => 50, 'step' => 1] + $ecodCrWhen);
+ecod_admin_field($form, 'number', 'ECrCommentCap', '10', '评论每日上限', '当天累计到上限后不再发；填 0 不限', [], 'credits', ['min' => 0, 'max' => 200, 'step' => 1] + $ecodCrWhen);
+ecod_admin_field($form, 'number', 'ECrLikeRecv', '1', '被赞奖励', '文章每被赞一次给作者加分（作者自赞不计）', [], 'credits', ['min' => 0, 'max' => 50, 'step' => 1] + $ecodCrWhen);
+ecod_admin_field($form, 'number', 'ECrLikeCap', '20', '被赞每日上限', '当天累计到上限后不再发；填 0 不限', [], 'credits', ['min' => 0, 'max' => 500, 'step' => 1] + $ecodCrWhen);
+ecod_admin_field($form, 'number', 'ECrPost', '20', '投稿奖励', '预留：发布文章发放（当前版本先由管理员手动调整）', [], 'credits', ['min' => 0, 'max' => 500, 'step' => 1] + $ecodCrWhen);
+ecod_admin_field($form, 'number', 'ECrPostCap', '40', '投稿每日上限', '当天累计到上限后不再发；填 0 不限', [], 'credits', ['min' => 0, 'max' => 2000, 'step' => 1] + $ecodCrWhen);
+ecod_admin_field($form, 'number', 'ECrVipGift', '0', '开会员赠送', '购买会员结算成功后一次性赠送的积分（guaqi 式拉新钩子，例如 500）；填 0 关闭', [], 'credits', ['min' => 0, 'max' => 100000, 'step' => 10] + $ecodCrWhen);
+ecod_admin_field($form, 'select', 'ECrRefOn', 'off', '推广返佣', '用户带 ?ref=推荐人UID 的链接注册后，其每笔付费订单结算时给推荐人返积分（1 元 = 100 Credit 基准）', [
+    'on'  => '开启',
+    'off' => '关闭（默认）',
+], 'credits');
+ecod_admin_field($form, 'number', 'ECrRefPercent', '10', '返佣比例（%）', '按订单金额的百分比返给推荐人，例如 10 = 订单 ¥50 返 500 Credit；范围 1–50', [], 'credits', ['min' => 1, 'max' => 50, 'step' => 1, 'data-ecod-show-when' => 'ECrOn:on,ECrRefOn:on']);
+ecod_admin_field($form, 'select', 'EAIChat', 'on', 'AI 助手对话页', '开启后「AI 助手」页面（page-ai.php）可用，复用上面「AI 智能摘要」的接口配置；接口未配置时页面会提示', [
+    'on'  => '开启',
+    'off' => '关闭',
+], 'credits', $ecodCrWhen);
+ecod_admin_field($form, 'number', 'ECrAICost', '1', 'AI 每条消息消耗', '用户每发一条消息扣多少积分；填 0 = 免费开放（仍有登录与限速保护）', [], 'credits', ['min' => 0, 'max' => 100, 'step' => 1, 'data-ecod-show-when' => 'ECrOn:on,EAIChat:on']);
+ecod_admin_field($form, 'number', 'EAIChatCtx', '4', '对话上下文轮数', '带几轮历史给模型（1 轮 = 一问一答）；越大越连贯也越耗 token', [], 'credits', ['min' => 0, 'max' => 10, 'step' => 1, 'data-ecod-show-when' => 'ECrOn:on,EAIChat:on']);
+ecod_admin_field($form, 'textarea', 'EAIChatPrompt', '', 'AI 系统提示词', '定义助手的人设与边界；留空使用主题内置提示词', [], 'credits', ['rows' => 4, 'data-ecod-show-when' => 'ECrOn:on,EAIChat:on']);
+ecod_admin_field($form, 'textarea', 'EAIChatWelcome', '', '开场白', '对话页的第一条消息；留空使用主题内置文案', [], 'credits', ['rows' => 2, 'data-ecod-show-when' => 'ECrOn:on,EAIChat:on']);
 
 /* 注入与性能 */
 ecod_admin_field($form, 'textarea', 'ECustomCss', '', '自定义 CSS', '不用写 style 标签；圆角、间距、字号都能在这里覆盖', [], 'appearance');
@@ -717,7 +1104,30 @@ ecod_admin_field($form, 'textarea', 'ECustomHead', '', 'head 追加代码', '原
 ecod_admin_field($form, 'textarea', 'ECustomBody', '', 'body 末尾代码', '原样输出到 </body> 之前，用于统计脚本、客服悬浮窗等', [], 'seo');
 ecod_admin_field($form, 'text', 'EFont', '', '自定义字体地址', 'woff / woff2 直链，会以 @font-face 注入并作为全站首选字体', [], 'appearance');
 ecod_admin_field($form, 'text', 'ECdn', '', '静态资源 CDN', '把主题 assets 目录传到 CDN 后填前缀，例如 https://cdn.example.com/ecod-theme', [], 'seo');
-ecod_admin_field($form, 'text', 'EBaidu', '', '百度推送 Token', '填了之后可在「工具」分组里一键把最新文章推给百度，加快收录', [], 'seo');
+ecod_admin_field($form, 'select', 'EAssetMode', '', '静态资源模式', '显式选择资源走本地还是 CDN。选 CDN 前需要先填「静态资源 CDN」前缀；留空/未保存过时保持历史行为（填了前缀即走 CDN）', [
+    ''      => '自动（跟随后台原有行为）',
+    'local' => '本地模式（忽略 CDN）',
+    'cdn'   => 'CDN 模式',
+], 'seo');
+ecod_admin_field($form, 'text', 'EBaidu', '', '百度推送 Token', '填了之后可在「站长 → 工具与备份」里一键把最新文章推给百度，加快收录', [], 'seo');
+ecod_admin_field($form, 'select', 'EBaiduAuto', 'off', '发布自动推送', '文章发布或更新时，响应结束后自动把该篇地址单独推给百度（24 小时内推过的自动跳过，不重复耗配额）；需先填上面的 Token', [
+    'off' => '关闭',
+    'on'  => '开启',
+], 'seo');
+
+/* 关键词内链：DOM 文本节点替换（core/content/keywords.php），管线位于短代码 / oEmbed 之后 */
+ecod_admin_field($form, 'select', 'EKeywords', 'off', '关键词内链', '把正文里的指定关键词自动替换为链接，提升站内导航与长尾词收录。只处理纯文本，代码块、已有链接与标题一律不动', [
+    'off' => '关闭',
+    'on'  => '开启',
+], 'seo');
+ecod_admin_field($form, 'textarea', 'EKeywordsList', '', '关键词库', '每行一个词：「关键词|链接|flags|限次」。flags 可空：n = nofollow，b = 本窗口打开（默认新窗口）；限次 = 该词在单篇内最多替换几次（留空用下面的默认值）。示例：Typecho|https://typecho.org||2', ['rows' => 8], 'seo', ['data-ecod-show-when' => 'EKeywords:on']);
+ecod_admin_field($form, 'number', 'EKeywordsLimit', '1', '默认替换次数', '单个关键词在单篇文章内最多替换为链接的次数，1 最克制，超过 3 容易显得堆砌', [], 'seo', ['data-ecod-show-when' => 'EKeywords:on']);
+ecod_admin_field($form, 'select', 'EKeywordsAuto', 'off', '分类 / 标签名自动内链', '正文里出现与分类或标签同名的词时，自动链到对应归档页（每词每篇 1 次，只链有文章的）', [
+    'off'  => '关闭',
+    'cats' => '仅分类名',
+    'tags' => '仅标签名',
+    'both' => '分类 + 标签',
+], 'seo', ['data-ecod-show-when' => 'EKeywords:on']);
 
 /* 外观与行为 */
 ecod_admin_field($form, 'select', 'EPjax', 'on', '无刷新跳转（PJAX）', '站内点击链接只替换页面主体，不重新加载整页', [
@@ -728,13 +1138,26 @@ ecod_admin_field($form, 'select', 'ELinkGo', 'on', '外链中转页', '文章 / 
     'on'  => '开启（推荐）',
     'off' => '关闭',
 ], 'appearance');
+ecod_admin_field($form, 'select', 'ELinkGoAuthor', 'on', '评论者链接中转', '评论者昵称上的站外主页链接同样先经过外链中转页，避免访客误点离开站点；关闭后只加 nofollow。需开启「外链中转页」才生效', [
+    'on'  => '开启（推荐）',
+    'off' => '关闭',
+], 'appearance', ['data-ecod-show-when' => 'ELinkGo:on']);
 /* 导航：菜单为空时才使用的旧版自定义链接（保留用于快速补一两条） */
 ecod_admin_field($form, 'textarea', 'ENavLinks', '', '兜底自定义链接', '仅在「菜单结构」为空时生效：一行一个，格式「名称 || 地址 || 新窗口」，第三段可省略。例如：GitHub || https://github.com/you || 1。菜单配好后这里会被忽略', [], 'nav', ['rows' => 4]);
 ecod_admin_field($form, 'number', 'ENavMax', '', '导航最多显示', '超过这个数量的条目收进「更多」下拉；填 0 或留空则全部平铺。一级与二级都按这个规则处理', [], 'nav', ['min' => 0, 'max' => 12, 'step' => 1]);
-ecod_admin_field($form, 'select', 'EAnimate', 'none', '列表入场动效', '滚动到视口才播放，不影响首屏', [
+ecod_admin_field($form, 'select', 'ENavStyle', 'auto', '二级菜单样式（全局默认）', '导航套选「跟随全局」或未设样式时使用：自动（有图标显示图标卡片）/ 纯文字列表 / 图标卡片（无图标用首字）/ 宽幅图标卡片（两列）/ 分组宽面板（栏标题 + 条目描述）。一级项还可用「子菜单显示模式」单独覆盖', [
+    'auto'        => '自动',
+    'list'        => '纯文字列表',
+    'icons'       => '图标卡片',
+    'mega'        => '宽幅图标卡片',
+    'mega-group'  => '分组宽面板',
+], 'nav');
+ecod_admin_field($form, 'select', 'EAnimate', 'blur', '列表入场动效', '站内换页 / 加载更多时，卡片滚进视口才逐个入场，不影响首屏', [
     'none' => '关闭',
-    'fade' => '淡入',
+    'blur' => '模糊上浮（推荐，显影+聚焦+落座）',
+    'zoom' => '缩放浮现',
     'up'   => '上浮淡入',
+    'fade' => '淡入',
 ], 'appearance');
 ecod_admin_field($form, 'select', 'ECursor', 'off', '鼠标跟随光点', '轻量光晕，触屏设备自动不加载', [
     'off' => '关闭',
@@ -804,6 +1227,46 @@ ecod_admin_field($form, 'text', 'EVip2Month', '', '超级会员 · 月价（元�
 ecod_admin_field($form, 'text', 'EVip2Quarter', '', '超级会员 · 季价（元）', '留空表示不提供该周期', [], 'pay', $ecodPayWhen);
 ecod_admin_field($form, 'text', 'EVip2Year', '', '超级会员 · 年价（元）', '留空表示不提供该周期', [], 'pay', $ecodPayWhen);
 ecod_admin_field($form, 'text', 'EVip2Forever', '', '超级会员 · 永久价（元）', '留空表示不提供', [], 'pay', $ecodPayWhen);
+
+/* ============================================================
+ * 变现 → 站点抽奖（core/site/lottery.php）与自助广告（core/site/ads.php）
+ * ========================================================== */
+ecod_admin_field($form, 'select', 'ELottery', 'off', '站点抽奖', '总开关。用户消耗 Credit 抽奖，积分 / 会员奖品自动到账；页面模板 page-lottery.php（可在「站长 → 工具与备份」一键创建）', [
+    'on'  => '开启',
+    'off' => '关闭（默认）',
+], 'lottery');
+$ecodLotWhen = ['data-ecod-show-when' => 'ELottery:on'];
+ecod_admin_field($form, 'text', 'ELotteryTitle', '幸运抽奖', '活动标题', '显示在抽奖页顶部', [], 'lottery', $ecodLotWhen);
+ecod_admin_field($form, 'number', 'ELotteryCost', '10', '单次消耗', '每抽一次扣多少 Credit；填 0 = 免费抽（仍受每日次数限制）', [], 'lottery', ['min' => 0, 'max' => 1000, 'step' => 1] + $ecodLotWhen);
+ecod_admin_field($form, 'number', 'ELotteryDaily', '3', '每人每日次数', '每天最多抽几次；填 0 不限', [], 'lottery', ['min' => 0, 'max' => 100, 'step' => 1] + $ecodLotWhen);
+ecod_admin_field($form, 'number', 'ELotteryPity', '0', '保底次数', '连续这么多次没中奖后，下一抽必中（guaqi 式保底，进度在抽奖挂件可见）；填 0 关闭', [], 'lottery', ['min' => 0, 'max' => 100, 'step' => 1] + $ecodLotWhen);
+ecod_admin_field($form, 'number', 'ELotteryExchange', '0', '头奖直接兑换价', '用户付这么多 Credit 跳过概率直接拿第一个可抽的有奖奖品（0 = 关闭直接兑换）；兑换不占每日抽奖次数', [], 'lottery', ['min' => 0, 'max' => 100000, 'step' => 10] + $ecodLotWhen);
+ecod_admin_field($form, 'textarea', 'ELotteryPrizes', "谢谢参与|60|0|none|\n10 Credit|25|0|credit|10\n会员 7 天|5|5|vip|1:7", '奖品池', '一行一个奖品，五段用 | 分隔：名称|权重|库存(0=不限)|类型|值。类型：none 谢谢参与 / credit 积分（值=数量）/ vip 会员（值=等级:天数，如 1:7）/ text 实物（值=兑奖说明）。恰好 8 个奖品时抽奖页显示九宫格转盘', [], 'lottery', ['rows' => 6] + $ecodLotWhen);
+ecod_admin_field($form, 'textarea', 'ELotteryNote', '', '活动说明', '显示在抽奖页底部，例如兑奖方式、活动时间、免责声明', [], 'lottery', ['rows' => 3] + $ecodLotWhen);
+
+/* 兑换商城（core/site/shop.php）：积分当钱花 */
+ecod_admin_field($form, 'select', 'EShop', 'off', '兑换商城', '总开关。用户用 Credit 兑换会员、单篇解锁或定制权益，页面模板 page-shop.php（可在「站长 → 工具与备份」一键创建）', [
+    'on'  => '开启',
+    'off' => '关闭（默认）',
+], 'shop');
+$ecodShopWhen = ['data-ecod-show-when' => 'EShop:on'];
+ecod_admin_field($form, 'textarea', 'EShopItems', "会员 7 天|500|vip|1:7|100|0\n全站文章畅读月卡|2000|vip|2:30|0|0\n定制周边|3000|text|兑换后联系站长发货|5|1", '商品列表', '一行一个商品，六段用 | 分隔：名称|价格(积分)|类型|值|库存(0=不限)|每人限购(0=不限)。类型：vip 会员（值=等级:天数）/ post 单篇解锁（值=文章ID）/ text 待发货（值=发货说明）', [], 'shop', ['rows' => 6] + $ecodShopWhen);
+ecod_admin_field($form, 'textarea', 'EShopNote', '', '商城说明', '显示在商城页底部：发货时效、联系方式、兑换规则等', [], 'shop', ['rows' => 3] + $ecodShopWhen);
+
+ecod_admin_field($form, 'select', 'EAdSelf', 'off', '自助广告', '总开关（依赖付费阅读）。用户在「广告投放」页（page-ads.php）选位、按天下单，走支付通道付款', [
+    'on'  => '开启',
+    'off' => '关闭（默认）',
+], 'ads');
+ecod_admin_field($form, 'select', 'EAdSelfReview', 'on', '上线前审核', '开启 = 支付完成后进入「待审核」，站长在付费管理台点通过才上线（起止时间从通过时算）；关闭 = 支付成功自动上线', [
+    'on'  => '需要审核（推荐）',
+    'off' => '支付后自动上线',
+], 'ads', ['data-ecod-show-when' => 'EAdSelf:on']);
+ecod_admin_field($form, 'text', 'EAdSelfPriceHomeTop', '', '首页顶部通栏（元/天）', '留空 = 不开放该广告位', [], 'ads', ['data-ecod-show-when' => 'EAdSelf:on']);
+ecod_admin_field($form, 'text', 'EAdSelfPriceSidebar', '', '侧边栏卡片（元/天）', '侧栏「投放广告」模块展示的图片卡位', [], 'ads', ['data-ecod-show-when' => 'EAdSelf:on']);
+ecod_admin_field($form, 'text', 'EAdSelfPricePostBottom', '', '文章底部通栏（元/天）', '留空 = 不开放该广告位', [], 'ads', ['data-ecod-show-when' => 'EAdSelf:on']);
+ecod_admin_field($form, 'number', 'EAdSelfMinDays', '3', '最短投放天数', '', [], 'ads', ['min' => 1, 'max' => 30, 'step' => 1, 'data-ecod-show-when' => 'EAdSelf:on']);
+ecod_admin_field($form, 'number', 'EAdSelfMaxDays', '90', '最长投放天数', '', [], 'ads', ['min' => 1, 'max' => 365, 'step' => 1, 'data-ecod-show-when' => 'EAdSelf:on']);
+ecod_admin_field($form, 'textarea', 'EAdSelfNote', '', '投放须知', '展示在投放页底部：尺寸建议、内容规范、联系方式等', [], 'ads', ['rows' => 4, 'data-ecod-show-when' => 'EAdSelf:on']);
 
 /* 隐藏：模块状态 */
 /* （旧 EBlocks 隐藏字段已移除：模块布局存于独立行 EWidgets，由模块管理台读写） */
@@ -875,7 +1338,7 @@ ecod_admin_field($form, 'select', 'ESearchTagCount', '10', '标签个数', '面�
     '12' => '12 个',
 ], 'search', ['data-ecod-show-when' => 'ESearchPanel:on']);
 
-/* 隐藏：不进导航的页面 slug（由「工具 → 特色页」的开关写入，逗号分隔） */
+/* 隐藏：不进导航的页面 slug（由「站长 → 工具与备份」的特色页开关写入，逗号分隔） */
 ecod_admin_field($form, 'hidden', 'ENavHide', '', '', '', [], 'tools');
 
 /* ------------------------------------------------------------------
@@ -885,6 +1348,12 @@ $ecodAdminData = [
     'panes' => array_map(static function ($p) {
         return ['title' => $p[0], 'desc' => $p[1]];
     }, $ecodPanes),
+    /* 面板内小节：config.js 按字段名把行分发进带标题的小节容器 */
+    'sections' => array_map(static function ($sects) {
+        return array_map(static function ($s) {
+            return ['title' => $s[0], 'desc' => $s[1], 'fields' => $s[2]];
+        }, $sects);
+    }, $ecodSections),
 ];
 
 /* 选图器：媒体库列表走主题自带接口，上传复用 Typecho 原生动作 */
@@ -922,7 +1391,8 @@ window.ECOD_TOPICS = <?php echo json_encode([
 ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_HEX_TAG | JSON_HEX_AMP); ?>;
 window.ECOD_MEDIA = {
     api: <?php echo json_encode(ecod_asset('media.php'), JSON_UNESCAPED_SLASHES); ?>,
-    upload: <?php echo json_encode($ecodUploadIndex, JSON_UNESCAPED_SLASHES); ?>
+    upload: <?php echo json_encode($ecodUploadIndex, JSON_UNESCAPED_SLASHES); ?>,
+    token: <?php echo json_encode(\Widget\Security::alloc()->getToken('ecod-media')); ?>
 };
 window.ECOD_TOOL = {
     api: <?php echo json_encode(ecod_asset('api.php'), JSON_UNESCAPED_SLASHES); ?>,

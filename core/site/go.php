@@ -159,6 +159,18 @@ function ecod_go_rewrite(string $html): string
                 return $m[0];
             }
 
+            /* 自定义短链：目标地址与短链表完全一致时用固定短码（推荐链接可读） */
+            $go = '';
+            if (function_exists('ecod_golink_key_for')) {
+                $gkey = ecod_golink_key_for($url);
+                if ($gkey !== '') {
+                    $go = ecod_golink_url($gkey);
+                }
+            }
+            if ($go === '') {
+                $go = ecod_go_url($url);
+            }
+
             /* 图片链接：点开是看图的，不进中转页，保留原样交给前端灯箱。
              * ① href 本身就是图片地址（原图 / 大图）
              * ② <a> 内只有图片没有文字 */
@@ -172,7 +184,6 @@ function ecod_go_rewrite(string $html): string
                 }
             }
 
-            $go = ecod_go_url($url);
             $attrs = trim((string) preg_replace('#\s+(?:rel|target)\s*=\s*("[^"]*"|\'[^\']*\')#i', '', $m[1] . $m[4]));
             return '<a' . ($attrs !== '' ? ' ' . $attrs : '') . ' href="' . htmlspecialchars($go, ENT_QUOTES, 'UTF-8') . '"'
                 . ' target="_blank" rel="nofollow noopener noreferrer" data-go="1"'
@@ -205,12 +216,30 @@ function ecod_go_intercept(): void
         $token = $m[1];
     }
 
+    /* /go/<key>：自定义短链路径形态（无签名段） */
+    if ($token === '' && preg_match('#/go/([A-Za-z0-9_\-]{3,32})/?$#', parse_url($uri, PHP_URL_PATH) ?? '', $m)) {
+        $token = $m[1];
+    }
+
     /* ?go=<token> 备选形态 */
     if ($token === '' && isset($_GET['go'])) {
         $token = (string) $_GET['go'];
     }
 
-    if ($token === '' || !preg_match('#^[A-Za-z0-9_\-]{8,}\.[a-f0-9]{10}$#', $token)) {
+    if ($token === '') {
+        return;
+    }
+
+    /* 自定义短链（ecod_shortlinks 表）：带点签名 token 走下面的签名校验，
+     * 不带点的 3-32 位 key 查表，命中即跳目标并计数 */
+    if (!preg_match('#^[A-Za-z0-9_\-]{8,}\.[a-f0-9]{10}$#', $token)) {
+        if (function_exists('ecod_golink_get')) {
+            $golink = ecod_golink_get($token);
+            if ($golink !== null) {
+                ecod_golink_hit((string) $golink['skey']);
+                ecod_go_page((string) $golink['target']);
+            }
+        }
         return;
     }
 
