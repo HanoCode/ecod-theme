@@ -85,6 +85,15 @@
 /* ============ 1. 基础 ============ */
 *, *::before, *::after { box-sizing: border-box; }
 
+/* 启动期禁用过渡：关键 CSS 与异步换入的完整样式表在部分属性上取值不同
+   （链接色、按钮底色、输入框边框等），完整表到位时这些属性会「变一次」，
+   若此时 transition 已经生效，全站文字/色块就会渐变一下——刷新时的频闪之一。
+   .ecod-booting 由 header.php 写在 <html> 上，ecod.global.js 在完整样式
+   应用并完成一次绘制后移除（双 rAF + 1.5s 兜底）。 */
+html.ecod-booting *,
+html.ecod-booting *::before,
+html.ecod-booting *::after { transition: none !important; }
+
 html {
     -webkit-text-size-adjust: 100%;
     scroll-behavior: smooth;
@@ -461,6 +470,31 @@ html[data-theme="dark"] .ecod_emojis { background: #1a1f2c; border-color: #2c334
     color: var(--ecod-text-2);
 }
 .ecod_nav__sub .is-active > a { color: var(--ecod-primary); background: var(--ecod-primary-soft); font-weight: 600; }
+
+/* 子项配图标的下拉 → 图标卡片网格（参考站层级样式，§03.5） */
+.ecod_nav__sub.has-icons {
+    min-width: 300px;
+    padding: 10px;
+    gap: 3px;
+}
+.ecod_nav__sub.has-icons a {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    padding: 8px 10px;
+    white-space: nowrap;
+}
+.ecod_nav__sub.has-icons .ecod_nav__licon {
+    width: 28px;
+    height: 28px;
+    border-radius: var(--ecod-radius-sm);
+    background: var(--ecod-primary-soft);
+    color: var(--ecod-primary);
+    align-items: center;
+    justify-content: center;
+}
+.ecod_nav__sub.has-icons .ecod_nav__licon svg { opacity: 1; }
+.ecod_nav__sub.has-icons .is-active > a .ecod_nav__licon { background: var(--ecod-primary); color: var(--ecod-surface); }
 
 /* 「更多」下拉 */
 .ecod_nav__more > details { position: relative; }

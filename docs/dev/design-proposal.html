@@ -577,7 +577,7 @@ details .in{padding-bottom:12px}
       <tr><td style="padding-left:0">③ 操作簇</td><td>从左到右：分割线 → <b>搜索按钮</b> → <b>深浅切换</b> → 分割线 → 用户区。<code>ESearchPanel=on</code> 时常驻搜索框收敛为 34px 圆形图标按钮（<code>.ecod_nav__searchbtn</code>），点击走 C4 面板的 capture 唤起，⌘K / dock 入口不变；<code>=off</code> 时保留原搜索表单形态兜底。深浅切换按钮复用 <code>data-ecod-theme-toggle</code> 机制（现有 dock 同款），点击循环 light/dark 并写 localStorage，EDark=auto 时初始按系统偏好</td></tr>
       <tr><td style="padding-left:0">④ 用户区</td><td>保持现状：登录态头像下拉 / 游客登录弹层入口，不改结构，仅纳入操作簇的间距节奏</td></tr>
     </table>
-    <p style="font-size:12px;color:var(--text-3);margin-top:8px">兼容：icon / badge 为可选字段，旧 ENavSets 数据无此字段时导航自动退化为纯文字；「更多」下拉与二级菜单不渲染 icon/badge。操作簇全部元素在 <code>#ecod-shell</code> 之外的 header 内，PJAX 换页不受影响。</p>
+    <p style="font-size:12px;color:var(--text-3);margin-top:8px">兼容：icon / badge 为可选字段，旧 ENavSets 数据无此字段时导航自动退化为纯文字；「更多」下拉不渲染 icon/badge。二级菜单子项渲染 icon（见下方图标网格说明）。操作簇全部元素在 <code>#ecod-shell</code> 之外的 header 内，PJAX 换页不受影响。</p>
   </div>
 </section>
 
@@ -659,10 +659,11 @@ details .in{padding-bottom:12px}
       <tr><td><code>blank</code></td><td>bool</td><td>新窗口打开，默认 off</td></tr>
       <tr><td><code>attr</code></td><td>string</td><td>链接的 <code>title</code> 属性（悬停提示），可留空；输出时转义</td></tr>
       <tr><td><code>cls</code></td><td>string</td><td>附加到 <code>&lt;a&gt;</code> 的 CSS 类，仅保留 <code>[A-Za-z0-9_-]</code> 片段、最多 5 个；用于单条菜单的特殊样式</td></tr>
-      <tr><td><code>icon</code></td><td>string</td><td><span class="tag new">新增</span> 导航项前置图标，取 sprite 图标名（<code>home</code> / <code>star</code> / <code>zap</code> / <code>folder</code> 等，后台下拉可选）；仅一级项前台渲染，非法名或留空不输出（<code>ecod_icon()</code> 对未知名返回空串，天然安全）</td></tr>
+      <tr><td><code>icon</code></td><td>string</td><td><span class="tag new">新增</span> 导航项前置图标，取 sprite 图标名（<code>home</code> / <code>star</code> / <code>zap</code> / <code>folder</code> 等，后台下拉可选）；一二级项均可渲染，非法名或留空不输出（<code>ecod_icon()</code> 对未知名返回空串，天然安全）</td></tr>
       <tr><td><code>badge</code></td><td>string</td><td><span class="tag new">新增</span> 导航项右上角标文案（如「热」「NEW」），最长 6 字，danger 色小胶囊；仅一级项前台渲染，留空不输出。后台清空「自定义」时一并清掉</td></tr>
       <tr><td><code>children</code></td><td>array</td><td>仅一级项可有；元素字段同上但不再嵌套，超出部分渲染时忽略</td></tr>
     </table>
+    <p style="font-size:12px;color:var(--text-3);margin-top:8px"><b>二级下拉图标网格（参考站层级样式）</b>：子项配了 <code>icon</code> 时，下拉面板加 <code>.has-icons</code>——面板加宽（min-width 300px、内边距 10px），子项改「28px 圆角图标块（primary-soft 底）+ 文字」横向卡片；当前项图标块反色（primary 底）。无图标旧数据保持纯文字列表，两形态并存。</p>
   </div>
 
   <div class="card pad" style="margin-top:16px">

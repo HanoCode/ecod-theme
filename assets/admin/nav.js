@@ -599,7 +599,7 @@
             fieldHtml('CSS 类', 'cls', item.cls, '可选，空格分隔，最多 5 个') +
             '<label class="ecod-navb__field">' +
             '<span>前置图标</span>' +
-            '<select data-e="icon"' + (isSub ? ' disabled title="仅一级项生效"' : '') + '>' + iconOpts + '</select>' +
+            '<select data-e="icon">' + iconOpts + '</select>' +
             '</label>' +
             fieldHtml('角标', 'badge', item.badge, '如「热」「NEW」，最长 6 字') +
             '<label class="ecod-navb__check"><input type="checkbox" data-e="blank"' +

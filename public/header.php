@@ -99,7 +99,7 @@ if ($ecodNavMax > 0 && count($ecodNav) > $ecodNavMax) {
 }
 ?>
 <!DOCTYPE html>
-<html lang="zh-CN" data-theme="light" data-dark="<?php echo $ecodDark; ?>"
+<html lang="zh-CN" class="ecod-booting" data-theme="light" data-dark="<?php echo $ecodDark; ?>"
       data-anim="<?php echo htmlspecialchars($ecodAnim, ENT_QUOTES, 'UTF-8'); ?>"
       data-backdrop="<?php echo htmlspecialchars($ecodBackdrop, ENT_QUOTES, 'UTF-8'); ?>"
       data-cursor="<?php echo htmlspecialchars($ecodCursor, ENT_QUOTES, 'UTF-8'); ?>">
@@ -157,11 +157,21 @@ if ($ecodNavMax > 0 && count($ecodNav) > $ecodNavMax) {
                         <a href="<?php echo htmlspecialchars($ecodItem['url'], ENT_QUOTES, 'UTF-8'); ?>"
                             <?php echo ecod_nav_link_attrs($ecodItem); ?>><?php echo $ecodIconHtml; ?><span class="ecod_nav__ltext"><?php echo htmlspecialchars($ecodItem['title'], ENT_QUOTES, 'UTF-8'); ?></span><?php echo $ecodBadgeHtml; ?><?php echo $ecodKids ? '<i class="ecod_nav__caret" aria-hidden="true">' . ecod_icon('chevron', 12) . '</i>' : ''; ?></a>
                         <?php if ($ecodKids): ?>
-                            <ul class="ecod_nav__sub<?php echo $ecodCols; ?>">
+                            <?php
+                            /* 任一子项配了图标 → 面板切图标卡片网格（§03.5） */
+                            $ecodKidIcons = false;
+                            foreach ($ecodKids as $ecodKid) {
+                                if (isset($ecodKid['icon']) && $ecodKid['icon'] !== '') {
+                                    $ecodKidIcons = true;
+                                    break;
+                                }
+                            }
+                            ?>
+                            <ul class="ecod_nav__sub<?php echo $ecodCols; ?><?php echo $ecodKidIcons ? ' has-icons' : ''; ?>">
                                 <?php foreach ($ecodKids as $ecodKid): ?>
                                     <li class="<?php echo ecod_nav_item_is_active($this, $ecodKid) ? 'is-active' : ''; ?>">
                                         <a href="<?php echo htmlspecialchars($ecodKid['url'], ENT_QUOTES, 'UTF-8'); ?>"
-                                            <?php echo ecod_nav_link_attrs($ecodKid); ?>><?php echo htmlspecialchars($ecodKid['title'], ENT_QUOTES, 'UTF-8'); ?></a>
+                                            <?php echo ecod_nav_link_attrs($ecodKid); ?>><?php echo isset($ecodKid['icon']) && $ecodKid['icon'] !== '' ? '<span class="ecod_nav__licon">' . ecod_icon((string) $ecodKid['icon'], 15) . '</span>' : ''; ?><?php echo htmlspecialchars($ecodKid['title'], ENT_QUOTES, 'UTF-8'); ?></a>
                                     </li>
                                 <?php endforeach; ?>
                             </ul>
