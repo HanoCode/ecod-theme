@@ -4,8 +4,8 @@
  *
  * @package Ecod Theme
  * @author  Ecod
- * @copyright Copyright (c) 2026 Ecod (https://ecod.cc)
- * @license   MIT
+ * @copyright Copyright (c) 2026 Ecod. All Rights Reserved.
+ * @link    https://ecod.cc
  */
 if (!defined('__TYPECHO_ROOT_DIR__')) {
     exit;
@@ -53,7 +53,7 @@ if (!array_filter($ecodRankData)) {
 }
 ?>
 <section class="ecod_widget ecod_rankcard">
-    <h2 class="ecod_widget__title"><?php echo htmlspecialchars((string) ecod_p('title', '热门排行')); ?></h2>
+    <?php ecod_block_head(); ?>
 
     <?php if ($ecodRankTabs): ?>
         <div class="ecod_rankcard__tabs" role="tablist">

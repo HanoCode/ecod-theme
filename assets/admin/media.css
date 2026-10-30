@@ -6,7 +6,7 @@
  *   - 写文章 / 独立页面（editor.css 所在页面）
  * 因此不使用任何父级作用域变量，类名统一 ecmd- 前缀。
  *
- * Copyright (c) 2026 Ecod · MIT License · https://ecod.cc
+ * Copyright (c) 2026 Ecod. All Rights Reserved. · https://ecod.cc
  */
 
 .ecmd, .ecod-media-field, .ecod-pool {

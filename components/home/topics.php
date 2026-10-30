@@ -7,8 +7,8 @@
  *
  * @package Ecod Theme
  * @author  Ecod
- * @copyright Copyright (c) 2026 Ecod (https://ecod.cc)
- * @license   MIT
+ * @copyright Copyright (c) 2026 Ecod. All Rights Reserved.
+ * @link    https://ecod.cc
  */
 if (!defined('__TYPECHO_ROOT_DIR__')) {
     exit;
@@ -25,16 +25,7 @@ $ecodWallStyle = (string) ecod_p('style', 'cover');
 $ecodHomeTopicsPage = ecod_topics_page();
 ?>
 <section class="ecod_section ecod_section--topics">
-    <header class="ecod_section-head">
-        <h2 class="ecod_section-head__title">
-            <span class="ecod_section-head__dot" aria-hidden="true"></span><?php echo htmlspecialchars((string) ecod_p('title', '专题'), ENT_QUOTES, 'UTF-8'); ?>
-        </h2>
-        <?php if ($ecodHomeTopicsPage['url'] !== ''): ?>
-            <a class="ecod_section-head__more" href="<?php echo htmlspecialchars($ecodHomeTopicsPage['url'], ENT_QUOTES, 'UTF-8'); ?>">
-                全部专题<?php echo ecod_icon('chevron', 12); ?>
-            </a>
-        <?php endif; ?>
-    </header>
+    <?php ecod_block_head($ecodHomeTopicsPage['url'] !== '' ? ['more_url' => $ecodHomeTopicsPage['url'], 'more_text' => '全部专题'] : []); ?>
 
     <?php require __DIR__ . '/../topic/wall.php'; ?>
 </section>

@@ -17,8 +17,7 @@
  * @since   2026-10-29
  * @version 2.0.0
  * @link    https://ecod.cc
- * @copyright Copyright (c) 2026 Ecod (https://ecod.cc)
- * @license   MIT
+ * @copyright Copyright (c) 2026 Ecod. All Rights Reserved.
  */
 
 if (!defined('__TYPECHO_ROOT_DIR__')) {
@@ -35,7 +34,7 @@ define('ECOD_BLOCKS_OPTION', 'EBlocks');
 define('ECOD_WIDGET_PINNED', 'pinned');
 
 /** 数据结构版本 */
-define('ECOD_WIDGET_SCHEMA', 2);
+define('ECOD_WIDGET_SCHEMA', 4);
 
 /** 单个区域的实例上限（旧 EBlocks 首页最多 14 条，故取 20 保证迁移不截断） */
 define('ECOD_WIDGET_LIMIT', 20);
@@ -278,6 +277,44 @@ function ecod_block_define(string $id, array $args = []): void
         'params'   => [],
         'file'     => '',       // 留空则按 components/{area}/{id}.php 查找
     ], $args, ['id' => $id]);
+
+    /* 第 7 轮修订：头部声明 → 自动拼接公共参数（模块已声明的键不覆盖） */
+    if (!empty($defs[$id]['head']) && is_array($defs[$id]['head'])) {
+        if (empty($defs[$id]['head']['scope'])) {
+            $defs[$id]['head']['scope'] = ($defs[$id]['area'] ?? 'home') === 'aside' ? 'widget' : 'section';
+        }
+        foreach (ecod_block_head_params($defs[$id]) as $headKey => $headParam) {
+            if (!isset($defs[$id]['params'][$headKey])) {
+                $defs[$id]['params'][$headKey] = $headParam;
+            }
+        }
+    }
+}
+
+/**
+ * 模块头部公共参数（title / more_url / more_text）
+ */
+function ecod_block_head_params(array $def): array
+{
+    return [
+        'title' => [
+            'label'   => '标题',
+            'type'    => 'text',
+            'default' => (string) ($def['head']['title'] ?? ($def['name'] ?? '')),
+            'desc'    => (string) ($def['head']['title_desc'] ?? ''),
+        ],
+        'more_url' => [
+            'label'   => '更多链接',
+            'type'    => 'text',
+            'default' => '',
+            'desc'    => '填了会在标题右侧显示「更多」入口',
+        ],
+        'more_text' => [
+            'label'   => '更多文案',
+            'type'    => 'text',
+            'default' => '更多',
+        ],
+    ];
 }
 
 /**
@@ -372,6 +409,11 @@ function ecod_widgets_read_option(): ?array
 
     if (!empty($data['aside']) && is_array($data['aside'])) {
         $doc['aside'] = $data['aside'];
+    }
+
+    /* 存储里记的是写入时的版本，不能被 blank_doc 的当前版本覆盖（迁移判定依赖它） */
+    if (isset($data['v']) && is_numeric($data['v'])) {
+        $doc['v'] = (int) $data['v'];
     }
 
     return $doc;
@@ -539,7 +581,121 @@ function ecod_widgets_raw(): array
         $doc = ecod_widgets_legacy_doc();
     }
 
+    /* 存储版本落后：先备份原样，再迁移落盘（第 8 轮修订） */
+    if ((int) ($doc['v'] ?? 0) < ECOD_WIDGET_SCHEMA) {
+        $doc = ecod_widgets_migrate($doc);
+    }
+
     $GLOBALS['ecod_widgets_doc'] = $doc;
+
+    return $doc;
+}
+
+/**
+ * 存储迁移（第 8 轮修订：v2 → v3 重复模块合并）
+ *
+ * 备份行名 EWidgetsBackupV{原版本}，原 doc 原样入库后才改写。
+ */
+function ecod_widgets_migrate(array $doc): array
+{
+    $from = (int) ($doc['v'] ?? 0);
+    ecod_cache_set('EWidgetsBackupV' . max(1, $from), $doc);
+
+    $doc = ecod_widgets_migrate_map($doc, $from);
+    $doc['v'] = ECOD_WIDGET_SCHEMA;
+    ecod_widgets_write($doc);
+    ecod_widgets_flush();
+
+    return ecod_widgets_raw();
+}
+
+/**
+ * 版本映射（纯函数，不落盘）：第 9 轮起导入外部布局时也复用
+ *
+ * v2 → v3 类型合并（第 8 轮）：旧类型 => [新类型, 参数规则]；参数规则：
+ *   - 'style' => 'rank'                  固定值直接写入
+ *   - 'by'    => ['sort', [值映射]]      改名并按表翻译取值，翻不到则丢弃
+ * v3 → v4（第 10 轮）：author.links 旧文本协议 → repeater JSON
+ */
+function ecod_widgets_migrate_map(array $doc, int $from): array
+{
+    if ($from < 3) {
+        $map = [
+            'aside-ad' => ['ad', []],
+            'popular'  => ['hot', [
+                'by'    => ['sort', ['hot' => 'comments', 'views' => 'views', 'rand' => 'rand']],
+                'style' => 'rank',
+            ]],
+            'recent'   => ['title-list', ['style' => 'rank']],
+        ];
+
+        foreach (($doc['areas'] ?? []) as $areaId => $rows) {
+            if (!is_array($rows)) {
+                continue;
+            }
+            foreach ($rows as $i => $row) {
+                $type = (string) ($row['type'] ?? '');
+                if (!isset($map[$type])) {
+                    continue;
+                }
+                [$newType, $rules] = $map[$type];
+                $params = is_array($row['params'] ?? null) ? $row['params'] : [];
+                foreach ($rules as $oldKey => $rule) {
+                    if (is_array($rule)) {
+                        [$newKey, $values] = $rule;
+                        $value = $values[$params[$oldKey] ?? ''] ?? null;
+                        unset($params[$oldKey]);
+                    } else {
+                        [$newKey, $value] = [$oldKey, $rule];
+                    }
+                    if ($value !== null && $value !== '') {
+                        $params[$newKey] = $value;
+                    }
+                }
+                $rows[$i] = [
+                    'uid'    => (string) ($row['uid'] ?? ''),
+                    'type'   => $newType,
+                    'on'     => !empty($row['on']) ? 1 : 0,
+                    'params' => $params,
+                ];
+            }
+            $doc['areas'][$areaId] = $rows;
+        }
+    }
+
+    /* v3 → v4（第 10 轮）：author.links 旧文本协议「每行 名称|网址」→ repeater JSON */
+    if ($from < 4) {
+        foreach (($doc['areas'] ?? []) as $areaId => $rows) {
+            if (!is_array($rows)) {
+                continue;
+            }
+            foreach ($rows as $i => $row) {
+                if ((string) ($row['type'] ?? '') !== 'author') {
+                    continue;
+                }
+                $params = is_array($row['params'] ?? null) ? $row['params'] : [];
+                $links = (string) ($params['links'] ?? '');
+                $links = ltrim($links);
+                if ($links === '' || $links[0] === '[') {
+                    continue;   /* 空值或已是 JSON */
+                }
+                $items = [];
+                foreach (preg_split('/\r\n|\r|\n/', $links) ?: [] as $line) {
+                    $line = trim($line);
+                    if ($line === '' || strpos($line, '|') === false) {
+                        continue;
+                    }
+                    [$label, $href] = array_map('trim', explode('|', $line, 2));
+                    if ($label !== '' && $href !== '') {
+                        $items[] = ['label' => $label, 'href' => $href];
+                    }
+                }
+                $params['links'] = $items === [] ? '' : json_encode($items, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+                $rows[$i]['params'] = $params;
+            }
+            $doc['areas'][$areaId] = $rows;
+        }
+    }
 
     return $doc;
 }
@@ -697,20 +853,34 @@ function ecod_widget_find(string $key): ?array
 }
 
 /**
+ * 单个参数的默认值（含 legacy 选项回落）
+ *
+ * 管理台与前台共用这一份口径：新实例表单显示的默认值
+ * = 前台在参数缺省时的实际渲染值。
+ *
+ * @param array $param 参数声明
+ * @return mixed
+ */
+function ecod_block_param_default(array $param)
+{
+    $value = $param['default'] ?? null;
+    if (!empty($param['legacy'])) {
+        $legacy = (string) ecod_option($param['legacy'], '');
+        if ($legacy !== '') {
+            $value = $legacy;
+        }
+    }
+    return $value;
+}
+
+/**
  * 模块的参数默认值（含旧 option 兼容回落）
  */
 function ecod_block_defaults(array $def): array
 {
     $out = [];
     foreach (($def['params'] ?? []) as $key => $param) {
-        $value = $param['default'] ?? null;
-        if (!empty($param['legacy'])) {
-            $legacy = (string) ecod_option($param['legacy'], '');
-            if ($legacy !== '') {
-                $value = $legacy;
-            }
-        }
-        $out[$key] = $value;
+        $out[$key] = ecod_block_param_default($param);
     }
     return $out;
 }
@@ -773,6 +943,71 @@ function ecod_p(string $key, $default = null)
     }
     $value = $block['params'][$key];
     return ($value === '' || $value === null) ? $default : $value;
+}
+
+/**
+ * 模块统一头部（第 7 轮修订：一个结构契约 + section / widget 两种 scope）
+ *
+ * 右槽互斥：more_url 优先，无链接时才渲染 note。
+ * $o 可临时覆盖 title / note / more_url / more_text；传 null 表示回落到参数链。
+ */
+function ecod_block_head(array $o = []): void
+{
+    $block = ecod_block_current();
+    $def = is_array($block['def'] ?? null) ? $block['def'] : [];
+    $head = is_array($def['head'] ?? null) ? $def['head'] : [];
+
+    $pick = static function (string $key, string $fallback) use ($o): string {
+        if (array_key_exists($key, $o) && $o[$key] !== null) {
+            return (string) $o[$key];
+        }
+        return (string) ecod_p($key, $fallback);
+    };
+
+    $title = array_key_exists('title', $o) && $o['title'] !== null
+        ? (string) $o['title']
+        : $pick('title', (string) ($head['title'] ?? ($def['name'] ?? '')));
+    if ($title === '') {
+        return;
+    }
+
+    $moreUrl = $pick('more_url', '');
+    $moreText = $pick('more_text', '更多');
+    $note = (string) ($o['note'] ?? '');
+    $esc = static function (string $s): string {
+        return htmlspecialchars($s, ENT_QUOTES, 'UTF-8');
+    };
+
+    $titleId = (string) ($o['title_id'] ?? '');
+
+    if (($head['scope'] ?? 'section') === 'widget') {
+        echo '<h2 class="ecod_widget__title"' . ($titleId !== '' ? ' id="' . $esc($titleId) . '"' : '') . '>' . $esc($title);
+        if ($moreUrl !== '') {
+            echo '<a class="ecod_widget__more" href="' . $esc($moreUrl) . '">' . $esc($moreText) . '</a>';
+        }
+        echo '</h2>';
+        return;
+    }
+
+    $class = 'ecod_section-head' . (!empty($head['md']) ? ' ecod_section-head--md' : '');
+    echo '<header class="' . $class . '">';
+    echo '<h2 class="ecod_section-head__title"' . ($titleId !== '' ? ' id="' . $esc($titleId) . '"' : '') . '>';
+    if (!empty($head['icon'])) {
+        echo ecod_icon((string) $head['icon'], 15);
+    } elseif (!empty($head['dot'])) {
+        echo '<span class="ecod_section-head__dot" aria-hidden="true"></span>';
+    }
+    echo $esc($title), '</h2>';
+    if ($moreUrl !== '') {
+        echo '<a class="ecod_section-head__more" href="' . $esc($moreUrl) . '">'
+            , $esc($moreText), ecod_icon('chevron', 12), '</a>';
+    } elseif (isset($o['note_raw'])) {
+        /* 完整右槽 HTML 原样输出（调用方自带 span 与样式） */
+        echo (string) $o['note_raw'];
+    } elseif ($note !== '') {
+        echo '<span class="ecod_section-head__note">' . $esc($note) . '</span>';
+    }
+    echo '</header>';
 }
 
 /**
@@ -1029,13 +1264,15 @@ function ecod_widgets_admin_data(): array
                 return [
                     'label'   => $p['label'] ?? '',
                     'type'    => $p['type'] ?? 'text',
-                    'default' => $p['default'] ?? '',
+                    'default' => ecod_block_param_default($p),
                     'desc'    => $p['desc'] ?? '',
                     'options' => $p['options'] ?? [],
                     'min'     => $p['min'] ?? null,
                     'max'     => $p['max'] ?? null,
                     'unit'    => $p['unit'] ?? '',
                     'when'    => $p['when'] ?? '',
+                    'fields'  => $p['fields'] ?? [],
+                    'max'     => $p['max'] ?? null,
                 ];
             }, $def['params'] ?? []),
         ];

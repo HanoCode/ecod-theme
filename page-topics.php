@@ -7,8 +7,7 @@
  * @since   2026-10-29
  * @version 2.0.0
  * @link    https://ecod.cc
- * @copyright Copyright (c) 2026 Ecod (https://ecod.cc)
- * @license   MIT
+ * @copyright Copyright (c) 2026 Ecod. All Rights Reserved.
  *
  * 在后台「页面 → 新建页面 → 自定义模板」选择「专题」，
  * 或直接到「设置 → 专题」点「一键创建专题页」。

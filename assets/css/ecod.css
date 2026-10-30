@@ -3,7 +3,7 @@
  * 0. 令牌  1. 基础  2. 布局  3. 导航/抽屉  4. 首页  5. 卡片
  * 6. 分页  7. 侧栏  8. 文章  9. 评论  10. 页脚  11. 工具  12. 暗色  13. 响应式
  *
- * Copyright (c) 2026 Ecod · MIT License · https://ecod.cc
+ * Copyright (c) 2026 Ecod. All Rights Reserved. · https://ecod.cc
  */
 
 /* ============ 0. 设计令牌 ============ */
@@ -60,11 +60,13 @@
     --ecod-fs-4xl: 27px;    /* 页面主标题 */
     --ecod-fs-5xl: 36px;    /* 展示数字 */
 
-    /* 动效时长三档：快速反馈 / 常规过渡 / 大面积展开 */
+    /* 动效时长四档：快速反馈 / 常规过渡 / 首次入场 / 大面积展开 */
     --ecod-dur-fast: 140ms;
     --ecod-dur: 200ms;
+    --ecod-dur-enter: 240ms;   /* 首次出现类动画专用，勿用 fast 代入场 */
     --ecod-dur-slow: 320ms;
     --ecod-ease: cubic-bezier(.4, 0, .2, 1);
+    --ecod-ease-pop: cubic-bezier(.34, 1.56, .64, 1);   /* 仅「弹出来」的元素，勿用于位移过渡 */
 
     /* z-index 分层刻度：内容 < 浮动件 < 抽屉/遮罩 < 全局工具 */
     --ecod-z-pop: 25;        /* 卡片内弹层（赞赏/分享） */
@@ -104,7 +106,7 @@ body {
 h1, h2, h3, h4, h5, h6 { margin: 0; font-weight: 600; line-height: 1.4; text-wrap: balance; }
 p { margin: 0 0 1em; }
 img { max-width: 100%; height: auto; display: block; }
-a { color: inherit; text-decoration: none; transition: color var(--ecod-dur); }
+a { color: inherit; text-decoration: none; transition: color var(--ecod-dur) var(--ecod-ease); }
 @media (hover: hover) {
     a:hover { color: var(--ecod-primary); }
 }
@@ -254,7 +256,7 @@ html[data-theme="dark"] .ecod_emojis { background: #1a1f2c; border-color: #2c334
     font-size: var(--ecod-fs-md);
     font-weight: 500;
     line-height: 1.4;
-    transition: background var(--ecod-dur), transform var(--ecod-dur), box-shadow var(--ecod-dur);
+    transition: background var(--ecod-dur) var(--ecod-ease), transform var(--ecod-dur) var(--ecod-ease), box-shadow var(--ecod-dur) var(--ecod-ease);
 }
 @media (hover: hover) {
     .ecod_btn:hover { background: var(--ecod-primary-deep); color: #fff; }
@@ -319,7 +321,7 @@ html[data-theme="dark"] .ecod_emojis { background: #1a1f2c; border-color: #2c334
     backdrop-filter: saturate(180%) blur(14px);
     -webkit-backdrop-filter: saturate(180%) blur(14px);
     border-bottom: 1px solid var(--ecod-border);
-    transition: transform var(--ecod-dur-slow) ease;
+    transition: transform var(--ecod-dur-slow) var(--ecod-ease);
 }
 .ecod_header.is-hidden { transform: translateY(-100%); }
 
@@ -369,7 +371,7 @@ html[data-theme="dark"] .ecod_emojis { background: #1a1f2c; border-color: #2c334
     display: inline-flex;
     margin-left: 3px;
     transform: rotate(90deg);
-    transition: transform var(--ecod-dur-fast) ease;
+    transition: transform var(--ecod-dur-fast) var(--ecod-ease);
 }
 .ecod_nav__caret svg { width: 12px; height: 12px; opacity: .7; }
 @media (hover: hover) {
@@ -394,7 +396,7 @@ html[data-theme="dark"] .ecod_emojis { background: #1a1f2c; border-color: #2c334
     opacity: 0;
     visibility: hidden;
     transform: translateY(-4px);
-    transition: opacity var(--ecod-dur-fast) ease, transform var(--ecod-dur-fast) ease, visibility var(--ecod-dur-fast);
+    transition: opacity var(--ecod-dur-fast) var(--ecod-ease), transform var(--ecod-dur-fast) var(--ecod-ease), visibility var(--ecod-dur-fast) var(--ecod-ease);
     z-index: 2;
 }
 .ecod_nav__sub.is-cols { grid-template-columns: repeat(2, minmax(160px, 1fr)); }
@@ -436,7 +438,7 @@ html[data-theme="dark"] .ecod_emojis { background: #1a1f2c; border-color: #2c334
     white-space: nowrap;
 }
 .ecod_nav__more summary::-webkit-details-marker { display: none; }
-.ecod_nav__more summary svg { transform: rotate(90deg); transition: transform var(--ecod-dur-fast) ease; }
+.ecod_nav__more summary svg { transform: rotate(90deg); transition: transform var(--ecod-dur-fast) var(--ecod-ease); }
 .ecod_nav__more[open] summary svg { transform: rotate(270deg); }
 @media (hover: hover) {
     .ecod_nav__more summary:hover { background: var(--ecod-primary-soft); color: var(--ecod-primary); }
@@ -508,7 +510,7 @@ html[data-theme="dark"] .ecod_emojis { background: #1a1f2c; border-color: #2c334
     background: var(--ecod-surface-2);
     color: var(--ecod-text-3);
     font-size: var(--ecod-fs-sm);
-    transition: border-color var(--ecod-dur), background var(--ecod-dur);
+    transition: border-color var(--ecod-dur) var(--ecod-ease), background var(--ecod-dur) var(--ecod-ease);
 }
 @media (hover: hover) {
     .ecod_nav__search:hover { border-color: var(--ecod-primary); background: #fff; color: var(--ecod-primary); }
@@ -600,7 +602,7 @@ html[data-theme="dark"] .ecod_emojis { background: #1a1f2c; border-color: #2c334
     inset: 0;
     background: rgba(20, 25, 40, .4);
     opacity: 0;
-    transition: opacity var(--ecod-dur);
+    transition: opacity var(--ecod-dur) var(--ecod-ease);
 }
 .ecod_drawer.is-open .ecod_drawer__mask { opacity: 1; }
 .ecod_drawer__panel {
@@ -613,7 +615,7 @@ html[data-theme="dark"] .ecod_emojis { background: #1a1f2c; border-color: #2c334
     padding: 20px;
     overflow-y: auto;
     transform: translateX(-100%);
-    transition: transform var(--ecod-dur) ease;
+    transition: transform var(--ecod-dur) var(--ecod-ease);
     box-shadow: 4px 0 24px rgba(20, 25, 40, .12);
 }
 .ecod_drawer.is-open .ecod_drawer__panel { transform: none; }
@@ -650,7 +652,7 @@ html[data-theme="dark"] .ecod_emojis { background: #1a1f2c; border-color: #2c334
 @media (hover: hover) {
     .ecod_drawer__group > summary:hover { background: var(--ecod-primary-soft); color: var(--ecod-primary); }
 }
-.ecod_drawer__group > summary svg { transition: transform var(--ecod-dur-fast) ease; opacity: .65; transform: rotate(90deg); }
+.ecod_drawer__group > summary svg { transition: transform var(--ecod-dur-fast) var(--ecod-ease); opacity: .65; transform: rotate(90deg); }
 .ecod_drawer__group[open] > summary { color: var(--ecod-primary); }
 .ecod_drawer__group[open] > summary svg { transform: rotate(270deg); }
 .ecod_drawer__sub {
@@ -751,7 +753,7 @@ body.is-locked { overflow: hidden; }
     color: var(--ecod-text-2);
     background: transparent;
     border-radius: var(--ecod-radius-full);
-    transition: color var(--ecod-dur), background-color var(--ecod-dur);
+    transition: color var(--ecod-dur) var(--ecod-ease), background-color var(--ecod-dur) var(--ecod-ease);
 }
 @media (hover: hover) {
     .ecod_streambar .ecod_tabs a:hover { color: var(--ecod-primary); background: var(--ecod-surface-2); }
@@ -786,7 +788,7 @@ body.is-locked { overflow: hidden; }
     font-size: var(--ecod-fs-xs);
     line-height: 1.5;
     cursor: pointer;
-    transition: color var(--ecod-dur), border-color var(--ecod-dur);
+    transition: color var(--ecod-dur) var(--ecod-ease), border-color var(--ecod-dur) var(--ecod-ease);
 }
 .ecod_catbar.is-overflow .ecod_catbar__more { display: inline-flex; }
 @media (hover: hover) {
@@ -799,7 +801,7 @@ body.is-locked { overflow: hidden; }
 }
 /* tab / 分页 Ajax 切换中的过渡态 */
 .ecod_stream { overflow-anchor: none; } /* 内容整体替换时不让浏览器自行微调滚动位置 */
-.ecod_stream.is-loading { opacity: .55; pointer-events: none; transition: opacity var(--ecod-dur-fast); }
+.ecod_stream.is-loading { opacity: .55; pointer-events: none; transition: opacity var(--ecod-dur-fast) var(--ecod-ease); }
 
 /* 视觉隐藏（保留给读屏器 / SEO） */
 .ecod_sr {
@@ -887,7 +889,7 @@ body.is-locked { overflow: hidden; }
     background: var(--ecod-surface);
     color: var(--ecod-text-3);
     box-shadow: var(--ecod-shadow);
-    transition: border-color var(--ecod-dur), box-shadow var(--ecod-dur);
+    transition: border-color var(--ecod-dur) var(--ecod-ease), box-shadow var(--ecod-dur) var(--ecod-ease);
 }
 .ecod_hero__search:focus-within { border-color: var(--ecod-primary); box-shadow: 0 0 0 3px rgba(79, 110, 242, .12); }
 .ecod_hero__search input {
@@ -927,7 +929,7 @@ body.is-locked { overflow: hidden; }
     background: var(--ecod-surface);
     border: 1px solid var(--ecod-border);
     border-radius: var(--ecod-radius);
-    transition: transform var(--ecod-dur), box-shadow var(--ecod-dur), border-color var(--ecod-dur);
+    transition: transform var(--ecod-dur) var(--ecod-ease), box-shadow var(--ecod-dur) var(--ecod-ease), border-color var(--ecod-dur) var(--ecod-ease);
 }
 @media (hover: hover) {
     .ecod_catnav__item:hover { transform: translateY(-2px); box-shadow: var(--ecod-shadow-hover); border-color: transparent; }
@@ -988,7 +990,7 @@ body.is-locked { overflow: hidden; }
     background-position: center;
     opacity: 0;
     pointer-events: none;
-    transition: opacity .5s ease;
+    transition: opacity .5s var(--ecod-ease);
     color: #fff;
 }
 .ecod_slider__slide.is-active { opacity: 1; pointer-events: auto; }
@@ -1022,7 +1024,7 @@ body.is-locked { overflow: hidden; }
     border: 0;
     border-radius: var(--ecod-radius-full);
     background: rgba(255, 255, 255, .42);
-    transition: width var(--ecod-dur), background var(--ecod-dur);
+    transition: width var(--ecod-dur) var(--ecod-ease), background var(--ecod-dur) var(--ecod-ease);
 }
 .ecod_slider__dots button.is-active { width: 18px; background: #fff; }
 
@@ -1042,7 +1044,7 @@ body.is-locked { overflow: hidden; }
     border-radius: var(--ecod-radius-full);
     background: rgba(12, 15, 24, .42);
     color: #fff;
-    transition: background-color var(--ecod-dur-fast), opacity var(--ecod-dur-fast);
+    transition: background-color var(--ecod-dur-fast) var(--ecod-ease), opacity var(--ecod-dur-fast) var(--ecod-ease);
 }
 @media (hover: hover) {
     .ecod_slider__pause:hover { background: rgba(12, 15, 24, .66); }
@@ -1059,6 +1061,8 @@ body.is-locked { overflow: hidden; }
     .ecod_section-head__more:hover { color: var(--ecod-primary); }
 }
 .ecod_section-head__note { font-size: var(--ecod-fs-xs); color: var(--ecod-text-3); }
+/* 卡片背景模块（hot 等）的头部放大一号 */
+.ecod_section-head--md .ecod_section-head__title { font-size: var(--ecod-fs-md); }
 
 /* M4 推荐位 */
 .ecod_reco { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
@@ -1069,7 +1073,7 @@ body.is-locked { overflow: hidden; }
     border: 1px solid var(--ecod-border);
     border-radius: var(--ecod-radius);
     overflow: hidden;
-    transition: transform var(--ecod-dur), box-shadow var(--ecod-dur);
+    transition: transform var(--ecod-dur) var(--ecod-ease), box-shadow var(--ecod-dur) var(--ecod-ease);
 }
 @media (hover: hover) {
     .ecod_reco__item:hover { transform: translateY(-2px); box-shadow: var(--ecod-shadow-hover); }
@@ -1094,10 +1098,6 @@ body.is-locked { overflow: hidden; }
 
 /* M5 热门 */
 .ecod_hot { padding: 16px; background: var(--ecod-surface); border: 1px solid var(--ecod-border); border-radius: var(--ecod-radius); }
-.ecod_hot__head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
-.ecod_hot__title { display: inline-flex; align-items: center; gap: 6px; font-size: var(--ecod-fs-md); }
-.ecod_hot__title .ecod_icon { color: var(--ecod-accent); }
-.ecod_hot__note { font-size: var(--ecod-fs-xs); color: var(--ecod-text-3); }
 .ecod_hot__grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
 .ecod_hot__item { display: flex; flex-direction: column; gap: 7px; }
 .ecod_hot__cover {
@@ -1194,7 +1194,7 @@ body.is-locked { overflow: hidden; }
     border: 1px solid var(--ecod-border);
     border-radius: var(--ecod-radius);
     overflow: hidden;
-    transition: transform var(--ecod-dur), box-shadow var(--ecod-dur);
+    transition: transform var(--ecod-dur) var(--ecod-ease), box-shadow var(--ecod-dur) var(--ecod-ease);
 }
 @media (hover: hover) {
     .ecod_coll__card:hover { transform: translateY(-2px); box-shadow: var(--ecod-shadow-hover); }
@@ -1271,7 +1271,7 @@ body.is-locked { overflow: hidden; }
     border: 1px solid var(--ecod-border);
     border-radius: var(--ecod-radius-sm);
     background: var(--ecod-surface-2);
-    transition: background var(--ecod-dur), border-color var(--ecod-dur), color var(--ecod-dur);
+    transition: background var(--ecod-dur) var(--ecod-ease), border-color var(--ecod-dur) var(--ecod-ease), color var(--ecod-dur) var(--ecod-ease);
 }
 .ecod_flash__stamp b {
     display: block;
@@ -1287,7 +1287,7 @@ body.is-locked { overflow: hidden; }
     font-weight: 600;
     color: var(--ecod-text);
     line-height: 1.55;
-    transition: color var(--ecod-dur);
+    transition: color var(--ecod-dur) var(--ecod-ease);
 }
 .ecod_flash__desc {
     display: -webkit-box;
@@ -1322,7 +1322,7 @@ body.is-locked { overflow: hidden; }
     border: 1px solid var(--ecod-border);
     border-radius: var(--ecod-radius);
     overflow: hidden;
-    transition: transform var(--ecod-dur), box-shadow var(--ecod-dur);
+    transition: transform var(--ecod-dur) var(--ecod-ease), box-shadow var(--ecod-dur) var(--ecod-ease);
 }
 @media (hover: hover) {
     .ecod_section__card:hover { transform: translateY(-2px); box-shadow: var(--ecod-shadow-hover); }
@@ -1410,7 +1410,7 @@ body.is-locked { overflow: hidden; }
     background: var(--ecod-surface);
     border: 1px solid var(--ecod-border);
     border-radius: var(--ecod-radius);
-    transition: transform var(--ecod-dur), box-shadow var(--ecod-dur), border-color var(--ecod-dur);
+    transition: transform var(--ecod-dur) var(--ecod-ease), box-shadow var(--ecod-dur) var(--ecod-ease), border-color var(--ecod-dur) var(--ecod-ease);
 }
 /* 列表模式：卡片常态透明，hover 时原地浮成一张完整卡片。
    盒子不越出列表内容区（不用负 margin 外扩），避免盖住面板边缘或相邻区域 */
@@ -1419,7 +1419,7 @@ body.is-locked { overflow: hidden; }
     background: transparent;
     border-color: transparent;
     border-radius: var(--ecod-radius);
-    transition: background var(--ecod-dur) ease, box-shadow var(--ecod-dur) ease, border-color var(--ecod-dur) ease;
+    transition: background var(--ecod-dur) var(--ecod-ease), box-shadow var(--ecod-dur) var(--ecod-ease), border-color var(--ecod-dur) var(--ecod-ease);
 }
 /* 分隔线画在后一张卡片的顶边上（即两张卡片的内边距中线），不占卡片盒子高度 */
 .ecod_list .ecod_card + .ecod_card::after {
@@ -1430,7 +1430,7 @@ body.is-locked { overflow: hidden; }
     top: -1px;
     border-top: 1px dashed var(--ecod-border);
     pointer-events: none;
-    transition: opacity var(--ecod-dur) ease;
+    transition: opacity var(--ecod-dur) var(--ecod-ease);
 }
 .ecod_list--plain .ecod_card { margin: 0; background: var(--ecod-surface); border: 1px solid var(--ecod-border); border-radius: var(--ecod-radius); padding: 16px; }
 .ecod_list--plain .ecod_card::after,
@@ -1476,7 +1476,7 @@ body.is-locked { overflow: hidden; }
     width: 100%;
     height: 100%;
     object-fit: cover;
-    transition: transform var(--ecod-dur-slow);
+    transition: transform var(--ecod-dur-slow) var(--ecod-ease);
 }
 @media (hover: hover) {
     .ecod_card:hover .ecod_card__media img { transform: scale(1.04); }
@@ -1611,7 +1611,7 @@ body.is-locked { overflow: hidden; }
     gap: 4px;
     opacity: 0;
     transform: translateY(-4px);
-    transition: opacity var(--ecod-dur), transform var(--ecod-dur);
+    transition: opacity var(--ecod-dur) var(--ecod-ease), transform var(--ecod-dur) var(--ecod-ease);
     z-index: 3;
 }
 @media (hover: hover) {
@@ -1631,7 +1631,7 @@ body.is-locked { overflow: hidden; }
     color: var(--ecod-text-2);
     font-size: var(--ecod-fs-2xs);
     line-height: 1;
-    transition: background var(--ecod-dur), color var(--ecod-dur);
+    transition: background var(--ecod-dur) var(--ecod-ease), color var(--ecod-dur) var(--ecod-ease);
 }
 .ecod_card__act button i {
     font-style: normal;
@@ -1828,7 +1828,7 @@ body.is-locked { overflow: hidden; }
 }
 html[data-theme="dark"] .ecod_card__gallery a,
 html[data-theme="dark"] .ecod_card__gallery-ph { background: linear-gradient(135deg, #262c3b, #323a52); }
-.ecod_card__gallery img { width: 100%; height: 100%; object-fit: cover; transition: transform var(--ecod-dur-slow); }
+.ecod_card__gallery img { width: 100%; height: 100%; object-fit: cover; transition: transform var(--ecod-dur-slow) var(--ecod-ease); }
 @media (hover: hover) {
     .ecod_card__gallery a:hover img { transform: scale(1.05); }
 }
@@ -1948,7 +1948,7 @@ html[data-theme="dark"] .ecod_card__gallery-ph { background: linear-gradient(135
     color: var(--ecod-text-2);
     font-size: var(--ecod-fs-md);
     cursor: pointer;
-    transition: border-color var(--ecod-dur), color var(--ecod-dur), background-color var(--ecod-dur);
+    transition: border-color var(--ecod-dur) var(--ecod-ease), color var(--ecod-dur) var(--ecod-ease), background-color var(--ecod-dur) var(--ecod-ease);
 }
 /* 作 main 直接子元素时间距交给 flex gap；stream 内部（首页）仍用自身 margin */
 .ecod_main > .ecod_loadmore { margin: 0; }
@@ -2126,7 +2126,7 @@ html[data-theme="dark"] .ecod_loadmore.is-end { color: #7b8394; }
     background: var(--ecod-surface-2);
     font-size: var(--ecod-fs-xs);
     color: var(--ecod-text-2);
-    transition: color var(--ecod-dur), border-color var(--ecod-dur);
+    transition: color var(--ecod-dur) var(--ecod-ease), border-color var(--ecod-dur) var(--ecod-ease);
 }
 @media (hover: hover) {
     .ecod_authorcard__links a:hover { color: var(--ecod-primary); border-color: var(--ecod-primary); }
@@ -2169,7 +2169,7 @@ html[data-theme="dark"] .ecod_loadmore.is-end { color: #7b8394; }
     font-size: var(--ecod-fs-xs);
     line-height: 1.6;
     cursor: pointer;
-    transition: background var(--ecod-dur), color var(--ecod-dur);
+    transition: background var(--ecod-dur) var(--ecod-ease), color var(--ecod-dur) var(--ecod-ease);
 }
 @media (hover: hover) {
     .ecod_rankcard__tab:hover { color: var(--ecod-primary); }
@@ -2189,7 +2189,7 @@ html[data-theme="dark"] .ecod_loadmore.is-end { color: #7b8394; }
     gap: 10px;
     padding: 6px 0;
     border-radius: var(--ecod-radius-sm);
-    transition: background var(--ecod-dur);
+    transition: background var(--ecod-dur) var(--ecod-ease);
 }
 .ecod_rankcard__no {
     flex: none;
@@ -2331,7 +2331,7 @@ html[data-theme="dark"] .ecod_rank a:nth-child(2) .ecod_rank__no { background: #
     border-radius: var(--ecod-radius-sm);
     color: var(--ecod-text-2);
     font-size: var(--ecod-fs-sm);
-    transition: background var(--ecod-dur-fast), color var(--ecod-dur-fast);
+    transition: background var(--ecod-dur-fast) var(--ecod-ease), color var(--ecod-dur-fast) var(--ecod-ease);
 }
 @media (hover: hover) {
     .ecod_wlist__item:hover { background: var(--ecod-primary-soft); color: var(--ecod-primary); }
@@ -2373,7 +2373,7 @@ html[data-theme="dark"] .ecod_rank a:nth-child(2) .ecod_rank__no { background: #
     color: var(--ecod-text);
     font-size: var(--ecod-fs-sm);
     font-family: inherit;
-    transition: border-color var(--ecod-dur-fast), background var(--ecod-dur-fast);
+    transition: border-color var(--ecod-dur-fast) var(--ecod-ease), background var(--ecod-dur-fast) var(--ecod-ease);
 }
 .ecod_wsearch input:focus {
     outline: 0;
@@ -2391,7 +2391,7 @@ html[data-theme="dark"] .ecod_rank a:nth-child(2) .ecod_rank__no { background: #
     font-size: var(--ecod-fs-sm);
     font-family: inherit;
     cursor: pointer;
-    transition: background var(--ecod-dur-fast);
+    transition: background var(--ecod-dur-fast) var(--ecod-ease);
 }
 @media (hover: hover) {
     .ecod_wsearch button:hover { background: var(--ecod-primary-deep); }
@@ -2411,8 +2411,8 @@ html[data-theme="dark"] .ecod_rank a:nth-child(2) .ecod_rank__no { background: #
 .ecod_wstats__num { font-size: var(--ecod-fs-lg); font-weight: 800; letter-spacing: .2px; }
 .ecod_wstats__label { font-size: var(--ecod-fs-2xs); color: var(--ecod-text-3); }
 
-/* 侧栏：广告位 */
-.ecod_aside-ad {
+/* 广告位（原 aside-ad 并入 ad，样式统一） */
+.ecod_ad {
     position: relative;
     display: block;
     overflow: hidden;
@@ -2420,7 +2420,7 @@ html[data-theme="dark"] .ecod_rank a:nth-child(2) .ecod_rank__no { background: #
     border-radius: var(--ecod-radius);
     background: var(--ecod-surface);
 }
-.ecod_aside-ad img { display: block; width: 100%; height: auto; }
+.ecod_ad img { display: block; width: 100%; height: auto; }
 
 /* 最新评论 */
 .ecod_rcmt { display: flex; flex-direction: column; }
@@ -2533,7 +2533,7 @@ html[data-theme="dark"] .ecod_rank a:nth-child(2) .ecod_rank__no { background: #
     line-height: 1.7;
 }
 .ecod_article__meta > a {
-    transition: color var(--ecod-dur), border-color var(--ecod-dur), background var(--ecod-dur);
+    transition: color var(--ecod-dur) var(--ecod-ease), border-color var(--ecod-dur) var(--ecod-ease), background var(--ecod-dur) var(--ecod-ease);
 }
 @media (hover: hover) {
     .ecod_article__meta > a:hover { color: var(--ecod-primary); border-color: var(--ecod-primary); }
@@ -2625,7 +2625,7 @@ html[data-theme="dark"] .ecod_rank a:nth-child(2) .ecod_rank__no { background: #
     font-size: var(--ecod-fs-sm);
     line-height: 1.4;
     white-space: nowrap; /* 移动端窄屏防止「复制链接」折成竖排 */
-    transition: color var(--ecod-dur), border-color var(--ecod-dur), background var(--ecod-dur), transform .1s;
+    transition: color var(--ecod-dur) var(--ecod-ease), border-color var(--ecod-dur) var(--ecod-ease), background var(--ecod-dur) var(--ecod-ease), transform .1s var(--ecod-ease);
 }
 @media (hover: hover) {
     .ecod_actbtn:hover { color: var(--ecod-primary); border-color: var(--ecod-primary); }
@@ -2671,7 +2671,7 @@ html[data-theme="dark"] .ecod_actbtn.is-liked { background: #3a2530; }
     font-size: var(--ecod-fs-sm);
     font-weight: 600;
     line-height: 1.5;
-    transition: background var(--ecod-dur), color var(--ecod-dur), transform .1s;
+    transition: background var(--ecod-dur) var(--ecod-ease), color var(--ecod-dur) var(--ecod-ease), transform .1s var(--ecod-ease);
 }
 @media (hover: hover) {
     .ecod_tts__btn:hover { background: var(--ecod-primary-deep); }
@@ -2692,7 +2692,7 @@ html[data-theme="dark"] .ecod_actbtn.is-liked { background: #3a2530; }
     height: 100%;
     border-radius: inherit;
     background: var(--ecod-primary);
-    transition: width var(--ecod-dur-slow) ease;
+    transition: width var(--ecod-dur-slow) var(--ecod-ease);
 }
 .ecod_tts__hint { flex: none; font-size: var(--ecod-fs-xs); color: var(--ecod-text-3); white-space: nowrap; }
 .ecod_tts__spacer { display: none; }
@@ -2727,7 +2727,7 @@ html[data-theme="dark"] .ecod_actbtn.is-liked { background: #3a2530; }
     border-radius: 50%;
     background: var(--ecod-surface);
     color: var(--ecod-text-3);
-    transition: color var(--ecod-dur), border-color var(--ecod-dur);
+    transition: color var(--ecod-dur) var(--ecod-ease), border-color var(--ecod-dur) var(--ecod-ease);
 }
 @media (hover: hover) {
     .ecod_tts__stop:hover { color: var(--ecod-danger); border-color: var(--ecod-danger); }
@@ -2741,7 +2741,7 @@ html[data-theme="dark"] .ecod_actbtn.is-liked { background: #3a2530; }
     background: var(--ecod-primary-soft);
     border-radius: var(--ecod-radius-sm);
     box-shadow: 0 0 0 6px var(--ecod-primary-soft);
-    transition: background var(--ecod-dur), box-shadow var(--ecod-dur);
+    transition: background var(--ecod-dur) var(--ecod-ease), box-shadow var(--ecod-dur) var(--ecod-ease);
 }
 @media (max-width: 680px) {
     .ecod_tts { gap: 8px; padding: 7px 10px; }
@@ -2920,7 +2920,7 @@ html[data-theme="dark"] .ecod_actbtn.is-liked { background: #3a2530; }
     font-size: var(--ecod-fs-xs);
     padding: 3px 8px;
     border-radius: var(--ecod-radius-xs);
-    transition: background var(--ecod-dur), color var(--ecod-dur), opacity var(--ecod-dur);
+    transition: background var(--ecod-dur) var(--ecod-ease), color var(--ecod-dur) var(--ecod-ease), opacity var(--ecod-dur) var(--ecod-ease);
 }
 @media (hover: hover) {
     .ecod_codeblock__copy:hover { background: rgba(127, 127, 127, .22); color: inherit; opacity: 1; }
@@ -2979,7 +2979,7 @@ html[data-theme="dark"] .ecod_actbtn.is-liked { background: #3a2530; }
     backdrop-filter: blur(6px);
     opacity: 0;
     visibility: hidden;
-    transition: opacity var(--ecod-dur), visibility 0s linear var(--ecod-dur);
+    transition: opacity var(--ecod-dur) var(--ecod-ease), visibility 0s linear var(--ecod-dur);
     cursor: zoom-out;
     overscroll-behavior: contain;
 }
@@ -2987,7 +2987,7 @@ html[data-theme="dark"] .ecod_actbtn.is-liked { background: #3a2530; }
 .ecod_lightbox.is-open {
     opacity: 1;
     visibility: visible;
-    transition: opacity var(--ecod-dur), visibility 0s;
+    transition: opacity var(--ecod-dur) var(--ecod-ease), visibility 0s var(--ecod-ease);
 }
 .ecod_lightbox img {
     max-width: min(92vw, 1200px);
@@ -2995,7 +2995,7 @@ html[data-theme="dark"] .ecod_actbtn.is-liked { background: #3a2530; }
     border-radius: var(--ecod-radius);
     box-shadow: 0 24px 64px rgba(0, 0, 0, .5);
     transform: scale(.96);
-    transition: transform var(--ecod-dur);
+    transition: transform var(--ecod-dur) var(--ecod-ease);
 }
 .ecod_lightbox.is-open img { transform: none; }
 
@@ -3020,7 +3020,7 @@ html[data-theme="dark"] .ecod_actbtn.is-liked { background: #3a2530; }
     color: #fff;
     cursor: pointer;
     transform: translateY(-50%);
-    transition: background var(--ecod-dur);
+    transition: background var(--ecod-dur) var(--ecod-ease);
 }
 @media (hover: hover) {
     .ecod_lightbox__nav:hover { background: rgba(255, 255, 255, .3); }
@@ -3076,7 +3076,7 @@ html[data-theme="dark"] .ecod_actbtn.is-liked { background: #3a2530; }
     font-size: var(--ecod-fs-xs);
     text-decoration: none;
     cursor: pointer;
-    transition: background var(--ecod-dur), border-color var(--ecod-dur);
+    transition: background var(--ecod-dur) var(--ecod-ease), border-color var(--ecod-dur) var(--ecod-ease);
 }
 @media (hover: hover) {
     .ecod_lightbox__btn:hover {
@@ -3110,7 +3110,7 @@ html[data-theme="dark"] .ecod_actbtn.is-liked { background: #3a2530; }
     border: 1px solid var(--ecod-border);
     border-radius: var(--ecod-radius);
     overflow: hidden;
-    transition: border-color var(--ecod-dur), box-shadow var(--ecod-dur), transform var(--ecod-dur);
+    transition: border-color var(--ecod-dur) var(--ecod-ease), box-shadow var(--ecod-dur) var(--ecod-ease), transform var(--ecod-dur) var(--ecod-ease);
 }
 @media (hover: hover) {
     .ecod_postnav__card:hover { border-color: var(--ecod-primary); box-shadow: var(--ecod-shadow); transform: translateY(-2px); }
@@ -3173,7 +3173,7 @@ html[data-theme="dark"] .ecod_actbtn.is-liked { background: #3a2530; }
     border-radius: 0 var(--ecod-radius-sm) var(--ecod-radius-sm) 0;
     color: var(--ecod-text-2);
     line-height: 1.55;
-    transition: color var(--ecod-dur), background var(--ecod-dur);
+    transition: color var(--ecod-dur) var(--ecod-ease), background var(--ecod-dur) var(--ecod-ease);
 }
 .ecod_toc a::before {
     content: "";
@@ -3184,7 +3184,7 @@ html[data-theme="dark"] .ecod_actbtn.is-liked { background: #3a2530; }
     width: 2px;
     border-radius: var(--ecod-radius-xs);
     background: transparent;
-    transition: background var(--ecod-dur);
+    transition: background var(--ecod-dur) var(--ecod-ease);
 }
 @media (hover: hover) {
     .ecod_toc a:hover { color: var(--ecod-primary); background: var(--ecod-surface-2); }
@@ -3217,7 +3217,7 @@ html[data-theme="dark"] .ecod_actbtn.is-liked { background: #3a2530; }
     font-size: var(--ecod-fs-sm);
     box-shadow: var(--ecod-shadow);
     cursor: pointer;
-    transition: color var(--ecod-dur), border-color var(--ecod-dur), box-shadow var(--ecod-dur);
+    transition: color var(--ecod-dur) var(--ecod-ease), border-color var(--ecod-dur) var(--ecod-ease), box-shadow var(--ecod-dur) var(--ecod-ease);
 }
 @media (hover: hover) {
     .ecod_floattoc__btn:hover { color: var(--ecod-primary); border-color: var(--ecod-primary); box-shadow: var(--ecod-shadow-hover); }
@@ -3238,7 +3238,7 @@ html[data-theme="dark"] .ecod_actbtn.is-liked { background: #3a2530; }
     opacity: 0;
     visibility: hidden;
     transform: translateY(-50%) translateX(-6px);
-    transition: opacity var(--ecod-dur), transform var(--ecod-dur), visibility 0s linear var(--ecod-dur);
+    transition: opacity var(--ecod-dur) var(--ecod-ease), transform var(--ecod-dur) var(--ecod-ease), visibility 0s linear var(--ecod-dur);
     pointer-events: none;
 }
 .ecod_floattoc.is-left .ecod_floattoc__pop { left: calc(100% + 12px); }
@@ -3246,7 +3246,7 @@ html[data-theme="dark"] .ecod_actbtn.is-liked { background: #3a2530; }
 .ecod_floattoc.is-open .ecod_floattoc__pop {
     opacity: 1;
     visibility: visible;
-    transition: opacity var(--ecod-dur), transform var(--ecod-dur), visibility 0s;
+    transition: opacity var(--ecod-dur) var(--ecod-ease), transform var(--ecod-dur) var(--ecod-ease), visibility 0s var(--ecod-ease);
     transform: translateY(-50%);
     pointer-events: auto;
 }
@@ -3281,7 +3281,7 @@ html[data-theme="dark"] .ecod_actbtn.is-liked { background: #3a2530; }
     height: 100%;
     border-radius: var(--ecod-radius-full);
     background: var(--ecod-primary);
-    transition: width .25s ease-out;
+    transition: width .25s var(--ecod-ease);
 }
 .ecod_toc a.is-read { color: var(--ecod-text-3); }
 .ecod_toc a.is-read::after {
@@ -3302,7 +3302,7 @@ html[data-theme="dark"] .ecod_actbtn.is-liked { background: #3a2530; }
     backdrop-filter: blur(3px);
     -webkit-backdrop-filter: blur(3px);
     opacity: 0;
-    transition: opacity var(--ecod-dur);
+    transition: opacity var(--ecod-dur) var(--ecod-ease);
 }
 .ecod_spanel.is-open .ecod_spanel__mask { opacity: 1; }
 .ecod_spanel__box {
@@ -3316,7 +3316,7 @@ html[data-theme="dark"] .ecod_actbtn.is-liked { background: #3a2530; }
     background: var(--ecod-surface);
     box-shadow: var(--ecod-shadow-hover);
     opacity: 0;
-    transition: opacity var(--ecod-dur), transform var(--ecod-dur);
+    transition: opacity var(--ecod-dur) var(--ecod-ease), transform var(--ecod-dur) var(--ecod-ease);
     overflow: hidden;
 }
 .ecod_spanel.is-open .ecod_spanel__box { opacity: 1; transform: translateX(-50%); }
@@ -3377,7 +3377,7 @@ html[data-theme="dark"] .ecod_actbtn.is-liked { background: #3a2530; }
     border-radius: var(--ecod-radius-full);
     font-size: var(--ecod-fs-sm);
     color: var(--ecod-text-2);
-    transition: color var(--ecod-dur), border-color var(--ecod-dur), background var(--ecod-dur);
+    transition: color var(--ecod-dur) var(--ecod-ease), border-color var(--ecod-dur) var(--ecod-ease), background var(--ecod-dur) var(--ecod-ease);
 }
 @media (hover: hover) {
     .ecod_spanel__chip:hover { color: var(--ecod-primary); border-color: var(--ecod-primary); background: var(--ecod-primary-soft); }
@@ -3391,7 +3391,7 @@ html[data-theme="dark"] .ecod_actbtn.is-liked { background: #3a2530; }
     padding: 9px 10px;
     border-radius: var(--ecod-radius);
     color: var(--ecod-text-2);
-    transition: background var(--ecod-dur);
+    transition: background var(--ecod-dur) var(--ecod-ease);
 }
 @media (hover: hover) {
     .ecod_spanel__result:hover { background: var(--ecod-primary-soft); color: var(--ecod-text); }
@@ -3487,7 +3487,7 @@ html[data-theme="dark"] .ecod_actbtn.is-liked { background: #3a2530; }
     line-height: inherit;
     color: var(--ecod-primary);
     cursor: pointer;
-    transition: opacity var(--ecod-dur-fast);
+    transition: opacity var(--ecod-dur-fast) var(--ecod-ease);
 }
 @media (hover: hover) {
     .ecod_pagehero__apply:hover { opacity: .75; }
@@ -3500,7 +3500,7 @@ html[data-theme="dark"] .ecod_actbtn.is-liked { background: #3a2530; }
     background: var(--ecod-surface);
     border: 1px solid var(--ecod-border);
     border-radius: var(--ecod-radius);
-    transition: border-color var(--ecod-dur), box-shadow var(--ecod-dur);
+    transition: border-color var(--ecod-dur) var(--ecod-ease), box-shadow var(--ecod-dur) var(--ecod-ease);
 }
 @media (hover: hover) {
     .ecod_tipcard:hover { border-color: var(--ecod-primary-line-2); box-shadow: var(--ecod-shadow); }
@@ -3531,7 +3531,7 @@ html[data-theme="dark"] .ecod_actbtn.is-liked { background: #3a2530; }
     background: var(--ecod-surface);
     border: 1px solid var(--ecod-border);
     border-radius: var(--ecod-radius);
-    transition: transform var(--ecod-dur), box-shadow var(--ecod-dur), border-color var(--ecod-dur);
+    transition: transform var(--ecod-dur) var(--ecod-ease), box-shadow var(--ecod-dur) var(--ecod-ease), border-color var(--ecod-dur) var(--ecod-ease);
 }
 @media (hover: hover) {
     .ecod_friend:hover { transform: translateY(-2px); box-shadow: var(--ecod-shadow-hover); border-color: var(--ecod-primary-line-2); }
@@ -3556,7 +3556,7 @@ html[data-theme="dark"] .ecod_actbtn.is-liked { background: #3a2530; }
 .ecod_friend__name { font-size: var(--ecod-fs-md); font-weight: 600; color: var(--ecod-text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .ecod_friend__host { font-size: var(--ecod-fs-2xs); color: var(--ecod-text-3); font-family: var(--ecod-mono); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .ecod_friend__desc { font-size: var(--ecod-fs-xs); color: var(--ecod-text-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.ecod_friend__go { color: var(--ecod-text-3); opacity: 0; transform: translate(-2px, 2px); transition: opacity var(--ecod-dur), transform var(--ecod-dur); }
+.ecod_friend__go { color: var(--ecod-text-3); opacity: 0; transform: translate(-2px, 2px); transition: opacity var(--ecod-dur) var(--ecod-ease), transform var(--ecod-dur) var(--ecod-ease); }
 @media (hover: hover) {
     .ecod_friend:hover .ecod_friend__go { opacity: 1; transform: translate(0, 0); color: var(--ecod-primary); }
 }
@@ -3647,7 +3647,7 @@ html[data-theme="dark"] .ecod_actbtn.is-liked { background: #3a2530; }
     border: 1px solid var(--ecod-border);
     border-radius: var(--ecod-radius);
     box-shadow: var(--ecod-shadow-hover);
-    animation: ecod-authmodal-in var(--ecod-dur-fast) ease;
+    animation: ecod-authmodal-in var(--ecod-dur-enter) var(--ecod-ease-pop);
 }
 .ecod_fmodal__close {
     position: absolute;
@@ -3664,7 +3664,7 @@ html[data-theme="dark"] .ecod_actbtn.is-liked { background: #3a2530; }
     background: var(--ecod-surface-2);
     color: var(--ecod-text-3);
     cursor: pointer;
-    transition: color var(--ecod-dur-fast), background var(--ecod-dur-fast);
+    transition: color var(--ecod-dur-fast) var(--ecod-ease), background var(--ecod-dur-fast) var(--ecod-ease);
 }
 @media (hover: hover) {
     .ecod_fmodal__close:hover { color: var(--ecod-text); background: var(--ecod-bg); }
@@ -3726,7 +3726,7 @@ html[data-theme="dark"] .ecod_actbtn.is-liked { background: #3a2530; }
     font-family: inherit;
     font-size: var(--ecod-fs-2xs);
     cursor: pointer;
-    transition: color var(--ecod-dur-fast), border-color var(--ecod-dur-fast);
+    transition: color var(--ecod-dur-fast) var(--ecod-ease), border-color var(--ecod-dur-fast) var(--ecod-ease);
 }
 @media (hover: hover) {
     .ecod_fmodal__selfcopy:hover { color: var(--ecod-primary); border-color: var(--ecod-primary-line-2); }
@@ -3742,7 +3742,7 @@ html[data-theme="dark"] .ecod_actbtn.is-liked { background: #3a2530; }
     color: var(--ecod-text);
     font-family: inherit;
     font-size: var(--ecod-fs-md);
-    transition: border-color var(--ecod-dur-fast), box-shadow var(--ecod-dur-fast), background var(--ecod-dur-fast);
+    transition: border-color var(--ecod-dur-fast) var(--ecod-ease), box-shadow var(--ecod-dur-fast) var(--ecod-ease), background var(--ecod-dur-fast) var(--ecod-ease);
 }
 .ecod_fmodal__field input::placeholder { color: var(--ecod-text-3); opacity: .8; }
 .ecod_fmodal__field input:focus {
@@ -3845,19 +3845,19 @@ html[data-theme="dark"] .ecod_actbtn.is-liked { background: #3a2530; }
     border: 1px solid var(--ecod-border);
     border-radius: var(--ecod-radius);
     overflow: hidden;
-    transition: box-shadow var(--ecod-dur), border-color var(--ecod-dur);
+    transition: box-shadow var(--ecod-dur) var(--ecod-ease), border-color var(--ecod-dur) var(--ecod-ease);
 }
 @media (hover: hover) {
     .ecod_wall:hover { box-shadow: var(--ecod-shadow-hover); border-color: var(--ecod-primary-line-2); }
 }
 .ecod_wall__open { display: block; width: 100%; padding: 0; border: 0; background: none; cursor: zoom-in; overflow: hidden; }
-.ecod_wall__open img { width: 100%; height: auto; transition: transform .5s ease; }
+.ecod_wall__open img { width: 100%; height: auto; transition: transform .5s var(--ecod-ease); }
 @media (hover: hover) {
     .ecod_wall:hover .ecod_wall__open img { transform: scale(1.04); }
 }
 .ecod_wall__cap { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 8px 12px; font-size: var(--ecod-fs-xs); color: var(--ecod-text-3); }
 .ecod_wall__cap span { min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.ecod_wall__dl { display: inline-flex; padding: 3px; border-radius: var(--ecod-radius-sm); color: var(--ecod-text-3); transition: color var(--ecod-dur), background var(--ecod-dur); }
+.ecod_wall__dl { display: inline-flex; padding: 3px; border-radius: var(--ecod-radius-sm); color: var(--ecod-text-3); transition: color var(--ecod-dur) var(--ecod-ease), background var(--ecod-dur) var(--ecod-ease); }
 @media (hover: hover) {
     .ecod_wall__dl:hover { color: var(--ecod-primary); background: var(--ecod-primary-soft); }
 }
@@ -3905,7 +3905,7 @@ html[data-theme="dark"] .ecod_actbtn.is-liked { background: #3a2530; }
 .ecod_cols { display: flex; align-items: flex-end; gap: 8px; height: 148px; padding-top: 10px; }
 .ecod_cols__item { flex: 1; height: 100%; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; gap: 4px; }
 .ecod_cols__num { font-family: var(--ecod-mono); font-size: var(--ecod-fs-2xs); color: var(--ecod-text-3); }
-.ecod_cols__bar { width: 100%; max-width: 26px; border-radius: var(--ecod-radius-xs) var(--ecod-radius-xs) 2px 2px; background: linear-gradient(180deg, #8b7bf0, #4f6ef2); min-height: 4px; transition: height var(--ecod-dur-slow) ease; }
+.ecod_cols__bar { width: 100%; max-width: 26px; border-radius: var(--ecod-radius-xs) var(--ecod-radius-xs) 2px 2px; background: linear-gradient(180deg, #8b7bf0, #4f6ef2); min-height: 4px; transition: height var(--ecod-dur-slow) var(--ecod-ease); }
 .ecod_cols__label { font-size: var(--ecod-fs-2xs); color: var(--ecod-text-3); }
 .ecod_rlist { list-style: none; display: grid; gap: 13px; }
 .ecod_rlist li { display: flex; gap: 10px; }
@@ -3915,7 +3915,7 @@ html[data-theme="dark"] .ecod_actbtn.is-liked { background: #3a2530; }
 .ecod_rlist__title i { font-style: normal; font-weight: 400; color: var(--ecod-text-3); font-size: var(--ecod-fs-2xs); }
 .ecod_rlist p { margin: 2px 0 0; font-size: var(--ecod-fs-xs); color: var(--ecod-text-2); line-height: 1.6; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 .ecod_tagcloud { display: flex; flex-wrap: wrap; gap: 8px; }
-.ecod_tagcloud__item { display: inline-flex; align-items: center; gap: 5px; padding: 4px 11px; font-size: var(--ecod-fs-xs); color: var(--ecod-text-2); background: var(--ecod-surface-2); border: 1px solid var(--ecod-border); border-radius: var(--ecod-radius-full); transition: border-color var(--ecod-dur), background-color var(--ecod-dur), color var(--ecod-dur), box-shadow var(--ecod-dur), transform var(--ecod-dur); }
+.ecod_tagcloud__item { display: inline-flex; align-items: center; gap: 5px; padding: 4px 11px; font-size: var(--ecod-fs-xs); color: var(--ecod-text-2); background: var(--ecod-surface-2); border: 1px solid var(--ecod-border); border-radius: var(--ecod-radius-full); transition: border-color var(--ecod-dur) var(--ecod-ease), background-color var(--ecod-dur) var(--ecod-ease), color var(--ecod-dur) var(--ecod-ease), box-shadow var(--ecod-dur) var(--ecod-ease), transform var(--ecod-dur) var(--ecod-ease); }
 .ecod_tagcloud__item i { font-style: normal; font-size: var(--ecod-fs-2xs); color: var(--ecod-text-3); }
 @media (hover: hover) {
     .ecod_tagcloud__item:hover { color: var(--ecod-primary); border-color: var(--ecod-primary-line); background: var(--ecod-primary-soft); }
@@ -3944,7 +3944,7 @@ html[data-theme="dark"] .ecod_actbtn.is-liked { background: #3a2530; }
     margin: 0;
     border-radius: 50%;
     box-shadow: 0 0 0 2px var(--ecod-surface), 0 0 0 3.5px var(--ecod-border);
-    transition: transform var(--ecod-dur);
+    transition: transform var(--ecod-dur) var(--ecod-ease);
 }
 @media (hover: hover) {
     .ecod_cmt:hover > .ecod_cmt__aside .avatar { transform: scale(1.05); }
@@ -4012,7 +4012,7 @@ html[data-theme="dark"] .ecod_cmt__pending { background: #3a2410; color: #f0a860
 @media (hover: hover) {
     .ecod_cmt__act a:hover { color: var(--ecod-primary); }
 }
-.ecod_cmt__anchor { opacity: 0; transition: opacity var(--ecod-dur-fast); }
+.ecod_cmt__anchor { opacity: 0; transition: opacity var(--ecod-dur-fast) var(--ecod-ease); }
 @media (hover: hover) {
     .ecod_cmt:hover .ecod_cmt__anchor { opacity: 1; }
 }
@@ -4039,7 +4039,7 @@ html[data-theme="dark"] .ecod_cmt__pending { background: #3a2410; color: #f0a860
     font-size: var(--ecod-fs-xs);
     line-height: 1.6;
     cursor: pointer;
-    transition: color var(--ecod-dur-fast), border-color var(--ecod-dur-fast), background var(--ecod-dur-fast);
+    transition: color var(--ecod-dur-fast) var(--ecod-ease), border-color var(--ecod-dur-fast) var(--ecod-ease), background var(--ecod-dur-fast) var(--ecod-ease);
 }
 .ecod_cmt__fold::before { content: '↳'; color: var(--ecod-primary); }
 @media (hover: hover) {
@@ -4072,7 +4072,7 @@ html[data-theme="dark"] .ecod_cmt__pending { background: #3a2410; color: #f0a860
     font-size: var(--ecod-fs-xs);
     line-height: 1.6;
     cursor: pointer;
-    transition: color var(--ecod-dur-fast), border-color var(--ecod-dur-fast), background var(--ecod-dur-fast);
+    transition: color var(--ecod-dur-fast) var(--ecod-ease), border-color var(--ecod-dur-fast) var(--ecod-ease), background var(--ecod-dur-fast) var(--ecod-ease);
 }
 .ecod_cmtall[hidden] { display: none; }
 .ecod_cmtall::before {
@@ -4083,7 +4083,7 @@ html[data-theme="dark"] .ecod_cmt__pending { background: #3a2410; color: #f0a860
     border-right: 1.5px solid var(--ecod-primary);
     border-bottom: 1.5px solid var(--ecod-primary);
     transform: rotate(45deg);
-    transition: transform var(--ecod-dur-fast), margin-top var(--ecod-dur-fast);
+    transition: transform var(--ecod-dur-fast) var(--ecod-ease), margin-top var(--ecod-dur-fast) var(--ecod-ease);
 }
 @media (hover: hover) {
     .ecod_cmtall:hover { color: var(--ecod-primary); border-color: var(--ecod-primary-line); background: var(--ecod-primary-soft); }
@@ -4112,7 +4112,7 @@ html[data-theme="dark"] .ecod_cmt__pending { background: #3a2410; color: #f0a860
     color: var(--ecod-text-3);
     font-size: var(--ecod-fs-xs);
     cursor: pointer;
-    transition: border-color var(--ecod-dur-fast), background-color var(--ecod-dur-fast), color var(--ecod-dur-fast), box-shadow var(--ecod-dur-fast), transform var(--ecod-dur-fast);
+    transition: border-color var(--ecod-dur-fast) var(--ecod-ease), background-color var(--ecod-dur-fast) var(--ecod-ease), color var(--ecod-dur-fast) var(--ecod-ease), box-shadow var(--ecod-dur-fast) var(--ecod-ease), transform var(--ecod-dur-fast) var(--ecod-ease);
 }
 @media (hover: hover) {
     .ecod_editor__emoji:hover { color: var(--ecod-primary); border-color: var(--ecod-primary-line); background: var(--ecod-primary-soft); }
@@ -4139,7 +4139,7 @@ html[data-theme="dark"] .ecod_cmt__pending { background: #3a2410; color: #f0a860
     font-size: var(--ecod-fs-xl);
     line-height: 1;
     cursor: pointer;
-    transition: transform var(--ecod-dur-fast), background var(--ecod-dur-fast);
+    transition: transform var(--ecod-dur-fast) var(--ecod-ease), background var(--ecod-dur-fast) var(--ecod-ease);
 }
 @media (hover: hover) {
     .ecod_emoji:hover { background: var(--ecod-surface); transform: scale(1.12); }
@@ -4200,7 +4200,7 @@ html[data-theme="dark"] .ecod_cmt__pending { background: #3a2410; color: #f0a860
     color: var(--ecod-text);
     font-family: inherit;
     font-size: var(--ecod-fs-sm);
-    transition: border-color var(--ecod-dur), background var(--ecod-dur);
+    transition: border-color var(--ecod-dur) var(--ecod-ease), background var(--ecod-dur) var(--ecod-ease);
 }
 .ecod_respond textarea { min-height: 96px; resize: vertical; }
 .ecod_respond input:focus,
@@ -4268,7 +4268,9 @@ html[data-theme="dark"] .ecod_third__tip { background: rgba(180, 83, 9, .14); bo
     box-shadow: 0 8px 30px rgba(20, 24, 35, .16), 0 2px 6px rgba(20, 24, 35, .08);
     opacity: 0;
     transform: translateY(-4px) scale(.98);
-    transition: opacity var(--ecod-dur-fast) ease, transform var(--ecod-dur-fast) ease;
+    /* 从光标落点展开：--ecod-ox/--ecod-oy 由 JS 写入，缺省居中 */
+    transform-origin: var(--ecod-ox, 50%) var(--ecod-oy, 50%);
+    transition: opacity var(--ecod-dur-fast) var(--ecod-ease), transform var(--ecod-dur-fast) var(--ecod-ease);
 }
 .ecod_ctx[hidden] { display: none; }
 .ecod_ctx.is-open { opacity: 1; transform: none; }
@@ -4285,7 +4287,7 @@ html[data-theme="dark"] .ecod_third__tip { background: rgba(180, 83, 9, .14); bo
     font-size: var(--ecod-fs-sm);
     line-height: 1.5;
     text-align: left;
-    transition: background var(--ecod-dur-fast), color var(--ecod-dur-fast);
+    transition: background var(--ecod-dur-fast) var(--ecod-ease), color var(--ecod-dur-fast) var(--ecod-ease);
 }
 .ecod_ctx__item .ecod_icon { flex: none; opacity: .75; }
 @media (hover: hover) {
@@ -4323,7 +4325,7 @@ html[data-theme="dark"] .ecod_third__tip { background: rgba(180, 83, 9, .14); bo
     width: 0;
     background: var(--ecod-primary);
     z-index: var(--ecod-z-progress);
-    transition: width .1s linear, opacity var(--ecod-dur-slow);
+    transition: width .1s linear, opacity var(--ecod-dur-slow) var(--ecod-ease);
     border-radius: 0 var(--ecod-radius-xs) var(--ecod-radius-xs) 0;
 }
 .ecod_progress.is-done { background: var(--ecod-success); opacity: 0; }
@@ -4345,7 +4347,7 @@ html[data-theme="dark"] .ecod_third__tip { background: rgba(180, 83, 9, .14); bo
     opacity: 0;
     visibility: hidden;
     transform: translateY(8px);
-    transition: opacity var(--ecod-dur), transform var(--ecod-dur), visibility var(--ecod-dur), color var(--ecod-dur), border-color var(--ecod-dur);
+    transition: opacity var(--ecod-dur) var(--ecod-ease), transform var(--ecod-dur) var(--ecod-ease), visibility var(--ecod-dur) var(--ecod-ease), color var(--ecod-dur) var(--ecod-ease), border-color var(--ecod-dur) var(--ecod-ease);
     z-index: var(--ecod-z-float);
 }
 .ecod_totop.is-show { opacity: 1; visibility: visible; transform: none; }
@@ -4368,7 +4370,7 @@ html[data-theme="dark"] .ecod_third__tip { background: rgba(180, 83, 9, .14); bo
     color: var(--ecod-text-2);
     box-shadow: var(--ecod-shadow);
     z-index: var(--ecod-z-float);
-    transition: color var(--ecod-dur), border-color var(--ecod-dur);
+    transition: color var(--ecod-dur) var(--ecod-ease), border-color var(--ecod-dur) var(--ecod-ease);
 }
 @media (hover: hover) {
     .ecod_theme-toggle:hover { color: var(--ecod-primary); border-color: var(--ecod-primary); }
@@ -4408,7 +4410,7 @@ html[data-theme="dark"] .ecod_third__tip { background: rgba(180, 83, 9, .14); bo
         font-size: 11px;
         line-height: 1;
         cursor: pointer;
-        transition: color var(--ecod-dur), background var(--ecod-dur);
+        transition: color var(--ecod-dur) var(--ecod-ease), background var(--ecod-dur) var(--ecod-ease);
     }
     .ecod_dock__btn:active { color: var(--ecod-primary); background: var(--ecod-bg-2, var(--ecod-bg)); }
     /* dock 接管后隐藏移动端悬浮按钮，避免重复入口 */
@@ -4422,7 +4424,7 @@ html[data-theme="dark"] .ecod_third__tip { background: rgba(180, 83, 9, .14); bo
 .ecod_notice {
     border-bottom: 1px solid var(--ecod-border);
     background: var(--ecod-surface-2, var(--ecod-bg));
-    transition: opacity .24s ease, transform .24s ease;
+    transition: opacity .24s var(--ecod-ease), transform .24s var(--ecod-ease);
 }
 .ecod_notice.is-closed { opacity: 0; transform: translateY(-8px); }
 .ecod_notice__inner {
@@ -4460,7 +4462,7 @@ html[data-theme="dark"] .ecod_third__tip { background: rgba(180, 83, 9, .14); bo
     background: none;
     color: var(--ecod-text-3);
     cursor: pointer;
-    transition: color var(--ecod-dur), background var(--ecod-dur);
+    transition: color var(--ecod-dur) var(--ecod-ease), background var(--ecod-dur) var(--ecod-ease);
 }
 @media (hover: hover) {
     .ecod_notice__close:hover { color: var(--ecod-text); background: var(--ecod-border); }
@@ -4544,7 +4546,7 @@ html[data-theme="dark"] .ecod_third__tip { background: rgba(180, 83, 9, .14); bo
     font-size: var(--ecod-fs-sm);
     color: var(--ecod-text-2);
     cursor: pointer;
-    transition: background-color var(--ecod-dur), color var(--ecod-dur);
+    transition: background-color var(--ecod-dur) var(--ecod-ease), color var(--ecod-dur) var(--ecod-ease);
 }
 @media (hover: hover) {
     .ecod_playlist__item:hover { background: var(--ecod-surface-2); color: var(--ecod-text); }
@@ -4586,7 +4588,7 @@ html[data-theme="dark"] .ecod_third__tip { background: rgba(180, 83, 9, .14); bo
     gap: 4px;
     color: var(--ecod-text-3) !important;
     text-decoration: none !important;
-    transition: color var(--ecod-dur);
+    transition: color var(--ecod-dur) var(--ecod-ease);
 }
 @media (hover: hover) {
     .ecod_oembed__open:hover { color: var(--ecod-primary) !important; }
@@ -4616,7 +4618,7 @@ html[data-theme="dark"] .ecod_third__tip { background: rgba(180, 83, 9, .14); bo
     border-radius: var(--ecod-radius-sm);
     background: var(--ecod-surface);
     text-decoration: none !important;
-    transition: border-color var(--ecod-dur), box-shadow var(--ecod-dur);
+    transition: border-color var(--ecod-dur) var(--ecod-ease), box-shadow var(--ecod-dur) var(--ecod-ease);
 }
 @media (hover: hover) {
     .ecod_oembed--card:hover { border-color: var(--ecod-primary); box-shadow: var(--ecod-shadow); }
@@ -4841,7 +4843,7 @@ html[data-theme="dark"] .ecod_slider__dots button { background: rgba(255, 255, 2
         border-radius: var(--ecod-radius-full);
         margin-bottom: 0;
         white-space: nowrap;
-        transition: color var(--ecod-dur), background-color var(--ecod-dur), border-color var(--ecod-dur);
+        transition: color var(--ecod-dur) var(--ecod-ease), background-color var(--ecod-dur) var(--ecod-ease), border-color var(--ecod-dur) var(--ecod-ease);
     }
 @media (hover: hover) {
     .ecod_streambar .ecod_tabs a:hover { color: var(--ecod-primary); }
@@ -4948,7 +4950,7 @@ html[data-theme="dark"] .ecod_card__act button[data-ecod-act="like"].is-on { bac
     border-radius: var(--ecod-radius-sm);
     font-size: var(--ecod-fs-sm);
     color: var(--ecod-text-2);
-    transition: background var(--ecod-dur), color var(--ecod-dur);
+    transition: background var(--ecod-dur) var(--ecod-ease), color var(--ecod-dur) var(--ecod-ease);
 }
 @media (hover: hover) {
     .ecod_favs__item:hover { background: var(--ecod-surface-2); color: var(--ecod-primary); }
@@ -4971,10 +4973,22 @@ html[data-theme="dark"] .ecod_card__act button[data-ecod-act="like"].is-on { bac
     height: 2px;
     background: linear-gradient(90deg, #4f6ef2, #8b7bf0);
     opacity: 0;
-    transition: width .55s cubic-bezier(.2, .8, .2, 1), opacity var(--ecod-dur-slow);
+    transition: width .55s cubic-bezier(.2, .8 var(--ecod-ease), .2 var(--ecod-ease), 1) var(--ecod-ease), opacity var(--ecod-dur-slow) var(--ecod-ease);
     pointer-events: none;
 }
 .ecod_pjaxbar.is-loading { width: 72%; opacity: 1; }
+
+/* --- PJAX 页面转场（View Transitions，渐进增强） ---
+   只让 #ecod-shell 参与交叉淡化；root 组保持静止，
+   避免壳外的常驻 UI（导航 / 搜索面板 / 抽屉 / 右键菜单）跟着闪。 */
+#ecod-shell { view-transition-name: ecod-shell; }
+::view-transition-old(root),
+::view-transition-new(root) { animation: none; }
+@media (prefers-reduced-motion: reduce) {
+    ::view-transition-group(*),
+    ::view-transition-old(*),
+    ::view-transition-new(*) { animation: none !important; }
+}
 
 /* ============ 17. 边界状态：密码保护 / 评论表单 ============ */
 /* 文章页 · 密码保护 */
@@ -5050,7 +5064,7 @@ html[data-theme="dark"] .ecod_lockhint {
     font-family: inherit;
     font-size: var(--ecod-fs-md);
     letter-spacing: .08em;
-    transition: border-color var(--ecod-dur), background var(--ecod-dur), box-shadow var(--ecod-dur);
+    transition: border-color var(--ecod-dur) var(--ecod-ease), background var(--ecod-dur) var(--ecod-ease), box-shadow var(--ecod-dur) var(--ecod-ease);
 }
 .ecod_content.is-locked .protected input.text:focus {
     border-color: var(--ecod-primary);
@@ -5069,7 +5083,7 @@ html[data-theme="dark"] .ecod_lockhint {
     font-size: var(--ecod-fs-md);
     font-weight: 600;
     cursor: pointer;
-    transition: filter var(--ecod-dur), transform var(--ecod-dur);
+    transition: filter var(--ecod-dur) var(--ecod-ease), transform var(--ecod-dur) var(--ecod-ease);
 }
 @media (hover: hover) {
     .ecod_content.is-locked .protected input.submit:hover { filter: brightness(1.06); }
@@ -5096,7 +5110,7 @@ html[data-theme="dark"] .ecod_lockhint {
     border-radius: var(--ecod-radius-sm);
     background: var(--ecod-surface-2);
     overflow: hidden;
-    transition: border-color var(--ecod-dur), background var(--ecod-dur), box-shadow var(--ecod-dur);
+    transition: border-color var(--ecod-dur) var(--ecod-ease), background var(--ecod-dur) var(--ecod-ease), box-shadow var(--ecod-dur) var(--ecod-ease);
 }
 .ecod_respond .ecod_editor:focus-within {
     border-color: var(--ecod-primary);
@@ -5322,13 +5336,13 @@ html, body { overflow-x: hidden; overflow-x: clip; }
     color: var(--ecod-text);
     cursor: pointer;
     list-style: none;
-    transition: background var(--ecod-dur-fast);
+    transition: background var(--ecod-dur-fast) var(--ecod-ease);
 }
 .ecod_fold > summary::-webkit-details-marker { display: none; }
 @media (hover: hover) {
     .ecod_fold > summary:hover { background: var(--ecod-surface-2); }
 }
-.ecod_fold__chev { display: inline-flex; color: var(--ecod-text-3); transition: transform var(--ecod-dur); }
+.ecod_fold__chev { display: inline-flex; color: var(--ecod-text-3); transition: transform var(--ecod-dur) var(--ecod-ease); }
 .ecod_fold[open] .ecod_fold__chev { transform: rotate(90deg); }
 .ecod_fold__body { padding: 2px 15px 14px; font-size: var(--ecod-fs-md); color: var(--ecod-text-2); border-top: 1px solid var(--ecod-border); }
 .ecod_fold__body > :first-child { margin-top: 10px; }
@@ -5345,7 +5359,7 @@ html, body { overflow-x: hidden; overflow-x: clip; }
     color: var(--ecod-text-2);
     font-size: var(--ecod-fs-sm);
     cursor: pointer;
-    transition: border-color var(--ecod-dur-fast), background-color var(--ecod-dur-fast), color var(--ecod-dur-fast), box-shadow var(--ecod-dur-fast), transform var(--ecod-dur-fast);
+    transition: border-color var(--ecod-dur-fast) var(--ecod-ease), background-color var(--ecod-dur-fast) var(--ecod-ease), color var(--ecod-dur-fast) var(--ecod-ease), box-shadow var(--ecod-dur-fast) var(--ecod-ease), transform var(--ecod-dur-fast) var(--ecod-ease);
     white-space: nowrap;
 }
 @media (hover: hover) {
@@ -5410,7 +5424,7 @@ html, body { overflow-x: hidden; overflow-x: clip; }
     border-radius: var(--ecod-radius-sm);
     background: var(--ecod-surface);
     text-decoration: none;
-    transition: border-color var(--ecod-dur), background-color var(--ecod-dur), color var(--ecod-dur), box-shadow var(--ecod-dur), transform var(--ecod-dur);
+    transition: border-color var(--ecod-dur) var(--ecod-ease), background-color var(--ecod-dur) var(--ecod-ease), color var(--ecod-dur) var(--ecod-ease), box-shadow var(--ecod-dur) var(--ecod-ease), transform var(--ecod-dur) var(--ecod-ease);
 }
 @media (hover: hover) {
     .ecod_dl:hover { border-color: var(--ecod-primary-line); background: var(--ecod-primary-soft); box-shadow: var(--ecod-shadow); }
@@ -5444,7 +5458,7 @@ html[data-theme="dark"] .ecod_tabs__btn.is-active { box-shadow: none; background
     padding: 14px 20px;
     cursor: pointer;
     list-style: none;
-    transition: background var(--ecod-dur-fast);
+    transition: background var(--ecod-dur-fast) var(--ecod-ease);
 }
 .ecod_arch__year > summary::-webkit-details-marker { display: none; }
 @media (hover: hover) {
@@ -5465,7 +5479,7 @@ html[data-theme="dark"] .ecod_tabs__btn.is-active { box-shadow: none; background
     border: 1px solid var(--ecod-border);
     border-radius: var(--ecod-radius-full);
 }
-.ecod_arch__chev { margin-left: auto; display: inline-flex; color: var(--ecod-text-3); transition: transform var(--ecod-dur); }
+.ecod_arch__chev { margin-left: auto; display: inline-flex; color: var(--ecod-text-3); transition: transform var(--ecod-dur) var(--ecod-ease); }
 .ecod_arch__year[open] .ecod_arch__chev { transform: rotate(90deg); }
 .ecod_arch__body { padding: 4px 20px 18px; border-top: 1px solid var(--ecod-border); }
 .ecod_arch__month + .ecod_arch__month { margin-top: 16px; }
@@ -5499,7 +5513,7 @@ html[data-theme="dark"] .ecod_tabs__btn.is-active { box-shadow: none; background
     padding: 6px 10px;
     border-radius: var(--ecod-radius-sm);
     font-size: var(--ecod-fs-md);
-    transition: background var(--ecod-dur-fast);
+    transition: background var(--ecod-dur-fast) var(--ecod-ease);
 }
 @media (hover: hover) {
     .ecod_arch__item:hover { background: var(--ecod-primary-soft); }
@@ -5543,7 +5557,7 @@ html[data-theme="dark"] .ecod_tabs__btn.is-active { box-shadow: none; background
     background: var(--ecod-surface);
     border: 1px solid var(--ecod-border);
     border-radius: var(--ecod-radius);
-    transition: transform var(--ecod-dur), box-shadow var(--ecod-dur), border-color var(--ecod-dur);
+    transition: transform var(--ecod-dur) var(--ecod-ease), box-shadow var(--ecod-dur) var(--ecod-ease), border-color var(--ecod-dur) var(--ecod-ease);
 }
 @media (hover: hover) {
     .ecod_reader:hover { transform: translateY(-2px); box-shadow: var(--ecod-shadow-hover); border-color: var(--ecod-primary-line-2); }
@@ -5668,7 +5682,7 @@ html[data-theme="dark"] .ecod_reader.is-bronze .ecod_reader__count { color: #d19
     border: 1px solid var(--ecod-border);
     border-radius: var(--ecod-radius);
     overflow: hidden;
-    transition: transform var(--ecod-dur), box-shadow var(--ecod-dur), border-color var(--ecod-dur);
+    transition: transform var(--ecod-dur) var(--ecod-ease), box-shadow var(--ecod-dur) var(--ecod-ease), border-color var(--ecod-dur) var(--ecod-ease);
 }
 @media (hover: hover) {
     .ecod_rel__card:hover {
@@ -5720,7 +5734,7 @@ html[data-theme="dark"] .ecod_reader.is-bronze .ecod_reader__count { color: #d19
     -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
     overflow: hidden;
-    transition: color var(--ecod-dur);
+    transition: color var(--ecod-dur) var(--ecod-ease);
 }
 @media (hover: hover) {
     .ecod_rel__card:hover .ecod_rel__title { color: var(--ecod-primary); }
@@ -5783,7 +5797,7 @@ html[data-theme="dark"] mark.ecod_kw { background: #5c4d1c; color: #ffe9a0; }
     background: var(--ecod-surface-2);
     color: var(--ecod-text-2);
     font-size: var(--ecod-fs-sm);
-    transition: border-color var(--ecod-dur-fast), background-color var(--ecod-dur-fast), color var(--ecod-dur-fast), box-shadow var(--ecod-dur-fast), transform var(--ecod-dur-fast);
+    transition: border-color var(--ecod-dur-fast) var(--ecod-ease), background-color var(--ecod-dur-fast) var(--ecod-ease), color var(--ecod-dur-fast) var(--ecod-ease), box-shadow var(--ecod-dur-fast) var(--ecod-ease), transform var(--ecod-dur-fast) var(--ecod-ease);
 }
 .ecod_sugg__chip i {
     font-style: normal;
@@ -5892,7 +5906,7 @@ img[data-ecod-img].is-error {
     .ecod_nav__more summary:hover { background: var(--ecod-primary-soft); color: var(--ecod-primary); }
 }
 .ecod_nav__more details[open] summary { background: var(--ecod-primary-soft); color: var(--ecod-primary); }
-.ecod_nav__more summary svg { transition: transform var(--ecod-dur); }
+.ecod_nav__more summary svg { transition: transform var(--ecod-dur) var(--ecod-ease); }
 .ecod_nav__more details[open] summary svg { transform: rotate(180deg); }
 
 .ecod_nav__drop {
@@ -6041,7 +6055,7 @@ html[data-theme="dark"] .ecod_ai {
     font-size: var(--ecod-fs-xs);
     line-height: 1;
     color: var(--ecod-text-2);
-    transition: background-color var(--ecod-dur-fast), color var(--ecod-dur-fast);
+    transition: background-color var(--ecod-dur-fast) var(--ecod-ease), color var(--ecod-dur-fast) var(--ecod-ease);
 }
 .ecod_share__app .ecod_icon { width: 22px; height: 22px; }
 .ecod_share__app[data-net="weibo"] { --ecod-net: #e6162d; }
@@ -6072,7 +6086,7 @@ html[data-theme="dark"] .ecod_share__app[data-net="x-twitter"] { --ecod-net: #e7
     color: var(--ecod-text-2);
     text-align: left;
     cursor: pointer;
-    transition: background-color var(--ecod-dur-fast), color var(--ecod-dur-fast);
+    transition: background-color var(--ecod-dur-fast) var(--ecod-ease), color var(--ecod-dur-fast) var(--ecod-ease);
 }
 @media (hover: hover) {
     .ecod_share__row:hover { background: var(--ecod-surface-2); color: var(--ecod-primary); }
@@ -6095,8 +6109,8 @@ html[data-theme="dark"] .ecod_share__app[data-net="x-twitter"] { --ecod-net: #e7
 }
 
 /* --- 列表入场动效：默认隐藏，脚本加 .is-in 后归位 --- */
-html[data-anim="fade"] .ecod-reveal { opacity: 0; transition: opacity var(--ecod-dur-slow) ease; }
-html[data-anim="up"] .ecod-reveal { opacity: 0; transform: translateY(14px); transition: opacity var(--ecod-dur-slow) ease, transform var(--ecod-dur-slow) ease; }
+html[data-anim="fade"] .ecod-reveal { opacity: 0; transition: opacity var(--ecod-dur-slow) var(--ecod-ease); }
+html[data-anim="up"] .ecod-reveal { opacity: 0; transform: translateY(14px); transition: opacity var(--ecod-dur-slow) var(--ecod-ease), transform var(--ecod-dur-slow) var(--ecod-ease); }
 html[data-anim="fade"] .ecod-reveal.is-in,
 html[data-anim="up"] .ecod-reveal.is-in { opacity: 1; transform: none; }
 @media (prefers-reduced-motion: reduce) {
@@ -6141,7 +6155,7 @@ html[data-theme="dark"][data-backdrop="mesh"] body {
     background: radial-gradient(circle, var(--ecod-primary) 0%, rgba(79, 110, 242, .25) 45%, transparent 70%);
     opacity: 0;
     pointer-events: none;
-    transition: opacity var(--ecod-dur-slow) ease;
+    transition: opacity var(--ecod-dur-slow) var(--ecod-ease);
     will-change: transform;
 }
 html[data-cursor="dot"] .ecod_cursor-dot { opacity: .55; }
@@ -6210,7 +6224,7 @@ html[data-cursor="dot"] .ecod_cursor-dot { opacity: .55; }
     font-size: var(--ecod-fs-sm);
     line-height: 1.75;
     color: var(--ecod-text-2);
-    transition: border-color var(--ecod-dur), background var(--ecod-dur);
+    transition: border-color var(--ecod-dur) var(--ecod-ease), background var(--ecod-dur) var(--ecod-ease);
 }
 @media (hover: hover) {
     .ecod_anote.is-link:hover { border-color: var(--ecod-primary); background: var(--ecod-primary-soft); color: var(--ecod-text); }
@@ -6268,7 +6282,7 @@ html[data-cursor="dot"] .ecod_cursor-dot { opacity: .55; }
     background: var(--ecod-surface);
     color: var(--ecod-text-2);
     font-size: var(--ecod-fs-xs);
-    transition: border-color var(--ecod-dur-fast), background-color var(--ecod-dur-fast), color var(--ecod-dur-fast), box-shadow var(--ecod-dur-fast), transform var(--ecod-dur-fast);
+    transition: border-color var(--ecod-dur-fast) var(--ecod-ease), background-color var(--ecod-dur-fast) var(--ecod-ease), color var(--ecod-dur-fast) var(--ecod-ease), box-shadow var(--ecod-dur-fast) var(--ecod-ease), transform var(--ecod-dur-fast) var(--ecod-ease);
 }
 @media (hover: hover) {
     .ecod_copybox__btn:hover { border-color: var(--ecod-primary); color: var(--ecod-primary); background: var(--ecod-primary-soft); }
@@ -6310,7 +6324,7 @@ html[data-cursor="dot"] .ecod_cursor-dot { opacity: .55; }
     border-radius: var(--ecod-radius-full);
     background: var(--c);
     background: linear-gradient(90deg, var(--c), color-mix(in srgb, var(--c) 55%, #fff));
-    transition: width .5s ease;
+    transition: width .5s var(--ecod-ease);
 }
 .ecod_prog__num { flex: none; font-weight: 600; color: var(--c); font-variant-numeric: tabular-nums; }
 
@@ -6328,7 +6342,7 @@ html[data-cursor="dot"] .ecod_cursor-dot { opacity: .55; }
     font-size: var(--ecod-fs-sm);
     font-weight: 600;
     line-height: 1.6;
-    transition: border-color var(--ecod-dur), background-color var(--ecod-dur), color var(--ecod-dur), box-shadow var(--ecod-dur), transform var(--ecod-dur);
+    transition: border-color var(--ecod-dur) var(--ecod-ease), background-color var(--ecod-dur) var(--ecod-ease), color var(--ecod-dur) var(--ecod-ease), box-shadow var(--ecod-dur) var(--ecod-ease), transform var(--ecod-dur) var(--ecod-ease);
 }
 @media (hover: hover) {
     .ecod_btn:hover { color: #fff; filter: brightness(1.06); box-shadow: 0 4px 12px var(--c-soft); transform: translateY(-1px); }
@@ -6393,7 +6407,7 @@ html[data-cursor="dot"] .ecod_cursor-dot { opacity: .55; }
     border: 1px solid var(--ecod-border);
     border-radius: var(--ecod-radius-sm);
     background: var(--ecod-surface);
-    transition: border-color var(--ecod-dur), background-color var(--ecod-dur), color var(--ecod-dur), box-shadow var(--ecod-dur), transform var(--ecod-dur);
+    transition: border-color var(--ecod-dur) var(--ecod-ease), background-color var(--ecod-dur) var(--ecod-ease), color var(--ecod-dur) var(--ecod-ease), box-shadow var(--ecod-dur) var(--ecod-ease), transform var(--ecod-dur) var(--ecod-ease);
 }
 @media (hover: hover) {
     .ecod_icard.is-link:hover { border-color: var(--ecod-primary-line); box-shadow: var(--ecod-shadow); transform: translateY(-1px); }
@@ -6441,7 +6455,7 @@ html[data-cursor="dot"] .ecod_cursor-dot { opacity: .55; }
     border: 1px solid var(--ecod-border);
     border-radius: var(--ecod-radius-sm);
     background: var(--ecod-surface);
-    transition: border-color var(--ecod-dur), background-color var(--ecod-dur), color var(--ecod-dur), box-shadow var(--ecod-dur), transform var(--ecod-dur);
+    transition: border-color var(--ecod-dur) var(--ecod-ease), background-color var(--ecod-dur) var(--ecod-ease), color var(--ecod-dur) var(--ecod-ease), box-shadow var(--ecod-dur) var(--ecod-ease), transform var(--ecod-dur) var(--ecod-ease);
 }
 @media (hover: hover) {
     .ecod_netdisk__item:hover { border-color: var(--ecod-primary-line); box-shadow: var(--ecod-shadow); }
@@ -6461,7 +6475,7 @@ html[data-cursor="dot"] .ecod_cursor-dot { opacity: .55; }
     color: var(--ecod-text-2);
     font-family: var(--ecod-mono);
     font-size: var(--ecod-fs-xs);
-    transition: border-color var(--ecod-dur-fast), background-color var(--ecod-dur-fast), color var(--ecod-dur-fast), box-shadow var(--ecod-dur-fast), transform var(--ecod-dur-fast);
+    transition: border-color var(--ecod-dur-fast) var(--ecod-ease), background-color var(--ecod-dur-fast) var(--ecod-ease), color var(--ecod-dur-fast) var(--ecod-ease), box-shadow var(--ecod-dur-fast) var(--ecod-ease), transform var(--ecod-dur-fast) var(--ecod-ease);
 }
 @media (hover: hover) {
     .ecod_netdisk__pwd:hover { border-color: var(--ecod-primary); color: var(--ecod-primary); }
@@ -6478,7 +6492,7 @@ html[data-cursor="dot"] .ecod_cursor-dot { opacity: .55; }
     color: #fff;
     font-size: var(--ecod-fs-xs);
     font-weight: 600;
-    transition: border-color var(--ecod-dur-fast), background-color var(--ecod-dur-fast), color var(--ecod-dur-fast), box-shadow var(--ecod-dur-fast), transform var(--ecod-dur-fast);
+    transition: border-color var(--ecod-dur-fast) var(--ecod-ease), background-color var(--ecod-dur-fast) var(--ecod-ease), color var(--ecod-dur-fast) var(--ecod-ease), box-shadow var(--ecod-dur-fast) var(--ecod-ease), transform var(--ecod-dur-fast) var(--ecod-ease);
 }
 @media (hover: hover) {
     .ecod_netdisk__go:hover { color: #fff; background: var(--ecod-primary-deep); }
@@ -6495,7 +6509,7 @@ html[data-cursor="dot"] .ecod_cursor-dot { opacity: .55; }
     border: 1px solid var(--ecod-border);
     border-radius: var(--ecod-radius);
     background: var(--ecod-surface);
-    transition: border-color var(--ecod-dur), background-color var(--ecod-dur), color var(--ecod-dur), box-shadow var(--ecod-dur), transform var(--ecod-dur);
+    transition: border-color var(--ecod-dur) var(--ecod-ease), background-color var(--ecod-dur) var(--ecod-ease), color var(--ecod-dur) var(--ecod-ease), box-shadow var(--ecod-dur) var(--ecod-ease), transform var(--ecod-dur) var(--ecod-ease);
 }
 @media (hover: hover) {
     .ecod_acard:hover {
@@ -6533,7 +6547,7 @@ html[data-cursor="dot"] .ecod_cursor-dot { opacity: .55; }
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-    transition: color var(--ecod-dur);
+    transition: color var(--ecod-dur) var(--ecod-ease);
 }
 @media (hover: hover) {
     .ecod_acard:hover .ecod_acard__main b { color: var(--ecod-primary); }
@@ -6563,7 +6577,7 @@ html[data-cursor="dot"] .ecod_cursor-dot { opacity: .55; }
     color: var(--ecod-primary);
     opacity: 0;
     transform: translate(-4px, 4px);
-    transition: opacity var(--ecod-dur), transform var(--ecod-dur), background-color var(--ecod-dur), color var(--ecod-dur);
+    transition: opacity var(--ecod-dur) var(--ecod-ease), transform var(--ecod-dur) var(--ecod-ease), background-color var(--ecod-dur) var(--ecod-ease), color var(--ecod-dur) var(--ecod-ease);
 }
 @media (hover: hover) {
     .ecod_acard:hover .ecod_acard__go { opacity: 1; transform: translate(0, 0); }
@@ -6579,7 +6593,7 @@ html[data-cursor="dot"] .ecod_cursor-dot { opacity: .55; }
     border: 1px solid var(--ecod-border);
     border-radius: var(--ecod-radius);
     background: var(--ecod-surface);
-    transition: border-color var(--ecod-dur), background-color var(--ecod-dur), color var(--ecod-dur), box-shadow var(--ecod-dur), transform var(--ecod-dur);
+    transition: border-color var(--ecod-dur) var(--ecod-ease), background-color var(--ecod-dur) var(--ecod-ease), color var(--ecod-dur) var(--ecod-ease), box-shadow var(--ecod-dur) var(--ecod-ease), transform var(--ecod-dur) var(--ecod-ease);
 }
 @media (hover: hover) {
     .ecod_gh:hover {
@@ -6599,7 +6613,7 @@ html[data-cursor="dot"] .ecod_cursor-dot { opacity: .55; }
     border-radius: var(--ecod-radius);
     background: var(--ecod-surface-2);
     color: var(--ecod-text);
-    transition: border-color var(--ecod-dur), background-color var(--ecod-dur), color var(--ecod-dur);
+    transition: border-color var(--ecod-dur) var(--ecod-ease), background-color var(--ecod-dur) var(--ecod-ease), color var(--ecod-dur) var(--ecod-ease);
 }
 @media (hover: hover) {
     .ecod_gh:hover .ecod_gh__logo { border-color: transparent; background: var(--ecod-primary); color: #fff; }
@@ -6628,7 +6642,7 @@ html[data-cursor="dot"] .ecod_cursor-dot { opacity: .55; }
     font-size: var(--ecod-fs-xs);
     font-weight: 500;
     font-variant-numeric: tabular-nums;
-    transition: border-color var(--ecod-dur), background-color var(--ecod-dur), color var(--ecod-dur);
+    transition: border-color var(--ecod-dur) var(--ecod-ease), background-color var(--ecod-dur) var(--ecod-ease), color var(--ecod-dur) var(--ecod-ease);
 }
 @media (hover: hover) {
     .ecod_gh:hover .ecod_gh__star {
@@ -6694,7 +6708,7 @@ html[data-cursor="dot"] .ecod_cursor-dot { opacity: .55; }
     font-size: var(--ecod-fs-sm);
     color: var(--ecod-text-2);
     cursor: pointer;
-    transition: background var(--ecod-dur-fast), color var(--ecod-dur-fast);
+    transition: background var(--ecod-dur-fast) var(--ecod-ease), color var(--ecod-dur-fast) var(--ecod-ease);
 }
 @media (hover: hover) {
     .ecod_playlist__item:hover { background: var(--ecod-surface-2); color: var(--ecod-text); }
@@ -6821,7 +6835,7 @@ html[data-theme="dark"] .ecod_netdisk__go { color: #cfd8ff; }
     border: 1px solid var(--ecod-border);
     border-radius: var(--ecod-radius);
     background: var(--ecod-surface);
-    transition: border-color var(--ecod-dur), background-color var(--ecod-dur), box-shadow var(--ecod-dur), transform var(--ecod-dur);
+    transition: border-color var(--ecod-dur) var(--ecod-ease), background-color var(--ecod-dur) var(--ecod-ease), box-shadow var(--ecod-dur) var(--ecod-ease), transform var(--ecod-dur) var(--ecod-ease);
 }
 @media (hover: hover) {
     .ecod_posts__item:hover {
@@ -6861,7 +6875,7 @@ html[data-theme="dark"] .ecod_netdisk__go { color: #cfd8ff; }
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-    transition: color var(--ecod-dur);
+    transition: color var(--ecod-dur) var(--ecod-ease);
 }
 .ecod_posts__main small {
     font-size: var(--ecod-fs-xs);
@@ -6895,7 +6909,7 @@ html[data-theme="dark"] .ecod_netdisk__go { color: #cfd8ff; }
     color: var(--ecod-primary);
     opacity: 0;
     transform: translate(-4px, 4px);
-    transition: opacity var(--ecod-dur), transform var(--ecod-dur);
+    transition: opacity var(--ecod-dur) var(--ecod-ease), transform var(--ecod-dur) var(--ecod-ease);
 }
 @media (hover: hover) {
     .ecod_posts__item:hover .ecod_posts__go { opacity: 1; transform: translate(0, 0); }
@@ -6937,7 +6951,7 @@ html[data-theme="dark"] .ecod_netdisk__go { color: #cfd8ff; }
     color: var(--ecod-text);
     font-family: inherit;
     font-size: var(--ecod-fs-sm);
-    transition: border-color var(--ecod-dur-fast), box-shadow var(--ecod-dur-fast);
+    transition: border-color var(--ecod-dur-fast) var(--ecod-ease), box-shadow var(--ecod-dur-fast) var(--ecod-ease);
 }
 .ecod_pwbox__form input:focus {
     border-color: var(--ecod-primary);
@@ -6956,7 +6970,7 @@ html[data-theme="dark"] .ecod_netdisk__go { color: #cfd8ff; }
     font-size: var(--ecod-fs-sm);
     font-weight: 600;
     cursor: pointer;
-    transition: background-color var(--ecod-dur-fast), border-color var(--ecod-dur-fast);
+    transition: background-color var(--ecod-dur-fast) var(--ecod-ease), border-color var(--ecod-dur-fast) var(--ecod-ease);
 }
 @media (hover: hover) {
     .ecod_pwbox__form button:hover { background: var(--ecod-primary-deep); border-color: var(--ecod-primary-deep); }
@@ -7007,7 +7021,7 @@ html[data-theme="dark"] .ecod_netdisk__go { color: #cfd8ff; }
     background: var(--ecod-surface-2);
     cursor: zoom-in;
     -webkit-tap-highlight-color: transparent;
-    transition: box-shadow var(--ecod-dur), transform var(--ecod-dur);
+    transition: box-shadow var(--ecod-dur) var(--ecod-ease), transform var(--ecod-dur) var(--ecod-ease);
 }
 @media (hover: hover) {
     .ecod_gal__item:hover { box-shadow: var(--ecod-shadow-hover); }
@@ -7048,7 +7062,7 @@ html[data-theme="dark"] .ecod_netdisk__go { color: #cfd8ff; }
     opacity: 0;
     transform: translateY(6px);
     pointer-events: none;
-    transition: opacity var(--ecod-dur), transform var(--ecod-dur);
+    transition: opacity var(--ecod-dur) var(--ecod-ease), transform var(--ecod-dur) var(--ecod-ease);
 }
 @media (hover: hover) {
     .ecod_gal__item:hover .ecod_gal__cap { opacity: 1; transform: none; }
@@ -7085,7 +7099,7 @@ html[data-theme="dark"] .ecod_netdisk__go { color: #cfd8ff; }
     border-bottom: 1px dashed color-mix(in srgb, var(--ecod-primary) 55%, transparent);
     cursor: help;
     outline: none;
-    transition: border-color var(--ecod-dur-fast);
+    transition: border-color var(--ecod-dur-fast) var(--ecod-ease);
 }
 @media (hover: hover) {
     .ecod_tip:hover { border-bottom-color: var(--ecod-primary); }
@@ -7113,7 +7127,7 @@ html[data-theme="dark"] .ecod_netdisk__go { color: #cfd8ff; }
     visibility: hidden;
     pointer-events: none;
     transform: translate(-50%, 4px) translateX(var(--shift, 0px));
-    transition: opacity var(--ecod-dur-fast), transform var(--ecod-dur-fast), visibility var(--ecod-dur-fast);
+    transition: opacity var(--ecod-dur-fast) var(--ecod-ease), transform var(--ecod-dur-fast) var(--ecod-ease), visibility var(--ecod-dur-fast) var(--ecod-ease);
 }
 .ecod_tip.is-bottom .ecod_tip__pop {
     bottom: auto;
@@ -7186,14 +7200,14 @@ html[data-theme="dark"] .ecod_netdisk__go { color: #cfd8ff; }
     outline: none;
     -webkit-box-decoration-break: clone;
     box-decoration-break: clone;
-    transition: background-color var(--ecod-dur-fast);
+    transition: background-color var(--ecod-dur-fast) var(--ecod-ease);
 }
 .ecod_spoiler__body {
     filter: blur(4.5px);
     opacity: .7;
     -webkit-user-select: none;
     user-select: none;
-    transition: filter var(--ecod-dur), opacity var(--ecod-dur);
+    transition: filter var(--ecod-dur) var(--ecod-ease), opacity var(--ecod-dur) var(--ecod-ease);
 }
 @media (hover: hover) {
     .ecod_spoiler:hover .ecod_spoiler__body { filter: blur(2.5px); opacity: .88; }
@@ -7322,7 +7336,7 @@ html[data-theme="dark"] .ecod_netdisk__go { color: #cfd8ff; }
     font-weight: 600;
     text-decoration: none;
     white-space: nowrap;
-    transition: background-color var(--ecod-dur-fast), border-color var(--ecod-dur-fast), transform var(--ecod-dur-fast);
+    transition: background-color var(--ecod-dur-fast) var(--ecod-ease), border-color var(--ecod-dur-fast) var(--ecod-ease), transform var(--ecod-dur-fast) var(--ecod-ease);
 }
 .ecod_pay__btn {
     background: var(--ecod-primary);
@@ -7580,7 +7594,7 @@ html[data-theme="dark"] .ecod_netdisk__go { color: #cfd8ff; }
     background: var(--ecod-surface-2);
     text-decoration: none;
     color: var(--ecod-text);
-    transition: border-color var(--ecod-dur-fast), background-color var(--ecod-dur-fast), transform var(--ecod-dur-fast), box-shadow var(--ecod-dur-fast);
+    transition: border-color var(--ecod-dur-fast) var(--ecod-ease), background-color var(--ecod-dur-fast) var(--ecod-ease), transform var(--ecod-dur-fast) var(--ecod-ease), box-shadow var(--ecod-dur-fast) var(--ecod-ease);
 }
 @media (hover: hover) {
     .ecod_vip__plan:hover {
@@ -7669,7 +7683,7 @@ html[data-theme="dark"] .ecod_netdisk__go { color: #cfd8ff; }
     line-height: 1;
     cursor: pointer;
     text-decoration: none;
-    transition: opacity var(--ecod-dur-fast), background var(--ecod-dur-fast), color var(--ecod-dur-fast), border-color var(--ecod-dur-fast);
+    transition: opacity var(--ecod-dur-fast) var(--ecod-ease), background var(--ecod-dur-fast) var(--ecod-ease), color var(--ecod-dur-fast) var(--ecod-ease), border-color var(--ecod-dur-fast) var(--ecod-ease);
 }
 @media (hover: hover) {
     .ecod-btn:hover { opacity: .88; color: #fff; }
@@ -7700,7 +7714,7 @@ html[data-theme="dark"] .ecod_netdisk__go { color: #cfd8ff; }
     color: var(--ecod-text-2);
     cursor: pointer;
     list-style: none;
-    transition: background var(--ecod-dur-fast), color var(--ecod-dur-fast), box-shadow var(--ecod-dur-fast);
+    transition: background var(--ecod-dur-fast) var(--ecod-ease), color var(--ecod-dur-fast) var(--ecod-ease), box-shadow var(--ecod-dur-fast) var(--ecod-ease);
 }
 .ecod_nav__user > summary::-webkit-details-marker { display: none; }
 @media (hover: hover) {
@@ -7727,10 +7741,12 @@ html[data-theme="dark"] .ecod_netdisk__go { color: #cfd8ff; }
     border: 1px solid var(--ecod-border);
     border-radius: var(--ecod-radius);
     box-shadow: var(--ecod-shadow-hover);
-    animation: ecod_upop_in var(--ecod-dur-fast) ease;
+    /* 从触发头像处展开：--ecod-ox/--ecod-oy 由 JS 写入，缺省居中 */
+    transform-origin: var(--ecod-ox, 50%) var(--ecod-oy, 50%);
+    animation: ecod_upop_in var(--ecod-dur-enter) var(--ecod-ease-pop);
 }
 @keyframes ecod_upop_in {
-    from { opacity: 0; transform: translateY(-4px); }
+    from { opacity: 0; transform: translateY(-4px) scale(.96); }
     to   { opacity: 1; transform: none; }
 }
 .ecod_nav__upop-head {
@@ -7875,7 +7891,7 @@ html[data-theme="dark"] .ecod_netdisk__go { color: #cfd8ff; }
     font-size: var(--ecod-fs-md);
     text-align: left;
     cursor: pointer;
-    transition: background var(--ecod-dur-fast), color var(--ecod-dur-fast);
+    transition: background var(--ecod-dur-fast) var(--ecod-ease), color var(--ecod-dur-fast) var(--ecod-ease);
 }
 .ecod_uc__tab span { flex: 1; }
 .ecod_uc__tab em {
@@ -7974,7 +7990,7 @@ html[data-theme="dark"] .ecod_netdisk__go { color: #cfd8ff; }
     border-radius: var(--ecod-radius-sm);
     color: var(--ecod-text);
     text-decoration: none;
-    transition: border-color var(--ecod-dur-fast), background var(--ecod-dur-fast);
+    transition: border-color var(--ecod-dur-fast) var(--ecod-ease), background var(--ecod-dur-fast) var(--ecod-ease);
 }
 @media (hover: hover) {
     a.ecod_uc__item:hover { border-color: var(--ecod-primary); background: var(--ecod-primary-soft); }
@@ -8000,7 +8016,7 @@ html[data-theme="dark"] .ecod_netdisk__go { color: #cfd8ff; }
     background: none;
     color: var(--ecod-text-3);
     cursor: pointer;
-    transition: background var(--ecod-dur-fast), color var(--ecod-dur-fast);
+    transition: background var(--ecod-dur-fast) var(--ecod-ease), color var(--ecod-dur-fast) var(--ecod-ease);
 }
 @media (hover: hover) {
     .ecod_uc__del:hover { background: rgba(217, 79, 79, .1); color: #d94f4f; }
@@ -8122,7 +8138,7 @@ html.ecod-modal-lock { overflow: hidden; }
     border: 1px solid var(--ecod-border);
     border-radius: var(--ecod-radius);
     box-shadow: var(--ecod-shadow-hover);
-    animation: ecod-authmodal-in var(--ecod-dur-fast) ease;
+    animation: ecod-authmodal-in var(--ecod-dur-enter) var(--ecod-ease-pop);
 }
 @keyframes ecod-authmodal-in {
     from { opacity: 0; transform: translateY(14px) scale(.98); }
@@ -8217,7 +8233,7 @@ html.ecod-modal-lock { overflow: hidden; }
     background: var(--ecod-bg);
     object-fit: cover;
     cursor: pointer;
-    transition: border-color var(--ecod-dur-fast);
+    transition: border-color var(--ecod-dur-fast) var(--ecod-ease);
 }
 @media (hover: hover) {
     .ecod_login__capimg:hover { border-color: var(--ecod-primary); }
@@ -8236,6 +8252,8 @@ html[data-theme="dark"] .ecod_login__capimg { filter: invert(1) hue-rotate(180de
     color: var(--ecod-text-3);
 }
 .ecod_login__oauth-line { flex: 1; height: 1px; background: var(--ecod-border); }
+.ecod_login__oauthrow { display: flex; flex-wrap: wrap; gap: 8px; }
+.ecod_login__oauthrow .ecod_login__oauthbtn { flex: 1 1 140px; width: auto; }
 .ecod_login__oauthbtn {
     display: flex;
     align-items: center;
@@ -8250,7 +8268,7 @@ html[data-theme="dark"] .ecod_login__capimg { filter: invert(1) hue-rotate(180de
     font-size: var(--ecod-fs-sm);
     font-weight: 500;
     text-decoration: none;
-    transition: color var(--ecod-dur), border-color var(--ecod-dur), background var(--ecod-dur);
+    transition: color var(--ecod-dur) var(--ecod-ease), border-color var(--ecod-dur) var(--ecod-ease), background var(--ecod-dur) var(--ecod-ease);
 }
 @media (hover: hover) {
     .ecod_login__oauthbtn:hover { color: var(--ecod-primary); border-color: var(--ecod-primary); }
@@ -8265,7 +8283,7 @@ html[data-theme="dark"] .ecod_login__capimg { filter: invert(1) hue-rotate(180de
     font-size: var(--ecod-fs-sm);
     border-radius: var(--ecod-radius-xs);
     cursor: pointer;
-    transition: color .15s, background .15s;
+    transition: color .15s var(--ecod-ease), background .15s var(--ecod-ease);
 }
 @media (hover: hover) {
     .ecod_login__tabs button:hover { color: var(--ecod-text); }
@@ -8317,7 +8335,7 @@ html[data-theme="dark"] .ecod_login__capimg { filter: invert(1) hue-rotate(180de
     font-size: var(--ecod-fs-md);
     background: var(--ecod-bg);
     color: var(--ecod-text);
-    transition: border-color var(--ecod-dur-fast), box-shadow var(--ecod-dur-fast);
+    transition: border-color var(--ecod-dur-fast) var(--ecod-ease), box-shadow var(--ecod-dur-fast) var(--ecod-ease);
     width: 100%;
     font-family: inherit;
 }
@@ -8433,7 +8451,7 @@ html.ecod-shcard-lock body { overflow: hidden; }
     font-weight: 600;
     white-space: nowrap;
     cursor: pointer;
-    transition: transform var(--ecod-dur-fast), filter var(--ecod-dur-fast);
+    transition: transform var(--ecod-dur-fast) var(--ecod-ease), filter var(--ecod-dur-fast) var(--ecod-ease);
 }
 @media (hover: hover) {
     .ecod_shcard__save:hover { filter: brightness(1.06); }
@@ -8528,7 +8546,7 @@ html.ecod-shcard-lock body { overflow: hidden; }
     font-size: var(--ecod-fs-xs);
     line-height: 1.6;
     cursor: pointer;
-    transition: color var(--ecod-dur), border-color var(--ecod-dur), background-color var(--ecod-dur);
+    transition: color var(--ecod-dur) var(--ecod-ease), border-color var(--ecod-dur) var(--ecod-ease), background-color var(--ecod-dur) var(--ecod-ease);
 }
 @media (hover: hover) {
     .ecod_sort__btn:hover {
@@ -8545,7 +8563,7 @@ html.ecod-shcard-lock body { overflow: hidden; }
 .ecod_sort__caret {
     display: inline-flex;
     color: var(--ecod-text-3);
-    transition: transform var(--ecod-dur);
+    transition: transform var(--ecod-dur) var(--ecod-ease);
 }
 .ecod_sort.is-open .ecod_sort__caret { transform: rotate(180deg); }
 
@@ -8563,7 +8581,7 @@ html.ecod-shcard-lock body { overflow: hidden; }
     opacity: 0;
     visibility: hidden;
     transform: translateY(-4px);
-    transition: opacity var(--ecod-dur-fast), transform var(--ecod-dur-fast), visibility var(--ecod-dur-fast);
+    transition: opacity var(--ecod-dur-fast) var(--ecod-ease), transform var(--ecod-dur-fast) var(--ecod-ease), visibility var(--ecod-dur-fast) var(--ecod-ease);
 }
 .ecod_sort.is-open .ecod_sort__pop { opacity: 1; visibility: visible; transform: translateY(0); }
 .ecod_sort__head {
@@ -8580,7 +8598,7 @@ html.ecod-shcard-lock body { overflow: hidden; }
     border-radius: var(--ecod-radius-sm);
     color: var(--ecod-text-2);
     font-size: var(--ecod-fs-sm);
-    transition: background-color var(--ecod-dur-fast), color var(--ecod-dur-fast);
+    transition: background-color var(--ecod-dur-fast) var(--ecod-ease), color var(--ecod-dur-fast) var(--ecod-ease);
 }
 @media (hover: hover) {
     .ecod_sort__opt:hover { background: var(--ecod-surface-2); color: var(--ecod-text); }
@@ -8821,7 +8839,7 @@ html.ecod-shcard-lock body { overflow: hidden; }
     overflow: hidden;
     color: inherit;
     text-decoration: none;
-    transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease;
+    transition: transform .18s var(--ecod-ease), box-shadow .18s var(--ecod-ease), border-color .18s var(--ecod-ease);
 }
 @media (hover: hover) {
     .ecod_tcard:hover {
@@ -8928,7 +8946,7 @@ html.ecod-shcard-lock body { overflow: hidden; }
     display: inline-flex;
     color: var(--ecod-primary);
     opacity: .65;
-    transition: opacity .16s ease, transform .16s ease;
+    transition: opacity .16s var(--ecod-ease), transform .16s var(--ecod-ease);
 }
 @media (hover: hover) {
     .ecod_tcard:hover .ecod_tcard__go { opacity: 1; transform: translate(1px, -1px); }
@@ -9117,7 +9135,7 @@ html.ecod-shcard-lock body { overflow: hidden; }
     color: #fff;
     font-size: var(--ecod-fs-2xs);
     text-decoration: none;
-    transition: background .16s ease;
+    transition: background .16s var(--ecod-ease);
 }
 .ecod_chead__chip em {
     font-style: normal;
@@ -9251,7 +9269,7 @@ html.ecod-shcard-lock body { overflow: hidden; }
     cursor: pointer;
     color: var(--ecod-text-3);
     font-size: var(--ecod-fs-xs);
-    transition: color var(--ecod-dur);
+    transition: color var(--ecod-dur) var(--ecod-ease);
 }
 @media (hover: hover) {
     .ecod_likers:hover { color: var(--ecod-text-2); }
@@ -9299,7 +9317,7 @@ html.ecod-shcard-lock body { overflow: hidden; }
     box-shadow: var(--ecod-shadow);
     opacity: 0;
     pointer-events: none;
-    transition: opacity .24s ease, transform .24s ease;
+    transition: opacity .24s var(--ecod-ease), transform .24s var(--ecod-ease);
 }
 .ecod_quickbar.is-on {
     opacity: 1;
@@ -9369,7 +9387,7 @@ html.ecod-shcard-lock body { overflow: hidden; }
     border: 1px solid transparent;
     border-radius: var(--ecod-radius-full);
     box-sizing: border-box;
-    transition: border-color var(--ecod-dur), background-color var(--ecod-dur);
+    transition: border-color var(--ecod-dur) var(--ecod-ease), background-color var(--ecod-dur) var(--ecod-ease);
 }
 .ecod_cattools__search:focus-within {
     background: var(--ecod-surface);

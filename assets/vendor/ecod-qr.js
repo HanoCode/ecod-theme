@@ -7,7 +7,7 @@
  * 用法：EcodQR.matrix(text, 'M') → boolean[][]（true = 深色模块）
  * 算法遵循 ISO/IEC 18004，块结构表与对齐图案坐标引自标准附录。
  *
- * Copyright (c) 2026 Ecod · MIT License · https://ecod.cc
+ * Copyright (c) 2026 Ecod. All Rights Reserved. · https://ecod.cc
  */
 (function (global) {
     'use strict';

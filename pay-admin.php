@@ -12,8 +12,8 @@
  *
  * @package Ecod Theme
  * @author  Ecod
- * @copyright Copyright (c) 2026 Ecod (https://ecod.cc)
- * @license   MIT
+ * @copyright Copyright (c) 2026 Ecod. All Rights Reserved.
+ * @link    https://ecod.cc
  */
 
 error_reporting(E_ALL & ~E_DEPRECATED & ~E_NOTICE & ~E_WARNING);

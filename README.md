@@ -352,4 +352,4 @@ npm run build   # 产物写进 assets/dist/，manifest 同步更新
 
 ## 十二、许可
 
-MIT License，详见根目录 `LICENSE` 文件。可自由使用、修改与二次分发，请保留文件头部的版权与署名（`@author` / `@copyright`）。
+本主题为商业付费软件（专有授权），详见根目录 `LICENSE` 文件。仅授权购买者在自己的站点使用；未经授权禁止复制、修改、传播、二次分发或转售。请保留文件头部的版权与署名（`@author` / `@copyright`）。

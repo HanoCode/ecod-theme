@@ -8,7 +8,7 @@
  *  3. 「/」搜索设置项、分组切换记忆、字段级 dirty 与离开拦截
  *  4. 配置导出 / 导入（仅设置项；模块布局在模块管理台导出）
  *
- * Copyright (c) 2026 Ecod · MIT License · https://ecod.cc
+ * Copyright (c) 2026 Ecod. All Rights Reserved. · https://ecod.cc
  */
 (function () {
     'use strict';

@@ -7,7 +7,7 @@
  *  - 图片支持粘贴 / 拖拽上传，复用 /action/upload；
  *  - 本地草稿、字数统计、大纲定位、全屏专注。
  *
- * Copyright (c) 2026 Ecod · MIT License · https://ecod.cc
+ * Copyright (c) 2026 Ecod. All Rights Reserved. · https://ecod.cc
  */
 (function () {
     'use strict';

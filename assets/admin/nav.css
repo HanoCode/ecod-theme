@@ -4,7 +4,7 @@
  * 只在 .ecod-navb 内生效；颜色/按钮复用 config.css 的 --ea-* 令牌与 .ecod-btn。
  * 结构：左列挑项（页面 / 分类 / 标签 / 自定义），右列菜单结构（拖拽 + 缩进）。
  *
- * Copyright (c) 2026 Ecod · MIT License · https://ecod.cc
+ * Copyright (c) 2026 Ecod. All Rights Reserved. · https://ecod.cc
  */
 
 /* ---------------- 顶部：多套导航切换 ---------------- */

@@ -13,7 +13,8 @@
  *
  * @package Ecod Theme
  * @author  Ecod
- * @license MIT
+ * @copyright Copyright (c) 2026 Ecod. All Rights Reserved.
+ * @link    https://ecod.cc
  */
 
 import { build } from 'esbuild';
@@ -30,7 +31,7 @@ const MANIFEST = join(OUT_ROOT, 'manifest.php');
 
 /** 版权横幅：加在每个 minify 产物开头（esbuild 不会保留源文件头注释） */
 const BANNER =
-    '/*! Ecod Theme (c) 2026 Ecod · MIT License · https://ecod.cc */\n';
+    '/*! Ecod Theme (c) 2026 Ecod. All Rights Reserved. · https://ecod.cc */\n';
 
 /**
  * 参与构建的源文件清单（相对主题根目录）。
@@ -240,7 +241,8 @@ async function main() {
         ' * PHP 侧 core/asset.php 读取本文件优先发哈希产物；删掉 dist 目录即回退源文件。',
         ' *',
         ' * @package Ecod Theme',
-        ' * @license MIT',
+        ' * @copyright Copyright (c) 2026 Ecod. All Rights Reserved.',
+        ' * @link    https://ecod.cc',
         ' */',
         '',
         'return ' + varExport(manifest) + ';',

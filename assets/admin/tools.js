@@ -4,7 +4,7 @@
  * 配置快照、sitemap / robots 生成。所有请求都带管理员令牌，
  * 服务端会再校验一次登录态，双重保险。
  *
- * Copyright (c) 2026 Ecod · MIT License · https://ecod.cc
+ * Copyright (c) 2026 Ecod. All Rights Reserved. · https://ecod.cc
  */
 (function () {
     'use strict';

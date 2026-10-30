@@ -11,8 +11,7 @@
  * @since   2026-10-29
  * @version 2.0.0
  * @link    https://ecod.cc
- * @copyright Copyright (c) 2026 Ecod (https://ecod.cc)
- * @license   MIT
+ * @copyright Copyright (c) 2026 Ecod. All Rights Reserved.
  */
 
 if (!defined('__TYPECHO_ROOT_DIR__')) {
@@ -578,14 +577,49 @@ ecod_admin_field($form, 'select', 'EOAuthGithub', 'off', 'GitHub 登录', '登�
 $ecodOAuthWhen = ['data-ecod-show-when' => 'EOAuthGithub:on'];
 ecod_admin_field($form, 'text', 'EOAuthGithubId', '', 'GitHub Client ID', 'GitHub OAuth App 的 Client ID', [], 'interact', $ecodOAuthWhen);
 ecod_admin_field($form, 'text', 'EOAuthGithubSecret', '', 'GitHub Client Secret', 'GitHub OAuth App 的 Client Secret，注意保密', [], 'interact', $ecodOAuthWhen);
-ecod_admin_field($form, 'select', 'EOAuthBindMail', 'on', '按邮箱自动绑定', '第三方账号的邮箱与本站用户邮箱一致时，首次登录自动绑定（关闭后需账号密码登录一次才能绑定）', [
+
+/* 第三方登录各平台：开关 + Id + Secret，端点协议与 Zibll 一致（docs/social-login.md） */
+ecod_admin_field($form, 'select', 'EOAuthWeixin', 'off', '微信登录（开放平台扫码）', '需企业资质的微信开放平台「网站应用」；回调地址填：站点地址 + /usr/themes/ecod-theme/api.php?action=oauth_callback&platform=weixin', [
     'off' => '关闭',
     'on'  => '开启',
-], 'interact', $ecodOAuthWhen);
+], 'interact');
+$ecodOAuthWeixinWhen = ['data-ecod-show-when' => 'EOAuthWeixin:on'];
+ecod_admin_field($form, 'text', 'EOAuthWeixinId', '', '微信 AppID', '微信开放平台网站应用的 AppID', [], 'interact', $ecodOAuthWeixinWhen);
+ecod_admin_field($form, 'text', 'EOAuthWeixinSecret', '', '微信 AppSecret', '微信开放平台网站应用的 AppSecret，注意保密', [], 'interact', $ecodOAuthWeixinWhen);
+
+ecod_admin_field($form, 'select', 'EOAuthQQ', 'off', 'QQ 登录', '需在 QQ 互联创建应用；回调地址填：站点地址 + /usr/themes/ecod-theme/api.php?action=oauth_callback&platform=qq', [
+    'off' => '关闭',
+    'on'  => '开启',
+], 'interact');
+$ecodOAuthQQWhen = ['data-ecod-show-when' => 'EOAuthQQ:on'];
+ecod_admin_field($form, 'text', 'EOAuthQQId', '', 'QQ 互联 APP ID', 'QQ 互联应用的 APP ID', [], 'interact', $ecodOAuthQQWhen);
+ecod_admin_field($form, 'text', 'EOAuthQQSecret', '', 'QQ 互联 APP Key', 'QQ 互联应用的 APP Key，注意保密', [], 'interact', $ecodOAuthQQWhen);
+
+ecod_admin_field($form, 'select', 'EOAuthWeibo', 'off', '微博登录', '需在微博开放平台做网站接入；回调地址填：站点地址 + /usr/themes/ecod-theme/api.php?action=oauth_callback&platform=weibo', [
+    'off' => '关闭',
+    'on'  => '开启',
+], 'interact');
+$ecodOAuthWeiboWhen = ['data-ecod-show-when' => 'EOAuthWeibo:on'];
+ecod_admin_field($form, 'text', 'EOAuthWeiboId', '', '微博 App Key', '微博开放平台应用的 App Key', [], 'interact', $ecodOAuthWeiboWhen);
+ecod_admin_field($form, 'text', 'EOAuthWeiboSecret', '', '微博 App Secret', '微博开放平台应用的 App Secret，注意保密', [], 'interact', $ecodOAuthWeiboWhen);
+
+ecod_admin_field($form, 'select', 'EOAuthGitee', 'off', 'Gitee 登录', '个人开发者即可在 Gitee 创建第三方应用，零门槛；回调地址填：站点地址 + /usr/themes/ecod-theme/api.php?action=oauth_callback&platform=gitee', [
+    'off' => '关闭',
+    'on'  => '开启',
+], 'interact');
+$ecodOAuthGiteeWhen = ['data-ecod-show-when' => 'EOAuthGitee:on'];
+ecod_admin_field($form, 'text', 'EOAuthGiteeId', '', 'Gitee Client ID', 'Gitee 第三方应用的 Client ID', [], 'interact', $ecodOAuthGiteeWhen);
+ecod_admin_field($form, 'text', 'EOAuthGiteeSecret', '', 'Gitee Client Secret', 'Gitee 第三方应用的 Client Secret，注意保密', [], 'interact', $ecodOAuthGiteeWhen);
+
+/* 公共开关：对全部平台生效，不再挂 GitHub 条件显隐 */
+ecod_admin_field($form, 'select', 'EOAuthBindMail', 'on', '按邮箱自动绑定', '第三方账号的邮箱与本站用户邮箱一致时，首次登录自动绑定（关闭后需账号密码登录一次才能绑定）；仅 GitHub 等能拿到邮箱的平台生效', [
+    'off' => '关闭',
+    'on'  => '开启',
+], 'interact');
 ecod_admin_field($form, 'select', 'EOAuthRegister', 'on', '第三方自动建号', '第三方账号没有匹配到本站用户时自动创建 subscriber 账号', [
     'off' => '关闭',
     'on'  => '开启',
-], 'interact', $ecodOAuthWhen);
+], 'interact');
 
 /* ============================================================
  * 评论：嵌套展示 + 外部服务

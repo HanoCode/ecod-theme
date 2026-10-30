@@ -11,8 +11,7 @@
  * @since   2026-10-29
  * @version 2.0.0
  * @link    https://ecod.cc
- * @copyright Copyright (c) 2026 Ecod (https://ecod.cc)
- * @license   MIT
+ * @copyright Copyright (c) 2026 Ecod. All Rights Reserved.
  */
 
 if (!defined('__TYPECHO_ROOT_DIR__')) {
@@ -172,6 +171,7 @@ ecod_block_define('hot', [
     'area'   => 'home',
     'areas'  => ['home', 'aside'],
     'order'  => 50,
+    'head'   => ['icon' => 'zap', 'md' => true],
     'params' => [
         'count' => [
             'label'   => '显示数量',
@@ -192,6 +192,16 @@ ecod_block_define('hot', [
             'options' => [
                 'comments' => '评论数',
                 'views'    => '阅读量',
+                'rand'     => '随机',
+            ],
+        ],
+        'style' => [
+            'label'   => '版式',
+            'type'    => 'select',
+            'default' => 'grid',
+            'options' => [
+                'grid' => '四宫格（图 + 摘要）',
+                'rank' => '排行列表（序号）',
             ],
         ],
     ],
@@ -204,6 +214,7 @@ ecod_block_define('feed', [
     'area'   => 'home',
     'areas'  => ['home', 'aside'],
     'order'  => 60,
+    'head'   => ['icon' => 'clock'],
     'params' => [
         'count' => [
             'label'   => '显示数量',
@@ -227,6 +238,7 @@ ecod_block_define('focus', [
     'area'   => 'home',
     'pages'  => ['home'],
     'order'  => 70,
+    'head'   => ['icon' => 'zap'],
     'params' => [
         'count' => [
             'label'   => '显示数量',
@@ -251,13 +263,13 @@ ecod_block_define('cat-post', [
     'pages'  => ['home', 'cat'],
     'areas'  => ['home', 'aside'],
     'order'  => 80,
+    'head'   => ['dot' => true, 'title' => '', 'title_desc' => '留空显示分类名'],
     'params' => [
         'mid'   => [
-            'label'   => '分类 MID',
-            'type'    => 'number',
+            'label'   => '分类',
+            'type'    => 'term',
             'default' => 0,
-            'min'     => 0,
-            'desc'    => '留 0 取第一个分类',
+            'desc'    => '留空取第一个分类',
         ],
         'count' => [
             'label'   => '显示数量',
@@ -271,11 +283,12 @@ ecod_block_define('cat-post', [
 
 ecod_block_define('title-list', [
     'name'   => '标题速览',
-    'desc'   => '纯标题列表，信息密度高',
+    'desc'   => '最新文章列表：标题卡片或序号排行两种版式',
     'icon'   => 'file',
     'area'   => 'home',
     'areas'  => ['home', 'aside'],
     'order'  => 90,
+    'head'   => ['icon' => 'file'],
     'params' => [
         'count' => [
             'label'   => '显示数量',
@@ -288,6 +301,15 @@ ecod_block_define('title-list', [
             'label'   => '标题',
             'type'    => 'text',
             'default' => '最新速览',
+        ],
+        'style' => [
+            'label'   => '版式',
+            'type'    => 'select',
+            'default' => 'card',
+            'options' => [
+                'card' => '标题卡片',
+                'rank' => '序号列表',
+            ],
         ],
     ],
 ]);
@@ -376,6 +398,7 @@ ecod_block_define('collection', [
     'pages'  => ['home'],
     'order'  => 150,
     'on'     => false,
+    'head'   => ['dot' => true],
     'params' => [
         'title' => [
             'label'   => '标题',
@@ -391,9 +414,9 @@ ecod_block_define('collection', [
         ],
         'mids'  => [
             'label'   => '指定分类',
-            'type'    => 'text',
+            'type'    => 'terms',
             'default' => '',
-            'desc'    => '分类 mid，逗号分隔；留空则按分类顺序取前几个',
+            'desc'    => '可多选；留空则按分类顺序取前几个',
         ],
     ],
 ]);
@@ -406,6 +429,7 @@ ecod_block_define('topics', [
     'pages'  => ['home'],
     'order'  => 160,
     'on'     => false,
+    'head'   => ['dot' => true],
     'params' => [
         'title' => [
             'label'   => '标题',
@@ -442,6 +466,7 @@ ecod_block_define('flash', [
     'areas'  => ['home', 'aside'],
     'order'  => 160,
     'on'     => false,
+    'head'   => ['dot' => true],
     'params' => [
         'title' => [
             'label'   => '标题',
@@ -457,10 +482,9 @@ ecod_block_define('flash', [
         ],
         'mid'   => [
             'label'   => '限定分类',
-            'type'    => 'number',
+            'type'    => 'term',
             'default' => 0,
-            'min'     => 0,
-            'desc'    => '分类 mid；填 0 表示不限定（取全站最新）',
+            'desc'    => '留空表示不限定（取全站最新）',
         ],
         'days'  => [
             'label'   => '时间范围',
@@ -541,9 +565,13 @@ ecod_block_define('author', [
         ],
         'links'  => [
             'label'   => '社交链接',
-            'type'    => 'textarea',
+            'type'    => 'repeater',
             'default' => '',
-            'desc'    => '每行一条，格式：名称|网址',
+            'max'     => 12,
+            'fields'  => [
+                ['key' => 'label', 'label' => '名称', 'placeholder' => '如：GitHub'],
+                ['key' => 'href', 'label' => '网址', 'placeholder' => 'https://…'],
+            ],
         ],
         'stats'  => [
             'label'   => '显示文章/评论数',
@@ -576,28 +604,6 @@ ecod_block_define('toc', [
             'label'   => '标题',
             'type'    => 'text',
             'default' => '目录',
-        ],
-    ],
-]);
-
-ecod_block_define('recent', [
-    'name'   => '最新文章',
-    'desc'   => '序号列表',
-    'icon'   => 'clock',
-    'area'   => 'aside',
-    'order'  => 30,
-    'params' => [
-        'title' => [
-            'label'   => '标题',
-            'type'    => 'text',
-            'default' => '最新文章',
-        ],
-        'count' => [
-            'label'   => '显示数量',
-            'type'    => 'number',
-            'default' => 6,
-            'min'     => 1,
-            'max'     => 20,
         ],
     ],
 ]);
@@ -641,39 +647,6 @@ ecod_block_define('tags', [
             'type'    => 'number',
             'default' => '',
             'desc'    => '按文章数从多到少取前 N 个；留空显示全部',
-        ],
-    ],
-]);
-
-ecod_block_define('popular', [
-    'name'   => '热门文章',
-    'desc'   => '按评论热度 / 阅读量 / 随机',
-    'icon'   => 'zap',
-    'area'   => 'aside',
-    'order'  => 60,
-    'on'     => false,
-    'params' => [
-        'title' => [
-            'label'   => '标题',
-            'type'    => 'text',
-            'default' => '热门文章',
-        ],
-        'by'    => [
-            'label'   => '排序依据',
-            'type'    => 'select',
-            'default' => 'hot',
-            'options' => [
-                'hot'   => '评论热度',
-                'views' => '阅读量',
-                'rand'  => '随机',
-            ],
-        ],
-        'count' => [
-            'label'   => '显示数量',
-            'type'    => 'number',
-            'default' => 5,
-            'min'     => 1,
-            'max'     => 20,
         ],
     ],
 ]);
@@ -772,34 +745,6 @@ ecod_block_define('wstats', [
     ],
 ]);
 
-ecod_block_define('aside-ad', [
-    'name'   => '侧栏广告位',
-    'desc'   => '单张图片横幅，可带跳转链接',
-    'icon'   => 'image',
-    'area'   => 'aside',
-    'order'  => 110,
-    'on'     => false,
-    'file'   => 'components/aside/ad.php',
-    'params' => [
-        'image' => [
-            'label'   => '图片',
-            'type'    => 'image',
-            'default' => '',
-            'desc'    => '从媒体库选图，或直接粘贴图片链接',
-        ],
-        'link'  => [
-            'label'   => '跳转链接',
-            'type'    => 'text',
-            'default' => '',
-        ],
-        'label' => [
-            'label'   => '角标文字',
-            'type'    => 'text',
-            'default' => '广告',
-        ],
-    ],
-]);
-
 ecod_block_define('rank', [
     'name'   => '排行榜',
     'desc'   => '缩略图 + 名次徽章，可按总榜/周榜/月榜切换',
@@ -807,6 +752,7 @@ ecod_block_define('rank', [
     'area'   => 'aside',
     'order'  => 105,
     'on'     => false,
+    'head'   => ['title' => '热门排行'],
     'params' => [
         'title' => [
             'label'   => '标题',
@@ -955,6 +901,7 @@ ecod_block_define('related', [
     'area'   => 'post',
     'pages'  => ['single'],
     'order'  => 30,
+    'head'   => ['dot' => true],
     'params' => [
         'title' => [
             'label'   => '标题',
@@ -1089,7 +1036,7 @@ ecod_block_define('notice', [
             'label'   => '公告内容',
             'type'    => 'textarea',
             'default' => '',
-            'hint'    => '支持 HTML；留空则不显示公告',
+            'desc'    => '支持 HTML；留空则不显示公告',
         ],
         'tone'     => [
             'label'   => '样式',
@@ -1101,7 +1048,7 @@ ecod_block_define('notice', [
             'label'   => '跳转链接',
             'type'    => 'text',
             'default' => '',
-            'hint'    => '可选，填了内容右侧会显示「查看」箭头',
+            'desc'    => '可选，填了内容右侧会显示「查看」箭头',
         ],
         'closable' => [
             'label'   => '允许关闭',

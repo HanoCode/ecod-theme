@@ -9,8 +9,8 @@
  *
  * @package Ecod Theme
  * @author  Ecod
- * @copyright Copyright (c) 2026 Ecod (https://ecod.cc)
- * @license   MIT
+ * @copyright Copyright (c) 2026 Ecod. All Rights Reserved.
+ * @link    https://ecod.cc
  */
 
 return [

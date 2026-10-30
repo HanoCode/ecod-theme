@@ -9,7 +9,7 @@
  * 注入，模块仍挂 Ecod.init* 命名空间，由 global 的 refresh()/runPost() 调度；
  * PJAX 从列表页进入内容页时由 global 的 ensurePostBundle() 动态注入本文件。
  *
- * Copyright (c) 2026 Ecod · MIT License · https://ecod.cc
+ * Copyright (c) 2026 Ecod. All Rights Reserved. · https://ecod.cc
  */
 (function () {
     'use strict';
@@ -2463,6 +2463,11 @@
             return on ? on.getAttribute('data-channel') : 'manual';
         }
 
+        function currentPaytype() {
+            var on = methods ? methods.querySelector('.is-on') : null;
+            return on ? (on.getAttribute('data-paytype') || '') : '';
+        }
+
         function stopPolling() {
             if (timer) {
                 clearInterval(timer);
@@ -2516,6 +2521,8 @@
             fd.append('level', level);
             fd.append('plan', plan);
             fd.append('channel', currentChannel());
+            var paytype = currentPaytype();
+            if (paytype) fd.append('paytype', paytype);
             fd.append('token', token);
 
             submit.disabled = true;
@@ -2623,6 +2630,18 @@
         if (card && currentChannel() === 'card') {
             card.hidden = false;
             if (submit) submit.hidden = true;
+        }
+
+        /* 支付回跳后订单仍是 pending：恢复轮询（pay_status 会向通道补单查询） */
+        var resume = root.getAttribute('data-resume-order') || '';
+        if (resume) {
+            if (submit) submit.hidden = true;
+            if (orderBox) {
+                orderBox.hidden = false;
+                orderBox.textContent = '订单号：' + resume;
+            }
+            say('订单尚未完成支付，正在等待支付结果…');
+            poll(resume);
         }
     };
 

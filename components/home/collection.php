@@ -4,8 +4,8 @@
  *
  * @package Ecod Theme
  * @author  Ecod
- * @copyright Copyright (c) 2026 Ecod (https://ecod.cc)
- * @license   MIT
+ * @copyright Copyright (c) 2026 Ecod. All Rights Reserved.
+ * @link    https://ecod.cc
  */
 if (!defined('__TYPECHO_ROOT_DIR__')) {
     exit;
@@ -67,11 +67,7 @@ if (!$ecodCollItems) {
 }
 ?>
 <section class="ecod_section">
-    <header class="ecod_section-head">
-        <h2 class="ecod_section-head__title">
-            <span class="ecod_section-head__dot" aria-hidden="true"></span><?php echo htmlspecialchars((string) ecod_p('title', '合集')); ?>
-        </h2>
-    </header>
+    <?php ecod_block_head(); ?>
 
     <div class="ecod_coll">
         <?php foreach ($ecodCollItems as $ecodCollI => $ecodColl): ?>

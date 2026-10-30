@@ -7,8 +7,7 @@
  * @since   2026-10-29
  * @version 2.0.0
  * @link    https://ecod.cc
- * @copyright Copyright (c) 2026 Ecod (https://ecod.cc)
- * @license   MIT
+ * @copyright Copyright (c) 2026 Ecod. All Rights Reserved.
  */
 
 if (!defined('__TYPECHO_ROOT_DIR__')) {

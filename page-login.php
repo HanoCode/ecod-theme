@@ -7,8 +7,7 @@
  * @since   2026-10-29
  * @version 2.0.0
  * @link    https://ecod.cc
- * @copyright Copyright (c) 2026 Ecod (https://ecod.cc)
- * @license   MIT
+ * @copyright Copyright (c) 2026 Ecod. All Rights Reserved.
  *
  * 在后台「页面 → 新建页面 → 自定义模板」里选择「登录」即可。
  * 登录与后台共用同一套校验（Widget\User::login）；
@@ -51,8 +50,23 @@ $ecodToken = function_exists('ecod_account_token') ? ecod_account_token() : '';
 $ecodAllowRegister = (int) $this->options->allowRegister === 1;
 $ecodAllowReset = function_exists('ecod_account_mail_ready') ? ecod_account_mail_ready() : false;
 
-/* 第三方登录：GitHub（后台配置凭据后启用） */
-$ecodOAuthGithub = function_exists('ecod_oauth_config') ? (bool) ecod_oauth_config('github') : false;
+/* 第三方登录：按后台启用情况渲染（凭据齐全即显示） */
+$ecodOauthNames = ['github' => 'GitHub', 'weixin' => '微信', 'qq' => 'QQ', 'weibo' => '微博', 'gitee' => 'Gitee'];
+$ecodOauthIcons = ['github' => 'github', 'weixin' => 'wechat', 'qq' => 'qq', 'weibo' => 'weibo', 'gitee' => 'gitee'];
+$ecodOauthBtns = [];
+if (function_exists('ecod_oauth_config')) {
+    foreach (ecod_oauth_platforms() as $ecodP) {
+        if (ecod_oauth_config($ecodP)) {
+            $ecodOauthBtns[] = [
+                'platform' => $ecodP,
+                'name'     => $ecodOauthNames[$ecodP],
+                'url'      => rtrim((string) $this->options->siteUrl, '/')
+                    . '/usr/themes/ecod-theme/api.php?action=oauth_start&platform=' . $ecodP
+                    . '&referer=' . rawurlencode($ecodReferer !== '' ? $ecodReferer : '/'),
+            ];
+        }
+    }
+}
 
 /* OAuth 回跳错误提示（如"该第三方账号未绑定本站用户"） */
 $ecodOauthError = '';
@@ -62,10 +76,6 @@ if (isset($_GET['oauth_error'])) {
         $ecodOauthError = '';
     }
 }
-$ecodOauthStart = $ecodOAuthGithub
-    ? rtrim((string) $this->options->siteUrl, '/') . '/usr/themes/ecod-theme/api.php?action=oauth_start&platform=github&referer='
-        . rawurlencode($ecodReferer !== '' ? $ecodReferer : '/')
-    : '';
 /* 登录页背景图（后台「外观」分组可配） */
 $ecodLoginBg = trim((string) ecod_option('ELoginBg', ''));
 ?>
@@ -227,17 +237,21 @@ $ecodLoginBg = trim((string) ecod_option('ELoginBg', ''));
                 </div>
                 <?php endif; ?>
 
-                <?php if ($ecodOAuthGithub): ?>
+                <?php if ($ecodOauthBtns): ?>
                 <!-- 第三方登录 -->
                 <div class="ecod_login__oauth">
                     <span class="ecod_login__oauth-line" aria-hidden="true"></span>
                     <span>第三方登录</span>
                     <span class="ecod_login__oauth-line" aria-hidden="true"></span>
                 </div>
-                <a class="ecod_login__oauthbtn" href="<?php echo htmlspecialchars($ecodOauthStart, ENT_QUOTES, 'UTF-8'); ?>">
-                    <?php echo ecod_icon('github', 17); ?>
-                    <span>使用 GitHub 登录</span>
-                </a>
+                <div class="ecod_login__oauthrow">
+                    <?php foreach ($ecodOauthBtns as $ecodOauthBtn): ?>
+                        <a class="ecod_login__oauthbtn" href="<?php echo htmlspecialchars($ecodOauthBtn['url'], ENT_QUOTES, 'UTF-8'); ?>">
+                            <?php echo ecod_icon($ecodOauthIcons[$ecodOauthBtn['platform']], 17); ?>
+                            <span>使用<?php echo htmlspecialchars($ecodOauthBtn['name'], ENT_QUOTES, 'UTF-8'); ?>登录</span>
+                        </a>
+                    <?php endforeach; ?>
+                </div>
                 <?php endif; ?>
 
                 <p class="ecod_login__more ecod_login__more--home"><a href="<?php $this->options->siteUrl(); ?>">返回首页</a></p>

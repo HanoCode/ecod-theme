@@ -4,8 +4,8 @@
  *
  * @package Ecod Theme
  * @author  Ecod
- * @copyright Copyright (c) 2026 Ecod (https://ecod.cc)
- * @license   MIT
+ * @copyright Copyright (c) 2026 Ecod. All Rights Reserved.
+ * @link    https://ecod.cc
  */
 if (!defined('__TYPECHO_ROOT_DIR__')) {
     exit;
@@ -14,7 +14,6 @@ $this->widget('EcodPostQuery@focus', 'pageSize=' . max(3, (int) ecod_p('count', 
 if (!$ecodFocus->have()) {
     return;
 }
-$ecodFocusTitle = (string) ecod_p('title', '本期焦点');
 
 /* 先收集数据，避免循环中拼不闭合的标签 */
 $ecodFocusItems = [];
@@ -33,10 +32,7 @@ while ($ecodFocus->next()) {
 $ecodLead = array_shift($ecodFocusItems);
 ?>
 <section class="ecod_focus">
-    <header class="ecod_section-head">
-        <h2 class="ecod_section-head__title"><?php echo ecod_icon('zap', 15); ?><?php echo htmlspecialchars($ecodFocusTitle); ?></h2>
-        <a class="ecod_section-head__more" href="<?php $this->options->siteUrl(); ?>">全部 <?php echo ecod_icon('chevron', 12); ?></a>
-    </header>
+    <?php ecod_block_head(); ?>
 
     <div class="ecod_focus__grid">
         <a class="ecod_focus__lead" href="<?php echo htmlspecialchars($ecodLead['permalink']); ?>">

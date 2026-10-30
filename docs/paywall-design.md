@@ -596,3 +596,38 @@ ecod_pay_grant($order);   // 同一事务内写权益
 测试文章（71/72）、临时页（73/74/75）、订单、权益、卡密、测试用户（uid=10）已全部删除；
 管理员 `authCode` 曾被测试脚本临时改写，已从 binlog 前镜像恢复原值。
 「收银台」（cid=69）与「会员」（cid=70）两个产品页保留。
+
+---
+
+## 15. epay 补强（2026-10-30，参考 Zibll EpayCore + notify）
+
+Zibll 的 `zibpay/sdk/epay/epay.class.php` 在「跳转 + 验签回调」之外还带三件事，逐项采纳：
+
+### 15.1 支付宝 / 微信分通道（采纳）
+
+- 易支付协议的 `type` 参数本来就能按单指定（alipay / wxpay / qqpay）；原实现是后台全局单选一个 type。
+- 改为：后台 `EPayEpayType` 仍作为**默认 type**（决定默认高亮哪个按钮）；收银台把 epay 拆成「支付宝」「微信」两个按钮，点击下单时随 `pay_create` 传 `paytype=alipay|wxpay`。
+- `EcodPayChannel::create()` 增加 `$opts` 参数，epay 用 `$opts['type']` 覆盖；`paytype` 只影响跳转参数，不落库（订单 `channel` 仍记 `epay`）；回调验签不依赖 type，无需改动。
+- 兜底：`pay_create` 只认 `alipay|wxpay` 两个白名单值，缺省回落后台配置。
+
+### 15.2 查单补单（采纳）
+
+- Zibll：`EpayCore::queryOrder($out_trade_no)` → `{apiurl}api.php?act=order&pid=&key=&out_trade_no=`，`status==1` 即已支付。多数易支付站点同时提供 `mapi.php` 同协议端点，落地选 `mapi.php?act=order`。
+- 场景：异步 notify 丢失 / 用户关掉支付页前没等回跳 → 订单一直 pending。
+- 落地：`ecod_pay_epay_query()`（`pay-channel.php`，返回 `null=查不到 / ['paid'=>false] / ['paid'=>true,trade_no,amount]`）+ `ecod_pay_epay_query_throttled()`（临时文件节流，同一订单 6 秒内只真正查一次，防 2 秒轮询打爆商户接口）。
+- 两个触发点：
+  - `pay_status` 轮询：`channel=epay && status=pending` 时查单，`paid` 即 `ecod_pay_settle()`（结算幂等 + 金额复核，双保险）。
+  - `pay_return` 验签失败：return 有的站不带完整签名，此时订单仍 pending 就查单兜底。
+
+### 15.3 trade_no 防重放（新增）
+
+`ecod_pay_settle()` 结算前检查：传入的渠道 `trade_no` 若已挂在**另一笔** paid 订单上 → 拒绝结算（status=`replay`）。防「拿同一笔回调参数重放给多个订单号」。
+
+### 15.4 同步回跳失败回退提示
+
+`pay_return` 结算后跳回收银台带 `&epay=ok|fail`；收银台对 `order_no` 归属校验后显示状态横幅（`paid` → 已到账；`pending` → 等待支付结果 / fail 时提示重新下单），pending 时 root 带 `data-resume-order`，JS 恢复轮询（轮询触发 15.2 的查单补单）。
+
+### 15.5 不采纳
+
+- `mapi.php` API 支付（返回二维码模式）：当前收银台是整页跳转模式，无扫码框，不加。
+- `act=refund` 退款：本项目禁止代码通道退款，保留后台线下处理。

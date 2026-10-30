@@ -12,7 +12,7 @@
  *  - 切换导航不清空任何数据，各套改动随一次「保存设置」提交
  *  - 任何改动都写回隐藏字段并派发 input 事件，复用设置页原有的「未保存」提示
  *
- * Copyright (c) 2026 Ecod · MIT License · https://ecod.cc
+ * Copyright (c) 2026 Ecod. All Rights Reserved. · https://ecod.cc
  */
 (function () {
     'use strict';

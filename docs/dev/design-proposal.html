@@ -449,6 +449,7 @@ details .in{padding-bottom:12px}
     <a href="#s7">30 参考站组件落地</a>
     <a href="#s8">31 区域与模块管理台</a>
     <a href="#s9">32 分类与标签增强</a>
+    <a href="#s10">33 动效与过渡规范</a>
   </nav>
 
   <div class="main">
@@ -2368,6 +2369,48 @@ details .in{padding-bottom:12px}
       <tr><td>8</td><td>回滚</td><td>删掉 <code>EWidgets</code> 行，前台立刻回到 <code>EBlocks</code> 的旧布局</td></tr>
     </table>
     <p class="sec-desc" style="margin:12px 0 0"><b>第 4 轮修订（2026-10-30）· 取消区域白名单</b>：用户反馈「既然是 widget，位置应由用户自行调整」——拖放不再有允许区域拦截，红色禁用态与「不能放在」toast 一并移除，前端 <code>canDrop()</code> 只剩「区域已满」一个条件；后端 <code>ecod_wgt_clean_rows()</code> 删除白名单过滤（修复「拖进去保存了却没生效」的静默丢失）；<code>ecod_block_allowed_areas()</code> 及其仅有的两个辅助函数 <code>ecod_block_slots()</code> / <code>ecod_block_pages()</code> 无人使用，删除。验收补两条：① 任意模块拖入任意区域保存成功且前台按所在区域渲染；② 区域满 20 个时仍被拦截并 toast 提示。</p>
+    <p class="sec-desc" style="margin:12px 0 0"><b>第 5 轮修订（2026-10-30）· 参数契约收口</b>（对照 Zibll 模块系统审计）：① <code>desc</code> 是参数描述的<b>唯一键</b>，<code>hint</code> 废弃（notice 模块 3 处声明已改）；② number 允许空值——表单留空即存空串，前台 <code>ecod_p()</code> 空串回落声明默认值，后端清洗不再把空值强转 0（<code>tags.limit</code>「留空显示全部」可恢复）；③ range 滑条只用于窄区间（<code>max − min ≤ 500</code>），宽区间自动回落数字输入（<code>siteage.goal</code> 0–100000 修复）；④ 管理台默认值与前台同口径——<code>ecod_widgets_admin_data()</code> 的 <code>param.default</code> 改用 <code>ecod_block_param_default()</code> 计算（含 legacy 选项回落），新实例表单显示值 = 前台实际渲染值。</p>
+    <p class="sec-desc" style="margin:12px 0 0"><b>第 6 轮修订（2026-10-30）· 分类选择字段</b>：参照 Zibll <code>zib_widget_option()</code>（下拉带 <code>[ID:x][共N篇]</code> 标注），新增两种参数类型，替掉裸填分类 MID 的数字框：<code>term</code>（单选分类下拉，空选项 = 声明里的默认语义）与 <code>terms</code>（多选，存储保持逗号分隔 mid 字符串，前后端模板解析不变）。选项数据由 <code>ecod_widgets_admin_data()</code> 以 <code>terms</code> 键注入（mid ⇒「名称 [ID:x][共N篇]」），后端 <code>ecod_wgt_clean_params()</code> 对两种类型只放行数字与逗号。落地：<code>cat-post.mid</code> / <code>flash.mid</code> → <code>term</code>，<code>collection.mids</code> → <code>terms</code>。</p>
+    <p class="sec-desc" style="margin:12px 0 0"><b>第 7 轮修订（2026-10-30）· 模块头部标准样式</b>：现存三套头部并存——<code>ecod_section-head</code>（feed / title-list / cat-post / flash / topics / collection）、<code>ecod_hot__head</code>（hot 专有，结构与 section-head 同构）、<code>ecod_widget__title</code>（侧栏标准），另有 recommend / slider / ad 等无头部。收敛为「一个结构契约 + 两种视觉 scope」，<b>不发明新类名</b>，沿用既有两套 CSS：</p>
+    <div class="card pad" style="margin:10px 0 0">
+      <table>
+        <tr><th style="width:22%">结构契约</th><td>统一 DOM：<code>&lt;header class="ecod_section-head"&gt;</code> 内 <code>__title</code>（icon 或 dot 之二 + 转义文字）+ 右槽；侧栏用 <code>&lt;h2 class="ecod_widget__title"&gt;</code> + <code>ecod_widget__more</code>。禁止模块再造 <code>xxx__head</code>。</td></tr>
+        <tr><th>右槽互斥规则</th><td><code>__more</code>（更多链接，文字 + chevron）与 <code>__note</code>（动态说明，如 hot 的「按阅读量」）占同一右槽，<b>more 优先</b>：配置了 more_url 则 note 不渲染。</td></tr>
+        <tr><th>scope 选择</th><td>首页/通栏区模块 → <code>ecod_section-head</code>（标题 fs-base；带卡片背景的模块如 hot 加 <code>ecod_section-head--md</code> 修饰符用 fs-md）；侧栏模块 → <code>ecod_widget__title</code>（fs-md + 虚线分隔，现状保留）。</td></tr>
+        <tr><th>通用参数注入</th><td>声明 <code>head</code> 的模块由 <code>ecod_block_define()</code> 自动补齐三个公共参数（<b>已声明的键不覆盖</b>，各模块保留自己的 title 默认值）：<code>title</code>（默认取 head.title，缺省用模块名）、<code>more_url</code>（留空 = 不渲染 more，右槽回落 note）、<code>more_text</code>（默认「更多」）。模板内用 <code>ecod_block_head($o)</code> 输出，<code>$o</code> 可临时覆盖（如 cat-post 用分类名当标题、flash 用分类链接当更多）；<code>$o</code> 传 <code>null</code> 表示回落参数链。</td></tr>
+        <tr><th>废弃</th><td><code>ecod_hot__head / __title / __note</code> 三条 CSS 与模板内联头部删除，hot 改用 <code>ecod_section-head ecod_section-head--md</code>；<code>ecod_section-head--md</code> 新增（仅字号 fs-md，其余继承）。</td></tr>
+        <tr><th>验收</th><td>① 所有声明 head 的模块头部 DOM 结构一致（同一选择器可命中）；② hot 配置 more_url 后 note 消失、more 出现且可点击；③ 侧栏热榜头部仍为虚线分隔样式；④ 前台无 <code>ecod_hot__head</code> 残留类。</td></tr>
+      </table>
+    </div>
+    <p class="sec-desc" style="margin:12px 0 0"><b>第 8 轮修订（2026-10-30）· 重复模块合并 + 存储迁移落盘</b>：用户裁定本站是测试环境，正式发布为全新安装，<b>不需要为存量数据保留兼容层</b>——合并直接做真删，存储用一次性迁移落盘（先备份）。当前存储版本 <code>v=2</code> → <code>v=3</code>：</p>
+    <div class="card pad" style="margin:10px 0 0">
+      <table>
+        <tr><th style="width:22%">合并映射</th><td>① <code>aside-ad</code> → <code>ad</code>（字段完全相同 image/link/label，纯改名；渲染 class 统一 <code>ecod_ad</code>，承接原 <code>.ecod_aside-ad</code> 卡片样式）；② <code>popular</code> → <code>hot</code> 新增 <code>style</code> 参数（grid 四宫格 / rank 排行列表），参数映射 <code>by</code> → <code>sort</code>（hot→comments、views→views、rand→rand，<code>EcodPostQuery</code> 已支持 order=rand）；③ <code>recent</code> → <code>title-list</code> 新增 <code>style</code> 参数（card 标题卡 / rank 序号列表），迁移实例置 style=rank。</td></tr>
+        <tr><th>迁移机制</th><td><code>ECOD_WIDGET_SCHEMA</code> 2→3；<code>ecod_widgets_raw()</code> 读到 <code>v &lt; ECOD_WIDGET_SCHEMA</code> 时执行 <code>ecod_widgets_migrate()</code>：<b>先把原 doc 原样备份到 <code>EWidgetsBackupV{N}</code> 独立 option 行</b>，再按映射表改写 type/params、bump v，经 <code>ecod_widgets_write()</code> 落盘。任何请求（前台/后台）首次触发，只跑一次。</td></tr>
+        <tr><th>删除物</th><td>blocks-def 删 <code>aside-ad</code>/<code>popular</code>/<code>recent</code> 三个声明；删模板 <code>components/aside/{ad,popular,recent}.php</code>（版式并入 hot / title-list 的 style 分支）；CSS <code>.ecod_aside-ad</code> 系列改名为 <code>.ecod_ad</code>。</td></tr>
+        <tr><th>验收</th><td>① 迁移后 <code>EWidgets</code> 的 v=3，<code>aside-ad/popular/recent</code> 零残留，<code>EWidgetsBackupV2</code> 与迁移前逐字节一致；② 原侧栏「最新文章」实例迁移后前台渲染序号列表（rank 版式）；③ 管理台模块库不再出现三个旧类型；④ hot 配 style=rank 后台渲染排行列表；⑤ 首页 200，无 PHP 报错。</td></tr>
+      </table>
+    </div>
+    <p class="sec-desc" style="margin:12px 0 0"><b>第 9 轮修订（2026-10-30）· 布局导入导出</b>：补齐审计遗留（此前只有 <code>action=export</code> 接口、无 UI 无导入）。管理台工具条新增「导出 / 导入」：</p>
+    <div class="card pad" style="margin:10px 0 0">
+      <table>
+        <tr><th style="width:22%">导出</th><td>POST <code>action=export</code>（已有）取全量 doc，前端 Blob 下载为 <code>ecod-widgets-YYYYMMDD.json</code>。纯只读，不动存储。</td></tr>
+        <tr><th>导入</th><td>新 POST <code>action=import</code>：① 校验 doc 结构（areas 为对象）；② <b>导入前把当前 doc 备份到 <code>EWidgetsBackupImport</code> option 行</b>；③ 旧版本 doc（v 低于当前 schema）先过合并映射（复用 <code>ecod_widgets_migrate_map()</code> 纯映射，不落盘）；④ 逐行 normalize + 类型白名单校验 + 区域 20 条限额（<code>ecod_widgets_write()</code> 已有），未知类型<b>跳过并计数</b>，不静默丢；⑤ 写入后返回 <code>{imported, skipped, rev}</code>，前端提示并刷新。导入会<b>整体替换</b>布局，含未保存改动一并丢弃（前端 confirm 双重确认）。</td></tr>
+        <tr><th>安全</th><td>与 save 同路径：管理员 cookie + CSRF token + JSON body；导入文件仅作数据源，类型/字段全部过白名单，不写任何主题配置行。</td></tr>
+        <tr><th>验收</th><td>① 导出文件可重新导入且 rev 语义正常；② 导入含未知类型的文件时 skipped 计数正确；③ 导入后 <code>EWidgetsBackupImport</code> 存有导入前 doc；④ 管理台未保存改动时导入有确认提示。</td></tr>
+      </table>
+    </div>
+
+    <p class="sec-desc" style="margin:12px 0 0"><b>第 10 轮修订（2026-10-30）· repeater 字段类型</b>：审计遗留的「author.links 用『每行 名称|网址』文本协议」改为结构化编辑器。复用 slides 编辑器的行模型，泛化为可配置子字段：</p>
+    <div class="card pad" style="margin:10px 0 0">
+      <table>
+        <tr><th style="width:22%">声明</th><td>参数 <code>type =&gt; 'repeater'</code>，新增 <code>fields</code> 键声明子字段（<code>['key' =&gt; 'label', 'label' =&gt; '名称', 'placeholder' =&gt; '…']</code>），可选 <code>max</code>（默认 20 行）。存储格式与 slides 一致：JSON 数组字符串（<code>[{"label":"…","href":"…"}]</code>），空 = 存空串。</td></tr>
+        <tr><th>管理台</th><td><code>widget.js</code> 新增 <code>repeaterEditor()</code>：按声明渲染子字段行，支持上移 / 下移 / 删除 / 添加，序列化前剔除全空行。<code>admin_data</code> 的参数透传增加 <code>fields</code> / <code>max</code>。</td></tr>
+        <tr><th>后端清洗</th><td><code>ecod_wgt_clean_params()</code> 新增 <code>repeater</code> 分支：JSON 解析 → 只保留声明过的子字段键 → 逐值 <code>mb_substr 500</code> → 行数截到 <code>max</code> → 回写 JSON 字符串。</td></tr>
+        <tr><th>存量迁移</th><td>存储 v3 → v4（<code>ECOD_WIDGET_SCHEMA=4</code>）：<code>author</code> 实例的 <code>links</code> 若为旧文本协议（非 <code>[</code> 开头），按行 <code>名称|网址</code> 解析转 JSON；author 模板同步改为直接 <code>json_decode</code>。迁移前照例备份 <code>EWidgetsBackupV3</code>。</td></tr>
+        <tr><th>验收</th><td>① 管理台 author 模块显示行编辑器（名称 + 网址两列）；② 增删排序后保存，前台作者卡社交链接按序渲染；③ 旧文本存量迁移后前台渲染不变；④ 非法 JSON / 超限行数被清洗。</td></tr>
+      </table>
+    </div>
   </div>
 
   <h3>非目标</h3>
@@ -2434,6 +2477,91 @@ details .in{padding-bottom:12px}
       <tr><td><code>noindex</code></td><td>归档页输出 <code>&lt;meta name="robots" content="noindex"&gt;</code>，治稀疏标签的重复内容</td></tr>
     </table>
     <p style="margin-top:8px">mid 解析沿用 <code>ecod_cat_meta()</code> 的 slug 反查模式（Archive 不暴露 mid）；查询单请求静态缓存，无新增每请求常驻开销。</p>
+  </div>
+</section>
+
+<section id="s10">
+  <span class="sec-tag">33 · 前端</span>
+  <h2>动效与过渡规范</h2>
+  <p class="sec-desc">动效令牌（<code>--ecod-dur-*</code> / <code>--ecod-ease</code>）早在 v2 就写进了 <code>:root</code>，但审计实测：全站 165 处 <code>transition</code> 中 <b>137 处（83%）没写 timing-function</b>，实际跑的是浏览器默认 <code>ease</code>；<code>--ecod-ease</code> 全站只被引用 1 次。<b>令牌建了不用，等于没有。</b>本节把动效从「随手写的过渡」升级为「有口径的系统能力」，作为后续所有动效改动的唯一依据。</p>
+
+  <h3>为什么值得做</h3>
+  <div class="card pad">
+    <table>
+      <tr><th style="width:30%">现状</th><th>诊断</th></tr>
+      <tr><td>137 / 165 处 transition 无曲线</td><td>浏览器默认 <code>ease</code> 是 <code>cubic-bezier(.25,.1,.25,1)</code>，起步肉、尾巴拖，是「廉价感」的最大来源；且它和项目自己定的 Material 曲线<b>不是同一条</b>，全站节奏不统一</td></tr>
+      <tr><td><code>transform-origin</code> 全站仅 1 处（默认值 50% 50%）</td><td>所有弹层都从中心缩放，而不是从触发它的那个按钮长出来——用户的空间认知断层</td></tr>
+      <tr><td>0 处 <code>animation-delay</code></td><td>列表卡片同时砸下来，没有先后，看不出内容层级</td></tr>
+      <tr><td>10 个 keyframes 全 <code>ease</code></td><td>「弹出来」的东西没有回弹，缺物理重量感</td></tr>
+      <tr><td>PJAX 换页只有顶部加载条</td><td>新旧页面之间没有连续性，读感是「刷新」而不是「翻页」</td></tr>
+    </table>
+    <p style="margin-top:8px">对标水位：Rare UI 的 fluid-orb（单文件 WebGL、零依赖、<code>prefers-reduced-motion</code> 只渲一帧）与 transitions.dev 的 43 组精调动效（origin-aware 展开 / spring 回弹 / stagger 级联 / FLIP 变形）。本站不追求那类视觉奇观，只吸收<b>可度量、低成本、全局一致</b>的部分。</p>
+  </div>
+
+  <h3>时长档位（四档，语义互斥）</h3>
+  <div class="card pad">
+    <table>
+      <tr><th style="width:26%">令牌</th><th style="width:14%">值</th><th>适用</th></tr>
+      <tr><td><code>--ecod-dur-fast</code></td><td>140ms</td><td>同层状态切换：hover / focus / 颜色 / 描边 / 小图标</td></tr>
+      <tr><td><code>--ecod-dur</code></td><td>200ms</td><td>常规过渡：展开收起、位移、尺寸变化、阴影</td></tr>
+      <tr><td><code>--ecod-dur-enter</code></td><td>240ms</td><td><b>首次出现</b>类动画：弹窗、下拉、pop 提示、列表入场。<b>不得</b>用 <code>fast</code> 代入场——低于 180ms 的入场在人眼看来是「跳」而不是「出现」</td></tr>
+      <tr><td><code>--ecod-dur-slow</code></td><td>320ms</td><td>大面积展开：抽屉、全屏面板、目录浮动体</td></tr>
+    </table>
+  </div>
+
+  <h3>曲线（两条，用途互斥）</h3>
+  <div class="card pad">
+    <table>
+      <tr><th style="width:26%">令牌</th><th style="width:34%">值</th><th>适用</th></tr>
+      <tr><td><code>--ecod-ease</code></td><td><code>cubic-bezier(.4, 0, .2, 1)</code></td><td>通用：位移、尺寸、颜色、阴影、展开收起。<b>全站默认曲线</b></td></tr>
+      <tr><td><code>--ecod-ease-pop</code></td><td><code>cubic-bezier(.34, 1.56, .64, 1)</code></td><td>仅用于「弹出来」的元素：pop 提示、弹窗、用户下拉、徽标。<b>不得</b>用于位移类过渡（过冲会让元素越界）</td></tr>
+    </table>
+    <p style="margin-top:8px"><code>linear</code> 保留给两处专用语义：进度条（进度必须匀速）、<code>visibility</code> 等离散属性（timing 无实际意义，写成 <code>linear</code> 语义更准确）。除此之外不应出现第三种曲线。</p>
+  </div>
+
+  <h3>七条强制规则</h3>
+  <div class="card pad">
+    <table>
+      <tr><th style="width:6%">#</th><th>规则</th></tr>
+      <tr><td>1</td><td>任何 <code>transition</code> / <code>animation</code> <b>必须显式声明时序函数</b>，禁止回落浏览器默认 <code>ease</code>。多段 transition 每段都要有（timing-function 不跨段继承）。</td></tr>
+      <tr><td>2</td><td>入场类动画统一用 <code>--ecod-dur-enter</code>；出场类用 <code>--ecod-dur</code>（出场快于入场，符合「离开不必挽留」的直觉）。</td></tr>
+      <tr><td>3</td><td>「弹出来」的元素用 <code>--ecod-ease-pop</code>，其余用 <code>--ecod-ease</code>。全站不出现第三条自定义曲线。</td></tr>
+      <tr><td>4</td><td>列表入场采用级联：<code>animation-delay: calc(min(var(--i, 0), 12) * 40ms)</code>。序号上限 12——超出的子项按 12 计算，避免长列表末尾等半秒才出现。</td></tr>
+      <tr><td>5</td><td>所有从触发点展开的弹层（下拉 / 右键菜单 / 用户菜单 / 搜索面板），<code>transform-origin</code> 由 JS 写入触发元素中心点（<code>--ox</code> / <code>--oy</code>），缺省回退 50% 50% 保持旧行为。</td></tr>
+      <tr><td>6</td><td><code>prefers-reduced-motion: reduce</code> 下：级联、回弹、View Transition 全部跳过；仅保留 opacity 级别的必要过渡。CSS 与 JS 两侧都要守（CSS 用媒体查询，JS 统一走 <code>Ecod.reduceMotion()</code>）。</td></tr>
+      <tr><td>7</td><td>只动 <code>transform</code> / <code>opacity</code> / <code>filter</code> 做动效；禁止用 <code>transition: all</code>，禁止对 <code>width</code> / <code>height</code> / <code>top</code> / <code>left</code> 做长过渡（布局抖动）。</td></tr>
+    </table>
+  </div>
+
+  <h3>弹层落点</h3>
+  <div class="card pad">
+    <table>
+      <tr><th style="width:30%">弹层</th><th style="width:22%">入场动画</th><th>origin / 时序</th></tr>
+      <tr><td>模态弹窗 <code>.ecod_fmodal__panel</code> / <code>.ecod_authmodal</code></td><td><code>ecod-authmodal-in</code></td><td><code>dur-enter</code> + <code>ease-pop</code>；origin 固定居中（无触发点）</td></tr>
+      <tr><td>用户下拉 <code>.ecod_upop</code></td><td><code>ecod_upop_in</code></td><td><code>dur-enter</code> + <code>ease-pop</code>；origin 取头像按钮</td></tr>
+      <tr><td>卡片内弹层（赞赏 / 分享）</td><td><code>ecod-pop</code></td><td><code>dur-enter</code> + <code>ease-pop</code>；origin 取触发按钮</td></tr>
+      <tr><td>导航下拉</td><td>opacity + translateY</td><td><code>dur</code> + <code>ease</code>；origin 取导航项</td></tr>
+      <tr><td>右键菜单 <code>.ecod_ctxmenu</code></td><td>opacity + scale</td><td><code>dur-fast</code> + <code>ease</code>；origin 取光标位置（快速响应类，不进 <code>enter</code> 档）</td></tr>
+      <tr><td>搜索面板 <code>.ecod_spanel__box</code></td><td>opacity + translateY</td><td><code>dur</code> + <code>ease</code>；origin 取搜索入口</td></tr>
+      <tr><td>列表子项 <code>.ecod_stream > *</code> / <code>.ecod_grid > *</code> / <code>.ecod_cards__list > *</code></td><td><code>ecod-fade-up</code></td><td><code>dur-enter</code> + <code>ease</code> + 级联 40ms</td></tr>
+    </table>
+  </div>
+
+  <h3>页面转场</h3>
+  <div class="card pad">
+    <p>PJAX 的 DOM 替换包进 <code>document.startViewTransition()</code>：旧页面淡出、新页面淡入，消除白闪。特性检测失败或 reduced-motion 时直接同步替换，行为与现在完全一致（渐进增强，零降级成本）。<b>只包裹 DOM 替换这一层</b>，后续脚本初始化不进快照期，避免卡在中间态。</p>
+    <p style="margin-top:8px">快照期禁用规则：<code>@media (prefers-reduced-motion: reduce) { ::view-transition-group(*), ::view-transition-old(*), ::view-transition-new(*) { animation: none !important; } }</code></p>
+  </div>
+
+  <h3>明确不做</h3>
+  <div class="card pad">
+    <table>
+      <tr><th style="width:34%">不做</th><th>理由</th></tr>
+      <tr><td>WebGL 流体 / 粒子背景</td><td>与本站克制的单 accent 风格冲突；单页 GPU 常驻开销换来的只是「炫」，不是「好读」</td></tr>
+      <tr><td>引入 Motion / anime.js 等动效库</td><td>现有原生能力已够；4553 行 JS 无框架依赖是资产，不为此破功</td></tr>
+      <tr><td>全站 spring 物理引擎</td><td>只有弹层需要回弹，一条 <code>cubic-bezier</code> 即可覆盖，不值得上引擎</td></tr>
+      <tr><td>滚动视差 / 滚动驱动动画</td><td>博客以阅读为主，视差会与阅读进度竞争注意力</td></tr>
+    </table>
   </div>
 </section>
 

@@ -11,8 +11,8 @@
  *
  * @package Ecod Theme
  * @author  Ecod
- * @copyright Copyright (c) 2026 Ecod (https://ecod.cc)
- * @license   MIT
+ * @copyright Copyright (c) 2026 Ecod. All Rights Reserved.
+ * @link    https://ecod.cc
  */
 
 if (!defined('__TYPECHO_ROOT_DIR__')) {
@@ -31,9 +31,10 @@ interface EcodPayChannel
      * 发起支付
      *
      * @param array $order ecod_orders 的一行
+     * @param array $opts  渠道内细分选项（epay：type = alipay|wxpay）
      * @return array{mode:string,url?:string,qr?:string,html?:string,tip?:string}
      */
-    public function create(array $order): array;
+    public function create(array $order, array $opts = []): array;
 
     /**
      * 校验回调 / 核销请求
@@ -119,6 +120,23 @@ function ecod_pay_site_url(string $path = ''): string
     return $base . ($path !== '' ? '/' . ltrim($path, '/') : '');
 }
 
+/**
+ * 回调入口地址：主题目录下的 api.php
+ *
+ * 不能用站点根 —— 根目录没有 api.php，notify/return 会 404（实测发现）。
+ * 也刻意不走 ecod_asset()：ECdn 配置会把 URL 指到 CDN，
+ * 支付回调必须直达源站，不能被 CDN 劫持域名。
+ */
+function ecod_pay_api_url(): string
+{
+    try {
+        $options = \Widget\Options::alloc();
+        return rtrim((string) $options->themeUrl, '/') . '/api.php';
+    } catch (\Throwable $e) {
+        return ecod_pay_site_url('usr/themes/ecod-theme/api.php');
+    }
+}
+
 /* ------------------------------------------------------------------
  * 手动通道
  * ---------------------------------------------------------------- */
@@ -138,7 +156,7 @@ class EcodPayManualChannel implements EcodPayChannel
     }
 
     /** 渲染线下付款说明：优先用设置项 EPayManualDoc 的文案 */
-    public function create(array $order): array
+    public function create(array $order, array $opts = []): array
     {
         $doc = trim((string) ecod_option('EPayManualDoc', ''));
         $tip = $doc !== ''
@@ -178,7 +196,7 @@ class EcodPayCardChannel implements EcodPayChannel
     }
 
     /** 渲染卡密输入框（卡密由站长在后台生成发放） */
-    public function create(array $order): array
+    public function create(array $order, array $opts = []): array
     {
         return [
             'mode' => 'card',
@@ -418,20 +436,29 @@ class EcodPayEpayChannel implements EcodPayChannel
         return md5(implode('&', $pairs) . $key);
     }
 
-    /** 组签名参数并跳易支付收银台；三项配置缺任一个则回退手动通道 */
-    public function create(array $order): array
+    /**
+     * 组签名参数并跳易支付收银台；三项配置缺任一个则回退手动通道
+     *
+     * $opts['type'] 允许收银台按按钮细分 alipay / wxpay（缺省用后台配置）。
+     */
+    public function create(array $order, array $opts = []): array
     {
         $cfg = ecod_pay_epay_config();
         if ($cfg['url'] === '' || $cfg['pid'] === '' || $cfg['key'] === '') {
-            return (new EcodPayManualChannel())->create($order);
+            return (new EcodPayManualChannel())->create($order, $opts);
+        }
+
+        $type = strtolower(trim((string) ($opts['type'] ?? '')));
+        if (!in_array($type, ['alipay', 'wxpay'], true)) {
+            $type = $cfg['type'] === 'wxpay' ? 'wxpay' : 'alipay';
         }
 
         $params = [
             'pid'          => $cfg['pid'],
-            'type'         => $cfg['type'] === 'wxpay' ? 'wxpay' : 'alipay',
+            'type'         => $type,
             'out_trade_no' => (string) $order['order_no'],
-            'notify_url'   => ecod_pay_site_url('api.php') . '?action=pay_notify&channel=epay',
-            'return_url'   => ecod_pay_site_url('api.php') . '?action=pay_return&channel=epay',
+            'notify_url'   => ecod_pay_api_url() . '?action=pay_notify&channel=epay',
+            'return_url'   => ecod_pay_api_url() . '?action=pay_return&channel=epay',
             'name'         => mb_substr((string) $order['title'], 0, 60, 'UTF-8'),
             'money'        => ecod_pay_money((int) $order['amount']),
         ];
@@ -455,7 +482,11 @@ class EcodPayEpayChannel implements EcodPayChannel
             return ['ok' => false, 'message' => '通道未配置'];
         }
 
+        /* 剔除我们自己的路由参数：易支付签名只覆盖它发送的业务参数，
+           notify_url 里的 ?action=…&channel=… 属于站点路由，不参与签名 */
         $sign = (string) ($request['sign'] ?? '');
+        unset($request['action'], $request['channel'], $request['sign'], $request['sign_type']);
+
         if ($sign === '' || !hash_equals(self::sign($request, $cfg['key']), strtolower($sign))) {
             return ['ok' => false, 'message' => '签名校验失败'];
         }
@@ -479,4 +510,78 @@ class EcodPayEpayChannel implements EcodPayChannel
             'amount'   => $cents,
         ];
     }
+}
+
+/**
+ * 易支付查单（mapi.php?act=order，Zibll 同款商户接口）
+ *
+ * 用于「回调丢失 / 用户付完没等回调就关页」的补单：前端轮询订单状态时
+ * 顺手向通道查一次，查到已支付就走正常结算（金额校验在 settle 里做）。
+ *
+ * 返回：null = 查不到 / 网络 / 配置问题（不能当未支付）；
+ *      ['paid' => false] = 通道明确说未支付；
+ *      ['paid' => true, 'trade_no' => …, 'amount' => 分] = 已支付。
+ */
+function ecod_pay_epay_query(string $orderNo): ?array
+{
+    $cfg = ecod_pay_epay_config();
+    if ($cfg['url'] === '' || $cfg['pid'] === '' || $cfg['key'] === '' || $orderNo === '') {
+        return null;
+    }
+
+    $url = $cfg['url'] . '/mapi.php?act=order'
+        . '&pid=' . rawurlencode($cfg['pid'])
+        . '&key=' . rawurlencode($cfg['key'])
+        . '&out_trade_no=' . rawurlencode($orderNo);
+
+    try {
+        $ctx = stream_context_create([
+            'http' => [
+                'method'        => 'GET',
+                'timeout'       => 8,
+                'ignore_errors' => true,
+                'header'        => "User-Agent: EcodPay/1.0\r\n",
+            ],
+        ]);
+        $body = @file_get_contents($url, false, $ctx);
+    } catch (\Throwable $e) {
+        return null;
+    }
+    if (!is_string($body) || $body === '') {
+        return null;
+    }
+
+    $json = json_decode($body, true);
+    if (!is_array($json) || (int) ($json['code'] ?? -1) !== 1) {
+        return null;
+    }
+    if ((int) ($json['status'] ?? 0) !== 1) {
+        return ['paid' => false];
+    }
+
+    $cents = ecod_pay_cents((string) ($json['money'] ?? ''));
+    return [
+        'paid'     => true,
+        'trade_no' => (string) ($json['trade_no'] ?? ''),
+        'amount'   => $cents ?? -1,
+    ];
+}
+
+/**
+ * 查单节流包装：同一订单 6 秒内只真正查一次
+ *
+ * 前端每 2 秒轮询一次 pay_status，直接透传会把 mapi.php 打爆。
+ * 用临时文件做跨请求节流（独立入口没有 APCu 可依赖）。
+ */
+function ecod_pay_epay_query_throttled(string $orderNo, int $ttl = 6): ?array
+{
+    if ($orderNo === '') {
+        return null;
+    }
+    $file = sys_get_temp_dir() . '/ecod-epayq-' . md5($orderNo);
+    if (is_file($file) && time() - (int) filemtime($file) < $ttl) {
+        return null;
+    }
+    @touch($file);
+    return ecod_pay_epay_query($orderNo);
 }

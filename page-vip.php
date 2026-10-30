@@ -7,8 +7,7 @@
  * @since   2026-10-29
  * @version 2.0.0
  * @link    https://ecod.cc
- * @copyright Copyright (c) 2026 Ecod (https://ecod.cc)
- * @license   MIT
+ * @copyright Copyright (c) 2026 Ecod. All Rights Reserved.
  *
  * 后台「页面 → 新建页面 → 自定义模板」选「会员」。
  * 价格与档位来自「设置 → 付费」里的 EVip1* / EVip2*，这里只负责展示。

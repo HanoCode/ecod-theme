@@ -11,7 +11,7 @@
  *  - 篇数 = 字段命中的文章（服务端给）+ 本地手动挑的篇数，改一下就实时变
  *  - 任何改动都写回隐藏字段并派发 input 事件，复用设置页原有的「未保存」提示
  *
- * Copyright (c) 2026 Ecod · MIT License · https://ecod.cc
+ * Copyright (c) 2026 Ecod. All Rights Reserved. · https://ecod.cc
  */
 (function () {
     'use strict';

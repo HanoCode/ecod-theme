@@ -14,8 +14,8 @@
  *
  * @package Ecod Theme
  * @author  Ecod
- * @copyright Copyright (c) 2026 Ecod (https://ecod.cc)
- * @license   MIT
+ * @copyright Copyright (c) 2026 Ecod. All Rights Reserved.
+ * @link    https://ecod.cc
  */
 
 if (!defined('__TYPECHO_ROOT_DIR__')) {
@@ -708,6 +708,26 @@ function ecod_pay_settle(string $orderNo, string $tradeNo = '', string $channel 
         return ['ok' => false, 'status' => 'amount', 'message' => '金额不符'];
     }
 
+    /* trade_no 防重放：同一笔渠道交易号只允许挂在一笔订单上 */
+    $tradeNo = trim($tradeNo);
+    if ($tradeNo !== '') {
+        try {
+            $db = \Typecho\Db::get();
+            $dupe = $db->fetchRow(
+                $db->select('order_no')->from('table.ecod_orders')
+                    ->where('trade_no = ?', $tradeNo)
+                    ->where('order_no <> ?', $orderNo)
+                    ->where('status = ?', 'paid')
+                    ->limit(1)
+            );
+        } catch (\Throwable $e) {
+            $dupe = null;
+        }
+        if ($dupe) {
+            return ['ok' => false, 'status' => 'replay', 'message' => '交易号已被其它订单使用'];
+        }
+    }
+
     try {
         $db = \Typecho\Db::get();
         $rows = ['status' => 'paid', 'paid_at' => time()];
@@ -907,10 +927,26 @@ function ecod_pay_teaser_html(string $content, int $chars = 80): string
 /** 收银台地址（页面不存在时落到会员页 / 空串） */
 function ecod_pay_cashier_url(array $query = []): string
 {
-    if (!function_exists('ecod_pages_url')) {
-        return '';
+    $url = '';
+    if (function_exists('ecod_pages_url')) {
+        $url = ecod_pages_url('cashier');
     }
-    $url = ecod_pages_url('cashier');
+    /* 独立入口（api.php）没加载路由表，Router::url 不抛异常而是返回 '#'，
+       必须当「解析失败」处理，否则回跳会落到 主题目录/#?order_no=… */
+    if ($url === '' || str_contains($url, '#')) {
+        /* 兜底：按模板直查收银台页面，拼 index.php 形式地址（rewrite 开关下均有效） */
+        try {
+            $db = \Typecho\Db::get();
+            $row = $db->fetchRow(
+                $db->select('slug')->from('table.contents')
+                    ->where('template = ?', 'page-cashier.php')->where('type = ?', 'page')
+                    ->where('status = ?', 'publish')->limit(1)
+            );
+            $url = $row ? ecod_pay_site_url('index.php/' . $row['slug'] . '.html') : '';
+        } catch (\Throwable $e) {
+            $url = '';
+        }
+    }
     if ($url === '') {
         return '';
     }

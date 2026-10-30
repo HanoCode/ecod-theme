@@ -13,8 +13,8 @@
  *
  * @package Ecod Theme
  * @author  Ecod
- * @copyright Copyright (c) 2026 Ecod (https://ecod.cc)
- * @license   MIT
+ * @copyright Copyright (c) 2026 Ecod. All Rights Reserved.
+ * @link    https://ecod.cc
  */
 
 /* 向上查找 Typecho 根目录 */
@@ -187,7 +187,7 @@ if ($action === 'oauth_start' || $action === 'oauth_callback') {
         exit;
     };
     $platform = (string) ($_GET['platform'] ?? 'github');
-    if (!in_array($platform, ['github'], true)) {
+    if (!in_array($platform, ecod_oauth_platforms(), true)) {
         $ecodLoginRedirect('暂不支持该平台');
     }
     $err = $action === 'oauth_start'
@@ -1167,7 +1167,8 @@ if ($action === 'pay_create') {
 
     try {
         $channel = ecod_pay_channel($channelId);
-        $payload = $channel->create($order);
+        $paytype = strtolower(trim((string) ($_POST['paytype'] ?? '')));
+        $payload = $channel->create($order, $paytype !== '' ? ['type' => $paytype] : []);
     } catch (\Throwable $e) {
         ecod_api_out(['ok' => false, 'error' => '支付通道不可用'], 500);
     }
@@ -1194,6 +1195,23 @@ if ($action === 'pay_status') {
     /* 越权查询一律 404，不暴露订单是否存在 */
     if (!$order || (int) $order['uid'] !== (int) $me->uid) {
         ecod_api_out(['ok' => false, 'error' => '订单不存在'], 404);
+    }
+
+    /* 补单：epay 订单还挂着 pending 时向通道查一次，
+       对付「回调丢失 / 用户付完没等回调就关页」的情况 */
+    if ((string) $order['status'] === 'pending'
+        && (string) $order['channel'] === 'epay'
+        && ecod_pay_epay_ready()) {
+        $remote = ecod_pay_epay_query_throttled($orderNo);
+        if ($remote && !empty($remote['paid'])) {
+            $settled = ecod_pay_settle($orderNo, (string) ($remote['trade_no'] ?? ''), 'epay', (int) ($remote['amount'] ?? -1));
+            if (!empty($settled['ok'])) {
+                ecod_audit_log('pay_settle', ['order' => $orderNo, 'via' => 'status_query']);
+            }
+            if (!empty($settled['ok']) || $settled['status'] === 'paid') {
+                $order = ecod_pay_order_get($orderNo) ?? $order;
+            }
+        }
     }
 
     ecod_api_out([
@@ -1269,21 +1287,44 @@ if ($action === 'pay_notify') {
     exit;
 }
 
-/* 易支付同步回跳：验签后结算并跳回收银台 */
+/* 易支付同步回跳：验签后结算并跳回收银台；
+   验签失败但订单还挂着 pending 时再查一次单兜底（有的站 return 不带签名） */
 if ($action === 'pay_return') {
     $params = array_merge($_GET, $_POST);
     $channel = new EcodPayEpayChannel();
     $verified = $channel->verify($params);
 
     $orderNo = (string) ($verified['order_no'] ?? '');
+    $ecodPayOk = false;
+
     if (!empty($verified['ok'])) {
         $ecodSettle = ecod_pay_settle($orderNo, (string) ($verified['trade_no'] ?? ''), 'epay', (int) ($verified['amount'] ?? -1));
         if (!empty($ecodSettle['ok'])) {
             ecod_audit_log('pay_settle', ['order' => $orderNo, 'via' => 'return']);
         }
+        $ecodPayOk = !empty($ecodSettle['ok']) || ($ecodSettle['status'] ?? '') === 'paid';
+    } elseif ($orderNo !== '' && ecod_pay_epay_ready()) {
+        $ecodOrder = ecod_pay_order_get($orderNo);
+        if ($ecodOrder && (string) $ecodOrder['status'] === 'pending') {
+            $remote = ecod_pay_epay_query($orderNo);
+            if ($remote && !empty($remote['paid'])) {
+                $ecodSettle = ecod_pay_settle($orderNo, (string) ($remote['trade_no'] ?? ''), 'epay', (int) ($remote['amount'] ?? -1));
+                if (!empty($ecodSettle['ok'])) {
+                    ecod_audit_log('pay_settle', ['order' => $orderNo, 'via' => 'return_query']);
+                }
+                $ecodPayOk = !empty($ecodSettle['ok']) || ($ecodSettle['status'] ?? '') === 'paid';
+            }
+        } elseif ($ecodOrder && (string) $ecodOrder['status'] === 'paid') {
+            $ecodPayOk = true;
+        }
     }
 
-    $cashier = ecod_pay_cashier_url($orderNo !== '' ? ['order_no' => $orderNo] : []);
+    $cashierQuery = [];
+    if ($orderNo !== '') {
+        $cashierQuery['order_no'] = $orderNo;
+        $cashierQuery['epay'] = $ecodPayOk ? 'ok' : 'fail';
+    }
+    $cashier = ecod_pay_cashier_url($cashierQuery);
     if ($cashier === '') {
         $cashier = ecod_pay_site_url();
     }

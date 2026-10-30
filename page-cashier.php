@@ -7,8 +7,7 @@
  * @since   2026-10-29
  * @version 2.0.0
  * @link    https://ecod.cc
- * @copyright Copyright (c) 2026 Ecod (https://ecod.cc)
- * @license   MIT
+ * @copyright Copyright (c) 2026 Ecod. All Rights Reserved.
  *
  * 后台「页面 → 新建页面 → 自定义模板」选「收银台」。
  * 页面本身只读：下单、支付、查状态全部走 api.php，避免 GET 请求产生写操作。
@@ -142,6 +141,22 @@ $ecodToken = ecod_account_token();
 $ecodLoginHref = ecod_pay_login_url((string) ($_SERVER['REQUEST_URI'] ?? ''));
 $ecodCurrency = ecod_pay_currency();
 $ecodMeta = $ecodItem ? '应付 ' . $ecodCurrency . ecod_pay_money((int) $ecodItem['amount']) : '';
+
+/* 支付回跳（?order_no=EC…&epay=ok|fail）：只展示状态，写操作全在 api.php */
+$ecodEpayFlag = (string) ($_GET['epay'] ?? '') === 'ok' || (string) ($_GET['epay'] ?? '') === 'fail'
+    ? (string) $_GET['epay'] : '';
+$ecodOrderState = '';
+if ($ecodOrderNo !== '' && $ecodUid > 0) {
+    $ecodOrderRow = ecod_pay_order_get($ecodOrderNo);
+    if ($ecodOrderRow && (int) $ecodOrderRow['uid'] === $ecodUid) {
+        if ((string) $ecodOrderRow['status'] === 'paid') {
+            $ecodOrderState = 'paid';
+        } elseif ((string) $ecodOrderRow['status'] === 'pending') {
+            $ecodOrderState = 'pending';
+        }
+    }
+}
+$ecodEpayType = (string) ecod_option('EPayEpayType', 'alipay') === 'wxpay' ? 'wxpay' : 'alipay';
 ?>
 <main class="ecod_main" id="ecod-main">
     <?php /* 模块 · 内容区上方（模块管理台） */ ecod_widgets_render("top_content", $this); ?>
@@ -161,7 +176,8 @@ $ecodMeta = $ecodItem ? '应付 ' . $ecodCurrency . ecod_pay_money((int) $ecodIt
          data-cid="<?php echo (int) $ecodCid; ?>"
          data-level="<?php echo (int) $ecodLevel; ?>"
          data-plan="<?php echo htmlspecialchars($ecodPlan, ENT_QUOTES, 'UTF-8'); ?>"
-         data-permalink="<?php echo htmlspecialchars($ecodPermalink, ENT_QUOTES, 'UTF-8'); ?>">
+         data-permalink="<?php echo htmlspecialchars($ecodPermalink, ENT_QUOTES, 'UTF-8'); ?>"
+         <?php if ($ecodOrderState === 'pending'): ?>data-resume-order="<?php echo htmlspecialchars($ecodOrderNo, ENT_QUOTES, 'UTF-8'); ?>"<?php endif; ?>>
 
         <?php if ($ecodError !== ''): ?>
             <div class="ecod_empty">
@@ -211,13 +227,33 @@ $ecodMeta = $ecodItem ? '应付 ' . $ecodCurrency . ecod_pay_money((int) $ecodIt
                         </a>
                     </p>
                 <?php else: ?>
+                    <?php if ($ecodOrderState === 'paid'): ?>
+                        <p class="ecod_cashier__status is-ok">
+                            <?php echo ecod_icon('check', 13); ?>订单已支付，权益已到账。
+                        </p>
+                    <?php elseif ($ecodOrderState === 'pending'): ?>
+                        <p class="ecod_cashier__status <?php echo $ecodEpayFlag === 'fail' ? 'is-bad' : ''; ?>">
+                            <?php echo $ecodEpayFlag === 'fail'
+                                ? '没有收到这笔订单的支付结果。若你已完成付款，到账确认后会自动解锁；未付款请重新下单。'
+                                : '这笔订单还未支付完成，正在等待支付结果…'; ?>
+                        </p>
+                    <?php endif; ?>
+
                     <?php if (count($ecodChannels) > 1): ?>
                         <div class="ecod_cashier__methods" data-cashier-methods>
                             <?php foreach ($ecodChannels as $ecodCh): ?>
-                                <button type="button" class="ecod_cashier__method<?php echo !empty($ecodCh['default']) ? ' is-on' : ''; ?>"
-                                        data-channel="<?php echo htmlspecialchars($ecodCh['id'], ENT_QUOTES, 'UTF-8'); ?>">
-                                    <?php echo htmlspecialchars($ecodCh['name'], ENT_QUOTES, 'UTF-8'); ?>
-                                </button>
+                                <?php if ($ecodCh['id'] === 'epay'): ?>
+                                    <?php /* 易支付拆成支付宝 / 微信两个按钮，paytype 随下单提交 */ ?>
+                                    <button type="button" class="ecod_cashier__method<?php echo $ecodEpayType === 'alipay' && !empty($ecodCh['default']) ? ' is-on' : ''; ?>"
+                                            data-channel="epay" data-paytype="alipay">支付宝</button>
+                                    <button type="button" class="ecod_cashier__method<?php echo $ecodEpayType === 'wxpay' && !empty($ecodCh['default']) ? ' is-on' : ''; ?>"
+                                            data-channel="epay" data-paytype="wxpay">微信支付</button>
+                                <?php else: ?>
+                                    <button type="button" class="ecod_cashier__method<?php echo !empty($ecodCh['default']) ? ' is-on' : ''; ?>"
+                                            data-channel="<?php echo htmlspecialchars($ecodCh['id'], ENT_QUOTES, 'UTF-8'); ?>">
+                                        <?php echo htmlspecialchars($ecodCh['name'], ENT_QUOTES, 'UTF-8'); ?>
+                                    </button>
+                                <?php endif; ?>
                             <?php endforeach; ?>
                         </div>
                     <?php endif; ?>

@@ -4,8 +4,8 @@
  *
  * @package Ecod Theme
  * @author  Ecod
- * @copyright Copyright (c) 2026 Ecod (https://ecod.cc)
- * @license   MIT
+ * @copyright Copyright (c) 2026 Ecod. All Rights Reserved.
+ * @link    https://ecod.cc
  */
 if (!defined('__TYPECHO_ROOT_DIR__')) {
     exit;
@@ -40,12 +40,11 @@ if (!$ecodCatPosts->have()) {
 }
 ?>
 <section class="ecod_section">
-    <header class="ecod_section-head">
-        <h2 class="ecod_section-head__title">
-            <span class="ecod_section-head__dot" aria-hidden="true"></span><?php echo htmlspecialchars($ecodCatName); ?>
-        </h2>
-        <a class="ecod_section-head__more" href="<?php echo htmlspecialchars($ecodCatUrl); ?>">全部 <?php echo ecod_icon('chevron', 12); ?></a>
-    </header>
+    <?php ecod_block_head([
+        'title'     => (string) ecod_p('title', '') === '' ? $ecodCatName : null,
+        'more_url'  => $ecodCatUrl,
+        'more_text' => '全部',
+    ]); ?>
 
     <div class="ecod_section__grid">
         <?php while ($ecodCatPosts->next()): ?>

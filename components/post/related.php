@@ -7,8 +7,8 @@
  *
  * @package Ecod Theme
  * @author  Ecod
- * @copyright Copyright (c) 2026 Ecod (https://ecod.cc)
- * @license   MIT
+ * @copyright Copyright (c) 2026 Ecod. All Rights Reserved.
+ * @link    https://ecod.cc
  */
 if (!defined('__TYPECHO_ROOT_DIR__')) {
     exit;
@@ -40,12 +40,7 @@ if (!empty($this->tags)) {
 }
 ?>
 <section class="ecod_rel" aria-labelledby="ecod-rel-title">
-    <header class="ecod_section-head">
-        <h2 class="ecod_section-head__title" id="ecod-rel-title">
-            <span class="ecod_section-head__dot" aria-hidden="true"></span><?php echo htmlspecialchars((string) ecod_p('title', '相关阅读')); ?>
-        </h2>
-        <span class="ecod_rel__hint"><?php echo ecod_icon('bulb', 12); ?>按标签与分类匹配</span>
-    </header>
+    <?php ecod_block_head(['title_id' => 'ecod-rel-title', 'note_raw' => '<span class="ecod_rel__hint">' . ecod_icon('bulb', 12) . '按标签与分类匹配</span>']); ?>
 
     <div class="ecod_rel__grid">
         <?php while ($ecodRel->next()): ?>

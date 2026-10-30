@@ -93,8 +93,8 @@ post 包头部做了空实现兜底。实测：首页/文章直载/PJAX 双向�
 
 ### 2.5 版权与注释
 
-- 根目录 `LICENSE`（MIT，含中文摘要）；
-- 全部源文件统一文件头：职责描述 + `@package` / `@author` / `@copyright` / `@license`；
+- 根目录 `LICENSE`（专有授权声明：付费主题，仅授权购买者使用）；
+- 全部源文件统一文件头：职责描述 + `@package` / `@author` / `@copyright`（All Rights Reserved）/ `@link`；
   minify 产物带版权横幅，压缩不抹署名；
 - 函数级注释补齐（pay-channel 三个通道类、工具函数、令牌助手等）。
 

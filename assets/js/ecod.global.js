@@ -4,7 +4,7 @@
  * 模块：主题切换 / 抽屉 / 导航滚动 / 回到顶部 / 阅读进度 / 目录
  *      内容增强 / 点赞收藏 / 轮播 / 无刷新跳转
  *
- * Copyright (c) 2026 Ecod · MIT License · https://ecod.cc
+ * Copyright (c) 2026 Ecod. All Rights Reserved. · https://ecod.cc
  */
 (function () {
     'use strict';
@@ -774,6 +774,19 @@
 
     /* ---------- 头部用户面板：点外部收起 ---------- */
     Ecod.initUserPop = function () {
+        /* 下拉面板从触发头像处展开：用 offset 坐标（不受入场 scale 影响），
+           summary 与面板同在 .ecod_nav__user 定位上下文内。 */
+        document.querySelectorAll('details.ecod_nav__user').forEach(function (d) {
+            var panel = d.querySelector('.ecod_nav__upop');
+            var summary = d.querySelector('summary');
+            if (!panel || !summary) return;
+            d.addEventListener('toggle', function () {
+                if (!d.open) return;
+                panel.style.setProperty('--ecod-ox', (summary.offsetLeft + summary.offsetWidth / 2) + 'px');
+                panel.style.setProperty('--ecod-oy', (summary.offsetTop + summary.offsetHeight) + 'px');
+            });
+        });
+
         document.addEventListener('click', function (e) {
             document.querySelectorAll('details.ecod_nav__user[open]').forEach(function (d) {
                 if (!d.contains(e.target)) {
@@ -1051,6 +1064,9 @@
         var top = Math.max(8, Math.min(y, window.innerHeight - r.height - 8));
         ctxEl.style.left = left + 'px';
         ctxEl.style.top = top + 'px';
+        /* 从光标落点展开：把原点换算成菜单内的 px 偏移（跟随实际 clamp 后的位置） */
+        ctxEl.style.setProperty('--ecod-ox', Math.round(x - left) + 'px');
+        ctxEl.style.setProperty('--ecod-oy', Math.round(y - top) + 'px');
     }
 
     Ecod.initCtxMenu = function () {
@@ -1948,44 +1964,55 @@
                     location.href = url;
                     return;
                 }
-                if (doc.title) document.title = doc.title;
-                cur.replaceWith(next);
+                /* 整段替换 + 收尾：包成函数，供 View Transition 快照期统一调用 */
+                var applyPage = function () {
+                    if (doc.title) document.title = doc.title;
+                    cur.replaceWith(next);
 
-                /* 本页已成为「当前页」，后续离开时位置记到它名下 */
-                lastHref = url.split('#')[0];
+                    /* 本页已成为「当前页」，后续离开时位置记到它名下 */
+                    lastHref = url.split('#')[0];
 
-                /* 导航栏在 shell 之外，无刷新跳转不会替换它：
-                   目标页把高亮地址放在 shell 的 data-ecod-nav-active 上，据此同步 */
-                syncNav(next);
+                    /* 导航栏在 shell 之外，无刷新跳转不会替换它：
+                       目标页把高亮地址放在 shell 的 data-ecod-nav-active 上，据此同步 */
+                    syncNav(next);
 
-                if (push) history.pushState({ ecod: 1 }, '', url);
+                    if (push) history.pushState({ ecod: 1 }, '', url);
 
-                /* 目标页是文章/独立页时，先确保内容页增强包就位再跑初始化 */
-                Ecod.ensurePostBundle(function () {
-                    Ecod.refresh();
-                });
+                    /* 目标页是文章/独立页时，先确保内容页增强包就位再跑初始化 */
+                    Ecod.ensurePostBundle(function () {
+                        Ecod.refresh();
+                    });
 
-                /* 无刷新换页对读屏不可见，播报新页面标题 */
-                live('已加载：' + (document.title || ''));
+                    /* 无刷新换页对读屏不可见，播报新页面标题 */
+                    live('已加载：' + (document.title || ''));
 
-                /* 滚动目标：hash 锚点优先；前进/后退恢复离开时位置；否则回顶部 */
-                var main = document.getElementById('ecod-main');
-                if (main) {
-                    main.setAttribute('tabindex', '-1');
-                    try { main.focus({ preventScroll: true }); } catch (e) {}
-                }
-                var anchor = null;
-                var hash = url.split('#')[1];
-                if (hash) {
-                    try { anchor = document.getElementById(decodeURIComponent(hash)); } catch (e) { anchor = null; }
-                }
-                if (anchor) {
-                    anchor.scrollIntoView();
-                } else if (!push) {
-                    var y = popScroll(url);
-                    jumpTo(typeof y === 'number' ? y : 0);
+                    /* 滚动目标：hash 锚点优先；前进/后退恢复离开时位置；否则回顶部 */
+                    var main = document.getElementById('ecod-main');
+                    if (main) {
+                        main.setAttribute('tabindex', '-1');
+                        try { main.focus({ preventScroll: true }); } catch (e) {}
+                    }
+                    var anchor = null;
+                    var hash = url.split('#')[1];
+                    if (hash) {
+                        try { anchor = document.getElementById(decodeURIComponent(hash)); } catch (e) { anchor = null; }
+                    }
+                    if (anchor) {
+                        anchor.scrollIntoView();
+                    } else if (!push) {
+                        var y = popScroll(url);
+                        jumpTo(typeof y === 'number' ? y : 0);
+                    } else {
+                        jumpTo(0);
+                    }
+                };
+
+                /* 支持 View Transitions 且未开启减动效时进快照期（新旧页交叉淡化）；
+                   否则同步执行，行为与旧版完全一致（渐进增强，零降级成本） */
+                if (document.startViewTransition && !Ecod.reduceMotion()) {
+                    document.startViewTransition(applyPage);
                 } else {
-                    jumpTo(0);
+                    applyPage();
                 }
             }).catch(function (err) {
                 if (my !== seq || (err && err.name === 'AbortError')) return;
@@ -2149,6 +2176,11 @@
        完整 CSS 异步加载时必须等 data-ecod-cssready 标记就位再初始化，
        否则「加类 → 样式晚到 → 内容先隐再淡入」造成频闪。
        阻塞加载模式（无 dist）在 head 里就已打标记，此处直接执行。 */
+    /* 系统「减少动态效果」：所有 JS 驱动的动效统一走这里，勿各自 matchMedia */
+    Ecod.reduceMotion = function () {
+        return !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+    };
+
     Ecod.initAnimate = function () {
         var run = function () { ecodAnimateRun(); };
         if (document.documentElement.getAttribute('data-ecod-cssready') === '1') {
@@ -2183,7 +2215,25 @@
                 return;
             }
             el.classList.add('ecod-reveal');
-            el.style.transitionDelay = Math.min(index, 6) * 45 + 'ms';
+            var delay = Math.min(index, 6) * 45;
+            el.style.transitionDelay = delay + 'ms';
+
+            /* 入场结束后必须清掉 inline transition-delay：
+               transition-delay 作用于该元素的「所有」过渡，残留会让卡片 hover 的
+               transform / 阴影最多等 270ms 才响应，手感发钝。 */
+            var cleared = false;
+            var clearDelay = function () {
+                if (cleared) return;
+                cleared = true;
+                el.style.transitionDelay = '';
+                el.removeEventListener('transitionend', onEnd);
+            };
+            var onEnd = function (e) {
+                if (e.target === el && e.propertyName === 'opacity') clearDelay();
+            };
+            el.addEventListener('transitionend', onEnd);
+            /* 兜底：过渡可能不触发（reduced-motion / 元素瞬间出视口），定时清 */
+            setTimeout(clearDelay, delay + 520);
             io.observe(el);
         });
     }

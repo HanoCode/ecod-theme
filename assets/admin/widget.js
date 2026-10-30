@@ -22,7 +22,7 @@
  * @version 2.3.1
  * @link    https://ecod.cc
  *
- * Copyright (c) 2026 Ecod · MIT License · https://ecod.cc
+ * Copyright (c) 2026 Ecod. All Rights Reserved. · https://ecod.cc
  */
 (function () {
     'use strict';
@@ -1050,7 +1050,8 @@
             toggle.appendChild(text);
             wrap.appendChild(toggle);
         } else if (type === 'number') {
-            if (param.min != null && param.max != null) {
+            /* 滑条只用于窄区间：宽区间（如 0–100000）拖不动，回落数字输入（§31 第 5 轮修订） */
+            if (param.min != null && param.max != null && (Number(param.max) - Number(param.min)) <= 500) {
                 var range = el('div', 'wgt-range');
                 var input = el('input');
                 input.type = 'range';
@@ -1077,10 +1078,66 @@
                 }
                 num.value = value == null ? '' : Number(value);
                 num.addEventListener('change', function () {
-                    setParam(area, row, key, Number(num.value) || 0);
+                    /* 留空 = 存空串，前台回落声明默认值（如 tags.limit「留空显示全部」） */
+                    var v = String(num.value).trim();
+                    setParam(area, row, key, v === '' ? '' : (Number(v) || 0));
                 });
                 wrap.appendChild(num);
             }
+        } else if (type === 'term') {
+            /* 单选分类：选项由服务端注入（DATA.terms），空选项 = 声明默认语义 */
+            var tsel = el('select', 'wgt-select');
+            var tBlank = document.createElement('option');
+            tBlank.value = '';
+            tBlank.textContent = '（默认）';
+            /* mid 0 不存在于真实分类：0 与空串都视为「默认」 */
+            tBlank.selected = String(value) === '' || String(value) === '0';
+            tsel.appendChild(tBlank);
+            Object.keys(DATA.terms || {}).forEach(function (mid) {
+                var o = document.createElement('option');
+                o.value = mid;
+                o.textContent = DATA.terms[mid];
+                if (String(value) === mid) {
+                    o.selected = true;
+                }
+                tsel.appendChild(o);
+            });
+            tsel.addEventListener('change', function () {
+                setParam(area, row, key, tsel.value);
+            });
+            wrap.appendChild(tsel);
+        } else if (type === 'terms') {
+            /* 多选分类：勾选列表，存储保持逗号分隔 mid 字符串 */
+            var tbox = el('div', 'wgt-terms');
+            var picked = {};
+            String(value || '').split(',').forEach(function (one) {
+                if (one.trim() !== '') {
+                    picked[one.trim()] = true;
+                }
+            });
+            Object.keys(DATA.terms || {}).forEach(function (mid) {
+                var lab = el('label', 'wgt-terms__item');
+                var cb = el('input');
+                cb.type = 'checkbox';
+                cb.value = mid;
+                cb.checked = !!picked[mid];
+                cb.addEventListener('change', function () {
+                    if (cb.checked) {
+                        picked[mid] = true;
+                    } else {
+                        delete picked[mid];
+                    }
+                    /* 按 DATA.terms 的展示顺序输出，保证存储稳定 */
+                    var order = Object.keys(DATA.terms).filter(function (m) {
+                        return picked[m];
+                    });
+                    setParam(area, row, key, order.join(','), { noWhen: true });
+                });
+                lab.appendChild(cb);
+                lab.appendChild(el('span', '', esc(DATA.terms[mid])));
+                tbox.appendChild(lab);
+            });
+            wrap.appendChild(tbox);
         } else if (type === 'image') {
             var box = el('div', 'wgt-img');
             var url = el('input', 'wgt-input');
@@ -1096,6 +1153,9 @@
             wrap.appendChild(box);
             wrap.appendChild(pv);
             wrap.appendChild(el('p', 'wgt-field__desc', '粘贴图片地址（可先去媒体库复制地址）'));
+        } else if (type === 'repeater') {
+            /* 结构化行编辑器（第 10 轮）：子字段由声明注入，存储 JSON 数组字符串 */
+            wrap.appendChild(repeaterEditor(area, row, key, value, param));
         } else if (type === 'slides') {
             wrap.appendChild(slidesEditor(area, row, key, value));
         } else {
@@ -1221,8 +1281,121 @@
         return box;
     }
 
-    /* 参数条件显隐：key:empty / key:!empty / key:!value / key:a|b */
-    function whenOk(expr, params) {
+    /* repeater：结构化行编辑器（第 10 轮），子字段由声明注入，序列化成 JSON 数组字符串 */
+    function repeaterEditor(area, row, key, value, param) {
+        var fields = (param.fields || []).filter(function (one) {
+            return one && one.key;
+        });
+        var maxRows = Math.max(1, parseInt(param.max, 10) || 20);
+        var items = [];
+        try {
+            var parsed = JSON.parse(String(value || '[]'));
+            if (Array.isArray(parsed)) {
+                parsed.forEach(function (one) {
+                    if (one && typeof one === 'object') {
+                        var item = {};
+                        fields.forEach(function (field) {
+                            item[field.key] = String(one[field.key] || '');
+                        });
+                        items.push(item);
+                    }
+                });
+            }
+        } catch (err) {
+            items = [];
+        }
+
+        var box = el('div', 'wgt-slides');
+
+        function flush() {
+            var clean = items.filter(function (one) {
+                return fields.some(function (field) {
+                    return (one[field.key] || '').trim() !== '';
+                });
+            });
+            setParam(area, row, key, clean.length ? JSON.stringify(clean) : '', { noWhen: true });
+        }
+
+        function paint() {
+            box.innerHTML = '';
+
+            items.forEach(function (one, index) {
+                var card = el('div', 'wgt-slide');
+                var hd = el('div', 'wgt-slide__hd');
+                hd.appendChild(el('b', '', '第 ' + (index + 1) + ' 条'));
+
+                var up = el('button', 'wgt-iconbtn', '↑');
+                up.type = 'button';
+                up.addEventListener('click', function () {
+                    if (index === 0) {
+                        return;
+                    }
+                    items.splice(index - 1, 0, items.splice(index, 1)[0]);
+                    paint();
+                    flush();
+                });
+
+                var down = el('button', 'wgt-iconbtn', '↓');
+                down.type = 'button';
+                down.addEventListener('click', function () {
+                    if (index === items.length - 1) {
+                        return;
+                    }
+                    items.splice(index + 1, 0, items.splice(index, 1)[0]);
+                    paint();
+                    flush();
+                });
+
+                var del = el('button', 'wgt-iconbtn', '✕');
+                del.type = 'button';
+                del.addEventListener('click', function () {
+                    items.splice(index, 1);
+                    paint();
+                    flush();
+                });
+
+                hd.appendChild(up);
+                hd.appendChild(down);
+                hd.appendChild(del);
+                card.appendChild(hd);
+
+                fields.forEach(function (field) {
+                    var input = el('input', 'wgt-input');
+                    input.type = 'text';
+                    input.value = one[field.key] || '';
+                    input.placeholder = field.placeholder || field.label || field.key;
+                    input.addEventListener('input', function () {
+                        one[field.key] = input.value;
+                        flush();
+                    });
+                    card.appendChild(input);
+                });
+
+                box.appendChild(card);
+            });
+
+            var add = el('button', 'wgt-btn', '＋ 新增一条');
+            add.type = 'button';
+            add.disabled = items.length >= maxRows;
+            add.addEventListener('click', function () {
+                if (items.length >= maxRows) {
+                    return;
+                }
+                var item = {};
+                fields.forEach(function (field) {
+                    item[field.key] = '';
+                });
+                items.push(item);
+                paint();
+            });
+            box.appendChild(add);
+        }
+
+        paint();
+        return box;
+    }
+
+    /* 参数条件显隐：key:empty / key:!empty / key:!value / key:a|b */    function whenOk(expr, params) {
         var parts = String(expr).split(':');
         if (parts.length < 2) {
             return true;
@@ -1290,6 +1463,89 @@
                 foldAll(btn.getAttribute('data-fold-all') === '1');
             });
         });
+
+        /* 导出 / 导入（第 9 轮修订） */
+        var exportBtn = $('[data-export-btn]');
+        var importBtn = $('[data-import-btn]');
+        var importFile = $('[data-import-file]');
+
+        if (exportBtn) {
+            exportBtn.addEventListener('click', function () {
+                window.fetch(DATA.ajax + '?action=export', {
+                    method: 'POST',
+                    credentials: 'same-origin',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ token: DATA.token })
+                }).then(function (res) { return res.json(); }).then(function (data) {
+                    if (!data || !data.ok) {
+                        toast((data && data.error) || '导出失败', 'bad');
+                        return;
+                    }
+                    var blob = new Blob([JSON.stringify(data.doc, null, 2)], { type: 'application/json' });
+                    var a = document.createElement('a');
+                    a.href = URL.createObjectURL(blob);
+                    a.download = 'ecod-widgets-' + new Date().toISOString().slice(0, 10).replace(/-/g, '') + '.json';
+                    document.body.appendChild(a);
+                    a.click();
+                    a.remove();
+                    URL.revokeObjectURL(a.href);
+                    toast('布局已导出', 'ok');
+                }).catch(function () {
+                    toast('导出失败：网络错误', 'bad');
+                });
+            });
+        }
+
+        if (importBtn && importFile) {
+            importBtn.addEventListener('click', function () {
+                if (state.dirty && !window.confirm('有未保存的改动，导入会整体替换当前布局并丢弃这些改动。继续？')) {
+                    return;
+                }
+                importFile.click();
+            });
+            importFile.addEventListener('change', function () {
+                var file = importFile.files && importFile.files[0];
+                importFile.value = '';
+                if (!file) {
+                    return;
+                }
+                file.text().then(function (text) {
+                    var doc;
+                    try {
+                        doc = JSON.parse(text);
+                    } catch (e) {
+                        toast('导入失败：不是合法的 JSON 文件', 'bad');
+                        return;
+                    }
+                    if (!doc || !doc.areas) {
+                        toast('导入失败：文件里没有模块布局数据', 'bad');
+                        return;
+                    }
+                    if (!window.confirm('导入将整体替换当前布局（当前布局会先自动备份）。确定继续？')) {
+                        return;
+                    }
+                    return window.fetch(DATA.ajax + '?action=import', {
+                        method: 'POST',
+                        credentials: 'same-origin',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ token: DATA.token, doc: doc })
+                    }).then(function (res) { return res.json(); }).then(function (data) {
+                        if (!data || !data.ok) {
+                            toast((data && data.error) || '导入失败', 'bad');
+                            return;
+                        }
+                        var msg = '已导入 ' + data.imported + ' 个模块';
+                        if (data.skipped > 0) {
+                            msg += '，跳过 ' + data.skipped + ' 个未知模块';
+                        }
+                        toast(msg + '，页面即将刷新', 'ok');
+                        window.setTimeout(function () { window.location.reload(); }, 800);
+                    });
+                }).catch(function () {
+                    toast('导入失败：文件读取错误', 'bad');
+                });
+            });
+        }
 
         window.addEventListener('beforeunload', function (event) {
             if (state.dirty) {

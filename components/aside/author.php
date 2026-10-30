@@ -4,8 +4,8 @@
  *
  * @package Ecod Theme
  * @author  Ecod
- * @copyright Copyright (c) 2026 Ecod (https://ecod.cc)
- * @license   MIT
+ * @copyright Copyright (c) 2026 Ecod. All Rights Reserved.
+ * @link    https://ecod.cc
  */
 if (!defined('__TYPECHO_ROOT_DIR__')) {
     exit;
@@ -33,18 +33,17 @@ if ($ecodAuHour < 5) {
     $ecodAuHello = '晚上好';
 }
 
-/* 社交链接：每行「名称|网址」 */
+/* 社交链接：repeater JSON（§31 第 10 轮） */
 $ecodAuLinks = [];
-foreach (preg_split('/\r\n|\r|\n/', (string) ecod_p('links', '')) as $ecodAuLine) {
-    $ecodAuLine = trim($ecodAuLine);
-    if ($ecodAuLine === '' || strpos($ecodAuLine, '|') === false) {
-        continue;
+$ecodAuLinksRaw = json_decode((string) ecod_p('links', ''), true);
+if (is_array($ecodAuLinksRaw)) {
+    foreach ($ecodAuLinksRaw as $ecodAuRow) {
+        $ecodAuLabel = trim((string) ($ecodAuRow['label'] ?? ''));
+        $ecodAuHref = trim((string) ($ecodAuRow['href'] ?? ''));
+        if ($ecodAuLabel !== '' && $ecodAuHref !== '') {
+            $ecodAuLinks[] = ['label' => $ecodAuLabel, 'href' => $ecodAuHref];
+        }
     }
-    [$ecodAuLabel, $ecodAuHref] = array_map('trim', explode('|', $ecodAuLine, 2));
-    if ($ecodAuLabel === '' || $ecodAuHref === '') {
-        continue;
-    }
-    $ecodAuLinks[] = ['label' => $ecodAuLabel, 'href' => $ecodAuHref];
 }
 
 $ecodAuOv = $ecodAuStats ? ecod_site_overview() : [];

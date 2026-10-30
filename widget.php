@@ -27,8 +27,7 @@
  * @since   2026-10-29
  * @version 2.3.1
  * @link    https://ecod.cc
- * @copyright Copyright (c) 2026 Ecod (https://ecod.cc)
- * @license   MIT
+ * @copyright Copyright (c) 2026 Ecod. All Rights Reserved.
  */
 
 error_reporting(E_ALL & ~E_DEPRECATED & ~E_NOTICE & ~E_WARNING);
@@ -185,6 +184,11 @@ function ecod_wgt_clean_params(array $def, array $in): array
 
         switch ($type) {
             case 'number':
+                /* 空值合法：存空串，前台回落声明默认值（§31 第 5 轮修订） */
+                if ($value === '' || $value === null) {
+                    $out[$key] = '';
+                    break;
+                }
                 $num = (int) $value;
                 if (isset($param['min']) && $num < (int) $param['min']) {
                     $num = (int) $param['min'];
@@ -209,6 +213,21 @@ function ecod_wgt_clean_params(array $def, array $in): array
                 $out[$key] = ecod_wgt_clean_slides($value);
                 break;
 
+            case 'term':
+                /* 单选分类：只放行纯数字 mid，空表示用声明默认 */
+                $pick = trim((string) $value);
+                $out[$key] = preg_match('/^\d+$/', $pick) ? $pick : '';
+                break;
+
+            case 'terms':
+                /* 多选分类：逗号分隔 mid，去重去空 */
+                $picks = preg_split('/[\s,，]+/', (string) $value) ?: [];
+                $picks = array_values(array_unique(array_filter($picks, static function ($one) {
+                    return preg_match('/^\d+$/', (string) $one) === 1;
+                })));
+                $out[$key] = implode(',', $picks);
+                break;
+
             case 'image':
                 $url = trim(str_replace(["\r", "\n", "\t"], '', (string) $value));
                 /* 只放行 http(s)、站内相对路径与 data:image，挡住 javascript: 之类 */
@@ -222,12 +241,72 @@ function ecod_wgt_clean_params(array $def, array $in): array
                 $out[$key] = mb_substr(trim((string) $value), 0, 20000);
                 break;
 
+            case 'repeater':
+                $out[$key] = ecod_wgt_clean_repeater($value, (array) ($param['fields'] ?? []), (int) ($param['max'] ?? 20));
+                break;
+
             default:
                 $out[$key] = mb_substr(trim((string) $value), 0, 2000);
         }
     }
 
     return $out;
+}
+
+/**
+ * repeater 参数：JSON 数组字符串清洗（第 10 轮）
+ *
+ * 只保留声明过的子字段键；行数截到 max；全空行剔除。
+ *
+ * @param mixed $value JSON 字符串或数组
+ */
+function ecod_wgt_clean_repeater($value, array $fields, int $max): string
+{
+    if (is_string($value)) {
+        $value = trim($value);
+        $value = $value === '' ? [] : json_decode($value, true);
+    }
+    if (!is_array($value)) {
+        return '';
+    }
+
+    $keys = [];
+    foreach ($fields as $field) {
+        $key = (string) ($field['key'] ?? '');
+        if ($key !== '') {
+            $keys[] = $key;
+        }
+    }
+    if ($keys === []) {
+        return '';
+    }
+
+    $out = [];
+    foreach ($value as $row) {
+        if (!is_array($row)) {
+            continue;
+        }
+        $item = [];
+        $filled = false;
+        foreach ($keys as $key) {
+            $one = mb_substr(trim((string) ($row[$key] ?? '')), 0, 500);
+            if (str_contains($one, 'javascript:')) {
+                $one = '';
+            }
+            $item[$key] = $one;
+            if ($one !== '') {
+                $filled = true;
+            }
+        }
+        if ($filled) {
+            $out[] = $item;
+        }
+        if (count($out) >= max(1, $max)) {
+            break;
+        }
+    }
+
+    return $out === [] ? '' : json_encode($out, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
 }
 
 /**
@@ -372,6 +451,41 @@ if ($ecodAction !== '') {
             ecod_wgt_json(['ok' => true, 'doc' => $ecodDoc]);
             break;
 
+        case 'import':
+            $inDoc = is_array($ecodIn['doc'] ?? null) ? $ecodIn['doc'] : null;
+            if (!$inDoc || empty($inDoc['areas']) || !is_array($inDoc['areas'])) {
+                ecod_wgt_json(['ok' => false, 'error' => '导入文件不是有效的模块布局'], 400);
+            }
+
+            /* 导入前备份当前布局（第 9 轮修订） */
+            ecod_cache_set('EWidgetsBackupImport', $ecodDoc);
+
+            /* 旧版本布局先过合并映射（纯映射，不动备份与存储） */
+            $inDoc = ecod_widgets_migrate_map($inDoc, (int) ($inDoc['v'] ?? 0));
+
+            /* 导入前计数，未知类型跳过并汇报，不静默丢 */
+            $inRows = 0;
+            $inKnown = 0;
+            $defs = ecod_block_defs();
+            foreach ($inDoc['areas'] as $rows) {
+                foreach ((is_array($rows) ? $rows : []) as $row) {
+                    $inRows++;
+                    if (isset($defs[(string) ($row['type'] ?? '')])) {
+                        $inKnown++;
+                    }
+                }
+            }
+
+            ecod_widgets_write($inDoc);
+
+            ecod_wgt_json([
+                'ok'       => true,
+                'imported' => $inKnown,
+                'skipped'  => $inRows - $inKnown,
+                'rev'      => ecod_widgets_rev(ecod_widgets_raw()),
+            ]);
+            break;
+
         default:
             ecod_wgt_json(['ok' => false, 'error' => '未知动作'], 400);
     }
@@ -384,6 +498,22 @@ header('Cache-Control: no-store');
  * 页面数据
  * ---------------------------------------------------------------- */
 $ecodWgt = ecod_widgets_admin_data();
+
+/* 分类选项（term / terms 字段）：mid => 「名称 [ID:x][共N篇]」，照 Zibll zib_widget_option() 的标注习惯 */
+$ecodWgtTerms = new stdClass();
+try {
+    \Widget\Metas\Category\Rows::alloc()->to($ecodCatsStack);
+    while ($ecodCatsStack->next()) {
+        $ecodWgtTerms->{(string) $ecodCatsStack->mid} = sprintf(
+            '%s [ID:%d][共%d篇]',
+            (string) $ecodCatsStack->name,
+            (int) $ecodCatsStack->mid,
+            (int) $ecodCatsStack->count
+        );
+    }
+} catch (\Throwable $e) {
+    /* 分类读取失败时下拉为空，不影响管理台其它功能 */
+}
 
 /* 图标：按 defs 里出现过的名字去重生成 */
 $ecodIcons = [];
@@ -429,6 +559,9 @@ $ecodJs = $ecodWgtAsset('assets/admin/widget.js');
         <?php endif; ?>
         <span class="wgt-save" data-save-state data-state="idle">已保存</span>
         <button type="button" class="wgt-btn wgt-btn--primary" data-save-btn disabled>已保存</button>
+        <button type="button" class="wgt-btn wgt-btn--ghost" data-export-btn>导出</button>
+        <button type="button" class="wgt-btn wgt-btn--ghost" data-import-btn>导入</button>
+        <input type="file" accept="application/json,.json" data-import-file hidden>
         <a class="wgt-btn wgt-btn--ghost" href="<?php echo htmlspecialchars($ecodAdminUrl . '/options-theme.php', ENT_QUOTES, 'UTF-8'); ?>">外观设置</a>
         <a class="wgt-btn wgt-btn--ghost" href="<?php echo htmlspecialchars($ecodSite, ENT_QUOTES, 'UTF-8'); ?>" target="_blank" rel="noopener">查看站点</a>
     </div>
@@ -479,6 +612,7 @@ window.ECOD_WGT = <?php echo json_encode([
     'slots'     => $ecodWgt['slots'],
     'globals'   => $ecodWgt['globals'],
     'aside'     => $ecodWgt['aside'],
+    'terms'     => $ecodWgtTerms,
     'icons'     => $ecodIcons,
     'limit'     => $ecodWgt['limit'],
     'rev'       => $ecodWgt['rev'],

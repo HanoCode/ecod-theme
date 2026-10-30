@@ -7,8 +7,7 @@
  * @since   2026-10-29
  * @version 2.0.0
  * @link    https://ecod.cc
- * @copyright Copyright (c) 2026 Ecod (https://ecod.cc)
- * @license   MIT
+ * @copyright Copyright (c) 2026 Ecod. All Rights Reserved.
  *
  * 在后台「页面 → 新建页面 → 自定义模板」里选择「归档时间轴」即可。
  * 一次 SQL 取全部已发布文章，按年 / 月分组折叠，不依赖 Widget 分页。
