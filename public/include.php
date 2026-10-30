@@ -170,6 +170,9 @@ html[data-theme="dark"] {
     --ecod-code-fg: <?php echo $ecodCodeDark[1]; ?>;
 }
 <?php if ($ecodFont !== ''): ?>
+/* 自定义字体预加载：@font-face 在下方 brand 样式里声明，浏览器要解析完 CSS
+   才开始拉字体，首帧必有一轮交换闪烁；preload 让字体与 CSS 并行加载 */
+<link rel="preload" href="<?php echo htmlspecialchars($ecodFont, ENT_QUOTES, 'UTF-8'); ?>" as="font" type="font/woff2" crossorigin>
 @font-face {
     font-family: "EcodCustom";
     src: url("<?php echo htmlspecialchars($ecodFont, ENT_QUOTES, 'UTF-8'); ?>") format("woff2"),
