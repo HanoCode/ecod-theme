@@ -578,6 +578,77 @@
     /* 图标下拉：DATA.icons 来自后端 sprite 键名清单 */
     var ICONS = Array.isArray(DATA.icons) ? DATA.icons : [];
 
+    /* 图标选择器：触发按钮弹出图标网格浮层（真实 svg 渲染，非文本下拉） */
+    var iconPop = null;
+    function closeIconPicker() {
+        if (iconPop) {
+            iconPop.remove();
+            iconPop = null;
+        }
+    }
+    function openIconPicker(btn) {
+        var toggle = !!(iconPop && iconPop._btn === btn);
+        closeIconPicker();
+        if (toggle) {
+            return;
+        }
+        var panel = btn.closest('[data-edit]');
+        /* findItem 返回 {item, parent, index} 包装，取 .item */
+        var hit = panel ? findItem(panel.getAttribute('data-edit')) : null;
+        var item = hit ? hit.item : null;
+        if (!item) {
+            return;
+        }
+        var pop = document.createElement('div');
+        pop.className = 'ecod-navb__ipop';
+        pop._btn = btn;
+        pop.innerHTML = '<div class="ecod-navb__ipop-h">选择图标</div>' +
+            '<div class="ecod-navb__ipop-grid">' +
+            '<button type="button" class="ecod-navb__icell is-clear' + (item.icon ? '' : ' is-on') + '" data-ic="" title="不使用"><span>×</span></button>' +
+            ICONS.filter(function (name) { return DATA.iconSvg && DATA.iconSvg[name]; }).map(function (name) {
+                return '<button type="button" class="ecod-navb__icell' + (item.icon === name ? ' is-on' : '') +
+                    '" data-ic="' + esc(name) + '" title="' + esc(name) + '">' + DATA.iconSvg[name] + '</button>';
+            }).join('') +
+            '</div>';
+        document.body.appendChild(pop);
+        var r = btn.getBoundingClientRect();
+        var top = r.bottom + 6;
+        var left = Math.max(8, Math.min(r.left, window.innerWidth - pop.offsetWidth - 8));
+        if (top + pop.offsetHeight > window.innerHeight - 8) {
+            top = Math.max(8, r.top - pop.offsetHeight - 6);
+        }
+        pop.style.top = top + 'px';
+        pop.style.left = left + 'px';
+        pop.addEventListener('click', function (e) {
+            var cell = e.target.closest ? e.target.closest('.ecod-navb__icell') : null;
+            if (!cell) {
+                return;
+            }
+            item.icon = cell.getAttribute('data-ic') || '';
+            closeIconPicker();
+            render();
+            sync();
+        });
+        iconPop = pop;
+    }
+    document.addEventListener('click', function (e) {
+        if (!iconPop) {
+            return;
+        }
+        if (iconPop.contains(e.target)) {
+            return;
+        }
+        if (e.target.closest && e.target.closest('[data-act="iconpick"]')) {
+            return;
+        }
+        closeIconPicker();
+    });
+    document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape') {
+            closeIconPicker();
+        }
+    });
+
     /* 菜单项编辑面板（等价于 WP 的菜单项折叠面板） */
     function panelHtml(item, isSub) {
         var src = urlMap[item.type + ':' + item.ref] || null;
@@ -587,9 +658,15 @@
             ? '必填，例如 https://github.com/you'
             : (srcUrl || '留空跟随源地址');
 
-        var iconOpts = '<option value="">不使用</option>' + ICONS.map(function (name) {
-            return '<option value="' + esc(name) + '"' + (item.icon === name ? ' selected' : '') + '>' + esc(name) + '</option>';
-        }).join('');
+        var curSvg = item.icon && DATA.iconSvg && DATA.iconSvg[item.icon] ? DATA.iconSvg[item.icon] : '';
+        var pickSvg = curSvg || (DATA.iconSvg && DATA.iconSvg.star ? DATA.iconSvg.star : '');
+        var iconField = '<div class="ecod-navb__field">' +
+            '<span>前置图标</span>' +
+            '<button type="button" class="ecod-navb__ipick' + (curSvg ? ' has-icon' : '') + '" data-act="iconpick" title="点击选择图标">' +
+            '<span class="ecod-navb__ipick-ic">' + pickSvg + '</span>' +
+            '<span>' + (curSvg ? esc(item.icon) : '选择图标') + '</span>' +
+            '</button>' +
+            '</div>';
 
         return '<div class="ecod-navb__edit' + (isSub ? ' is-sub' : '') + '" data-edit="' + esc(item._k) + '">' +
             '<div class="ecod-navb__grid">' +
@@ -597,10 +674,7 @@
             fieldHtml('标题属性', 'attr', item.attr, '鼠标悬停提示，可留空') +
             fieldHtml('链接地址', 'url', item.url, ph, true) +
             fieldHtml('CSS 类', 'cls', item.cls, '可选，空格分隔，最多 5 个') +
-            '<label class="ecod-navb__field">' +
-            '<span>前置图标</span>' +
-            '<select data-e="icon">' + iconOpts + '</select>' +
-            '</label>' +
+            iconField +
             fieldHtml('角标', 'badge', item.badge, '如「热」「NEW」，最长 6 字') +
             '<label class="ecod-navb__check"><input type="checkbox" data-e="blank"' +
             (item.blank ? ' checked' : '') + '> 新窗口打开</label>' +
@@ -725,7 +799,10 @@
         }
         var act = btn.getAttribute('data-act');
 
-        if (act === 'del') {
+        if (act === 'iconpick') {
+            openIconPicker(btn);
+            return;
+        } else if (act === 'del') {
             if (hit.parent) {
                 hit.parent.children.splice(hit.index, 1);
             } else {
@@ -805,14 +882,6 @@
 
     listEl.addEventListener('change', function (e) {
         var input = e.target;
-        if (input.matches && input.matches('select[data-e="icon"]')) {
-            var selHit = editTarget(input);
-            if (selHit) {
-                selHit.item.icon = input.value;
-                sync();
-            }
-            return;
-        }
         if (!input.matches || !input.matches('input[data-e="blank"]')) {
             return;
         }

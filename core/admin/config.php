@@ -903,6 +903,14 @@ window.ECOD_NAV = <?php echo json_encode([
     'active'  => ecod_nav_sets()['active'],
     'home'    => ecod_nav_home_url(),
     'icons'   => ecod_icon_names(),
+    /* 键名 => 完整 svg 标记：构建器图标选择器直接渲染图形，不做文本下拉 */
+    'iconSvg' => (static function () {
+        $map = [];
+        foreach (ecod_icon_names() as $ecodIconName) {
+            $map[$ecodIconName] = ecod_icon($ecodIconName, 18);
+        }
+        return $map;
+    })(),
 ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_HEX_TAG | JSON_HEX_AMP); ?>;
 window.ECOD_TOPICS = <?php echo json_encode([
     'items' => ecod_topics(false),

@@ -659,7 +659,7 @@ details .in{padding-bottom:12px}
       <tr><td><code>blank</code></td><td>bool</td><td>新窗口打开，默认 off</td></tr>
       <tr><td><code>attr</code></td><td>string</td><td>链接的 <code>title</code> 属性（悬停提示），可留空；输出时转义</td></tr>
       <tr><td><code>cls</code></td><td>string</td><td>附加到 <code>&lt;a&gt;</code> 的 CSS 类，仅保留 <code>[A-Za-z0-9_-]</code> 片段、最多 5 个；用于单条菜单的特殊样式</td></tr>
-      <tr><td><code>icon</code></td><td>string</td><td><span class="tag new">新增</span> 导航项前置图标，取 sprite 图标名（<code>home</code> / <code>star</code> / <code>zap</code> / <code>folder</code> 等，后台下拉可选）；一二级项均可渲染，非法名或留空不输出（<code>ecod_icon()</code> 对未知名返回空串，天然安全）</td></tr>
+      <tr><td><code>icon</code></td><td>string</td><td><span class="tag new">新增</span> 导航项前置图标，取 sprite 图标名（<code>home</code> / <code>star</code> / <code>zap</code> / <code>folder</code> 等）；一二级项均可渲染，非法名或留空不输出（<code>ecod_icon()</code> 对未知名返回空串，天然安全）。后台为<b>可视化图标选择器</b>：触发按钮显示当前图标（svg 渲染），点击弹出 8 列图标网格浮层（首格「×」= 不使用，选中格描边高亮），非文本下拉；图标 svg 由 <code>ECOD_NAV.iconSvg</code> 注入</td></tr>
       <tr><td><code>badge</code></td><td>string</td><td><span class="tag new">新增</span> 导航项右上角标文案（如「热」「NEW」），最长 6 字，danger 色小胶囊；仅一级项前台渲染，留空不输出。后台清空「自定义」时一并清掉</td></tr>
       <tr><td><code>children</code></td><td>array</td><td>仅一级项可有；元素字段同上但不再嵌套，超出部分渲染时忽略</td></tr>
     </table>
@@ -870,7 +870,7 @@ details .in{padding-bottom:12px}
       <tr><th>模式</th><th>字段值</th><th>版式</th><th>典型场景</th><th>响应式</th></tr>
       <tr><td><b>A 列表</b></td><td><code>default</code></td><td>左文右图（170×110）</td><td>首页默认</td><td>&lt;560px 图片缩小 / 可关图</td></tr>
       <tr><td><b>B 大图</b></td><td><code>single</code></td><td>右大图 54% + 左文，整卡 200px</td><td>重点文章、置顶</td><td>&lt;760px 上下堆叠</td></tr>
-      <tr><td><b>C 三图</b></td><td><code>multiple</code></td><td>上文下三图等分</td><td>图集、摄影、旅行</td><td>三图始终等分</td></tr>
+      <tr><td><b>C 三图</b></td><td><code>multiple</code></td><td>上三图等分 + 下文（标题/摘要）</td><td>图集、摄影、旅行</td><td>三图始终等分</td></tr>
       <tr><td><b>D 无图</b></td><td><code>none</code></td><td>纯文字，标题更大</td><td>技术笔记、长文</td><td>无变化</td></tr>
       <tr><td><b>E 网格</b></td><td><code>grid</code> <span class="tag new">新增</span></td><td>3 列卡片，上图下文</td><td>归档页 / 视图切换</td><td>3 → 2 → 1 列</td></tr>
       <tr><td><b>F 标题式</b></td><td><code>title</code> <span class="tag new">v3</span></td><td>序号 + 标题 + 日期，无摘要</td><td>最新速览 / 侧栏</td><td>单行省略</td></tr>
@@ -975,6 +975,7 @@ details .in{padding-bottom:12px}
         </table>
         <p style="margin-top:6px;font-size:12.5px;color:var(--text-3)"><b>纯 CSS 命中</b>：只挂 <code>.ecod_content h2/h3/h4</code>，与标题文字内容无关——正文里有没有手写「第 N 节」都同样生效，不跑 JS、不改 DOM、不加类名。三条竖条的左边缘都在 <code>left:0</code> 对齐；装饰走 <code>::before</code> 伪元素，TOC 抽取（<code>textContent</code>）不受影响。</p>
         <p style="margin-top:6px;font-size:12.5px;color:var(--text-3)">暗色下 h4 文字提亮为 <code>#9db0ff</code>，竖条随 <code>--primary</code> 自动适配。</p>
+        <p style="margin-top:6px;font-size:12.5px;color:var(--text-3)"><b>原生 details 折叠（FAQ）</b>：正文里未走短代码的裸 <code>&lt;details&gt;</code> 同样成卡片——细边框圆角 + surface 底，summary 前置 chevron（收起朝右、展开 90° 朝下，与 .ecod_fold 同规则），open 态标题转主色 + 内容区虚线分隔；连续堆叠间距 14px；展开动画用 <code>::details-content</code> + <code>interpolate-size: allow-keywords</code> 高度插值（Chrome 131+ 生效，旧浏览器瞬时开合无副作用）。</p>
         <div style="margin-top:14px">
           <div style="position:relative;padding-left:16px"><span style="position:absolute;left:0;top:.16em;width:5px;height:1.02em;border-radius:3px;background:var(--primary)"></span><b style="font-size:22px;line-height:1.4">功能说明与使用方式</b></div>
           <div style="position:relative;padding-left:14px;margin-top:16px"><span style="position:absolute;left:0;top:.34em;width:3px;height:.78em;border-radius:2px;background:var(--primary)"></span><b style="font-size:18px;line-height:1.4">安装步骤</b></div>

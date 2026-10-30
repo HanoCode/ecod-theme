@@ -11,16 +11,16 @@
  */
 
 return [
-    'assets/css/ecod.css' => 'assets/dist/css/ecod.7e273200.min.css',
-    'assets/css/ecod.critical.css' => 'assets/dist/css/ecod.critical.de17c885.min.css',
+    'assets/css/ecod.css' => 'assets/dist/css/ecod.5e1d98c5.min.css',
+    'assets/css/ecod.critical.css' => 'assets/dist/css/ecod.critical.00bc76ba.min.css',
     'assets/js/ecod.global.js' => 'assets/dist/js/ecod.global.4ef8e0e5.min.js',
     'assets/js/ecod.post.js' => 'assets/dist/js/ecod.post.6d928df6.min.js',
     'assets/admin/config.css' => 'assets/dist/admin/config.db78a792.min.css',
     'assets/admin/config.js' => 'assets/dist/admin/config.f5721c6a.min.js',
     'assets/admin/media.css' => 'assets/dist/admin/media.fb1a556c.min.css',
     'assets/admin/media.js' => 'assets/dist/admin/media.8d4d899f.min.js',
-    'assets/admin/nav.css' => 'assets/dist/admin/nav.fe96d5b9.min.css',
-    'assets/admin/nav.js' => 'assets/dist/admin/nav.0c3c4e40.min.js',
+    'assets/admin/nav.css' => 'assets/dist/admin/nav.4d12fc93.min.css',
+    'assets/admin/nav.js' => 'assets/dist/admin/nav.db7db360.min.js',
     'assets/admin/topics.css' => 'assets/dist/admin/topics.42a9af21.min.css',
     'assets/admin/topics.js' => 'assets/dist/admin/topics.1607b555.min.js',
     'assets/admin/tools.js' => 'assets/dist/admin/tools.511e5a4b.min.js',

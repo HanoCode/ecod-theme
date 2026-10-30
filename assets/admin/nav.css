@@ -512,26 +512,112 @@ body.is-navb-dragging {
     color: var(--ea-ink);
 }
 
-/* 前置图标下拉：与文本输入同规格 */
-.ecod-navb__field select {
+/* 前置图标选择器：触发按钮 + 图标网格浮层（替代文本下拉） */
+.ecod-navb__ipick {
+    display: flex;
+    align-items: center;
+    gap: 7px;
     width: 100%;
     height: 28px;
-    padding: 0 6px;
+    padding: 0 8px;
     border: 1px solid var(--ea-line);
     border-radius: var(--ea-radius-sm);
     background: #fff;
     font-size: 12px;
+    color: var(--ea-sub);
+    cursor: pointer;
+    box-sizing: border-box;
+}
+
+.ecod-navb__ipick:hover {
+    border-color: var(--ea-brand);
     color: var(--ea-ink);
 }
 
-.ecod-navb__field select:disabled {
-    background: var(--ea-soft, #f5f6f8);
-    color: var(--ea-sub);
-    cursor: not-allowed;
+.ecod-navb__ipick.has-icon {
+    color: var(--ea-ink);
 }
 
-.ecod-navb__field input:focus,
-.ecod-navb__field select:focus {
+.ecod-navb__ipick-ic {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    height: 18px;
+    color: var(--ea-sub);
+    flex: none;
+}
+
+.ecod-navb__ipick.has-icon .ecod-navb__ipick-ic {
+    color: var(--ea-brand);
+}
+
+.ecod-navb__ipick-ic svg {
+    width: 18px;
+    height: 18px;
+}
+
+.ecod-navb__ipop {
+    position: fixed;
+    z-index: 9999;
+    min-width: 232px;
+    padding: 8px;
+    border: 1px solid var(--ea-line);
+    border-radius: var(--ea-radius, 10px);
+    background: #fff;
+    box-shadow: 0 12px 32px rgba(16, 20, 30, .14);
+}
+
+.ecod-navb__ipop-h {
+    font-size: 11px;
+    color: var(--ea-sub);
+    padding: 0 2px 6px;
+}
+
+.ecod-navb__ipop-grid {
+    display: grid;
+    grid-template-columns: repeat(8, 26px);
+    gap: 4px;
+}
+
+.ecod-navb__icell {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 26px;
+    height: 26px;
+    padding: 0;
+    border: 1px solid transparent;
+    border-radius: 6px;
+    background: transparent;
+    color: var(--ea-ink);
+    cursor: pointer;
+    box-sizing: border-box;
+}
+
+.ecod-navb__icell:hover {
+    background: var(--ea-brand-soft);
+    color: var(--ea-brand);
+}
+
+.ecod-navb__icell.is-on {
+    border-color: var(--ea-brand);
+    background: var(--ea-brand-soft);
+    color: var(--ea-brand);
+}
+
+.ecod-navb__icell svg {
+    width: 15px;
+    height: 15px;
+}
+
+.ecod-navb__icell.is-clear span {
+    font-size: 13px;
+    line-height: 1;
+    color: var(--ea-sub);
+}
+
+.ecod-navb__field input:focus {
     outline: none;
     border-color: var(--ea-brand);
     box-shadow: 0 0 0 3px var(--ea-brand-soft);
