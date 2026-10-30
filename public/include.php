@@ -143,8 +143,12 @@ if ($ecodCode) {
 }
 ?>
 <?php
-/* 关键 CSS 内联：构建产物存在时，首屏必需的节（令牌/基础/布局/导航/暗色）
-   直接进 <head>，完整样式表转异步预加载——首屏渲染不再被整包 CSS 阻塞。
+/* 关键 CSS 内联：构建产物存在时，首屏必需的节（令牌/基础/布局/导航/暗色/
+   首页流/卡片/侧栏/响应式等，切片清单见 build/build.mjs CRITICAL_SECTIONS）
+   直接进 <head>，完整样式表转异步预加载——首屏渲染不被整包 CSS 阻塞。
+   完整表 onload 后在 <html> 打 data-ecod-cssready 标记并派发 ecod:cssready
+   事件：依赖整包样式的行为（如 reveal 入场动画初始化）必须等标记就位再跑，
+   否则出现「内容先隐再淡入」的频闪。
    未构建（无 dist）时维持整包阻塞加载，行为与旧版一致。
    内联块在 brand 之前输出，主色等派生变量的覆盖顺序不变。 */
 $ecodFullCssUrl = ecod_asset('assets/css/ecod.css');
@@ -153,9 +157,11 @@ if ($ecodCriticalFile !== null) {
     $ecodCriticalCss = (string) file_get_contents(ECOD_THEME_DIR . '/' . $ecodCriticalFile);
     echo '<style id="ecod-critical">' . $ecodCriticalCss . '</style>' . "\n";
 ?>
-<link rel="stylesheet" href="<?php echo $ecodFullCssUrl; ?>">
+<link rel="preload" href="<?php echo $ecodFullCssUrl; ?>" as="style" onload="this.onload=null;this.rel='stylesheet';document.documentElement.setAttribute('data-ecod-cssready','1');document.dispatchEvent(new Event('ecod:cssready'))">
+<noscript><link rel="stylesheet" href="<?php echo $ecodFullCssUrl; ?>"></noscript>
 <?php } else { ?>
 <link rel="stylesheet" href="<?php echo $ecodFullCssUrl; ?>">
+<script>document.documentElement.setAttribute('data-ecod-cssready','1');</script>
 <?php } ?>
 <style id="ecod-brand">
 :root {

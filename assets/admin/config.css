@@ -19,6 +19,9 @@
     --ea-brand: #4f6ef2;
     --ea-brand-soft: #eef1fe;
     --ea-radius: 12px;
+    --ea-radius-xs: 4px;
+    --ea-radius-sm: 8px;
+    --ea-radius-full: 999px;
 
     display: grid;
     grid-template-columns: 232px minmax(0, 1fr);
@@ -26,7 +29,7 @@
     margin-bottom: 18px;
     background: #fff;
     border: 1px solid var(--ea-line);
-    border-radius: 16px;
+    border-radius: var(--ea-radius);
     box-shadow: 0 10px 34px rgba(23, 32, 63, .07);
     /* 不用 overflow:hidden：会破坏 __head 的 position:sticky 吸顶 */
     color: var(--ea-ink);
@@ -70,7 +73,7 @@
     place-items: center;
     width: 32px;
     height: 32px;
-    border-radius: 9px;
+    border-radius: var(--ea-radius-sm);
     background: linear-gradient(135deg, #5b7bfa, #3f5ce0);
     color: #fff;
     font-weight: 700;
@@ -107,7 +110,7 @@
     gap: 8px;
     padding: 9px 12px;
     border: 0;
-    border-radius: 9px;
+    border-radius: var(--ea-radius-sm);
     background: transparent;
     color: #4a5065;
     font-size: 13px;
@@ -131,7 +134,7 @@
 .ecod-admin__navitem em {
     min-width: 20px;
     padding: 0 6px;
-    border-radius: 999px;
+    border-radius: var(--ea-radius-full);
     background: #e8ebf6;
     color: #6b7390;
     font-size: 11px;
@@ -191,7 +194,7 @@
     align-items: center;
     gap: 6px;
     padding: 4px 10px;
-    border-radius: 999px;
+    border-radius: var(--ea-radius-full);
     background: #fff5e6;
     color: #b06a00;
     font-size: 12px;
@@ -254,7 +257,7 @@ body {
     margin: 16px 0 4px;
     padding: 12px 14px;
     border: 1px solid #f2d18b;
-    border-radius: 10px;
+    border-radius: var(--ea-radius);
     background: #fdf6e3;
 }
 .ecod-pane__notice b {
@@ -280,7 +283,7 @@ body {
     margin: 16px 0 4px;
     padding: 11px 14px;
     border: 1px solid #d7dffb;
-    border-radius: 10px;
+    border-radius: var(--ea-radius);
     background: #f2f5fe;
     color: #41508a;
     font-size: 12.5px;
@@ -291,7 +294,7 @@ body {
     flex: none;
     padding: 5px 12px;
     border: 0;
-    border-radius: 7px;
+    border-radius: var(--ea-radius-sm);
     background: var(--ea-brand);
     color: #fff;
     font-family: inherit;
@@ -353,7 +356,7 @@ body {
     box-sizing: border-box;
     padding: 8px 11px;
     border: 1px solid #dfe3ee;
-    border-radius: 9px;
+    border-radius: var(--ea-radius-sm);
     background: #fcfcfe;
     color: var(--ea-ink);
     font-size: 13px;
@@ -411,7 +414,7 @@ body {
     text-align: left;
     background: #fbfcfe;
     border: 1px solid var(--ea-line);
-    border-radius: 11px;
+    border-radius: var(--ea-radius);
     cursor: pointer;
     transition: border-color .16s, background .16s, box-shadow .16s;
 }
@@ -455,7 +458,7 @@ body {
     box-sizing: border-box;
     color: #6b7390;
     background: #eef1f8;
-    border-radius: 5px;
+    border-radius: var(--ea-radius-xs);
 }
 
 .ecod-choice__item.is-on .ecod-choice__view {
@@ -466,7 +469,7 @@ body {
 .ecod-choice__view i {
     flex: 1;
     background: currentColor;
-    border-radius: 2px;
+    border-radius: var(--ea-radius-xs);
     opacity: .32;
 }
 
@@ -547,7 +550,7 @@ body {
     padding: 3px;
     background: #f4f6fb;
     border: 1px solid var(--ea-line);
-    border-radius: 10px;
+    border-radius: var(--ea-radius);
 }
 
 .ecod-choice--segment .ecod-choice__item {
@@ -556,7 +559,7 @@ body {
     padding: 6px 15px;
     background: transparent;
     border: 0;
-    border-radius: 7px;
+    border-radius: var(--ea-radius-sm);
     box-shadow: none;
 }
 
@@ -595,7 +598,7 @@ body {
     width: 38px;
     height: 22px;
     background: #d8dceb;
-    border-radius: 999px;
+    border-radius: var(--ea-radius-full);
     transition: background .18s;
 }
 
@@ -649,7 +652,7 @@ body {
 .ecod-switch i {
     position: absolute;
     inset: 0;
-    border-radius: 999px;
+    border-radius: var(--ea-radius-full);
     background: #d8dceb;
     transition: background .18s;
     pointer-events: none;
@@ -704,7 +707,7 @@ body {
     justify-content: center;
     gap: 6px;
     padding: 7px 14px;
-    border-radius: 9px;
+    border-radius: var(--ea-radius-sm);
     border: 1px solid transparent;
     background: var(--ea-brand);
     color: #fff;
@@ -784,7 +787,7 @@ body {
 
 .ecod-tool__text code {
     padding: 1px 5px;
-    border-radius: 4px;
+    border-radius: var(--ea-radius-xs);
     background: #f1f3fa;
     color: #4c5670;
     font-size: 11.5px;
@@ -793,7 +796,7 @@ body {
 .ecod-tool__tag {
     flex: none;
     padding: 5px 12px;
-    border-radius: 999px;
+    border-radius: var(--ea-radius-full);
     background: var(--ea-brand-soft);
     color: var(--ea-brand);
     font-size: 12px;
@@ -849,7 +852,7 @@ body {
     box-sizing: border-box;
     padding: 8px 11px;
     border: 1px solid #dfe3ee;
-    border-radius: 9px;
+    border-radius: var(--ea-radius-sm);
     background: #fcfcfe;
     color: #1c2130;
     font-size: 13px;
@@ -890,7 +893,7 @@ textarea.ecod-input {
     gap: 10px;
     padding: 10px;
     border: 1px solid #e6e9f2;
-    border-radius: 10px;
+    border-radius: var(--ea-radius);
     background: #fbfbfd;
 }
 
@@ -900,7 +903,7 @@ textarea.ecod-input {
     flex: none;
     width: 54px;
     height: 38px;
-    border-radius: 7px;
+    border-radius: var(--ea-radius-sm);
     background: #eef1f8 center / cover no-repeat;
     color: #98a0b6;
     font-size: 12px;
@@ -934,7 +937,7 @@ textarea.ecod-input {
     flex: none;
     padding: 0 10px;
     border: 1px solid #dfe3ee;
-    border-radius: 8px;
+    border-radius: var(--ea-radius-sm);
     background: #fff;
     color: #1c2130;
     font-size: 12px;
@@ -958,7 +961,7 @@ textarea.ecod-input {
     height: 22px;
     padding: 0;
     border: 1px solid #e6e9f2;
-    border-radius: 6px;
+    border-radius: var(--ea-radius-sm);
     background: #fff;
     color: #6b7390;
     font-size: 12px;
@@ -981,7 +984,7 @@ textarea.ecod-input {
     align-self: flex-start;
     padding: 7px 12px;
     border: 1px dashed #cfd6ea;
-    border-radius: 9px;
+    border-radius: var(--ea-radius-sm);
     background: #fff;
     color: var(--ea-brand);
     font-size: 12.5px;
@@ -1002,7 +1005,7 @@ textarea.ecod-input {
     height: auto;
     padding: 9px 12px;
     border: 1px solid #dfe3ee;
-    border-radius: 9px;
+    border-radius: var(--ea-radius-sm);
     background: #fcfcfe;
     position: relative;
 }
@@ -1013,7 +1016,7 @@ textarea.ecod-input {
     width: 38px;
     height: 22px;
     inset: auto;
-    border-radius: 999px;
+    border-radius: var(--ea-radius-full);
     flex: none;
 }
 
@@ -1222,7 +1225,7 @@ textarea.ecod-input {
 .ecod-tool__status {
     margin: 12px 0 0;
     padding: 9px 13px;
-    border-radius: 8px;
+    border-radius: var(--ea-radius-sm);
     background: #eef7f0;
     color: #2c7a45;
     font-size: 12.5px;
@@ -1259,7 +1262,7 @@ textarea.ecod-input {
     padding: 12px 15px;
     background: #fff;
     border: 1px solid var(--ea-line, #e6e8ef);
-    border-radius: 10px;
+    border-radius: var(--ea-radius);
 }
 
 .ecod-page-row.is-exists {
@@ -1273,7 +1276,7 @@ textarea.ecod-input {
     flex: none;
     width: 34px;
     height: 34px;
-    border-radius: 9px;
+    border-radius: var(--ea-radius-sm);
     background: var(--ea-brand-soft);
     color: var(--ea-brand);
 }
@@ -1325,7 +1328,7 @@ textarea.ecod-input {
     flex: none;
     padding: 3px 9px 3px 10px;
     border: 1px solid var(--ea-line, #e6e8ef);
-    border-radius: 999px;
+    border-radius: var(--ea-radius-full);
     background: #fff;
     color: var(--ea-sub);
     font-size: 11.5px;
@@ -1377,12 +1380,12 @@ textarea.ecod-input {
     height: 34px;
     padding: 2px;
     border: 1px solid var(--ecod-admin-border, #e2e5ec);
-    border-radius: 8px;
+    border-radius: var(--ea-radius-sm);
     background: #fff;
     cursor: pointer;
 }
 .ecod-color__pick::-webkit-color-swatch-wrapper { padding: 0; }
-.ecod-color__pick::-webkit-color-swatch { border: 0; border-radius: 5px; }
+.ecod-color__pick::-webkit-color-swatch { border: 0; border-radius: var(--ea-radius-xs); }
 .ecod-color__text {
     width: 118px !important;
     font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
@@ -1396,7 +1399,7 @@ textarea.ecod-input {
 .ecod-color__reset {
     padding: 3px 9px;
     border: 1px solid #e2e5ec;
-    border-radius: 999px;
+    border-radius: var(--ea-radius-full);
     background: #fff;
     color: #6b7280;
     font-size: 11.5px;
@@ -1497,7 +1500,7 @@ textarea.ecod-input {
 
 .ecod-admin__aside::-webkit-scrollbar-thumb,
 .ecod-admin__body::-webkit-scrollbar-thumb {
-    border-radius: 999px;
+    border-radius: var(--ea-radius-full);
     background: rgba(123, 130, 151, .3);
 }
 
@@ -1530,7 +1533,7 @@ textarea.ecod-input {
 }
 .ecod-admin__dirty {
     padding: 3px 10px;
-    border-radius: 999px;
+    border-radius: var(--ea-radius-full);
     background: #fff7e6;
     border: 1px solid #f2d18b;
     color: #8a6116;
@@ -1577,7 +1580,7 @@ textarea.ecod-input {
     margin: 16px 0 4px;
     padding: 12px;
     border: 1px dashed var(--ea-line);
-    border-radius: 10px;
+    border-radius: var(--ea-radius);
     background: var(--ea-soft);
 }
 .ecod-preview__card {
@@ -1586,20 +1589,20 @@ textarea.ecod-input {
     padding: 10px;
     background: #fff;
     border: 1px solid var(--ea-line);
-    border-radius: 8px;
+    border-radius: var(--ea-radius-sm);
 }
 .ecod-preview__thumb {
     flex: none;
     width: 56px;
     height: 40px;
-    border-radius: 6px;
+    border-radius: var(--ea-radius-sm);
     background: linear-gradient(135deg, var(--ecod-primary), color-mix(in srgb, var(--ecod-primary) 55%, #8b5cf6));
 }
 .ecod-preview__body { display: flex; flex-direction: column; gap: 5px; min-width: 0; flex: 1; }
 .ecod-preview__body b { font-size: 12.5px; color: #1c2130; }
 .ecod-preview__body i {
     height: 6px;
-    border-radius: 3px;
+    border-radius: var(--ea-radius-xs);
     background: #eef0f6;
 }
 .ecod-preview__body i:first-of-type { width: 92%; }
@@ -1628,7 +1631,7 @@ textarea.ecod-input {
     gap: 7px;
     padding: 0 10px;
     border: 1px solid #dfe3ee;
-    border-radius: 9px;
+    border-radius: var(--ea-radius-sm);
     background: #fff;
     transition: border-color .16s, box-shadow .16s;
 }
@@ -1663,7 +1666,7 @@ textarea.ecod-input {
     flex: none;
     padding: 1px 5px;
     border: 1px solid #e3e7f1;
-    border-radius: 4px;
+    border-radius: var(--ea-radius-xs);
     color: #9aa1b6;
     font-size: 10.5px;
     font-family: inherit;
@@ -1684,7 +1687,7 @@ textarea.ecod-input {
     overflow-y: auto;
     padding: 6px;
     border: 1px solid var(--ea-line);
-    border-radius: 12px;
+    border-radius: var(--ea-radius);
     background: #fff;
     box-shadow: 0 16px 40px rgba(23, 32, 63, .16);
 }
@@ -1707,7 +1710,7 @@ textarea.ecod-input {
     width: 100%;
     padding: 7px 8px;
     border: 0;
-    border-radius: 8px;
+    border-radius: var(--ea-radius-sm);
     background: transparent;
     text-align: left;
     cursor: pointer;
@@ -1744,7 +1747,7 @@ textarea.ecod-input {
 .ecod-searchres__kind {
     flex: none;
     padding: 1px 5px;
-    border-radius: 4px;
+    border-radius: var(--ea-radius-xs);
     background: #eef1f8;
     color: #6b7390;
     font-size: 10px;
@@ -1756,7 +1759,7 @@ textarea.ecod-input {
 }
 
 @keyframes ecodHit {
-    0%, 60% { box-shadow: 0 0 0 3px rgba(79, 110, 242, .28); border-radius: 10px; }
+    0%, 60% { box-shadow: 0 0 0 3px rgba(79, 110, 242, .28); border-radius: var(--ea-radius); }
     100% { box-shadow: 0 0 0 0 rgba(79, 110, 242, 0); }
 }
 
@@ -1786,7 +1789,7 @@ textarea.ecod-input {
     overflow: visible;
     border-right: 0;
     border-bottom: 1px solid var(--ea-line);
-    border-radius: 15px 15px 0 0;
+    border-radius: var(--ea-radius) var(--ea-radius) 0 0;
 }
 
 .ecod-admin.is-narrow .ecod-admin__brand {
@@ -2021,7 +2024,7 @@ textarea.ecod-input {
     height: 4px;
     padding: 0;
     border: 0;
-    border-radius: 999px;
+    border-radius: var(--ea-radius-full);
     background: #e6e9f2;
     -webkit-appearance: none;
     appearance: none;
@@ -2058,7 +2061,7 @@ textarea.ecod-input {
     margin: 16px 0 18px;
     padding: 12px;
     border: 1px dashed var(--ea-line);
-    border-radius: 10px;
+    border-radius: var(--ea-radius);
     background: var(--ea-soft);
 }
 .ecod-cprev__list {
@@ -2071,19 +2074,19 @@ textarea.ecod-input {
     gap: 8px;
     padding: 7px;
     border: 1px solid var(--ea-line);
-    border-radius: 8px;
+    border-radius: var(--ea-radius-sm);
     background: #fff;
 }
 .ecod-cprev__thumb {
     flex: none;
     width: 52px;
     height: 36px;
-    border-radius: 5px;
+    border-radius: var(--ea-radius-xs);
     background: linear-gradient(135deg, var(--ecod-primary, #4f6ef2), color-mix(in srgb, var(--ecod-primary, #4f6ef2) 45%, #8b5cf6));
 }
 .ecod-cprev__item > span { display: flex; flex-direction: column; gap: 5px; flex: 1; min-width: 0; }
-.ecod-cprev__item b { height: 8px; border-radius: 3px; background: #d8deeb; }
-.ecod-cprev__item em { height: 6px; border-radius: 3px; background: #eef0f6; }
+.ecod-cprev__item b { height: 8px; border-radius: var(--ea-radius-xs); background: #d8deeb; }
+.ecod-cprev__item em { height: 6px; border-radius: var(--ea-radius-xs); background: #eef0f6; }
 .ecod-cprev > small { display: block; margin-top: 8px; font-size: 11px; color: var(--ea-sub); }
 
 /* 网格 / 混合：两列 */
@@ -2116,7 +2119,7 @@ textarea.ecod-input {
 .ecod-cprev[data-mode="compact"] .ecod-cprev__thumb { width: 28px; height: 22px; }
 .ecod-cprev[data-mode="compact"] .ecod-cprev__item em { display: none; }
 /* 清单/装备：方形小图 + 三行 */
-.ecod-cprev[data-mode="item"] .ecod-cprev__thumb { width: 36px; height: 36px; border-radius: 8px; }
+.ecod-cprev[data-mode="item"] .ecod-cprev__thumb { width: 36px; height: 36px; border-radius: var(--ea-radius-sm); }
 
 @media (prefers-color-scheme: dark) {
     .ecod-range__slider { background: #2b3140; }
@@ -2131,13 +2134,13 @@ textarea.ecod-input {
     margin: 16px 0 18px;
     padding: 12px;
     border: 1px dashed var(--ea-line);
-    border-radius: 10px;
+    border-radius: var(--ea-radius);
     background: var(--ea-soft);
 }
 .ecod-bdprev__stage {
     position: relative;
     height: 96px;
-    border-radius: 8px;
+    border-radius: var(--ea-radius-sm);
     border: 1px solid var(--ea-line);
     background-color: #fff;
     overflow: hidden;
@@ -2162,13 +2165,13 @@ textarea.ecod-input {
     flex-direction: column;
     gap: 6px;
     padding: 10px;
-    border-radius: 8px;
+    border-radius: var(--ea-radius-sm);
     background: #fff;
     border: 1px solid var(--ea-line);
     box-shadow: 0 4px 12px rgba(23, 32, 63, .06);
 }
-.ecod-bdprev__card b { height: 9px; width: 62%; border-radius: 3px; background: #d8deeb; }
-.ecod-bdprev__card i { height: 6px; border-radius: 3px; background: #eef0f6; }
+.ecod-bdprev__card b { height: 9px; width: 62%; border-radius: var(--ea-radius-xs); background: #d8deeb; }
+.ecod-bdprev__card i { height: 6px; border-radius: var(--ea-radius-xs); background: #eef0f6; }
 .ecod-bdprev__card i:last-child { width: 78%; }
 .ecod-bdprev > small { display: block; margin-top: 8px; font-size: 11px; color: var(--ea-sub); }
 
@@ -2194,7 +2197,8 @@ textarea.ecod-input {
     margin: 0;
     padding: 10px 16px;
     border: 1px solid #c9e6cd;
-    border-radius: 10px;
+    /* 原生 toast 挂在 body 下、不在 .ecod-admin 作用域内：令牌取不到时回退字面量 */
+    border-radius: var(--ea-radius, 12px);
     background: #f0fbf2;
     color: #1f7a33;
     font-size: 13px;
@@ -2266,7 +2270,7 @@ textarea.ecod-input {
     margin: 0 0 16px;
     padding: 13px 16px;
     border: 1px solid #dbe2ff;
-    border-radius: 10px;
+    border-radius: var(--ea-radius);
     background: #eef1fe;
     transition: .18s;
 }
@@ -2277,7 +2281,7 @@ textarea.ecod-input {
     height: 34px;
     display: grid;
     place-items: center;
-    border-radius: 9px;
+    border-radius: var(--ea-radius-sm);
     background: #4f6ef2;
     color: #fff;
 }

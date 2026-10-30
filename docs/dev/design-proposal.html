@@ -513,10 +513,17 @@ details .in{padding-bottom:12px}
     </div>
     <div class="grid-3" style="margin-top:20px">
       <div style="font-size:12.5px;color:var(--text-2)"><b style="color:var(--text)">字阶</b><br>12 / 12.5 / 13.5 / 15 / 17 / 22 / 28px<br>正文 15px，行高 1.75</div>
-      <div style="font-size:12.5px;color:var(--text-2)"><b style="color:var(--text)">圆角</b><br>卡片 12 · 按钮输入 8 · 标签 999<br>图片 8px</div>
+      <div style="font-size:12.5px;color:var(--text-2)"><b style="color:var(--text)">圆角（四档阶梯）</b><br>xs 4 · sm 8 · 默认 12 · full 999<br>全部走 <code>--ecod-radius-*</code>，禁止裸 px</div>
       <div style="font-size:12.5px;color:var(--text-2)"><b style="color:var(--text)">阴影</b><br>静态 1 层轻投影<br>hover 上浮 2px + 阴影加深</div>
     </div>
+    <p style="margin-top:16px;font-size:12.5px;color:var(--text-2)"><b style="color:var(--text)">圆角阶梯收敛（2026-10-30 全量排查）：</b>排查前 CSS 里混着 2/3/4/5/6/7/8/9/10/11/12/14/16/18/44/99px 共 16 种裸值（面板 14、页头 16、弹层 18 与卡片 12 并存；小控件 5/6/7/9 各写各的）。收敛为四档令牌，任何新组件不得写裸 px：<br>
+      ① <code>--ecod-radius-xs: 4px</code> — 微元素：角标 badge、kbd、内联 <code>code</code>、标签 tag、序号、滚动条、装饰竖条（原 2/3/4/5px）；<br>
+      ② <code>--ecod-radius-sm: 8px</code> — 小控件：次级按钮、输入框/下拉、卡片内缩略图、排序浮层与选项、图标底座（原 6/7/8/9px）；<br>
+      ③ <code>--ecod-radius: 12px</code> — 一切「面」级容器的唯一半径：卡片、侧栏 widget、文章容器、评论块、页头 hero（chead/pagehero/thead）、弹层（spanel/share/reward）、抽屉 dock、面板 panel——原 10/11/14/16/18px 全部并入，不再分「卡片 12 / 页头 16」两档；<br>
+      ④ <code>--ecod-radius-full: 999px</code> — 胶囊按钮/标签/头像/进度条（原 44/99px，含轮播取色 glow）。<br>
+      嵌套同心规则：卡片内媒体/图片统一 sm；浮层内选项与浮层同档（间隙小，视觉差异可忽略）。<code>50%</code> 仅限正圆（头像/圆点/圆钮），<code>0</code> 仅限贴边媒体与贴边块。</p>
     <p style="margin-top:16px;font-size:12.5px;color:var(--text-2)"><b style="color:var(--text)">暗色校验记录（2026-10-30 全组件扫描）：</b>规则跟随组件就近放置 <code>html[data-theme="dark"]</code> 覆盖。本次补齐 9 处漏网：热度角标（<code>badge--hot</code>）、热榜 1/2 名序号（#fdeaea / #fff3e0 浅底）、评论等级徽章 lv3–lv6、待审评论标记、收藏删除 hover、热议卡缩略占位、图集卡占位渐变。写法统一为「主题色 12–20% 透明度底 + 提亮 400 号文字」，与既有 dark 规则同构。封面占位渐变（<code>card__media</code> 等）不随主题反相——与封面图同理由。白底 pay/member 角标只出现在彩色封面上，暗色不覆盖（1442 行注释为据）。断点体系按实现收敛为 1100 / 900 / 680（§25 表格同步），<code>?ecod-dark=1</code> 可强制暗色验收。</p>
+    <p style="margin-top:16px;font-size:12.5px;color:var(--text-2)"><b style="color:var(--text)">主栏纵向节奏统一（2026-10-30）：</b><code>.ecod_main</code> 全站统一为 <code>flex column + gap:20px</code>（原先只有首页 <code>.ecod_home</code> 有 flex 节奏，其余页面退化为 block + 各组件手写 margin，出现 14 / 0 / 16 / 17 / 24 / 28 混用：分类工具条贴死列表面板、文章页 crumb→article 34px、自定义页 pagehero→内容 36-38px 等）。清零的手写间距（均以 <code>.ecod_main &gt; 子元素</code> 作用域收编，组件在他处复用不受影响）：<code>chead / cattools / pagehead mb / article / comments / pagehero / leave__tips / leave__intro / friendgrid / apply / videogrid / wallgrid / livestage / statgrid / stat2col / readers / uc / vip__faq</code>；<code>pager / loadmore</code> 保留 stream 内部 margin（首页块流），仅作 main 直接子元素时清零。组件内部间距（卡片 padding、list 内 16px 内缩等）不在本条范围。验收：22 页 main 子元素间距全部 20px，首页零变化，390px 无溢出，dark 无回归。</p>
   </div>
 </section>
 
@@ -1277,12 +1284,14 @@ details .in{padding-bottom:12px}
 
   <div class="card pad" style="margin-top:16px">
     <b style="font-size:13.5px">分类 tab = 文章流筛选，不是换页</b>
-    <p style="font-size:12.5px;color:var(--text-2);margin-top:8px;line-height:1.9">点 <code>.ecod_tabs</code> 里的分类只替换 <code>#ecod-stream</code>（tab 高亮 + 排序条 + 卡片 + 分页一起换），页面其余骨架原地保留。替换粒度按两侧骨架判定：</p>
+    <p style="font-size:12.5px;color:var(--text-2);margin-top:8px;line-height:1.9">点 <code>.ecod_tabs</code> 里的分类只替换 <code>#ecod-stream</code>（tab 高亮 + 排序条 + 共 N 篇 + 卡片 + 分页都在流内，随流一起更新），页面其余骨架原地保留：</p>
     <table style="width:100%;border-collapse:collapse;font-size:12.5px;margin-top:6px">
-      <tr><td style="padding:6px 10px 6px 0;color:var(--text-3);white-space:nowrap">首页 → 分类</td><td>只换文章流：首页横幅（搜索 / 统计）与其后所有首页块（分类导航、推荐、热门、动态…）全部保留</td></tr>
-      <tr><td style="padding:6px 10px 6px 0;color:var(--text-3);white-space:nowrap">分类 → 分类</td><td>换分类页头（<code>.ecod_chead</code> 标题 / 统计 / 专题）+ 文章流，其余不动</td></tr>
-      <tr><td style="padding:6px 10px 6px 0;color:var(--text-3);white-space:nowrap">分类 → 首页</td><td>换整个 <code>#ecod-main</code>，首页横幅与首页块才能回来</td></tr>
+      <tr><td style="padding:6px 10px 6px 0;color:var(--text-3);white-space:nowrap">首页 → 分类</td><td>只换文章流：首页横幅（搜索 / 统计）与其后所有首页块（分类导航、推荐、热门、动态…）逐节点保留，aside 不动</td></tr>
+      <tr><td style="padding:6px 10px 6px 0;color:var(--text-3);white-space:nowrap">分类 ↔ 分类</td><td>同样只换文章流；tab 条不消失，当前分类仍以 pill 高亮，「共 N 篇」跟着变</td></tr>
+      <tr><td style="padding:6px 10px 6px 0;color:var(--text-3);white-space:nowrap">列表分页</td><td>同一个流内替换，tab 条与排序条保持原样</td></tr>
+      <tr><td style="padding:6px 10px 6px 0;color:var(--text-3);white-space:nowrap">工具条关闭时</td><td><code>ECatTools=off</code> 的分类页仍带 catbar，从分类回首页时换整个 <code>#ecod-main</code>（横幅与首页块才回得来）；工具条开启时分类页本就没有 catbar，该分支不触发</td></tr>
     </table>
+    <p style="font-size:12.5px;color:var(--text-2);margin-top:10px;line-height:1.9">服务端配合：取流请求带 <code>X-Requested-With: Ecod-Ajax</code>，分类页即便由 F3 工具条接管也照常输出 <code>streambar</code>（<code>ecod_is_stream()</code>），否则换回来的流里没有 tab 条与「共 N 篇」。</p>
     <p style="font-size:12px;color:var(--text-3);margin-top:10px;line-height:1.9">URL 用 <code>pushState</code> 同步（可复制、可刷新）；链接保留 <code>href</code>，中键 / 新窗口 / 禁用 JS 仍是普通跳转。滚动位置不变。</p>
   </div>
 </section>
@@ -1996,7 +2005,7 @@ details .in{padding-bottom:12px}
   <div class="card pad">
     <table>
       <tr><th style="width:20%">项</th><th>设计</th></tr>
-      <tr><td>C3 · 进度环</td><td>浮动目录按钮外套 SVG 进度环：轨道用边框色，弧线用主色，随阅读进度扫过；100% 时环满 + 主色微光。进度条（顶部 3px）不变，环是「目录侧」的镜像</td></tr>
+      <tr><td>C3 · 进度环（已移除）</td><td>浮动目录按钮外最初套 SVG 进度环，但按钮是胶囊形（约 90×40），圆环按最短边缩放后落在按钮中央，压住图标与文字——实测重叠不可用，已移除（2026-10-30）。进度表达收敛到弹层内进度条 + 章节计数</td></tr>
       <tr><td>C3 · 弹层进度</td><td>目录弹层头部加一条细进度条 +「x / n 节 · x%」；当前节之前的项目标 <code>is-read</code>（淡化 + 勾），读者一眼看到「读到哪了、还剩多少」</td></tr>
       <tr><td>C3 · 范围</td><td>只做浮动目录（侧栏静态卡不 sticky，进度无意义）；<code>ETocProgress=off</code> 时回到纯按钮形态。顶部进度条不受此开关控制</td></tr>
       <tr><td>C4 · 面板</td><td><code>ESearchPanel=on</code> 时输出居中搜索面板（桌面 560px 卡、移动端近全屏）：大号输入框 + 键盘提示（↑↓ / ↵ / Esc）→ 实时结果 → 热词 → 标签。导航搜索框点击、dock 搜索按钮、⌘K / Ctrl+K 三入口唤起</td></tr>
@@ -2013,7 +2022,7 @@ details .in{padding-bottom:12px}
   <div class="card pad">
     <table>
       <tr><th style="width:22%">设置项</th><th style="width:16%">默认</th><th>作用</th></tr>
-      <tr><td><code>ETocProgress</code></td><td>on</td><td>浮动目录的进度环 + 弹层进度条 + 已读态（文章页分组，跟在「浮动目录」后面）</td></tr>
+      <tr><td><code>ETocProgress</code></td><td>on</td><td>浮动目录的弹层进度条 + 章节计数 + 已读态（文章页分组，跟在「浮动目录」后面；按钮无进度环）</td></tr>
       <tr><td><code>ESearchPanel</code></td><td>on</td><td>居中搜索面板总开关；off 时保留原地下拉与 ⌘K 聚焦</td></tr>
       <tr><td><code>ESearchHot</code></td><td>空</td><td>热词（逗号 / 顿号分隔）；空则回退热门标签</td></tr>
       <tr><td><code>ESearchTagCount</code></td><td>10</td><td>面板标签区个数 6 / 8 / 10 / 12</td></tr>
@@ -2339,9 +2348,9 @@ details .in{padding-bottom:12px}
     <table>
       <tr><th style="width:22%">约束</th><th>处理</th></tr>
       <tr><td>交换边界</td><td>PJAX 只替换 <code>#ecod-shell</code>（<code>ecod.global.js:3445</code>），shell 从 <code>header.php:329</code> 开。全宽区<b>必须放 shell 内</b>，否则换页后内容不更新</td></tr>
-      <tr><td>出血</td><td><code>width:100vw; margin-inline:calc(50% - 50vw)</code> + 父级 <code>overflow-x:clip</code>（不能用 <code>hidden</code>，会切断 sticky）</td></tr>
+      <tr><td>宽度（第 5 轮修订）</td><td><b>不贴视口边缘</b>：<code>.ecod_zone</code> 是 <code>.ecod_container</code>（max-width: <code>--ecod-container</code> + 24px 内边距）的直接子元素，去掉 <code>100vw</code> 出血后自然与 <code>.ecod_layout</code>（主内容区 + 侧栏）同宽。第 4 轮前的 <code>width:100vw; margin-inline:calc(50% - 50vw)</code> 通栏出血已废除——用户裁定：通栏指「内容版心通栏」，不是「视口通栏」，贴边在宽屏上把横幅拉得过散</td></tr>
       <tr><td>布局插入</td><td><code>#ecod-shell</code> 内改为纵向栈：<code>[top_fluid]</code> → <code>.ecod_layout</code>（main + aside）→ <code>[bottom_fluid]</code>；全宽块不参与 main/aside 的栅格</td></tr>
-      <tr><td>滚动条</td><td><code>100vw</code> 含滚动条宽度，桌面端会多出 1–2px 横向溢出，用 <code>body{overflow-x:clip}</code> 兜住，不加 <code>max-width:100%</code>（会被父容器裁切）</td></tr>
+      <tr><td>滚动条</td><td>第 4 轮前 <code>100vw</code> 含滚动条宽度会造成 1–2px 横向溢出（<code>body{overflow-x:clip}</code> 兜住）；改为版心宽后该问题不复存在，兜底规则保留不动</td></tr>
     </table>
   </div>
 

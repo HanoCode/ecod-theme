@@ -10,11 +10,11 @@
  */
 
 return [
-    'assets/css/ecod.css' => 'assets/dist/css/ecod.1ec6da22.min.css',
-    'assets/css/ecod.critical.css' => 'assets/dist/css/ecod.critical.3c7a80b1.min.css',
-    'assets/js/ecod.global.js' => 'assets/dist/js/ecod.global.9be3516b.min.js',
-    'assets/js/ecod.post.js' => 'assets/dist/js/ecod.post.3740ea6c.min.js',
-    'assets/admin/config.css' => 'assets/dist/admin/config.653216b4.min.css',
+    'assets/css/ecod.css' => 'assets/dist/css/ecod.d912fa07.min.css',
+    'assets/css/ecod.critical.css' => 'assets/dist/css/ecod.critical.80e91996.min.css',
+    'assets/js/ecod.global.js' => 'assets/dist/js/ecod.global.07db7b4d.min.js',
+    'assets/js/ecod.post.js' => 'assets/dist/js/ecod.post.9381e939.min.js',
+    'assets/admin/config.css' => 'assets/dist/admin/config.a70879cc.min.css',
     'assets/admin/config.js' => 'assets/dist/admin/config.c54e90c0.min.js',
     'assets/admin/media.css' => 'assets/dist/admin/media.10e44844.min.css',
     'assets/admin/media.js' => 'assets/dist/admin/media.ba5ae7bd.min.js',

@@ -267,11 +267,11 @@ body {
 }
 .go-card {
     width: 100%; max-width: 460px; padding: 36px 32px 28px; text-align: center;
-    background: #fff; border: 1px solid #e6e9f2; border-radius: 18px;
+    background: #fff; border: 1px solid #e6e9f2; border-radius: 12px;
     box-shadow: 0 20px 50px rgba(23, 32, 63, .1);
 }
 .go-icon {
-    width: 56px; height: 56px; margin: 0 auto 18px; border-radius: 16px;
+    width: 56px; height: 56px; margin: 0 auto 18px; border-radius: 12px;
     display: flex; align-items: center; justify-content: center;
     background: color-mix(in srgb, var(--go-primary) 12%, #fff); color: var(--go-primary);
 }
@@ -279,14 +279,14 @@ body {
 .go-sub { font-size: 12.5px; color: #7d879e; margin-bottom: 18px; }
 .go-url {
     padding: 10px 14px; margin-bottom: 20px; text-align: left;
-    background: #f5f6fa; border-radius: 10px; color: #5b6479;
+    background: #f5f6fa; border-radius: 8px; color: #5b6479;
     font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
     font-size: 12px; line-height: 1.6; word-break: break-all;
 }
 .go-actions { display: flex; gap: 10px; justify-content: center; }
 .go-btn {
     display: inline-flex; align-items: center; justify-content: center; gap: 6px;
-    height: 40px; padding: 0 20px; border-radius: 10px; border: 0;
+    height: 40px; padding: 0 20px; border-radius: 8px; border: 0;
     font-size: 13.5px; font-weight: 600; cursor: pointer; text-decoration: none;
     transition: transform .14s, box-shadow .14s, background .14s;
 }

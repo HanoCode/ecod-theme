@@ -21,8 +21,12 @@ $ecodLayoutMode = ecod_list_force_mode($ecodLayout);
 $ecodListClass = ecod_list_class($ecodLayoutMode);
 ?>
 <section class="ecod_stream" id="ecod-stream">
-    <?php if ($this->is('category') && !empty($GLOBALS['ecodCatToolsDone'])): ?>
-        <?php /* F3 分类工具条已接管：catbar tabs 是重复导航，「共 N 篇」在 E1 统计里已有 */ ?>
+    <?php /* 分类页由 F3 工具条接管时，streambar 是重复导航（页头已表明分类）。
+           「只换文章流」请求例外：前端换流后仍要用这条 streambar 切 tab / 看篇数；
+           但排序不再输出——F3 工具条的排序按钮原位保留，两份并存是重复控件，
+           且 sort.php 的浮层 id 写死，双实例会产生重复 id */ ?>
+    <?php $ecodStreamKeepSort = !($this->is('category') && !empty($GLOBALS['ecodCatToolsDone']) && ecod_is_stream()); ?>
+    <?php if ($this->is('category') && !empty($GLOBALS['ecodCatToolsDone']) && !ecod_is_stream()): ?>
     <?php else: ?>
     <div class="ecod_streambar">
         <?php if ($ecodShowTabs): ?>
@@ -43,7 +47,7 @@ $ecodListClass = ecod_list_class($ecodLayoutMode);
             <span class="ecod_streambar__note">最新文章</span>
         <?php endif; ?>
         <div class="ecod_streambar__tools">
-            <?php $this->need('components/home/sort.php'); ?>
+            <?php if ($ecodStreamKeepSort) $this->need('components/home/sort.php'); ?>
             <span class="ecod_streambar__note">共 <?php echo (int) $this->getTotal(); ?> 篇</span>
         </div>
     </div>

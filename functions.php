@@ -611,6 +611,19 @@ function ecod_is_pjax(): bool
 }
 
 /**
+ * 是否为主题自身的「只换文章流」请求
+ *
+ * 分类 tab / 分页局部切换带 X-Requested-With: Ecod-Ajax。分类页正常情况下
+ * 由 F3 工具条接管、不输出 streambar（tab 与页头重复），但取流时前端要继续
+ * 用这条 streambar 切 tab、排序与显示篇数，所以这种情况下照常输出。
+ */
+function ecod_is_stream(): bool
+{
+    return isset($_SERVER['HTTP_X_REQUESTED_WITH'])
+        && $_SERVER['HTTP_X_REQUESTED_WITH'] === 'Ecod-Ajax';
+}
+
+/**
  * 当前页对应的导航高亮地址
  *
  * 全量渲染与 PJAX 局部渲染共用：地址随 shell 的 data-ecod-nav-active 输出，

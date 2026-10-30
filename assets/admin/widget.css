@@ -32,6 +32,8 @@
     --bad: #ef4444;
     --r: 12px;
     --r-sm: 8px;
+    --r-xs: 4px;
+    --r-full: 999px;
     --sh: 0 1px 3px rgba(31, 36, 48, .06), 0 4px 16px rgba(31, 36, 48, .05);
     --sh-hi: 0 8px 28px rgba(31, 36, 48, .12);
 }
@@ -51,7 +53,7 @@ body {
 button, input, select, textarea { font: inherit; color: inherit; }
 button { cursor: pointer; }
 a { color: inherit; text-decoration: none; }
-code { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 12px; background: #eef1f4; padding: 1px 5px; border-radius: 4px; }
+code { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 12px; background: #eef1f4; padding: 1px 5px; border-radius: var(--r-xs); }
 
 /* ---------------- 顶栏 ---------------- */
 .wgt-top {
@@ -102,7 +104,7 @@ code { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 12px; b
     gap: 5px;
     height: 22px;
     padding: 0 9px;
-    border-radius: 999px;
+    border-radius: var(--r-full);
     font-size: 11.5px;
     background: #eef1f4;
     color: var(--tx2);
@@ -162,7 +164,7 @@ code { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 12px; b
     font-style: normal;
     margin-left: 6px;
     padding: 0 6px;
-    border-radius: 999px;
+    border-radius: var(--r-full);
     background: #eef1f4;
     color: var(--tx2);
     font-size: 10.5px;
@@ -190,7 +192,7 @@ code { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 12px; b
     padding: 8px 9px;
     background: var(--sf);
     border: 1px solid var(--bd);
-    border-radius: 10px;
+    border-radius: var(--r);
     box-shadow: var(--sh);
     cursor: grab;
     transition: .14s;
@@ -204,7 +206,7 @@ code { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 12px; b
 .wgt-libcard__main { flex: 1; min-width: 0; }
 .wgt-libcard__main b { display: flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 600; }
 .wgt-libcard__main small { display: block; font-size: 11px; color: var(--tx3); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.wgt-used { font-style: normal; font-size: 10.5px; color: var(--tx3); background: #eef1f4; border-radius: 999px; padding: 0 6px; font-weight: 400; }
+.wgt-used { font-style: normal; font-size: 10.5px; color: var(--tx3); background: #eef1f4; border-radius: var(--r-full); padding: 0 6px; font-weight: 400; }
 
 .wgt-libcard__go { flex: none; font-size: 11px; color: var(--tx3); }
 .wgt-libcard.is-open .wgt-libcard__go { color: var(--c); }
@@ -300,7 +302,7 @@ code { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 12px; b
 /* 实例行 */
 .wgt-item {
     border: 1px solid var(--bd2);
-    border-radius: 10px;
+    border-radius: var(--r);
     background: var(--sf);
     transition: .14s;
 }
@@ -329,12 +331,12 @@ code { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 12px; b
     opacity: .5;
     cursor: grab;
 }
-.wgt-card__ic { flex: none; width: 22px; height: 22px; display: grid; place-items: center; color: var(--c); background: var(--c-soft); border-radius: 6px; }
+.wgt-card__ic { flex: none; width: 22px; height: 22px; display: grid; place-items: center; color: var(--c); background: var(--c-soft); border-radius: var(--r-sm); }
 .wgt-card__ic svg { width: 13px; height: 13px; }
 
 .wgt-item__name { flex: 1; min-width: 0; font-size: 13px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .wgt-item__name small { font-weight: 400; color: var(--tx3); font-size: 11px; margin-left: 6px; }
-.wgt-lock { font-style: normal; font-size: 10.5px; color: var(--tx3); border: 1px solid var(--bd); border-radius: 999px; padding: 0 6px; font-weight: 400; margin-left: 6px; vertical-align: 1px; }
+.wgt-lock { font-style: normal; font-size: 10.5px; color: var(--tx3); border: 1px solid var(--bd); border-radius: var(--r-full); padding: 0 6px; font-weight: 400; margin-left: 6px; vertical-align: 1px; }
 
 .wgt-item__go { flex: none; font-size: 11px; color: var(--tx3); }
 
@@ -344,7 +346,7 @@ code { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 12px; b
     width: 30px;
     height: 18px;
     border: none;
-    border-radius: 999px;
+    border-radius: var(--r-full);
     background: #dfe4ec;
     transition: .18s;
 }
@@ -354,7 +356,7 @@ code { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 12px; b
 .wgt-sw[disabled] { opacity: .45; cursor: not-allowed; }
 
 /* 行内展开：参数 + 操作 */
-.wgt-item__body { border-top: 1px solid var(--bd2); padding: 12px 12px 10px 27px; background: var(--sf2); border-radius: 0 0 10px 10px; }
+.wgt-item__body { border-top: 1px solid var(--bd2); padding: 12px 12px 10px 27px; background: var(--sf2); border-radius: 0 0 var(--r) var(--r); }
 .wgt-fields { max-width: 520px; }
 
 .wgt-ops { display: flex; align-items: center; gap: 4px; margin-top: 10px; padding-top: 9px; border-top: 1px dashed var(--bd); flex-wrap: wrap; }
@@ -362,7 +364,7 @@ code { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 12px; b
     height: 26px;
     padding: 0 9px;
     border: 1px solid var(--bd);
-    border-radius: 6px;
+    border-radius: var(--r-sm);
     background: var(--sf);
     color: var(--tx2);
     font-size: 12px;
@@ -426,7 +428,7 @@ code { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 12px; b
     display: grid;
     place-items: center;
     border: 1px solid var(--bd);
-    border-radius: 6px;
+    border-radius: var(--r-sm);
     background: var(--sf);
     color: var(--tx3);
     font-size: 12px;
@@ -469,7 +471,7 @@ code { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 12px; b
     margin-bottom: 6px;
     background: var(--sf2);
     border: 1px solid var(--bd2);
-    border-radius: 10px;
+    border-radius: var(--r);
 }
 .wgt-aside__row:last-child { margin-bottom: 0; }
 .wgt-aside__label { flex: 1; font-size: 13px; font-weight: 600; }
@@ -484,7 +486,7 @@ code { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 12px; b
     z-index: 80;
     transform: translateX(-50%);
     padding: 9px 16px;
-    border-radius: 999px;
+    border-radius: var(--r-full);
     background: #1e2430;
     color: #fff;
     font-size: 12.5px;

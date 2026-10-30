@@ -16,6 +16,10 @@
     --md-soft: #f7f8fc;
     --md-brand: #4f6ef2;
     --md-brand-soft: #eef1fe;
+    --md-r-xs: 4px;
+    --md-r-sm: 8px;
+    --md-r: 12px;
+    --md-r-full: 999px;
     --md-card: #fff;
     --md-bar: #fcfcfe;
     --md-line-strong: #dfe3ee;
@@ -61,7 +65,7 @@
     width: min(1080px, 100%);
     height: min(680px, 100%);
     background: var(--md-card);
-    border-radius: 16px;
+    border-radius: var(--md-r);
     box-shadow: 0 24px 70px rgba(15, 22, 45, .28);
     overflow: hidden;
     animation: ecmd-pop .18s cubic-bezier(.2, .7, .3, 1);
@@ -130,7 +134,7 @@
     margin-left: 4px;
     margin-bottom: 4px;
     border: 0;
-    border-radius: 8px;
+    border-radius: var(--md-r-sm);
     background: none;
     color: var(--md-sub);
     cursor: pointer;
@@ -176,7 +180,7 @@
     height: 32px;
     padding: 0 10px 0 30px;
     border: 1px solid var(--md-line-strong);
-    border-radius: 9px;
+    border-radius: var(--md-r-sm);
     background: var(--md-card);
     font-size: 12.5px;
     color: var(--md-ink);
@@ -206,7 +210,7 @@
     height: 32px;
     padding: 0 14px;
     border: 1px solid var(--md-line-strong);
-    border-radius: 9px;
+    border-radius: var(--md-r-sm);
     background: var(--md-card);
     color: var(--md-ink);
     font-size: 12.5px;
@@ -272,7 +276,7 @@
     position: relative;
     padding: 0;
     border: 2px solid transparent;
-    border-radius: 11px;
+    border-radius: var(--md-r);
     background: var(--md-soft);
     cursor: pointer;
     overflow: hidden;
@@ -389,7 +393,7 @@
     margin: 14px 0 0;
     padding: 9px;
     border: 1px dashed var(--md-line);
-    border-radius: 9px;
+    border-radius: var(--md-r-sm);
     background: var(--md-bar);
     color: var(--md-sub);
     font-size: 12px;
@@ -422,7 +426,7 @@
     height: 38px;
     padding: 0 12px;
     border: 1px solid var(--md-line-strong);
-    border-radius: 9px;
+    border-radius: var(--md-r-sm);
     background: var(--md-bar);
     font-size: 13px;
     color: var(--md-ink);
@@ -441,7 +445,7 @@
     min-height: 210px;
     padding: 12px;
     border: 1px dashed var(--md-line);
-    border-radius: 12px;
+    border-radius: var(--md-r);
     background: var(--md-soft);
     color: var(--md-sub);
     font-size: 12px;
@@ -452,7 +456,7 @@
 .ecmd__preview img {
     max-width: 100%;
     max-height: 260px;
-    border-radius: 8px;
+    border-radius: var(--md-r-sm);
     box-shadow: 0 6px 18px rgba(23, 32, 63, .12);
 }
 
@@ -480,7 +484,7 @@
     margin: 0;
     padding: 10px;
     border: 1px solid var(--md-line);
-    border-radius: 10px;
+    border-radius: var(--md-r);
     background: var(--md-card);
     overflow: hidden;
 }
@@ -489,7 +493,7 @@
     display: block;
     max-width: 100%;
     max-height: 180px;
-    border-radius: 6px;
+    border-radius: var(--md-r-sm);
 }
 
 .ecmd__side-meta {
@@ -497,7 +501,7 @@
     flex-direction: column;
     margin: 0;
     border: 1px solid var(--md-line);
-    border-radius: 10px;
+    border-radius: var(--md-r);
     background: var(--md-card);
     overflow: hidden;
 }
@@ -537,7 +541,7 @@
     height: 32px;
     padding: 0 10px;
     border: 1px solid var(--md-line-strong);
-    border-radius: 9px;
+    border-radius: var(--md-r-sm);
     background: var(--md-card);
     color: var(--md-sub);
     font-size: 11.5px;
@@ -572,7 +576,7 @@
     place-items: center;
     width: 22px;
     height: 22px;
-    border-radius: 6px;
+    border-radius: var(--md-r-sm);
     background: rgba(20, 26, 44, .62);
     color: #fff;
     opacity: 0;
@@ -623,7 +627,7 @@
 .ecmd__lb-stage img {
     max-width: 78vw;
     max-height: 76vh;
-    border-radius: 8px;
+    border-radius: var(--md-r-sm);
     box-shadow: 0 18px 60px rgba(0, 0, 0, .5);
 }
 
@@ -741,7 +745,7 @@
     display: grid;
     place-items: center;
     border: 2px dashed var(--md-brand);
-    border-radius: 12px;
+    border-radius: var(--md-r);
     background: rgba(238, 241, 254, .92);
     color: var(--md-brand);
     font-size: 13px;
@@ -808,7 +812,7 @@
     min-height: 34px;
     padding: 0 12px;
     border: 1px solid var(--md-line-strong);
-    border-radius: 9px;
+    border-radius: var(--md-r-sm);
     background: var(--md-card);
     color: var(--md-ink);
     font-size: 12.5px;
@@ -828,7 +832,7 @@
     width: 100%;
     max-width: 320px;
     border: 1px solid var(--md-line);
-    border-radius: 11px;
+    border-radius: var(--md-r);
     background: var(--md-soft);
     overflow: hidden;
 }
@@ -882,7 +886,7 @@
 .ecod-pool__item {
     position: relative;
     border: 1px solid var(--md-line);
-    border-radius: 10px;
+    border-radius: var(--md-r);
     background: var(--md-soft);
     overflow: hidden;
 }
@@ -929,7 +933,7 @@
     min-height: 80px;
     padding: 8px;
     border: 1px dashed var(--md-line-hover);
-    border-radius: 10px;
+    border-radius: var(--md-r);
     background: var(--md-bar);
     color: var(--md-sub);
     font-size: 12px;

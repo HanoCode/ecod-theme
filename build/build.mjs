@@ -63,23 +63,56 @@ const ENTRIES = [
 
 /**
  * 关键 CSS 抽取的节编号（源码分节标记 `/* ============ N. 名称 ============ `）。
- * 0 令牌 / 1 基础 / 2 布局 / 3 导航抽屉 / 12 暗色令牌——
- * 保证任意页面的头部与配色首帧即正确，内容区随完整样式表（异步预加载）补齐。
+ * 覆盖首屏所需的全部区块：令牌/基础/布局/导航/暗色 + 首页流与模块、卡片、
+ * 分页、侧栏、页脚、顶部进度条、底部 dock、公告横幅、搜索面板、懒加载、
+ * 站点级设置变体、排序浮层、首屏 Hero、专题/分类页头——
+ * 首帧即完整成形，只有文章正文与特色页等深层内容随完整样式表（异步预加载）补齐。
+ * 语法：'N' = 该编号全部节；'N@k' = 该编号第 k 次出现（0 起，源码有重复编号时用）。
  */
-const CRITICAL_SECTIONS = ['0', '1', '2', '3', '12'];
+const CRITICAL_SECTIONS = [
+    '0', '1', '2', '3',              // 令牌 / 基础 / 布局 / 导航抽屉
+    '4', '4.5', '5', '6', '7',       // 首页 / 首页模块 / 卡片 / 分页 / 侧栏
+    '10', '11', '11.4b', '11.4c',    // 页脚 / 进度回顶 / 移动端 dock / 公告横幅
+    '12', '13', '16', '18',          // 暗色 / 响应式 / 收藏点赞 / 移动端加固
+    '21', '22', '23@0',              // 搜索面板 / 懒加载+reveal / 站点级设置变体
+    '24@1', '25@1', '27',            // 列表排序浮层 / 首屏 Hero / 专题与分类页头
+];
 
-/** 按分节标记从 CSS 源码中抽取指定编号的节，保持原顺序拼接 */
+/** 按分节标记从 CSS 源码中抽取指定编号的节，保持原顺序拼接。
+    'N@k' 语法用于区分源码中重复的编号（如两个 23. / 两个 24.）。 */
 function extractCssSections(source, numbers) {
     const lines = source.split('\n');
     const marks = [];
     for (let i = 0; i < lines.length; i++) {
-        const m = lines[i].match(/^\/\* =+ (\d+(?:\.\d+)?)\./);
+        const m = lines[i].match(/^\/\* =+ (\d+(?:\.\d+)?[a-z]?)\.? /);
         if (m) marks.push({ i, num: m[1] });
     }
-    const wanted = new Set(numbers);
+    /* 展开编号：'N' → 该编号所有出现；'N@k' → 第 k 次出现的下标 */
+    const wantedIdx = new Set();
+    const seen = {};
+    for (const mark of marks) {
+        seen[mark.num] = (seen[mark.num] || 0) + 1;
+    }
+    for (const entry of numbers) {
+        const m = entry.match(/^(\d+(?:\.\d+)?[a-z]?)(?:@(\d+))?$/);
+        if (!m) throw new Error(`CRITICAL_SECTIONS 条目格式错误：${entry}`);
+        const num = m[1];
+        const occ = m[2] === undefined ? null : parseInt(m[2], 10);
+        const idxs = [];
+        let n = 0;
+        for (let k = 0; k < marks.length; k++) {
+            if (marks[k].num === num) {
+                if (occ === null || occ === n) idxs.push(k);
+                n++;
+            }
+        }
+        if (!idxs.length) {
+            throw new Error(`关键 CSS 抽取：找不到分节 ${entry}`);
+        }
+        idxs.forEach((k) => wantedIdx.add(k));
+    }
     let out = [];
-    for (let k = 0; k < marks.length; k++) {
-        if (!wanted.has(marks[k].num)) continue;
+    for (const k of Array.from(wantedIdx).sort((a, b) => a - b)) {
         const end = k + 1 < marks.length ? marks[k + 1].i : lines.length;
         out = out.concat(lines.slice(marks[k].i, end));
     }

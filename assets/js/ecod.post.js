@@ -76,16 +76,14 @@
 
             var activeIndex = -1;
 
-            /* C3：进度环 / 弹层进度条 / 章节计数，与顶部进度条共用同一口径。
+            /* C3：弹层进度条 / 章节计数，与顶部进度条共用同一口径。
                必须在「章节未变化」时也跑 —— 同一节内滚动 pct 仍在变，
                否则进度只在跨章节时跳变。 */
             function syncProgress(next) {
                 if (!showProg || !floatBox) return;
                 var pct = Math.round(Ecod.readProgress());
-                if (ringBar) ringBar.style.strokeDashoffset = String(100 - pct);
                 if (meterBar) meterBar.style.width = pct + '%';
                 if (stat) stat.textContent = (next + 1) + ' / ' + targets.length + ' 节 · ' + pct + '%';
-                floatBox.classList.toggle('is-done', pct >= 99);
             }
 
             function spy() {
@@ -134,16 +132,13 @@
             var layout = document.querySelector('.ecod_layout');
             var side = layout && layout.getAttribute('data-aside') === 'left' ? 'right' : 'left';
             floatBox.className = 'ecod_floattoc is-' + side;
-            /* C3 目录进度条：ETocProgress=on 时按钮套进度环、弹层头部加进度条与章节计数 */
+            /* C3 目录进度条：ETocProgress=on 时弹层头部加进度条与章节计数（按钮不套环——胶囊按钮上圆环会压住图标文字） */
             var showProg = CFG.tocProgress !== false;
-            var RING = '<svg class="ecod_floattoc__ring" viewBox="0 0 36 36" aria-hidden="true">'
-                + '<circle class="ecod_floattoc__ring-t" cx="18" cy="18" r="16"/>'
-                + '<circle class="ecod_floattoc__ring-b" cx="18" cy="18" r="16" pathLength="100"/></svg>';
             floatBox.innerHTML =
                 '<button type="button" class="ecod_floattoc__btn" data-ecod-ft-btn aria-expanded="false" aria-haspopup="true">'
                 + '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 6h13M8 12h13M8 18h13"/><path d="M3 6h.01M3 12h.01M3 18h.01"/></svg>'
                 + '<span>目录</span>'
-                + (showProg ? RING : '') + '</button>'
+                + '</button>'
                 + '<div class="ecod_floattoc__pop" data-ecod-ft-pop role="menu" aria-label="文章目录">'
                 + '<p class="ecod_floattoc__head">目录'
                 + (showProg ? '<span class="ecod_floattoc__stat" data-ecod-ft-stat></span>' : '') + '</p>'
@@ -154,7 +149,6 @@
             var btn = floatBox.querySelector('[data-ecod-ft-btn]');
             var pop = floatBox.querySelector('[data-ecod-ft-pop]');
             var list = floatBox.querySelector('.ecod_floattoc__list');
-            var ringBar = floatBox.querySelector('.ecod_floattoc__ring-b');
             var meterBar = floatBox.querySelector('[data-ecod-ft-meter]');
             var stat = floatBox.querySelector('[data-ecod-ft-stat]');
             mount(list);

@@ -242,13 +242,13 @@ td.num, th.num { text-align: right; }
 .tag { display: inline-block; padding: 0 8px; border-radius: 999px; background: #eef1fe; color: var(--c); font-size: 11px; }
 .tag.ok { background: #eafaf3; color: #067a55; }
 .tag.bad { background: #fdecec; color: #b42318; }
-button, .btn { padding: 5px 12px; border: 1px solid var(--bd); border-radius: 7px; background: var(--sf); color: var(--tx); font: inherit; font-size: 12px; cursor: pointer; }
+button, .btn { padding: 5px 12px; border: 1px solid var(--bd); border-radius: 8px; background: var(--sf); color: var(--tx); font: inherit; font-size: 12px; cursor: pointer; }
 button.primary { border-color: var(--c); background: var(--c); color: #fff; }
 button.ghost { color: var(--tx3); }
 form.inline { display: inline; }
 .grid { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)) auto; gap: 8px; align-items: end; }
 .grid label { display: block; font-size: 12px; color: var(--tx3); }
-.grid input, .grid select { width: 100%; height: 34px; padding: 0 10px; border: 1px solid var(--bd); border-radius: 7px; font: inherit; font-size: 13px; background: #fff; }
+.grid input, .grid select { width: 100%; height: 34px; padding: 0 10px; border: 1px solid var(--bd); border-radius: 8px; font: inherit; font-size: 13px; background: #fff; }
 .codes { margin-top: 12px; padding: 12px; border: 1px dashed var(--bd); border-radius: 8px; background: #fafbfc; font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 12px; white-space: pre-wrap; word-break: break-all; }
 .empty { padding: 16px; color: var(--tx3); font-size: 13px; text-align: center; }
 .hint { margin: 8px 0 0; color: var(--tx3); font-size: 12px; }

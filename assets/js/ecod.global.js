@@ -2145,7 +2145,20 @@
     };
 
     /* ---------- 列表入场动效 ---------- */
+    /* 依赖整包样式表的动画规则（.ecod-reveal 的 opacity:0 等）——
+       完整 CSS 异步加载时必须等 data-ecod-cssready 标记就位再初始化，
+       否则「加类 → 样式晚到 → 内容先隐再淡入」造成频闪。
+       阻塞加载模式（无 dist）在 head 里就已打标记，此处直接执行。 */
     Ecod.initAnimate = function () {
+        var run = function () { ecodAnimateRun(); };
+        if (document.documentElement.getAttribute('data-ecod-cssready') === '1') {
+            run();
+            return;
+        }
+        document.addEventListener('ecod:cssready', run, { once: true });
+    };
+
+    function ecodAnimateRun() {
         var mode = document.documentElement.getAttribute('data-anim');
         if (!mode || mode === 'none' || !('IntersectionObserver' in window)) {
             return;
@@ -2173,7 +2186,7 @@
             el.style.transitionDelay = Math.min(index, 6) * 45 + 'ms';
             io.observe(el);
         });
-    };
+    }
 
     /* ---------- 鼠标跟随光点 ---------- */
     Ecod.initCursor = function () {
