@@ -11,8 +11,8 @@
  */
 
 return [
-    'assets/css/ecod.css' => 'assets/dist/css/ecod.e5142a3b.min.css',
-    'assets/css/ecod.critical.css' => 'assets/dist/css/ecod.critical.54755061.min.css',
+    'assets/css/ecod.css' => 'assets/dist/css/ecod.a91cead4.min.css',
+    'assets/css/ecod.critical.css' => 'assets/dist/css/ecod.critical.2f861deb.min.css',
     'assets/js/ecod.global.js' => 'assets/dist/js/ecod.global.ebbb5d26.min.js',
     'assets/js/ecod.post.js' => 'assets/dist/js/ecod.post.74a55a8b.min.js',
     'assets/admin/tokens.css' => 'assets/dist/admin/tokens.f1907ff8.min.css',

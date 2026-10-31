@@ -1145,6 +1145,420 @@ html[data-theme="dark"] .ecod_emojis { background: #1a1f2c; border-color: #2c334
 .ecod_drawer__search input:focus { border-color: var(--ecod-primary); box-shadow: var(--ecod-ring); }
 .ecod_drawer__cats { display: flex; flex-wrap: wrap; gap: 8px; }
 
+/* ============ 41. 通用组件层（跨页面族复用件，构建期随 CORE 全站下发） ============ */
+/* 迁移自 §4.5 / §8 / §23@1 / §24：灯箱、面包屑、通用按钮、徽标、轮播与模块头骨架、
+   导航用户弹层、登录弹层。置于业务节之前，业务覆盖仍按源码顺序正常生效。 */
+.ecod_sliderwrap { position: relative; isolation: isolate; }
+.ecod_sliderwrap__glow {
+    position: absolute;
+    inset: 14px 7% -4px;
+    border-radius: var(--ecod-radius-full);
+    background-image: var(--ecod-slider-bg, none);
+    background-size: cover;
+    background-position: center;
+    filter: blur(34px) saturate(1.5);
+    opacity: .5;
+    z-index: 0;
+    pointer-events: none;
+}
+.ecod_slider {
+    position: relative;
+    z-index: 1;
+    height: 320px;
+    border-radius: var(--ecod-radius);
+    overflow: hidden;
+    background: linear-gradient(135deg, #2b3a6b, #5b4b9c 60%, #8e5aa8);
+}
+.ecod_slider__track { position: absolute; inset: 0; }
+.ecod_slider__slide {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: flex-end;
+    padding: 24px 24px;
+    background-image: var(--ecod-cover, none);
+    background-size: cover;
+    background-position: center;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity var(--ecod-dur-slow) var(--ecod-ease);
+    color: #fff;
+}
+.ecod_slider__slide.is-active { opacity: 1; pointer-events: auto; }
+.ecod_slider__slide.is-plain { background-image: linear-gradient(135deg, var(--ecod-primary), #1b2340); }
+.ecod_slider__shade { position: absolute; inset: 0; background: linear-gradient(180deg, rgba(10, 14, 26, .12) 25%, rgba(10, 14, 26, .8)); }
+.ecod_slider__body { position: relative; z-index: 1; display: flex; flex-direction: column; gap: 8px; max-width: 560px; }
+.ecod_slider__badge {
+    align-self: flex-start;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 8px;
+    border-radius: var(--ecod-radius-xs);
+    background: rgba(246, 195, 68, .18);
+    border: 1px solid rgba(246, 195, 68, .38);
+    backdrop-filter: blur(6px);
+    color: #f8cf6a;
+    font-size: var(--ecod-fs-2xs);
+}
+.ecod_slider__badge svg { color: currentColor; }
+.ecod_slider__title { font-size: var(--ecod-fs-3xl); line-height: 1.45; font-weight: 700; text-shadow: var(--ecod-text-shadow); }
+.ecod_slider__meta { display: flex; gap: 12px; font-size: var(--ecod-fs-xs); color: rgba(255, 255, 255, .8); }
+.ecod_slider__meta > * { display: inline-flex; align-items: center; gap: 4px; }
+.ecod_slider__dots { position: absolute; right: 22px; bottom: 18px; z-index: 2; display: flex; gap: 24px; }
+.ecod_slider__dots button {
+    position: relative;
+    width: 7px;
+    height: 7px;
+    padding: 0;
+    border: 0;
+    border-radius: var(--ecod-radius-full);
+    background: rgba(255, 255, 255, .42);
+    transition: width var(--ecod-dur) var(--ecod-ease), background var(--ecod-dur) var(--ecod-ease);
+}
+.ecod_slider__dots button::before {
+    content: "";
+    position: absolute;
+    top: -8.5px;
+    right: -8.5px;
+    bottom: -8.5px;
+    left: -8.5px;
+    border-radius: inherit;
+}
+.ecod_slider__dots button.is-active { width: 18px; background: #fff; }
+.ecod_slider__pause {
+    position: absolute;
+    right: 22px;
+    bottom: 56px;
+    z-index: 2;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 26px;
+    height: 26px;
+    padding: 0;
+    border: 0;
+    border-radius: var(--ecod-radius-full);
+    background: rgba(12, 15, 24, .42);
+    color: #fff;
+    transition: background-color var(--ecod-dur-fast) var(--ecod-ease), opacity var(--ecod-dur-fast) var(--ecod-ease);
+}
+.ecod_slider__pause:focus-visible { outline-color: #fff; }
+.ecod_section-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 8px; }
+.ecod_section-head__title { display: inline-flex; align-items: center; gap: 8px; font-size: var(--ecod-fs-base); }
+.ecod_section-head__dot { width: 7px; height: 7px; border-radius: 50%; background: var(--ecod-primary); }
+.ecod_section-head__more { display: inline-flex; align-items: center; gap: 1px; font-size: var(--ecod-fs-xs); color: var(--ecod-text-3); }
+.ecod_section-head__note { font-size: var(--ecod-fs-xs); color: var(--ecod-text-3); }
+.ecod_section-head--md .ecod_section-head__title { font-size: var(--ecod-fs-md); }
+.ecod_section--plain .ecod_rank { padding: 4px 16px; background: var(--ecod-surface); border: 1px solid var(--ecod-border); border-radius: var(--ecod-radius); }
+.ecod_crumb {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    padding: 8px 12px;
+    font-size: var(--ecod-fs-sm);
+    color: var(--ecod-text-3);
+    background: var(--ecod-surface);
+    border: 1px solid var(--ecod-border);
+    border-radius: var(--ecod-radius);
+}
+.ecod_crumb__back {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 26px;
+    height: 26px;
+    margin-right: 2px;
+    border: 1px solid var(--ecod-border-strong);
+    border-radius: 50%;
+    color: var(--ecod-text-2);
+}
+.ecod_crumb__back svg { transform: rotate(180deg); }
+.ecod_crumb a {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+.ecod_crumb__sep {
+    display: inline-flex;
+    color: var(--ecod-border-strong);
+}
+.ecod_crumb [aria-current="page"] { color: var(--ecod-text-2); }
+.ecod_lightbox {
+    position: fixed;
+    inset: 0;
+    z-index: var(--ecod-z-lightbox);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    background: rgba(12, 15, 24, .88);
+    backdrop-filter: blur(6px);
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity var(--ecod-dur) var(--ecod-ease), visibility 0s linear var(--ecod-dur);
+    cursor: zoom-out;
+    overscroll-behavior: contain;
+}
+.ecod_lightbox.is-open {
+    opacity: 1;
+    visibility: visible;
+    transition: opacity var(--ecod-dur) var(--ecod-ease), visibility 0s var(--ecod-ease);
+}
+.ecod_lightbox img {
+    max-width: min(92vw, 1200px);
+    max-height: 82vh;
+    border-radius: var(--ecod-radius);
+    box-shadow: var(--ecod-shadow-pop);
+    transform: scale(.96);
+    transition: transform var(--ecod-dur) var(--ecod-ease);
+}
+.ecod_lightbox.is-open img { transform: none; }
+.ecod_lightbox__stage {
+    display: grid;
+    place-items: center;
+    margin: 0;
+    min-width: 0;
+}
+.ecod_lightbox__nav {
+    position: absolute;
+    top: 50%;
+    display: grid;
+    place-items: center;
+    width: 42px;
+    height: 42px;
+    padding: 0;
+    border: 0;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, .14);
+    color: #fff;
+    cursor: pointer;
+    transform: translateY(-50%);
+    transition: background var(--ecod-dur) var(--ecod-ease);
+}
+.ecod_lightbox__nav[hidden] { display: none; }
+.ecod_lightbox__prev { left: 20px; }
+.ecod_lightbox__next { right: 20px; }
+.ecod_lightbox__bar {
+    position: absolute;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 24px;
+    background: linear-gradient(to top, rgba(6, 8, 16, .55), rgba(6, 8, 16, 0));
+    color: rgba(232, 235, 245, .75);
+    font-size: var(--ecod-fs-xs);
+    pointer-events: none;
+}
+.ecod_lightbox__cap {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    min-width: 0;
+}
+.ecod_lightbox__cap b {
+    color: #fff;
+    font-size: var(--ecod-fs-sm);
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.ecod_lightbox__cap span { font-size: var(--ecod-fs-xs); }
+.ecod_lightbox__actions {
+    display: flex;
+    gap: 8px;
+    margin-left: auto;
+    pointer-events: auto;
+}
+.ecod_lightbox__btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    height: 30px;
+    padding: 0 12px;
+    border: 1px solid rgba(255, 255, 255, .22);
+    border-radius: var(--ecod-radius-full);
+    background: rgba(255, 255, 255, .1);
+    color: #fff;
+    font-size: var(--ecod-fs-xs);
+    text-decoration: none;
+    cursor: pointer;
+    transition: background var(--ecod-dur) var(--ecod-ease), border-color var(--ecod-dur) var(--ecod-ease);
+}
+.ecod_badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    margin: 0 2px;
+    padding: 1px 8px;
+    border: 1px solid color-mix(in srgb, var(--c, var(--ecod-primary)) 20%, transparent);
+    border-radius: var(--ecod-radius-full);
+    background: color-mix(in srgb, var(--c, var(--ecod-primary)) 12%, transparent);
+    color: var(--c, var(--ecod-primary));
+    font-size: var(--ecod-fs-2xs);
+    font-weight: 600;
+    line-height: 1.75;
+    white-space: nowrap;
+    vertical-align: 1px;
+}
+.ecod_badge.is-solid {
+    border-color: transparent;
+    background: var(--c, var(--ecod-primary));
+    color: #fff;
+}
+.ecod_badge.is-outline {
+    border-color: color-mix(in srgb, var(--c, var(--ecod-primary)) 52%, transparent);
+    background: transparent;
+}
+.ecod_badge--pay {
+    --c: #b45309;
+    border-color: transparent;
+    background: #b45309;
+    color: #fff;
+}
+.ecod_badge--member { --c: #8b5cf6; }
+.ecod-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    padding: 8px 16px;
+    border: 1px solid var(--ecod-primary-btn);
+    border-radius: var(--ecod-radius-full);
+    background: var(--ecod-primary-btn);
+    color: #fff;
+    font-size: var(--ecod-fs-sm);
+    font-weight: 600;
+    line-height: 1;
+    cursor: pointer;
+    text-decoration: none;
+    transition: background var(--ecod-dur) var(--ecod-ease), color var(--ecod-dur) var(--ecod-ease), border-color var(--ecod-dur) var(--ecod-ease);
+}
+.ecod-btn--primary { background: var(--ecod-primary-btn); border-color: var(--ecod-primary-btn); color: #fff; }
+.ecod-btn--ghost {
+    background: transparent;
+    border-color: var(--ecod-border);
+    color: var(--ecod-text-2);
+}
+.ecod_nav__user { position: relative; flex-shrink: 0; }
+.ecod_nav__user > summary {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    color: var(--ecod-text-2);
+    cursor: pointer;
+    list-style: none;
+    transition: background var(--ecod-dur-fast) var(--ecod-ease), color var(--ecod-dur-fast) var(--ecod-ease), box-shadow var(--ecod-dur-fast) var(--ecod-ease);
+}
+.ecod_nav__user > summary::-webkit-details-marker { display: none; }
+.ecod_nav__user[open] > summary { box-shadow: 0 0 0 2px var(--ecod-primary-soft); color: var(--ecod-primary); }
+.ecod_nav__user img {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    object-fit: cover;
+    background: var(--ecod-primary-soft);
+}
+.ecod_nav__upop {
+    position: absolute;
+    top: calc(100% + 10px);
+    right: 0;
+    z-index: var(--ecod-z-upop);
+    min-width: 208px;
+    padding: 4px;
+    background: var(--ecod-surface);
+    border: 1px solid var(--ecod-border);
+    border-radius: var(--ecod-radius);
+    box-shadow: var(--ecod-shadow-hover);
+    /* 从触发头像处展开：--ecod-ox/--ecod-oy 由 JS 写入，缺省居中 */
+    transform-origin: var(--ecod-ox, 50%) var(--ecod-oy, 50%);
+    animation: ecod-upop-in var(--ecod-dur-enter) var(--ecod-ease-pop);
+}
+.ecod_nav__upop > a {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 8px;
+    border-radius: var(--ecod-radius-sm);
+    font-size: var(--ecod-fs-sm);
+    color: var(--ecod-text-2);
+    white-space: nowrap;
+}
+.ecod_nav__user > summary { position: relative; }
+.ecod_nav__user > summary img {
+    position: absolute;
+    top: 2px;
+    left: 2px;
+}
+.ecod_authmodal { position: fixed; inset: 0; z-index: var(--ecod-z-drawer); display: flex; align-items: center; justify-content: center; padding: 20px; }
+.ecod_authmodal[hidden] { display: none; }
+.ecod_authmodal__mask { position: absolute; inset: 0; background: var(--ecod-mask); backdrop-filter: blur(var(--ecod-mask-blur)); -webkit-backdrop-filter: blur(var(--ecod-mask-blur)); }
+.ecod_authmodal__panel {
+    position: relative;
+    width: 100%;
+    max-width: 372px;
+    max-height: calc(100dvh - 40px);
+    overflow-y: auto;
+    background: var(--ecod-surface);
+    border: 1px solid var(--ecod-border);
+    border-radius: var(--ecod-radius);
+    box-shadow: var(--ecod-shadow-pop);
+    animation: ecod-authmodal-in var(--ecod-dur-enter) var(--ecod-ease-pop);
+}
+.ecod_authmodal__close {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    height: 30px;
+    border: 0;
+    border-radius: var(--ecod-radius-full);
+    background: var(--ecod-surface-2);
+    color: var(--ecod-text-3);
+    cursor: pointer;
+}
+.ecod_authmodal__form { padding: 28px 28px 20px; text-align: center; }
+.ecod_authmodal__title { font-size: var(--ecod-fs-xl); margin: 12px 0 4px; color: var(--ecod-text); }
+.ecod_authmodal__panel .ecod_authmodal__title { font-size: var(--ecod-fs-lg, 16px); margin: 4px 0 2px; }
+@media (hover: hover) {
+.ecod_slider__pause:hover { background: rgba(12, 15, 24, .66); }
+.ecod_section-head__more:hover { color: var(--ecod-primary); }
+.ecod_crumb a:hover { color: var(--ecod-primary); }
+.ecod_crumb__back:hover { color: var(--ecod-primary); border-color: var(--ecod-primary); }
+.ecod_lightbox__nav:hover { background: rgba(255, 255, 255, .3); }
+.ecod_lightbox__btn:hover {
+        background: rgba(255, 255, 255, .22);
+        border-color: rgba(255, 255, 255, .4);
+        color: #fff;
+    }
+.ecod-btn:hover { background: var(--ecod-primary-deep); border-color: var(--ecod-primary-deep); color: #fff; }
+.ecod-btn--ghost:hover {
+        border-color: var(--ecod-primary);
+        background: transparent;
+        color: var(--ecod-primary);
+    }
+.ecod_nav__user > summary:hover { background: var(--ecod-primary-soft); color: var(--ecod-primary); }
+.ecod_nav__upop > a:hover { background: var(--ecod-primary-soft); color: var(--ecod-primary); }
+.ecod_authmodal__close:hover { color: var(--ecod-text); background: var(--ecod-surface); }
+}
+@media (max-width: 640px) {
+.ecod_lightbox__nav { width: 34px; height: 34px; }
+.ecod_lightbox__prev { left: 10px; }
+.ecod_lightbox__next { right: 10px; }
+.ecod_lightbox__cap b { max-width: 52vw; }
+.ecod_lightbox__bar { padding: 12px 56px 16px; }
+}
 /* ============ 4. 首页 ============ */
 .ecod_banner {
     position: relative;
@@ -1422,117 +1836,24 @@ html[data-theme="dark"] .ecod_emojis { background: #1a1f2c; border-color: #2c334
 
 /* M3 轮播 */
 /* 轮播：封面取色外发光（JS 随切换更新 --ecod-slider-bg） */
-.ecod_sliderwrap { position: relative; isolation: isolate; }
-.ecod_sliderwrap__glow {
-    position: absolute;
-    inset: 14px 7% -4px;
-    border-radius: var(--ecod-radius-full);
-    background-image: var(--ecod-slider-bg, none);
-    background-size: cover;
-    background-position: center;
-    filter: blur(34px) saturate(1.5);
-    opacity: .5;
-    z-index: 0;
-    pointer-events: none;
-}
-.ecod_slider {
-    position: relative;
-    z-index: 1;
-    height: 320px;
-    border-radius: var(--ecod-radius);
-    overflow: hidden;
-    background: linear-gradient(135deg, #2b3a6b, #5b4b9c 60%, #8e5aa8);
-}
-.ecod_slider__track { position: absolute; inset: 0; }
-.ecod_slider__slide {
-    position: absolute;
-    inset: 0;
-    display: flex;
-    align-items: flex-end;
-    padding: 24px 24px;
-    background-image: var(--ecod-cover, none);
-    background-size: cover;
-    background-position: center;
-    opacity: 0;
-    pointer-events: none;
-    transition: opacity var(--ecod-dur-slow) var(--ecod-ease);
-    color: #fff;
-}
-.ecod_slider__slide.is-active { opacity: 1; pointer-events: auto; }
+
 /* 自定义幻灯片没配图时的兜底背景，避免整块空白 */
-.ecod_slider__slide.is-plain { background-image: linear-gradient(135deg, var(--ecod-primary), #1b2340); }
-.ecod_slider__shade { position: absolute; inset: 0; background: linear-gradient(180deg, rgba(10, 14, 26, .12) 25%, rgba(10, 14, 26, .8)); }
-.ecod_slider__body { position: relative; z-index: 1; display: flex; flex-direction: column; gap: 8px; max-width: 560px; }
-.ecod_slider__badge {
-    align-self: flex-start;
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-    padding: 2px 8px;
-    border-radius: var(--ecod-radius-xs);
-    background: rgba(246, 195, 68, .18);
-    border: 1px solid rgba(246, 195, 68, .38);
-    backdrop-filter: blur(6px);
-    color: #f8cf6a;
-    font-size: var(--ecod-fs-2xs);
-}
+
 /* 精选角标：整体金色（背景/边框/文字/图标一致） */
-.ecod_slider__badge svg { color: currentColor; }
-.ecod_slider__title { font-size: var(--ecod-fs-3xl); line-height: 1.45; font-weight: 700; text-shadow: var(--ecod-text-shadow); }
-.ecod_slider__meta { display: flex; gap: 12px; font-size: var(--ecod-fs-xs); color: rgba(255, 255, 255, .8); }
-.ecod_slider__meta > * { display: inline-flex; align-items: center; gap: 4px; }
-.ecod_slider__dots { position: absolute; right: 22px; bottom: 18px; z-index: 2; display: flex; gap: 24px; }
-.ecod_slider__dots button {
-    position: relative;
-    width: 7px;
-    height: 7px;
-    padding: 0;
-    border: 0;
-    border-radius: var(--ecod-radius-full);
-    background: rgba(255, 255, 255, .42);
-    transition: width var(--ecod-dur) var(--ecod-ease), background var(--ecod-dur) var(--ecod-ease);
-}
+
 /* 视觉仍是 7px 圆点，命中区精确 24×24（WCAG 2.5.8）；
    gap 24px + 激活点 18px 展宽下，相邻命中区互不接触 */
-.ecod_slider__dots button::before {
-    content: "";
-    position: absolute;
-    top: -8.5px;
-    right: -8.5px;
-    bottom: -8.5px;
-    left: -8.5px;
-    border-radius: inherit;
-}
-.ecod_slider__dots button.is-active { width: 18px; background: #fff; }
 
 /* 轮播暂停：自动播放超过 5 秒必须可停。
    bottom ≥56：圆点命中区 24×24（移动端 min-height 24 顶到 42px 高），
    原先 36px 与右侧两枚圆点的命中区重叠 6px，被 Lighthouse 判 partially obscured */
-.ecod_slider__pause {
-    position: absolute;
-    right: 22px;
-    bottom: 56px;
-    z-index: 2;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 26px;
-    height: 26px;
-    padding: 0;
-    border: 0;
-    border-radius: var(--ecod-radius-full);
-    background: rgba(12, 15, 24, .42);
-    color: #fff;
-    transition: background-color var(--ecod-dur-fast) var(--ecod-ease), opacity var(--ecod-dur-fast) var(--ecod-ease);
-}
+
 @media (hover: hover) {
-    .ecod_slider__pause:hover { background: rgba(12, 15, 24, .66); }
+    
 }
-.ecod_slider__pause:focus-visible { outline-color: #fff; }
 
 /* 模块标题栏 */
-.ecod_section-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 8px; }
-.ecod_section-head__title { display: inline-flex; align-items: center; gap: 8px; font-size: var(--ecod-fs-base); }
+
 /* 图标型分节头：与挂件头（.ecod_widget__icon）统一成 22×22 主色淡底图标块 */
 .ecod_section-head__title .ecod_icon {
     box-sizing: border-box;
@@ -1544,14 +1865,12 @@ html[data-theme="dark"] .ecod_emojis { background: #1a1f2c; border-color: #2c334
     background: var(--ecod-primary-soft);
     color: var(--ecod-primary);
 }
-.ecod_section-head__dot { width: 7px; height: 7px; border-radius: 50%; background: var(--ecod-primary); }
-.ecod_section-head__more { display: inline-flex; align-items: center; gap: 1px; font-size: var(--ecod-fs-xs); color: var(--ecod-text-3); }
+
 @media (hover: hover) {
-    .ecod_section-head__more:hover { color: var(--ecod-primary); }
+    
 }
-.ecod_section-head__note { font-size: var(--ecod-fs-xs); color: var(--ecod-text-3); }
+
 /* 卡片背景模块（hot 等）的头部放大一号 */
-.ecod_section-head--md .ecod_section-head__title { font-size: var(--ecod-fs-md); }
 
 /* M4 推荐位 */
 .ecod_reco { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
@@ -1834,7 +2153,6 @@ html[data-theme="dark"] .ecod_emojis { background: #1a1f2c; border-color: #2c334
 /* M9 标题速览 */
 .ecod_section--plain .ecod_titlelist { padding: 4px 16px; background: var(--ecod-surface); border: 1px solid var(--ecod-border); border-radius: var(--ecod-radius); }
 /* 序号列表版式与标题卡片同壳：rank 行是紧凑列表，上下多留一点呼吸 */
-.ecod_section--plain .ecod_rank { padding: 4px 16px; background: var(--ecod-surface); border: 1px solid var(--ecod-border); border-radius: var(--ecod-radius); }
 
 /* M6 动态流 */
 .ecod_feed__list { padding: 8px 16px; background: var(--ecod-surface); border: 1px solid var(--ecod-border); border-radius: var(--ecod-radius); }
@@ -2050,7 +2368,6 @@ html[data-theme="dark"] .ecod_emojis { background: #1a1f2c; border-color: #2c334
 .ecod_feed__lock,
 .ecod_hot__lock,
 .ecod_rank__lock { vertical-align: -1px; margin-right: 4px; }
-
 
 /* 内容 */
 .ecod_card__body { min-width: 0; flex: 1; display: flex; flex-direction: column; }
@@ -3214,45 +3531,13 @@ html[data-theme="dark"] .ecod_rank a:nth-child(2) .ecod_rank__no { background: #
 }
 
 /* ============ 8. 文章 ============ */
-.ecod_crumb {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    flex-wrap: wrap;
-    padding: 8px 12px;
-    font-size: var(--ecod-fs-sm);
-    color: var(--ecod-text-3);
-    background: var(--ecod-surface);
-    border: 1px solid var(--ecod-border);
-    border-radius: var(--ecod-radius);
-}
+
 /* 卡片条左侧圆形返回按钮 */
-.ecod_crumb__back {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 26px;
-    height: 26px;
-    margin-right: 2px;
-    border: 1px solid var(--ecod-border-strong);
-    border-radius: 50%;
-    color: var(--ecod-text-2);
-}
-.ecod_crumb__back svg { transform: rotate(180deg); }
-.ecod_crumb a {
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-}
+
 @media (hover: hover) {
-    .ecod_crumb a:hover { color: var(--ecod-primary); }
-    .ecod_crumb__back:hover { color: var(--ecod-primary); border-color: var(--ecod-primary); }
+    
+    
 }
-.ecod_crumb__sep {
-    display: inline-flex;
-    color: var(--ecod-border-strong);
-}
-.ecod_crumb [aria-current="page"] { color: var(--ecod-text-2); }
 
 .ecod_article {
     background: var(--ecod-surface);
@@ -3923,6 +4208,11 @@ html.is-hd-off .ecod_content h4 { scroll-margin-top: 18px; }
 .ecod_content th,
 .ecod_content td { border: 1px solid var(--ecod-border); padding: 8px 12px; text-align: left; }
 .ecod_content th { background: var(--ecod-surface-2); font-weight: 600; }
+/* 斑马纹偶数行；hover 高亮（触屏无 hover，天然只生效斑马纹） */
+.ecod_content tbody tr:nth-child(even) td { background: color-mix(in srgb, var(--ecod-surface-2) 55%, transparent); }
+@media (hover: hover) {
+    .ecod_content tbody tr:hover td { background: color-mix(in srgb, var(--ecod-primary-soft) 65%, transparent); }
+}
 .ecod_content hr { border: 0; border-top: 1px solid var(--ecod-border); margin: 28px 0; }
 
 /* --- 正文原生 details 折叠（FAQ 场景：未用短代码的裸 details） ---
@@ -3984,7 +4274,6 @@ html.is-hd-off .ecod_content h4 { scroll-margin-top: 18px; }
     transition-behavior: allow-discrete;
 }
 .ecod_content details[open]::details-content { block-size: auto; }
-
 
 .ecod_article__tags { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 28px; padding-top: 16px; border-top: 1px solid var(--ecod-line-2); }
 /* 标签去底片（设计稿 §05）：# 前缀纯文字，hover 才出底 */
@@ -4103,130 +4392,24 @@ html.is-hd-off .ecod_content h4 { scroll-margin-top: 18px; }
 .ecod_codeblock pre code .tok-kw { font-weight: 500; }
 
 /* 图片灯箱 */
-.ecod_lightbox {
-    position: fixed;
-    inset: 0;
-    z-index: var(--ecod-z-lightbox);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 24px;
-    background: rgba(12, 15, 24, .88);
-    backdrop-filter: blur(6px);
-    opacity: 0;
-    visibility: hidden;
-    transition: opacity var(--ecod-dur) var(--ecod-ease), visibility 0s linear var(--ecod-dur);
-    cursor: zoom-out;
-    overscroll-behavior: contain;
-}
+
 /* 打开时 visibility 立刻生效，否则 100ms 内元素不可聚焦/不可点击 */
-.ecod_lightbox.is-open {
-    opacity: 1;
-    visibility: visible;
-    transition: opacity var(--ecod-dur) var(--ecod-ease), visibility 0s var(--ecod-ease);
-}
-.ecod_lightbox img {
-    max-width: min(92vw, 1200px);
-    max-height: 82vh;
-    border-radius: var(--ecod-radius);
-    box-shadow: var(--ecod-shadow-pop);
-    transform: scale(.96);
-    transition: transform var(--ecod-dur) var(--ecod-ease);
-}
-.ecod_lightbox.is-open img { transform: none; }
 
 /* 灯箱：舞台 / 切换 / 底栏 */
-.ecod_lightbox__stage {
-    display: grid;
-    place-items: center;
-    margin: 0;
-    min-width: 0;
-}
-.ecod_lightbox__nav {
-    position: absolute;
-    top: 50%;
-    display: grid;
-    place-items: center;
-    width: 42px;
-    height: 42px;
-    padding: 0;
-    border: 0;
-    border-radius: 50%;
-    background: rgba(255, 255, 255, .14);
-    color: #fff;
-    cursor: pointer;
-    transform: translateY(-50%);
-    transition: background var(--ecod-dur) var(--ecod-ease);
-}
+
 @media (hover: hover) {
-    .ecod_lightbox__nav:hover { background: rgba(255, 255, 255, .3); }
+    
 }
-.ecod_lightbox__nav[hidden] { display: none; }
-.ecod_lightbox__prev { left: 20px; }
-.ecod_lightbox__next { right: 20px; }
-.ecod_lightbox__bar {
-    position: absolute;
-    right: 0;
-    bottom: 0;
-    left: 0;
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 12px 24px;
-    background: linear-gradient(to top, rgba(6, 8, 16, .55), rgba(6, 8, 16, 0));
-    color: rgba(232, 235, 245, .75);
-    font-size: var(--ecod-fs-xs);
-    pointer-events: none;
-}
-.ecod_lightbox__cap {
-    display: flex;
-    flex-direction: column;
-    gap: 1px;
-    min-width: 0;
-}
-.ecod_lightbox__cap b {
-    color: #fff;
-    font-size: var(--ecod-fs-sm);
-    font-weight: 600;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-.ecod_lightbox__cap span { font-size: var(--ecod-fs-xs); }
-.ecod_lightbox__actions {
-    display: flex;
-    gap: 8px;
-    margin-left: auto;
-    pointer-events: auto;
-}
-.ecod_lightbox__btn {
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-    height: 30px;
-    padding: 0 12px;
-    border: 1px solid rgba(255, 255, 255, .22);
-    border-radius: var(--ecod-radius-full);
-    background: rgba(255, 255, 255, .1);
-    color: #fff;
-    font-size: var(--ecod-fs-xs);
-    text-decoration: none;
-    cursor: pointer;
-    transition: background var(--ecod-dur) var(--ecod-ease), border-color var(--ecod-dur) var(--ecod-ease);
-}
+
 @media (hover: hover) {
-    .ecod_lightbox__btn:hover {
-        background: rgba(255, 255, 255, .22);
-        border-color: rgba(255, 255, 255, .4);
-        color: #fff;
-    }
+    
 }
 @media (max-width: 640px) {
-    .ecod_lightbox__nav { width: 34px; height: 34px; }
-    .ecod_lightbox__prev { left: 10px; }
-    .ecod_lightbox__next { right: 10px; }
-    .ecod_lightbox__cap b { max-width: 52vw; }
-    .ecod_lightbox__bar { padding: 12px 56px 16px; }
+    
+    
+    
+    
+    
 }
 
 /* 上下篇：带封面底图的大卡片 */
@@ -7614,7 +7797,6 @@ html[data-anim="zoom"] .ecod-reveal.is-in { opacity: 1; translate: 0; scale: 1; 
     }
 }
 
-
 /* --- 站点背景（纯 CSS） --- */
 html[data-backdrop="soft"] body {
     background-image:
@@ -8676,32 +8858,6 @@ html.is-hd-off .ecod_pwbox { scroll-margin-top: 24px; }
 .ecod_tip.is-bottom:focus-visible .ecod_tip__pop,
 .ecod_tip.is-bottom:focus-within .ecod_tip__pop { transform: translate(-50%, 0) translateX(var(--shift, 0px)); }
 
-.ecod_badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-    margin: 0 2px;
-    padding: 1px 8px;
-    border: 1px solid color-mix(in srgb, var(--c, var(--ecod-primary)) 20%, transparent);
-    border-radius: var(--ecod-radius-full);
-    background: color-mix(in srgb, var(--c, var(--ecod-primary)) 12%, transparent);
-    color: var(--c, var(--ecod-primary));
-    font-size: var(--ecod-fs-2xs);
-    font-weight: 600;
-    line-height: 1.75;
-    white-space: nowrap;
-    vertical-align: 1px;
-}
-.ecod_badge.is-solid {
-    border-color: transparent;
-    background: var(--c, var(--ecod-primary));
-    color: #fff;
-}
-.ecod_badge.is-outline {
-    border-color: color-mix(in srgb, var(--c, var(--ecod-primary)) 52%, transparent);
-    background: transparent;
-}
-
 .ecod_spoiler {
     padding: 0 3px;
     border-radius: var(--ecod-radius-xs);
@@ -8913,13 +9069,6 @@ html.is-hd-off .ecod_pwbox { scroll-margin-top: 24px; }
 /* 角标：付费 / 会员（会员用 --member，--vip 已被「系列」占用）
    付费用「琥珀底白字」：它是信息而非警告——红色在本站表示 danger / 上涨，
    不能拿来标价；amber-700 (#b45309) 配白字对比度约 4.8:1，11px 也读得清。 */
-.ecod_badge--pay {
-    --c: #b45309;
-    border-color: transparent;
-    background: #b45309;
-    color: #fff;
-}
-.ecod_badge--member { --c: #8b5cf6; }
 
 /* 文章 meta 的付费标记 */
 .ecod_article__paid {
@@ -9181,84 +9330,24 @@ html.is-hd-off .ecod_pwbox { scroll-margin-top: 24px; }
    与 .ecod_btn（§1）同一按钮族：hover 换底色 / transition / ghost 行为已对齐，
    有意保留的密度差只有两处：胶囊圆角 + fs-sm/600（页面级场景更紧凑）。
    历史上 hover 曾是 opacity:.88、ghost hover 曾多一层 soft 底，本次统一 */
-.ecod-btn {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 4px;
-    padding: 8px 16px;
-    border: 1px solid var(--ecod-primary-btn);
-    border-radius: var(--ecod-radius-full);
-    background: var(--ecod-primary-btn);
-    color: #fff;
-    font-size: var(--ecod-fs-sm);
-    font-weight: 600;
-    line-height: 1;
-    cursor: pointer;
-    text-decoration: none;
-    transition: background var(--ecod-dur) var(--ecod-ease), color var(--ecod-dur) var(--ecod-ease), border-color var(--ecod-dur) var(--ecod-ease);
-}
+
 @media (hover: hover) {
-    .ecod-btn:hover { background: var(--ecod-primary-deep); border-color: var(--ecod-primary-deep); color: #fff; }
+    
 }
 /* --primary 与基类同值，保留类名兼容模板既有用法（page-user / page-ads） */
-.ecod-btn--primary { background: var(--ecod-primary-btn); border-color: var(--ecod-primary-btn); color: #fff; }
-.ecod-btn--ghost {
-    background: transparent;
-    border-color: var(--ecod-border);
-    color: var(--ecod-text-2);
-}
+
 @media (hover: hover) {
-    .ecod-btn--ghost:hover {
-        border-color: var(--ecod-primary);
-        background: transparent;
-        color: var(--ecod-primary);
-    }
+    
 }
 
 /* --- 头部用户按钮 --- */
-.ecod_nav__user { position: relative; flex-shrink: 0; }
-.ecod_nav__user > summary {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 34px;
-    height: 34px;
-    border-radius: 50%;
-    color: var(--ecod-text-2);
-    cursor: pointer;
-    list-style: none;
-    transition: background var(--ecod-dur-fast) var(--ecod-ease), color var(--ecod-dur-fast) var(--ecod-ease), box-shadow var(--ecod-dur-fast) var(--ecod-ease);
-}
-.ecod_nav__user > summary::-webkit-details-marker { display: none; }
+
 @media (hover: hover) {
-    .ecod_nav__user > summary:hover { background: var(--ecod-primary-soft); color: var(--ecod-primary); }
-}
-.ecod_nav__user[open] > summary { box-shadow: 0 0 0 2px var(--ecod-primary-soft); color: var(--ecod-primary); }
-.ecod_nav__user img {
-    width: 30px;
-    height: 30px;
-    border-radius: 50%;
-    object-fit: cover;
-    background: var(--ecod-primary-soft);
+    
 }
 
 /* --- 用户弹出面板 --- */
-.ecod_nav__upop {
-    position: absolute;
-    top: calc(100% + 10px);
-    right: 0;
-    z-index: var(--ecod-z-upop);
-    min-width: 208px;
-    padding: 4px;
-    background: var(--ecod-surface);
-    border: 1px solid var(--ecod-border);
-    border-radius: var(--ecod-radius);
-    box-shadow: var(--ecod-shadow-hover);
-    /* 从触发头像处展开：--ecod-ox/--ecod-oy 由 JS 写入，缺省居中 */
-    transform-origin: var(--ecod-ox, 50%) var(--ecod-oy, 50%);
-    animation: ecod-upop-in var(--ecod-dur-enter) var(--ecod-ease-pop);
-}
+
 @keyframes ecod-upop-in {
     from { opacity: 0; transform: translateY(-4px) scale(.96); }
     to   { opacity: 1; transform: none; }
@@ -9294,18 +9383,9 @@ html.is-hd-off .ecod_pwbox { scroll-margin-top: 24px; }
     color: var(--ecod-text);
 }
 .ecod_nav__upop-head span { font-size: var(--ecod-fs-xs); color: var(--ecod-text-3); }
-.ecod_nav__upop > a {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 8px 8px;
-    border-radius: var(--ecod-radius-sm);
-    font-size: var(--ecod-fs-sm);
-    color: var(--ecod-text-2);
-    white-space: nowrap;
-}
+
 @media (hover: hover) {
-    .ecod_nav__upop > a:hover { background: var(--ecod-primary-soft); color: var(--ecod-primary); }
+    
 }
 
 /* --- 站内消息铃铛：样式跟随用户头像入口，弹层与 upop 同语言 --- */
@@ -9898,13 +9978,8 @@ html.is-hd-off .ecod_pwbox { scroll-margin-top: 24px; }
 }
 
 /* 头像加载失败时露出人形图标 */
-.ecod_nav__user > summary { position: relative; }
+
 .ecod_nav__user-ic { display: flex; align-items: center; justify-content: center; }
-.ecod_nav__user > summary img {
-    position: absolute;
-    top: 2px;
-    left: 2px;
-}
 
 /* ------------------------------------------------------------------
  * 前台登录页
@@ -9940,45 +10015,16 @@ html[data-theme="dark"] .ecod_login__bg::after {
 
 /* 全站登录弹窗 */
 html.ecod-modal-lock { overflow: hidden; }
-.ecod_authmodal { position: fixed; inset: 0; z-index: var(--ecod-z-drawer); display: flex; align-items: center; justify-content: center; padding: 20px; }
-.ecod_authmodal[hidden] { display: none; }
-.ecod_authmodal__mask { position: absolute; inset: 0; background: var(--ecod-mask); backdrop-filter: blur(var(--ecod-mask-blur)); -webkit-backdrop-filter: blur(var(--ecod-mask-blur)); }
-.ecod_authmodal__panel {
-    position: relative;
-    width: 100%;
-    max-width: 372px;
-    max-height: calc(100dvh - 40px);
-    overflow-y: auto;
-    background: var(--ecod-surface);
-    border: 1px solid var(--ecod-border);
-    border-radius: var(--ecod-radius);
-    box-shadow: var(--ecod-shadow-pop);
-    animation: ecod-authmodal-in var(--ecod-dur-enter) var(--ecod-ease-pop);
-}
+
 @keyframes ecod-authmodal-in {
     from { opacity: 0; transform: translateY(14px) scale(.98); }
     to { opacity: 1; transform: none; }
 }
-.ecod_authmodal__close {
-    position: absolute;
-    top: 12px;
-    right: 12px;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 30px;
-    height: 30px;
-    border: 0;
-    border-radius: var(--ecod-radius-full);
-    background: var(--ecod-surface-2);
-    color: var(--ecod-text-3);
-    cursor: pointer;
-}
+
 @media (hover: hover) {
-    .ecod_authmodal__close:hover { color: var(--ecod-text); background: var(--ecod-surface); }
+    
 }
-.ecod_authmodal__form { padding: 28px 28px 20px; text-align: center; }
-.ecod_authmodal__title { font-size: var(--ecod-fs-xl); margin: 12px 0 4px; color: var(--ecod-text); }
+
 .ecod_login__card {
     width: 100%;
     max-width: 400px;
@@ -10027,7 +10073,7 @@ html.ecod-modal-lock { overflow: hidden; }
 
 /* 登录弹窗：比登录页卡片更紧凑（同一组字段，留白与间距收紧一档） */
 .ecod_login__form.ecod_authmodal__form { gap: 8px; padding: 20px 20px 16px; }
-.ecod_authmodal__panel .ecod_authmodal__title { font-size: var(--ecod-fs-lg, 16px); margin: 4px 0 2px; }
+
 .ecod_authmodal__form .ecod_login__logo { width: 34px; height: 34px; border-radius: var(--ecod-radius); margin-bottom: 8px; }
 .ecod_authmodal__form .ecod_login__logo svg { width: 17px; height: 17px; }
 .ecod_authmodal__form .ecod_login__desc { margin: 0 0 12px; }
@@ -13374,3 +13420,33 @@ html[data-theme="dark"] .ecod_checkin__banner {
 html[data-theme="dark"] .ecod_checkin__promote {
     background: color-mix(in srgb, var(--ecod-success) 22%, transparent);
 }
+
+/* ============ 41. 正文渲染增强（代码复制状态 / mark / kbd / 任务列表；Nimbus 对标） ============ */
+/* 复制成功：JS 同步切 is-done，成功色与 .ecod_copybox__btn.is-done 同口径 */
+.ecod_codeblock__copy.is-done { color: var(--ecod-success); opacity: 1; }
+@media (hover: hover) {
+    .ecod_codeblock__copy.is-done:hover { color: var(--ecod-success); }
+}
+/* 行内 <mark> 高亮：与 [mark] 短代码（.ecod_mark）同一套配色，原生 mark 不再裸奔 */
+.ecod_content mark { padding: 1px 3px; border-radius: var(--ecod-radius-xs); background: #fff3bf; color: inherit; }
+html[data-theme="dark"] .ecod_content mark { background: #5c4d1c; color: #ffe9a0; }
+/* 键帽：底部边框加厚的按键观感 */
+.ecod_content kbd {
+    font-family: var(--ecod-mono);
+    font-size: .85em;
+    padding: .1em .5em;
+    border-radius: var(--ecod-radius-xs);
+    border: 1px solid var(--ecod-border);
+    border-bottom-width: 2px;
+    background: var(--ecod-surface-2);
+    color: var(--ecod-ink-2);
+}
+/* 任务列表：勾选框用主色，首项为 checkbox 的 li 去掉圆点/序号 */
+.ecod_content input[type="checkbox"] {
+    width: 15px;
+    height: 15px;
+    margin: 0 6px 0 0;
+    vertical-align: -2px;
+    accent-color: var(--ecod-primary);
+}
+.ecod_content li:has(> input[type="checkbox"]:first-child) { list-style: none; margin-left: -1.4em; }
