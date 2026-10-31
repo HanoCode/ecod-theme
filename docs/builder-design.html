@@ -332,32 +332,81 @@ tr:last-child td{border-bottom:none}
 
 <h2 id="s5">5 UI 设计</h2>
 
-<h3>5.1 编辑器整体布局（三段式 + 顶栏）</h3>
-<p>与主题设置页同一视觉语言（token 体系、圆角/描边三档、rest 靠描边不靠阴影）：</p>
+<h3>5.1 编辑器整体布局与区域规格</h3>
+<p>三段式 + 顶栏 + 状态栏。与主题设置页同一视觉语言（token 体系、圆角/描边三档、rest 靠描边不靠阴影）。编辑器壳是<b>固定框架、面板内部滚动</b>——各面板独立滚，互不牵动。给分析用的硬规格：</p>
+<table>
+  <tr><th>区域</th><th>尺寸</th><th>折叠 / 响应</th><th>职责</th></tr>
+  <tr><td>顶栏 Topbar</td><td>高 48px，固定</td><td>&lt;1280px 隐藏中组（设备切换移入状态栏）</td><td>文档、设备、历史、保存</td></tr>
+  <tr><td>左栏 Library / Outline</td><td>宽 264px，内部滚动</td><td>可折叠为 48px 图标轨；1280–1439px 默认收起</td><td>模块库 + 大纲树（双 tab）</td></tr>
+  <tr><td>画布 Canvas</td><td>flex 剩余，最小 640px</td><td>始终可见</td><td>iframe 工作台 + 缩放</td></tr>
+  <tr><td>右栏 Inspector</td><td>宽 312px，内部滚动</td><td>1024–1279px 变滑出抽屉；无选中时显示「页面设置」（文档级背景、板块外上下边距等）</td><td>选中对象的属性</td></tr>
+  <tr><td>状态栏 Statusbar</td><td>高 28px</td><td>&lt;1280px 并入顶栏</td><td>缩放、脏状态、连接状态</td></tr>
+</table>
+<p class="note warn"><b>编辑器自身可用性下限</b>：&lt;1024px 不再适配，画布上方出提示条「页面构建器建议在桌面端使用」并提供只读大纲模式——不为移动端管理维护第二套编辑 UI（与前台访客的触屏体验无关，前台路径零影响）。</p>
+
+<h4>5.1.1 顶栏控件清单</h4>
+<table>
+  <tr><th>组</th><th>控件</th><th>行为细节</th></tr>
+  <tr><td>左组</td><td>退出 · 文档选择器</td>
+      <td>退出：脏状态先弹「保存 / 放弃 / 取消」三选；文档选择器下拉列出全部文档（home、cat:N、cid:N…），当前项带「绑定来源」徽标（页面类型默认 / 分类覆盖 / 单页覆盖），底部入口「为当前页面新建覆盖」——3.3 回退链的 UI 出口</td></tr>
+  <tr><td>中组</td><td>设备三段 · 缩放 · 撤销/重做</td>
+      <td>设备切换 = iframe 宽度切换（390 / 768 / 内容宽），<b>不切数据</b>（9.3）；缩放 = fit + 50–150% 滑条（也在状态栏）；撤销/重做带步数徽标，悬停出最近 5 步摘要</td></tr>
+  <tr><td>右组</td><td>预览 · 快照 · 保存</td>
+      <td>预览：新标签打开无 builder 标记的前台页（真实访客视角）；快照：下拉列最近 10 份可恢复；保存按钮三态——<b>干净</b>（灰、禁用）/ <b>脏</b>（主色，徽标 = 改动处数）/ <b>冲突</b>（红，点击出取回远端 diff 弹窗）</td></tr>
+</table>
+
+<h4>5.1.2 左栏（模块库 / 大纲 双 tab）</h4>
+<ul>
+  <li><b>模块库</b>：顶部搜索框（拼音首字母匹配，复用 nav.js 图标搜索的匹配器）；按 blocks-def 的 area 分组折叠（布局 / 内容 / 媒体 / 营销 / 工具…）；卡片 = 图标 + 名称 + 一行描述；<b>拖拽发起 + 点击即追加</b>到选中板块末尾（无选中则追加到最后一个板块）——点击路径同时是键盘可达路径；</li>
+  <li><b>大纲</b>：板块 → 栏 → 模块三层树（nav.js 摊平/重建算法复用）；行内控件：显隐眼睛（切 on）、上移/下移、删除；支持拖拽排序与跨板块拖动；选中项与画布<b>双向高亮</b>；</li>
+  <li>底部固定入口：「存为我的板块」（选中板块，P2）、「导入模板」（P2）。</li>
+</ul>
+
+<h4>5.1.3 画布工作台</h4>
+<ul>
+  <li>灰底工作台 + 居中 iframe；<b>iframe 内部滚动</b>（不做全高 iframe + 外层滚动）——保真主题的 sticky 侧栏、固定头、移动端 dock 行为，这是 8.4 混合 chrome 决策的直接前提；</li>
+  <li>选中框 / 悬停描边 / 投放条 / 空板块 CTA 全部画在 iframe 内（<code>.ecod-b-*</code> 命名空间，仅 builder 标记下注入，见 6.2）——bridge 在文档坐标系内直接画，<b>不存在「×缩放比换算覆盖层坐标」问题</b>；</li>
+  <li>缩放实现：iframe 保持文档像素宽度，外层 wrapper <code>transform: scale(z)</code>；wrapper 占位尺寸 = 文档尺寸 × z（docHeight 由 bridge 上报，设备/缩放/patch 后重报），保证工作台滚动条长度正确；</li>
+  <li><b>双击文本</b>：不开放画布内联改文（内容仍归 Typecho 编辑器管，路由见 5.2.1），双击正文类模块 → 引导跳转内容编辑页。</li>
+</ul>
+
+<h4>5.1.4 右栏 Inspector</h4>
+<ul>
+  <li>头部：对象图标 + 名称（板块 label 可改）+ 类型徽标 + 行内三键（复制 / 显隐 / 删除，删除有确认）；</li>
+  <li>标签页：选中模块 → 「内容」（params schema，EcodFields 渲染）+「样式」（supports 驱动：density / shell / hide-sm…见 4.5）；选中板块 → 「板块设置」（box + cols）+「背景」+「高级」（P2）；</li>
+  <li>底部固定「设备上下文条」：桌面段修改写基础值，平板/手机段修改写入 <code>ov</code>（9.3 的 UI 呈现）；存在覆盖时显示「📱 手机：已覆盖 2 项 · 清除」；</li>
+  <li>字段分组标题吸顶；改动即时生效（patch 片段替换）+ debounce 500ms 合并进撤销栈。</li>
+</ul>
+
+<h4>5.1.5 状态栏</h4>
+<p>缩放滑条 + fit 按钮 · 设备×缩放读数（如 <code>390px × 100%</code>）· 脏状态（「未保存 · 3 处改动」/「已保存 14:32」）· 桥接状态点（绿=正常 / 黄=重连中 / 红=断开，附「重载预览」按钮）· rev 号。</p>
 
 <div class="diagram">
 <div class="wire">
   <div class="bar">
     <span class="chip">← 退出</span>
-    <span class="chip on">首页</span><span class="chip">cat:12</span><span class="chip">cid:23</span>
+    <span class="chip on">首页 ▾</span><span class="chip">＋ 页面覆盖</span>
     <span style="flex:1"></span>
     <span class="seg"><span class="on">桌面</span><span>平板</span><span>手机</span></span>
-    <span class="chip">缩放 75%</span>
-    <span class="chip">撤销</span>
-    <span class="chip on">保存</span><span class="chip">预览</span>
+    <span class="chip">fit</span>
+    <span class="chip">↶ 3</span><span class="chip">↷</span>
+    <span style="flex:1"></span>
+    <span class="chip">预览</span><span class="chip">快照 ▾</span>
+    <span class="chip on">保存 ● 3</span>
   </div>
   <div class="cols">
     <div class="panel">
-      <div class="pt">模块库</div>
+      <div class="tabs"><span class="on">模块库</span><span>大纲</span></div>
+      <div class="search">🔍 搜索模块…</div>
+      <div class="pt">布局</div>
       <div class="mitem"><span class="ic"></span>板块 <span class="badge-new">新</span></div>
+      <div class="pt">内容</div>
       <div class="mitem"><span class="ic"></span>轮播图</div>
       <div class="mitem"><span class="ic"></span>文章列表</div>
       <div class="mitem"><span class="ic"></span>磁贴区</div>
-      <div class="mitem"><span class="ic"></span>搜索</div>
-      <div class="pt" style="margin-top:10px">大纲</div>
-      <div class="mitem" style="border-style:solid">▾ 精选推荐</div>
-      <div class="mitem" style="border-style:solid;margin-left:14px">slider-1</div>
-      <div class="mitem" style="border-style:solid;margin-left:14px">hot-1</div>
+      <div class="pt" style="margin-top:8px">底部</div>
+      <div class="mitem" style="color:var(--accent)">存为我的板块（P2）</div>
+      <div class="mitem" style="color:var(--accent)">导入模板（P2）</div>
     </div>
     <div class="canvas">
       <div class="sec">
@@ -369,47 +418,63 @@ tr:last-child td{border-bottom:none}
         <span class="sl">最新文章 · 主体+右栏 320px</span>
         <span class="ov"><i></i><i></i><i></i></span>
         <div style="display:grid;grid-template-columns:1fr 96px;gap:8px">
-          <div class="mod sel">文章列表 · 网格 3 列</div>
+          <div class="mod sel">文章列表 · 网格 3 列 <span style="float:right">⧉ 👁 🗑</span></div>
           <div class="mod">热门</div>
         </div>
         <div class="drop">＋ 拖入模块放到此处</div>
       </div>
       <div class="sec">
-        <span class="sl">页脚链接</span>
-        <div class="mod">链接列表</div>
+        <span class="sl">页脚链接 · 空</span>
+        <div class="drop">虚线空板块 · 拖入第一个模块</div>
       </div>
     </div>
     <div class="panel">
-      <div class="pt">文章列表 · 属性</div>
+      <div class="ihead"><span class="ic"></span><b>文章列表</b><span class="tag" style="font-size:10px">模块</span><span style="flex:1"></span><span>⧉</span><span>👁</span><span>🗑</span></div>
+      <div class="pt">内容</div>
       <div class="insp-row"><span>数量</span><span class="fld">6</span></div>
       <div class="insp-row"><span>布局</span><span class="fld">网格 ▾</span></div>
       <div class="insp-row"><span>缩略图</span><span class="fld">开 ●</span></div>
-      <div class="pt" style="margin-top:12px">板块设置</div>
-      <div class="insp-row"><span>宽度</span><span class="seg"><span class="on">全宽</span><span>盒式</span></span></div>
-      <div class="insp-row"><span>上/下距</span><span class="fld">48 px</span></div>
-      <div class="insp-row"><span>背景</span><span class="fld">选择图片</span></div>
-      <div class="insp-row"><span>明暗</span><span class="seg"><span class="on">自动</span><span>亮</span><span>暗</span></span></div>
+      <div class="pt" style="margin-top:10px">样式 · supports</div>
+      <div class="insp-row"><span>密度</span><span class="seg"><span>松</span><span class="on">标准</span><span>紧</span></span></div>
+      <div class="insp-row"><span>素壳</span><span class="fld">关 ○</span></div>
       <div class="insp-row"><span>移动端隐藏</span><span class="fld">关 ○</span></div>
+      <div style="margin-top:10px;border-top:1px solid var(--line);padding-top:6px;color:var(--orange)">📱 手机：已覆盖 1 项 · 清除</div>
     </div>
+  </div>
+  <div class="stat">
+    <span>缩放 ▁▂▃ 100% · fit</span><span>1200px × 100%（桌面）</span>
+    <span style="flex:1"></span>
+    <span class="dirty">● 未保存 · 3 处改动</span><span>桥接 ●</span><span>rev 42</span>
   </div>
 </div>
 </div>
 
-<h3>5.2 画布交互状态</h3>
+<h3>5.2 画布交互与事件路由</h3>
+<p>交互状态表——每行标注实现方：<span class="tag blue">bridge</span> = iframe 内，<span class="tag orange">编辑器</span> = 编辑器侧：</p>
 <table>
   <tr><th>状态</th><th>呈现</th><th>实现</th></tr>
-  <tr><td><b>悬停</b></td><td>模块外 1px 描边 + 左上角类型小签</td><td>覆盖层 div 按 iframe 上报坐标定位（见 6.3），<b>不在 iframe 内画</b>，避免污染前台样式</td></tr>
-  <tr><td><b>选中</b></td><td>2px 主色描边 + 右侧面板切换；板块选中出「+ 插入模块」虚位</td><td><code>data-buid</code> 定位 <code>getBoundingClientRect()</code> × 当前缩放比</td></tr>
-  <tr><td><b>拖放</b></td><td>插入位置显示主色虚线投放条；从模块库拖出 / 画布内拖动排序共用一套指示</td><td>preview 内上报 <code>nearestUid + before/after</code>，编辑器算目标 slot</td></tr>
-  <tr><td><b>空板块</b></td><td>虚线框 + 「拖入模块」占位（瓜奇同款 move-in 区）</td><td>板块 <code>main</code> 为空时渲染占位节点</td></tr>
-  <tr><td><b>设备预览</b></td><td>切「平板/手机」= iframe 宽度切换 + 画布缩放，<b>不切数据</b>（单数据源，见 8.1）</td><td>iframe width: 768 / 390，容器 transform: scale()</td></tr>
+  <tr><td><b>悬停</b></td><td>模块外 1px 描边 + 左上角类型小签</td><td><span class="tag blue">bridge</span> mouseover 事件委托 + 命名空间 CSS，文档坐标系内直接画，零换算</td></tr>
+  <tr><td><b>选中</b></td><td>2px 主色描边 + 描边上的悬浮三键（复制/显隐/删除，与 Inspector 头部同源）；板块选中出「+ 插入模块」虚位</td><td><span class="tag blue">bridge</span> 点击拦截 → <code>select</code> 消息 → 编辑器 Store → Inspector 切换；描边留在 bridge 内直至失焦</td></tr>
+  <tr><td><b>拖放</b></td><td>插入位置主色虚线投放条；库拖出与画布内拖动同一套指示</td><td><span class="tag orange">编辑器</span> + <span class="tag blue">bridge</span> 协作，见 5.4（HTML5 DnD 不跨 iframe，全部指针式）</td></tr>
+  <tr><td><b>空板块</b></td><td>虚线框 + 「拖入模块」占位（瓜奇 move-in 同款）</td><td><span class="tag blue">bridge</span> 板块 main 为空时渲染占位节点</td></tr>
+  <tr><td><b>设备预览</b></td><td>切平板/手机 = iframe 宽度切换 + 缩放适配，<b>不切数据</b>（9.3）</td><td><span class="tag orange">编辑器</span> wrapper 宽度切换，bridge 重报 docHeight 重排占位</td></tr>
+  <tr><td><b>滚动</b></td><td>无 UI，仅同步</td><td><span class="tag blue">bridge</span> scrollY 以 rAF 节流上报（rect 增量校正与跨文档拖拽换算用，5.4）</td></tr>
 </table>
-<p class="note"><b>触屏与可访问性</b>：画布编辑仅限桌面端（管理台场景）；模块库/大纲/属性面板全程键盘可达，拖拽均有大纲树内的等价「上移/下移/删除」按钮。hover 相关规则遵守主题的 <code>(hover: hover)</code> 包裹约定。</p>
+<h4>5.2.1 事件路由表</h4>
+<table>
+  <tr><th>事件</th><th>处理方</th><th>路由</th></tr>
+  <tr><td>iframe 内点击任意元素</td><td>bridge</td><td>preventDefault → 向上找最近 <code>data-buid</code> → <code>select</code> 消息；命中链接一律拦截，内链跳转改发 <code>nav</code> 消息，编辑器提示「前往前台预览」</td></tr>
+  <tr><td>iframe 内表单 / 按钮</td><td>bridge</td><td>builder 标记下整体禁用提交与 PJAX——<b>画布只管布局，不产生业务数据</b>（评论、点赞、支付都不可能被误触）</td></tr>
+  <tr><td>iframe 内文本双击</td><td>bridge</td><td>不开放内联编辑；发 <code>edit-content</code>，编辑器出引导卡「内容请在 Typecho 编辑器修改」+ 跳转按钮（防出现两份内容数据源）</td></tr>
+  <tr><td>编辑器键盘</td><td>编辑器</td><td>5.3.1 快捷键；焦点在 iframe 内时由 bridge 转发 keydown（Esc / Del / Ctrl+Z / Ctrl+S）</td></tr>
+  <tr><td>编辑器内导航（切文档 / 退出 / 刷新）</td><td>编辑器</td><td>脏守卫三选弹窗 + <code>beforeunload</code></td></tr>
+</table>
+<p class="note"><b>触屏与可访问性</b>：画布编辑仅限桌面端；模块库/大纲/属性面板全程键盘可达，拖拽均有大纲树内的等价「上移/下移/删除」按钮。hover 相关规则遵守主题的 <code>(hover: hover)</code> 包裹约定。</p>
 
 <h3>5.3 属性面板信息架构</h3>
 <p>右栏随选中对象切换，两组标签页：</p>
 <ul>
-  <li><b>选中模块</b> → 「内容」（params schema 全量字段）/「样式」（壳参数：density、shell、移动端隐藏）；</li>
+  <li><b>选中模块</b> → 「内容」（params schema 全量字段）/「样式」（supports 驱动的壳能力：density、shell、hide-sm…见 4.5）；</li>
   <li><b>选中板块</b> → 「板块设置」（box + cols）/「背景」（明/暗两套图 + 色值）/「高级」（板块级自定义 CSS，P2，见 6.5）。</li>
 </ul>
 <p>模块参数改动<b>即时生效</b>：Inspector onChange → Store 更新 → 对该模块单独发起 <code>canvas.render</code> 片段请求（只重渲染该模块 HTML，替换 iframe 内对应节点），避免整页刷新闪烁。</p>
@@ -419,6 +484,29 @@ tr:last-child td{border-bottom:none}
   <li><b>样式拷贝 / 粘贴</b>：模块右键「复制样式 / 粘贴样式」（Elementor 惯例），实现为 Store 内剪贴板对象，P2；</li>
   <li><b>快捷键</b>：<code>Esc</code> 取消选中 · <code>Del</code> 删除 · <code>Ctrl/Cmd+D</code> 复制模块 · <code>Ctrl/Cmd+Z / Y</code> 撤销重做 · <code>Ctrl/Cmd+S</code> 保存。全部在大纲树内有等价按钮，键盘可达。</li>
 </ul>
+
+<h3>5.4 跨 iframe 拖拽（专门的硬问题）</h3>
+<p>HTML5 DnD 事件<b>不跨越 iframe 边界</b>——模块库（编辑器文档）与画布（iframe 文档）是两个 document，所以整套拖拽必须用指针式自定义实现（nav.js 的 pointer 拖拽算法直接复用）。分三条链路：</p>
+<table>
+  <tr><th>链路</th><th>机制</th></tr>
+  <tr><td><b>模块库 → 画布</b><br><span class="meta">跨文档，最难</span></td>
+      <td>① 拖起：编辑器创建拖影（ghost），画布区覆盖<b>透明 shield</b> 接管指针；② 命中计算：bridge 事先上报 <code>rects</code> 注册表（uid→文档坐标，加载 / resize / patch 后刷新），shield 收到 pointermove 后换算 <code>x_doc = (clientX − iframe视口x) / z + scrollX</code>，查注册表得 nearestUid + before/after；③ 指示：<code>dnd</code> 消息下发 → bridge 画投放条；④ 释放：Store 插入 → patch 片段 → shield 撤除</td></tr>
+  <tr><td><b>画布内拖动排序</b><br><span class="meta">同文档</span></td><td>bridge 内部原生指针事件直接处理（无跨文档往返），落点确定时上报一次 <code>move {uid, target, before}</code> → Store 移动 → patch 受影响板块</td></tr>
+  <tr><td><b>大纲树 ↔ 画布</b><br><span class="meta">编辑器文档内</span></td><td>大纲树拖拽在编辑器文档内（HTML5 DnD 即可），落点仅更新 Store + patch，不与 iframe 实时交互</td></tr>
+</table>
+<p>缩放下的坐标换算统一收口在编辑器侧一个 <code>toDocXY()</code> 函数（视口差 + scroll + 缩放三段变换），rects 注册表与拖拽共享，避免多处换算漂移。</p>
+
+<h3>5.5 编辑器状态机与自身响应式</h3>
+<table>
+  <tr><th>状态</th><th>进入条件</th><th>UI 呈现</th><th>迁出</th></tr>
+  <tr><td><b>booting</b></td><td>进入编辑器</td><td>顶栏/面板骨架可交互，画布区骨架屏</td><td>bridge <code>ready</code> → ready；10s 超时 → bridge-lost</td></tr>
+  <tr><td><b>ready</b></td><td>—</td><td>全部控件可用</td><td>任意 mutation → dirty（子态，不锁 UI）</td></tr>
+  <tr><td><b>saving</b></td><td>Ctrl+S / 保存钮</td><td>保存钮转菊花，<b>不</b>锁顶栏（可继续编辑，保存队列合并）</td><td>200 → ready（「已保存 hh:mm」）；409 → conflict</td></tr>
+  <tr><td><b>conflict</b></td><td>rev 不匹配</td><td>居中弹窗：远端/本地改动摘要对比，三选「取回远端 / 覆盖 / 稍后」（沿用 widget.js 冲突 UI）</td><td>选择后回 ready</td></tr>
+  <tr><td><b>bridge-lost</b></td><td>postMessage 心跳超时 5s（心跳每 2s）</td><td>状态栏红点 + 画布横幅「预览连接断开 · 重载」；Inspector 置只读</td><td>重载 iframe → booting</td></tr>
+  <tr><td><b>unsaved-guard</b></td><td>脏状态下切文档 / 退出 / 刷新</td><td>三选弹窗「保存 / 放弃 / 取消」+ beforeunload</td><td>选择后执行或取消</td></tr>
+</table>
+<p>编辑器自身响应式：≥1440 双栏全展开；1280–1439 左栏默认收起为图标轨；1024–1279 右栏变抽屉；&lt;1024 提示条 + 只读大纲模式（5.1 警告框）。</p>
 
 <h2 id="s6">6 重要逻辑设计</h2>
 
@@ -463,6 +551,20 @@ tr:last-child td{border-bottom:none}
   <div class="msg" style="grid-column:4">doc.save { doc, rev }<small>显式保存（Ctrl/Cmd+S）</small></div>
 </div>
 </div>
+<p>消息类型总表（载荷均为 <code>{t, ...}</code>，同源 + token 校验）：</p>
+<table>
+  <tr><th>方向</th><th>t</th><th>载荷</th><th>时机</th></tr>
+  <tr><td>iframe → 编辑器</td><td><code>ready</code></td><td>docHeight、uid 索引</td><td>bridge 启动完成</td></tr>
+  <tr><td>iframe → 编辑器</td><td><code>rects</code></td><td>uid→rect 注册表（文档坐标）</td><td>加载 / resize / patch 后刷新；滚动增量校正</td></tr>
+  <tr><td>iframe → 编辑器</td><td><code>select</code> / <code>move</code></td><td>uid；target + before/after</td><td>点击 / 画布内拖动落点（5.2、5.4）</td></tr>
+  <tr><td>iframe → 编辑器</td><td><code>scroll</code></td><td>scrollX/Y（rAF 节流）</td><td>iframe 内滚动</td></tr>
+  <tr><td>iframe → 编辑器</td><td><code>heartbeat</code></td><td>时间戳</td><td>每 2s，超时 5s 判 bridge-lost（5.5）</td></tr>
+  <tr><td>iframe → 编辑器</td><td><code>nav</code> / <code>edit-content</code></td><td>目标 URL / uid</td><td>内链点击 / 文本双击的引导（5.2.1）</td></tr>
+  <tr><td>编辑器 → iframe</td><td><code>patch</code></td><td>uid、HTML 片段</td><td>参数变更后局部替换</td></tr>
+  <tr><td>编辑器 → iframe</td><td><code>css</code></td><td>uid、CSS 变量集</td><td>板块样式热更新</td></tr>
+  <tr><td>编辑器 → iframe</td><td><code>dnd</code></td><td>on/off、文档坐标、指示位置</td><td>库→画布拖拽（shield 期间，5.4）</td></tr>
+  <tr><td>编辑器 → iframe</td><td><code>zoom</code></td><td>设备宽、缩放比</td><td>设备 / 缩放切换</td></tr>
+</table>
 <p>安全约束：bridge 与编辑器互相校验 <code>event.origin</code>（同源）+ 一次性 token；服务端所有写操作沿用 <code>ecod_wgt_token</code> CSRF 门禁。</p>
 
 <h3>6.4 保存与迁移（v4 → v5）</h3>

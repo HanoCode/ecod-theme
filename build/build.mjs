@@ -81,6 +81,43 @@ const CRITICAL_SECTIONS = [
 ];
 
 /**
+ * 页面族 CSS 分包（S2）：按「节的宿主模板族」把整份样式表切成若干个
+ * 可独立下发的 CSS 文件，页面只加载 CORE + 自己所属族。
+ *
+ * 归属依据（S1 归位之后节边界 ≈ 依赖边界）：
+ *   - core    全站常驻：框架 / 导航 / 布局 / 侧栏 / 卡片 / 暗色 / 响应式 /
+ *             搜索 / 站点设置 / toast / 页脚，以及侧栏可选挂件（抽奖、商城、
+ *             打卡、自助广告、专题墙、作者卡）与 JustNews 杂项；
+ *   - home    index.php 首页流（模块 / Hero / 排序入口）；
+ *   - list    归档 / 分类 / 标签 / 搜索列表（首页也带，分页翻页用）；
+ *   - post    post.php 文章正文相关（评论、正文短代码、相关阅读、分享图、
+ *             付费组件——付费按钮出现在文章页，cashier 页由 user 族补齐）；
+ *   - postext 正文含扩展短代码时按需追加（网盘卡 / 媒体 / 投票等），
+ *             由 PHP 检测正文决定是否输出；
+ *   - user    page-user / page-shop / page-vip / page-cashier / page-ai 个人中心族；
+ *   - page    独立页（特色页、留言板、归档时间轴等）兜底族。
+ *
+ * 断言：所有族的节并集必须恰好覆盖源码全部分节 —— 防止改节号后漏掉
+ * 某节导致整站某类页面静默丢样式。
+ */
+const PAGE_SETS = {
+    core: [
+        '0', '1', '2', '3', '3.5',                   // 令牌/基础/布局/导航 + 通用组件层
+        '5', '6', '7', '10', '11',                   // 卡片/分页/侧栏/页脚/工具
+        '11.4b', '11.4c', '12', '13', '16', '18',    // dock/公告/暗色/响应式/互动/加固
+        '21', '22', '23@0', '26', '27',              // 搜索/懒加载/站点设置/页脚年龄/专题
+        '28', '32', '33', '35', '36', '37',          // JustNews 杂项/抽奖页/广告/公告弹窗/挂件/播报
+        '38', '39', '40',                            // 商城/toast/打卡
+    ],
+    home: ['4', '4.5', '24@1', '25@1'],
+    list: ['24@1'],
+    post: ['8', '9', '9.5', '11.5', '11.6', '14@1', '17', '19.5', '20', '25@0', '34', '41'],
+    postext: ['23@1', '31'],
+    user: ['14@1', '24@0', '29', '30'],
+    page: ['8.5', '9', '14@0', '15', '19'],
+};
+
+/**
  * CSS 括号平衡守卫：剥掉注释与字符串字面量后逐字符扫描花括号，
  * 深度不允许变负、结尾必须归零。防「少写一个 }」把 @media 后半段
  * 泄漏到顶层（移动端规则在桌面端生效）这类静默排版事故。
@@ -140,6 +177,37 @@ function extractCssSections(source, numbers) {
         throw new Error('关键 CSS 抽取为空：分节标记与 CRITICAL_SECTIONS 对不上');
     }
     return out.join('\n');
+}
+
+/** 全部分节编号（含 @k 去重形式），供 PAGE_SETS 覆盖断言使用。
+    与 extractCssSections 的 'N@k' 语法一致：重复编号的键为 N@0 / N@1 / … */
+function allSectionKeys(source) {
+    const nums = [...source.matchAll(/^\/\* =+ (\d+(?:\.\d+)?[a-z]?)\.? /gm)].map((m) => m[1]);
+    const total = {};
+    for (const n of nums) total[n] = (total[n] || 0) + 1;
+    const seen = {};
+    return nums.map((n) => {
+        seen[n] = (seen[n] || 0) + 1;
+        return total[n] > 1 ? n + '@' + (seen[n] - 1) : n;
+    });
+}
+
+/** PAGE_SETS 覆盖断言：族并集必须恰好等于全部分节（不重不漏） */
+function assertPageSetsCoverAll(source) {
+    const all = allSectionKeys(source);
+    const used = new Set();
+    const dup = [];
+    for (const [fam, secs] of Object.entries(PAGE_SETS)) {
+        for (const s of secs) {
+            if (used.has(s)) dup.push(`${fam}:${s}`);
+            used.add(s);
+        }
+    }
+    const missing = all.filter((k) => !used.has(k));
+    const unknown = [...used].filter((s) => !all.includes(s));
+    if (missing.length) throw new Error(`PAGE_SETS 漏节：${missing.join(', ')} —— 这些节的样式不会随任何页面族下发`);
+    if (unknown.length) throw new Error(`PAGE_SETS 引用了不存在的节：${unknown.join(', ')}`);
+    /* 重复引用是合法的（如 §24@1 同属 home/list、§9 同属 post/page） */
 }
 
 /**
@@ -281,6 +349,7 @@ async function main() {
            想调整首屏覆盖面改这一个数组即可。 */
         if (rel === 'assets/css/ecod.css') {
             assertBraceBalance(source, 'ecod.css 源码');
+            assertPageSetsCoverAll(source);
             const sectionSource = extractCssSections(source, CRITICAL_SECTIONS);
             assertBraceBalance(sectionSource, '关键 CSS 抽取');
             const criticalSource = sectionSource + '\n' + overlayGuardCss(source, sectionSource);
@@ -319,6 +388,36 @@ async function main() {
                 src: Buffer.byteLength(criticalSource),
                 out: Buffer.byteLength(criticalMin),
             });
+
+            /* 页面族分包（S2）：每族一个可独立下发的 CSS 文件。
+               页面只加载 core + 所属族（见 public/include.php ecod_css_family()）；
+               PJAX 跨族换页时由 ecod.global.js 的 ensurePageCss() 注入缺失族。 */
+            for (const [fam, secs] of Object.entries(PAGE_SETS)) {
+                const famSource = extractCssSections(source, secs);
+                assertBraceBalance(famSource, `页面族 ${fam} 抽取`);
+                const famMin = (
+                    await build({
+                        stdin: { contents: famSource, loader: 'css', resolveDir: THEME_DIR },
+                        minify: true,
+                        bundle: false,
+                        write: false,
+                        logLevel: 'silent',
+                    })
+                ).outputFiles[0].text;
+                const famRel = `assets/dist/css/ecod.fam.${fam}.${hashOf(famMin)}.min.css`;
+                await mkdir(dirname(join(THEME_DIR, famRel)), { recursive: true });
+                await writeFile(join(THEME_DIR, famRel), famMin);
+                await writeFile(join(THEME_DIR, famRel) + '.gz', gzipSync(famMin, { level: 9 }));
+                await writeFile(join(THEME_DIR, famRel) + '.br', brotliCompressSync(famMin, {
+                    params: { [zlibConstants.BROTLI_PARAM_QUALITY]: 11 },
+                }));
+                manifest[`assets/css/ecod.fam.${fam}.css`] = famRel;
+                report.push({
+                    file: `css/ecod.fam.${fam}.css (派生)`,
+                    src: Buffer.byteLength(famSource),
+                    out: Buffer.byteLength(famMin),
+                });
+            }
         }
     }
 

@@ -243,7 +243,7 @@ foreach (ecod_widget_area_order('bottom_content', 'single') as $ecodStackArea) {
             echo ecod_pay_box($this, $ecodPay);
         }
         ?>
-        <div class="ecod_content<?php echo $ecodLocked ? ' is-locked' : ''; ?><?php echo $ecodPayLocked ? ' is-paylocked' : ''; ?>" data-ecod-content>
+        <div class="ecod_content<?php echo $ecodLocked ? ' is-locked' : ''; ?><?php echo $ecodPayLocked ? ' is-paylocked' : ''; ?>"<?php if ($ecodProseStyle = ecod_prose_style()) echo ' style="' . $ecodProseStyle . '"'; ?> data-ecod-content>
             <?php
             /* 短代码在主题层处理：Typecho 的 contentEx 钩子按运行时子类分发，
                只注册基类会漏掉，这里直接接管输出更可靠。

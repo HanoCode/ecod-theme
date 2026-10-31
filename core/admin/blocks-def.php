@@ -916,6 +916,17 @@ ecod_block_define('act', [
     'pages'  => ['single'],
     'order'  => 10,
     'params' => [
+        'mode' => [
+            'label'   => '显示位置',
+            'type'    => 'select',
+            'default' => 'bottom',
+            'options' => [
+                'bottom' => '文末动作条（默认）',
+                'side'   => '侧边悬浮栏（宽屏侧栏，窄屏回落文末）',
+                'both'   => '文末 + 侧边悬浮栏',
+            ],
+            'desc'    => '侧边悬浮栏在 ≥1200px 宽屏出现在正文一侧，附阅读进度竖条与返回顶部',
+        ],
         'like'  => [
             'label'   => '点赞',
             'type'    => 'switch',

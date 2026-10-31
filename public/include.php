@@ -112,6 +112,7 @@ window.ECOD = {
     pjax: <?php echo ecod_option('EPjax', 'on') === 'on' ? 'true' : 'false'; ?>,
     lightbox: <?php echo $ecodLightbox ? 'true' : 'false'; ?>,
     prism: <?php echo $ecodCode ? 'true' : 'false'; ?>,
+    codeFold: <?php echo ecod_option('ECodeFold', 'on') === 'on' ? 'true' : 'false'; ?>,
     ctxmenu: <?php echo ecod_option('ECtxMenu', 'on') === 'on' ? 'true' : 'false'; ?>,
     ctxitems: <?php echo json_encode(ecod_ctx_items(), JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>,
     tocProgress: <?php echo ecod_option('ETocProgress', 'on') === 'on' ? 'true' : 'false'; ?>,

@@ -17,6 +17,11 @@ $ecodActShare = (int) ecod_p('share', 1) === 1;
 $ecodActReward = (int) ecod_p('reward', 0) === 1;
 $ecodActAlipay = trim((string) ecod_p('alipay', ''));
 $ecodActWechat = trim((string) ecod_p('wechat', ''));
+/* 显示位置：bottom 文末动作条 / side 侧边悬浮栏（窄屏回落文末）/ both 两者都出 */
+$ecodActMode = (string) ecod_p('mode', 'bottom');
+if (!in_array($ecodActMode, ['bottom', 'side', 'both'], true)) {
+    $ecodActMode = 'bottom';
+}
 /* 收款码缺失时不再隐藏按钮：开关打开即占位显示，弹层输出虚线占位框 */
 
 if (!$ecodActLike && !$ecodActFav && !$ecodActShare && !$ecodActReward) {
@@ -38,7 +43,7 @@ if ($ecodActDate === '' && !empty($this->created)) {
     $ecodActDate = date('Y.m.d', (int) $this->created);
 }
 ?>
-<div class="ecod_article__act" data-ecod-postact
+<div class="ecod_article__act<?php echo $ecodActMode === 'side' ? ' is-side-mode' : ''; ?>" data-ecod-postact
      data-cid="<?php echo (int) $this->cid; ?>"
      data-url="<?php echo htmlspecialchars((string) $this->permalink, ENT_QUOTES, 'UTF-8'); ?>"
      data-title="<?php echo htmlspecialchars((string) $this->title, ENT_QUOTES, 'UTF-8'); ?>"
@@ -218,3 +223,44 @@ if ($ecodActDate === '' && !empty($this->created)) {
     </details>
     </div>
 </div>
+<?php
+/* 侧边悬浮栏（Nimbus 对标）：宽屏 sticky 竖栏 = 点赞 / 收藏 / 讨论 / 复制链接 /
+   阅读进度竖条 / 返回顶部。按钮沿用 data-ecod-act + data-cid 委托，点赞收藏的
+   状态回填与计数更新自动同步；窄屏（<1200px）由 CSS 整栏隐藏，操作回落文末动作条 */
+if ($ecodActMode === 'side' || $ecodActMode === 'both'):
+    $ecodRailCid = (int) $this->cid;
+?>
+<aside class="ecod_actsiderail" data-ecod-actsiderail aria-label="文章快捷操作">
+    <?php if ($ecodActLike): ?>
+    <button type="button" class="ecod_actsiderail__btn" data-ecod-act="like" data-cid="<?php echo $ecodRailCid; ?>" aria-pressed="false" title="点赞">
+        <?php echo ecod_icon('heart', 18); ?>
+        <span data-ecod-like-num="short"><?php echo ecod_num_short(ecod_likes($ecodRailCid)); ?></span>
+        <span class="ecod-sr">点赞</span>
+    </button>
+    <?php endif; ?>
+    <?php if ($ecodActFav): ?>
+    <button type="button" class="ecod_actsiderail__btn" data-ecod-act="fav" data-cid="<?php echo $ecodRailCid; ?>" aria-pressed="false" title="收藏">
+        <?php echo ecod_icon('star', 18); ?>
+        <span data-ecod-fav-num="short"><?php echo ecod_num_short(ecod_favs_count($ecodRailCid)); ?></span>
+        <span class="ecod-sr">收藏</span>
+    </button>
+    <?php endif; ?>
+    <?php if ($ecodActComments ?? null): ?>
+    <a class="ecod_actsiderail__btn" href="#comments" title="讨论">
+        <?php echo ecod_icon('comment', 18); ?>
+        <span><?php echo $ecodActCmtNum > 0 ? ecod_num_short($ecodActCmtNum) : '讨论'; ?></span>
+    </a>
+    <?php endif; ?>
+    <?php if ($ecodActShare): ?>
+    <button type="button" class="ecod_actsiderail__btn" data-ecod-share title="复制链接">
+        <?php echo ecod_icon('link', 18); ?>
+        <span>复制</span>
+    </button>
+    <?php endif; ?>
+    <span class="ecod_actsiderail__line" aria-hidden="true"><i data-ecod-rail-fill></i></span>
+    <button type="button" class="ecod_actsiderail__btn" data-ecod-rail-top title="返回顶部">
+        <?php echo ecod_icon('arrow-up', 18); ?>
+        <span>顶部</span>
+    </button>
+</aside>
+<?php endif; ?>

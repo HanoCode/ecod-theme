@@ -378,8 +378,10 @@
             copy.innerHTML = Ecod.icon('copy', 12) + '<span>复制</span>';
             copy.addEventListener('click', function () {
                 copyText(pre.innerText, function () {
+                    copy.classList.add('is-done');
                     copy.innerHTML = Ecod.icon('check', 12) + '<span>已复制</span>';
                     setTimeout(function () {
+                        copy.classList.remove('is-done');
                         copy.innerHTML = Ecod.icon('copy', 12) + '<span>复制</span>';
                     }, 1600);
                 });
@@ -389,6 +391,27 @@
             pre.parentNode.insertBefore(box, pre);
             box.appendChild(bar);
             box.appendChild(pre);
+
+            /* 长代码折叠：超过 40 行收起到固定高度，底部渐隐 + 展开胶囊（ECodeFold）。
+               展开按钮挂在 box 上而非 pre 里，pre.innerText 复制不会被带进剪贴板 */
+            if (CFG.codeFold) {
+                var codeText = code ? code.textContent : pre.innerText;
+                var lineCount = codeText.replace(/\n+$/, '').split('\n').length;
+                if (lineCount > 40) {
+                    box.classList.add('is-folded');
+                    var expand = document.createElement('button');
+                    expand.type = 'button';
+                    expand.className = 'ecod_codeblock__expand';
+                    expand.setAttribute('aria-expanded', 'false');
+                    expand.textContent = '展开全部 · ' + lineCount + ' 行';
+                    expand.addEventListener('click', function () {
+                        var open = box.classList.toggle('is-open');
+                        expand.setAttribute('aria-expanded', open ? 'true' : 'false');
+                        expand.textContent = open ? '收起' : '展开全部 · ' + lineCount + ' 行';
+                    });
+                    box.appendChild(expand);
+                }
+            }
 
             /* 后台开着 Prism 时由 Prism 统一染色，内置高亮器不再插手，避免两套配色互相覆盖 */
             if (code && !(CFG.prism && window.Prism)) {

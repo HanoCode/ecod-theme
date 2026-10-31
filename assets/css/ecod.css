@@ -1145,7 +1145,7 @@ html[data-theme="dark"] .ecod_emojis { background: #1a1f2c; border-color: #2c334
 .ecod_drawer__search input:focus { border-color: var(--ecod-primary); box-shadow: var(--ecod-ring); }
 .ecod_drawer__cats { display: flex; flex-wrap: wrap; gap: 8px; }
 
-/* ============ 41. 通用组件层（跨页面族复用件，构建期随 CORE 全站下发） ============ */
+/* ============ 3.5. 通用组件层（跨页面族复用件，构建期随 CORE 全站下发） ============ */
 /* 迁移自 §4.5 / §8 / §23@1 / §24：灯箱、面包屑、通用按钮、徽标、轮播与模块头骨架、
    导航用户弹层、登录弹层。置于业务节之前，业务覆盖仍按源码顺序正常生效。 */
 .ecod_sliderwrap { position: relative; isolation: isolate; }
@@ -4109,7 +4109,7 @@ html.is-hd-off .ecod_readbar:not(.is-side) { top: 8px; }
 
 /* 正文排版（设计稿 §4.6）：16/28、段距 20、层级靠阶跃
    h2 唯一保留竖条装饰；h3/h4 去装饰；行宽靠 .ecod_article 列宽控制在 60–72 字符 */
-.ecod_content { font-size: var(--ecod-fs-base); line-height: 1.75; color: var(--ecod-ink); }
+.ecod_content { font-size: var(--ecod-prose-fs, var(--ecod-fs-base)); line-height: var(--ecod-prose-lh, 1.75); font-family: var(--ecod-prose-font, inherit); color: var(--ecod-ink); }
 /* 正文与顶部 Meta 分隔线保持间距 */
 .ecod_article .ecod_content { margin-top: 20px; }
 .ecod_content > *:first-child { margin-top: 0; }
@@ -13450,3 +13450,32 @@ html[data-theme="dark"] .ecod_content mark { background: #5c4d1c; color: #ffe9a0
     accent-color: var(--ecod-primary);
 }
 .ecod_content li:has(> input[type="checkbox"]:first-child) { list-style: none; margin-left: -1.4em; }
+/* 长代码折叠：超过阈值收起，底部渐隐 + 居中展开胶囊（ECodeFold，JS 挂 is-folded/is-open） */
+.ecod_codeblock.is-folded { position: relative; }
+.ecod_codeblock.is-folded pre { max-height: 420px; overflow: hidden; }
+.ecod_codeblock.is-folded::after {
+    content: "";
+    position: absolute;
+    left: 0; right: 0; bottom: 0;
+    height: 90px;
+    background: linear-gradient(to top, var(--ecod-code-bg), transparent);
+    pointer-events: none;
+}
+.ecod_codeblock__expand {
+    position: absolute;
+    left: 50%; bottom: 14px;
+    translate: -50% 0;
+    z-index: 2;
+    padding: 6px 16px;
+    border: 0;
+    border-radius: var(--ecod-radius-full);
+    font-size: var(--ecod-fs-xs);
+    font-weight: 600;
+    cursor: pointer;
+    background: var(--ecod-primary-btn);
+    color: var(--ecod-primary-ink);
+    box-shadow: 0 6px 16px -4px color-mix(in srgb, var(--ecod-primary) 45%, transparent);
+}
+/* 展开后渐隐遮罩撤掉，pre 底部留出胶囊高度避免盖住末行 */
+.ecod_codeblock.is-open pre { max-height: none; overflow-x: auto; padding-bottom: 48px; }
+.ecod_codeblock.is-open::after { display: none; }

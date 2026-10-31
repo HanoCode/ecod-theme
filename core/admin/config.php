@@ -112,8 +112,9 @@ $ecodSections = [
     ],
     'post' => [
         ['阅读体验', '过期提醒、浮动目录与图片灯箱', ['EStale', 'EFloatToc', 'ETocProgress', 'ELightbox']],
+        ['正文排版', '正文字号、行距与字体档位，落到文章 / 页面正文容器', ['EProseSize', 'EProseLh', 'EProseFont']],
         ['显示更多', '长文按高度折叠 + 展开按钮；正文仍在 HTML 里，不影响 SEO', ['EShowMore', 'EShowMoreH', 'EShowMoreText']],
-        ['代码与嵌入', '代码高亮与视频 / 社交卡片自动嵌入', ['ECode', 'ECodeTheme', 'EOembed', 'EOembedSocial']],
+        ['代码与嵌入', '代码高亮、长代码折叠与视频 / 社交卡片自动嵌入', ['ECode', 'ECodeTheme', 'ECodeFold', 'EOembed', 'EOembedSocial']],
         ['互动与版权', '点赞头像、快速评论条与版权声明', ['ELikers', 'EQuickBar', 'ECopyrightSet']],
         ['卡片动效', '磁贴 / 聚合卡等新组件的 hover 动效与图片渐入总开关', ['ECardMotion']],
         ['AI 摘要', 'OpenAI 兼容接口，按文章异步生成摘要卡片', ['EAI', 'EAIProvider', 'EAIEndpoint', 'EAIKey', 'EAIModel', 'EAIPrompt', 'EAIMotion']],
@@ -717,6 +718,24 @@ ecod_admin_field($form, 'number', 'ENewDays', '7', '「新」角标天数', '文
 ecod_admin_field($form, 'number', 'EListPerPage', '0', '每页文章数', '首页 / 分类 / 标签 / 作者 / 搜索列表一次加载几篇，分页与「加载更多」按此计算；填 0 跟随 Typecho 后台「阅读 → 每页文章数」', [], 'layout', ['min' => 0, 'max' => 60, 'step' => 1, 'placeholder' => '0 = 跟随后台设置']);
 ecod_admin_field($form, 'number', 'EExcerpt', '110', '摘要长度', '单位：字符，默认 110；文章里填了「自定义摘要」时以手填内容为准', [], 'layout', ['min' => 40, 'max' => 200, 'step' => 5, 'data-ecod-show-when' => 'ECardMode:!=bare|title|compact']);
 ecod_admin_field($form, 'text', 'EStale', '180', '文章过期提醒', '文章超过这么多天未更新时，正文上方提示内容可能已过时；填 0 关闭', [], 'post');
+ecod_admin_field($form, 'select', 'EProseSize', '16', '正文字号', '文章与页面正文的基准字号，标题随比例微调；默认 16px', [
+    '15' => '15px（紧凑）',
+    '16' => '16px（默认）',
+    '17' => '17px（舒适）',
+    '18' => '18px（大字）',
+], 'post');
+ecod_admin_field($form, 'select', 'EProseLh', '1.75', '正文行距', '正文行高倍数；行距越大长文阅读越松弛，默认 1.75', [
+    '1.7'  => '1.7（紧凑）',
+    '1.75' => '1.75（默认）',
+    '1.8'  => '1.8（舒适）',
+    '1.85' => '1.85（松弛）',
+    '1.9'  => '1.9（极松）',
+], 'post');
+ecod_admin_field($form, 'select', 'EProseFont', 'system', '正文字体', '正文使用字体族；「自定义」读取「外观 → 字体与自定义样式」里的自定义字体地址，未填时回退系统字体', [
+    'system' => '系统默认（默认）',
+    'serif'  => '衬线（宋体阅读感）',
+    'custom' => '自定义字体',
+], 'post');
 ecod_admin_field($form, 'select', 'EShowMore', 'off', '显示更多', '长文先折叠到指定高度（底部渐隐遮罩 + 「展开全文」按钮），点击后展开全文。正文始终完整输出在 HTML 里，搜索引擎可正常抓取；密码 / 付费截断的文章不叠加此效果', [
     'off'    => '关闭（默认）',
     'mobile' => '仅移动端',
@@ -863,6 +882,10 @@ ecod_admin_field($form, 'select', 'ECodeTheme', 'prism', '高亮配色', 'auto �
     'okaidia'        => 'okaidia 深色',
     'dark'           => 'dark 深色',
 ], 'post', ['data-ecod-show-when' => 'ECode:on']);
+ecod_admin_field($form, 'select', 'ECodeFold', 'on', '长代码折叠', '超过 40 行的代码块先折叠到 420px 高（底部渐隐 + 「展开全部 · N 行」按钮），点击展开、再点收起；不影响短代码块', [
+    'on'  => '开启（默认）',
+    'off' => '关闭',
+], 'post');
 ecod_admin_field($form, 'select', 'ELightbox', 'on', '正文图片灯箱', '点开正文图片全屏预览，支持左右切换与 Esc 关闭', [
     'on'  => '开启',
     'off' => '关闭',

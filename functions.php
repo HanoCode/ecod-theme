@@ -472,6 +472,32 @@ function ecod_primary_deep(): string
 }
 
 /**
+ * 正文排版变量（后台「文章页 → 正文排版」）：
+ * 字号 / 行距 / 字体档位落到 .ecod_content 的行内 CSS 变量上，
+ * CSS 侧用 var(--ecod-prose-*, 默认值) 消费，未配置页（如友链申请）自然回退默认。
+ */
+function ecod_prose_style(): string
+{
+    $size = (string) ecod_option('EProseSize', '16');
+    if (!preg_match('/^(15|16|17|18)$/', $size)) {
+        $size = '16';
+    }
+    $lh = (string) ecod_option('EProseLh', '1.75');
+    if (!preg_match('/^(1\.7|1\.75|1\.8|1\.85|1\.9)$/', $lh)) {
+        $lh = '1.75';
+    }
+    $style = '--ecod-prose-fs:' . $size . 'px;--ecod-prose-lh:' . $lh . ';';
+    $fontMode = (string) ecod_option('EProseFont', 'system');
+    if ($fontMode === 'serif') {
+        $style .= '--ecod-prose-font:"Songti SC","Noto Serif SC","Source Han Serif SC",STSong,SimSun,serif;';
+    } elseif ($fontMode === 'custom') {
+        /* EcodCustom 由 EFont 的 @font-face 声明；未填字体地址时自然回退系统栈 */
+        $style .= '--ecod-prose-font:"EcodCustom",-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;';
+    }
+    return $style;
+}
+
+/**
  * 主色按钮底（--ecod-primary-btn）：保证白字对比度 ≥ WCAG AA(4.5) 的最小必要加深。
  * 品牌色白字已达标则原色返回（视觉零变化）；不达标时向黑混色到刚好达标
  * （默认靛蓝 #4f6ef2 白字 4.33 → 混黑 4% 得 #4c6ae8，白字 4.64）。

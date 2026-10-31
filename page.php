@@ -25,7 +25,7 @@ $this->need('public/header.php');
 
     <article class="ecod_article" data-ecod-article>
         <h1 class="ecod_article__title"><?php $this->title(); ?></h1>
-        <div class="ecod_content" data-ecod-content>
+        <div class="ecod_content"<?php if ($ecodProseStyle = ecod_prose_style()) echo ' style="' . $ecodProseStyle . '"'; ?> data-ecod-content>
             <?php
             ob_start();
             $this->content();
