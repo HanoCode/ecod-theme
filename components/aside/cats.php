@@ -33,7 +33,12 @@ $ecodCatIdx = 0;
             <a href="<?php $ecodAsideCats->permalink(); ?>" class="ecod_wlist__item">
                 <span class="ecod_wlist__name"><?php $ecodAsideCats->name(); ?></span>
                 <?php if ($ecodShowCount): ?>
-                    <b class="ecod_wlist__num"><?php echo (int) $ecodAsideCats->count; ?></b>
+                    <?php
+                    /* 不用 metas.count：Typecho 的缓存计数会滞后，且不含子分类；
+                       实时统计与分类页头 / 归档列表同口径。 */
+                    $ecodAsideStat = ecod_cat_stats((int) $ecodAsideCats->mid);
+                    ?>
+                    <b class="ecod_wlist__num"><?php echo (int) $ecodAsideStat['count']; ?></b>
                 <?php endif; ?>
             </a>
         <?php endwhile; ?>

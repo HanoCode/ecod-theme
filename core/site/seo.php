@@ -490,7 +490,8 @@ function ecod_seo_jsonld($archive = null, string $canonical = '', string $desc =
             $article['wordCount'] = $words;
         }
         try {
-            $article['commentCount'] = (int) $archive->commentsNum;
+            /* commentsNum 含待审评论且会滞后，结构化数据用已通过的真实条数 */
+            $article['commentCount'] = ecod_comment_count((int) $archive->cid);
         } catch (\Throwable $e) {
         }
         try {

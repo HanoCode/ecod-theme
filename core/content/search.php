@@ -352,6 +352,11 @@ if (!function_exists('ecod_search_featured')) {
                 $now = time();
                 $where = "c.type = 'post' AND c.status = 'publish' AND c.created < {$now}";
                 $views = ecod_views_available() ? 'c.views' : '0';
+                /* 评论数按「已通过」实算：commentsNum 含待审且有滞后，
+                   会和卡片上显示的条数对不上 */
+                $cmtJoin = "LEFT JOIN (SELECT cid, COUNT(*) AS cmt FROM {$prefix}comments"
+                    . " WHERE status = 'approved' GROUP BY cid) ecod_cmt ON ecod_cmt.cid = c.cid";
+                $cmtNum = 'COALESCE(ecod_cmt.cmt, 0)';
 
                 if ($order === 'likes') {
                     $sql = "SELECT c.cid, c.title, c.created, COUNT(l.cid) AS num
@@ -364,8 +369,9 @@ if (!function_exists('ecod_search_featured')) {
                 } elseif ($order === 'comments') {
                     $sql = "SELECT c.cid, c.title, c.created
                               FROM {$prefix}contents c
+                              {$cmtJoin}
                              WHERE {$where}
-                          ORDER BY c.commentsNum DESC, c.created DESC
+                          ORDER BY {$cmtNum} DESC, c.created DESC
                              LIMIT {$limit}";
                 } elseif ($order === 'views') {
                     if (!ecod_views_available()) {
@@ -380,8 +386,9 @@ if (!function_exists('ecod_search_featured')) {
                     /* 热度：评论加权 8，与列表排序里「最多评论」的直观程度保持一致 */
                     $sql = "SELECT c.cid, c.title, c.created
                               FROM {$prefix}contents c
+                              {$cmtJoin}
                              WHERE {$where}
-                          ORDER BY (c.commentsNum * 8 + {$views}) DESC, c.created DESC
+                          ORDER BY ({$cmtNum} * 8 + {$views}) DESC, c.created DESC
                              LIMIT {$limit}";
                 }
 

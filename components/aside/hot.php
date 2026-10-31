@@ -32,9 +32,9 @@ if (!$ecodHot->have()) {
                     <span class="ecod_wlist__meta">
                         <span class="ecod_wlist__no<?php echo $ecodHotNo <= 3 ? ' is-top' : ''; ?>"><?php echo $ecodHotNo; ?></span>
                         <?php if ($ecodHotSort === 'weighted'): ?>
-                            <span><?php echo ecod_num_short((int) $ecodHot->views); ?> 阅读 · <?php echo (int) $ecodHot->commentsNum; ?> 评论</span>
+                            <span><?php echo ecod_num_short((int) $ecodHot->views); ?> 阅读 · <?php echo ecod_comment_count((int) $ecodHot->cid); ?> 评论</span>
                         <?php else: ?>
-                            <span><?php echo $ecodHotSort === 'views' ? ecod_num_short((int) $ecodHot->views) . ' 阅读' : (int) $ecodHot->commentsNum . ' 评论'; ?></span>
+                            <span><?php echo $ecodHotSort === 'views' ? ecod_num_short((int) $ecodHot->views) . ' 阅读' : ecod_comment_count((int) $ecodHot->cid) . ' 评论'; ?></span>
                         <?php endif; ?>
                     </span>
                 </span>

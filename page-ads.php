@@ -19,7 +19,9 @@ $this->need('public/header.php');
 
 $ecodAdsOn = ecod_ads_enabled();
 $ecodSlots = ecod_ads_slots();
-$ecodRange = ecod_ads_days_range();
+$ecodRange = ecod_ads_units_range();
+$ecodUnit = ecod_ads_unit();
+$ecodUnitLabel = $ecodUnit['label'];
 $ecodNote = trim((string) ecod_option('EAdSelfNote', ''));
 
 $ecodMe = null;
@@ -63,7 +65,7 @@ $ecodPreSlot = preg_replace('/[^a-z_]/', '', (string) ($_GET['slot'] ?? ''));
     ecod_page_hero(
         (string) $this->title(),
         '自助广告',
-        '在线选择广告位、按天购买，支付后经审核即可上线。'
+        '在线选择广告位、按' . $ecodUnitLabel . '购买，支付后经审核即可上线。'
     );
     ?>
 
@@ -85,11 +87,11 @@ $ecodPreSlot = preg_replace('/[^a-z_]/', '', (string) ($_GET['slot'] ?? ''));
                         <?php foreach ($ecodPriceList as $ecodSlotKey => $ecodSlot): ?>
                             <div class="ecod_adself__price">
                                 <b><?php echo htmlspecialchars($ecodSlot['name'], ENT_QUOTES, 'UTF-8'); ?></b>
-                                <span><?php echo ecod_pay_currency(); ?><?php echo $ecodSlot['money']; ?> / 天</span>
+                                <span><?php echo ecod_pay_currency(); ?><?php echo $ecodSlot['money']; ?> / <?php echo $ecodUnitLabel; ?></span>
                             </div>
                         <?php endforeach; ?>
                     </div>
-                    <p class="ecod_adself__tip">投放 <?php echo $ecodRange['min']; ?>–<?php echo $ecodRange['max']; ?> 天，按所选天数一次性结算。<?php echo ecod_ads_review_on() ? '支付完成后需站长审核，审核通过起开始计时。' : '支付成功后自动上线。'; ?></p>
+                    <p class="ecod_adself__tip">投放 <?php echo $ecodRange['min']; ?>–<?php echo $ecodRange['max']; ?> <?php echo $ecodUnitLabel; ?>，按所选数量一次性结算。<?php echo ecod_ads_review_on() ? '支付完成后需站长审核，审核通过起开始计时。' : '支付成功后自动上线。'; ?></p>
                 </section>
             <?php endif; ?>
 
@@ -98,9 +100,11 @@ $ecodPreSlot = preg_replace('/[^a-z_]/', '', (string) ($_GET['slot'] ?? ''));
                     <h3 class="ecod_adself__hd"><?php echo ecod_icon('user', 15); ?>开始投放</h3>
                     <div class="ecod_uc__hint" style="margin:0">
                         <?php echo ecod_icon('info', 16); ?>
-                        <p>登录后即可提交广告。</p>
-                        <p style="margin-top:12px"><a class="ecod-btn" data-ecod-login-open data-no-pjax
-                            href="<?php echo htmlspecialchars($ecodLoginUrl, ENT_QUOTES, 'UTF-8'); ?>?referer=<?php echo rawurlencode($this->permalink); ?>">登录</a></p>
+                        <div>
+                            <p>登录后即可提交广告。</p>
+                            <p style="margin-top:12px"><a class="ecod-btn" data-ecod-login-open data-no-pjax
+                                href="<?php echo htmlspecialchars($ecodLoginUrl, ENT_QUOTES, 'UTF-8'); ?>?referer=<?php echo rawurlencode($this->permalink); ?>">登录</a></p>
+                        </div>
                     </div>
                 </section>
             <?php elseif ($ecodPriceList): ?>
@@ -111,26 +115,26 @@ $ecodPreSlot = preg_replace('/[^a-z_]/', '', (string) ($_GET['slot'] ?? ''));
                             <span>广告位</span>
                             <select name="slot" data-ecod-adself-slot>
                                 <?php foreach ($ecodPriceList as $ecodSlotKey => $ecodSlot): ?>
-                                    <option value="<?php echo $ecodSlotKey; ?>"<?php echo $ecodPreSlot === $ecodSlotKey ? ' selected' : ''; ?>><?php echo htmlspecialchars($ecodSlot['name'], ENT_QUOTES, 'UTF-8'); ?>（<?php echo ecod_pay_currency() . $ecodSlot['money']; ?>/天）</option>
+                                    <option value="<?php echo $ecodSlotKey; ?>"<?php echo $ecodPreSlot === $ecodSlotKey ? ' selected' : ''; ?>><?php echo htmlspecialchars($ecodSlot['name'], ENT_QUOTES, 'UTF-8'); ?>（<?php echo ecod_pay_currency() . $ecodSlot['money']; ?>/<?php echo $ecodUnitLabel; ?>）</option>
                                 <?php endforeach; ?>
                             </select>
                         </label>
                         <label class="ecod_adself__row">
-                            <span>广告标题</span>
+                            <span>广告标题<i class="is-req" aria-hidden="true">*</i></span>
                             <input type="text" name="title" maxlength="20" required placeholder="展示用文案，20 字以内">
                         </label>
                         <label class="ecod_adself__row">
-                            <span>图片地址</span>
+                            <span>图片地址<i class="is-req" aria-hidden="true">*</i></span>
                             <input type="url" name="image" required placeholder="https://…（建议 640×280）">
                         </label>
                         <label class="ecod_adself__row">
-                            <span>跳转链接</span>
+                            <span>跳转链接<i class="is-req" aria-hidden="true">*</i></span>
                             <input type="url" name="link" required placeholder="https://…">
                         </label>
                         <label class="ecod_adself__row">
-                            <span>投放天数</span>
-                            <input type="number" name="days" min="<?php echo $ecodRange['min']; ?>" max="<?php echo $ecodRange['max']; ?>"
-                                   value="<?php echo $ecodRange['min']; ?>" data-ecod-adself-days>
+                            <span>投放时长（<?php echo $ecodUnitLabel; ?>）</span>
+                            <input type="number" name="units" min="<?php echo $ecodRange['min']; ?>" max="<?php echo $ecodRange['max']; ?>"
+                                   value="<?php echo $ecodRange['min']; ?>" data-ecod-adself-units>
                         </label>
                         <div class="ecod_adself__amount">
                             应付金额：<b data-ecod-adself-amount><?php echo ecod_pay_currency() . $ecodPriceList[array_key_first($ecodPriceList)]['money']; ?></b>
@@ -155,7 +159,7 @@ $ecodPreSlot = preg_replace('/[^a-z_]/', '', (string) ($_GET['slot'] ?? ''));
                                 <div class="ecod_adself__admain">
                                     <b><?php echo htmlspecialchars((string) $ecodMyAd['title'], ENT_QUOTES, 'UTF-8'); ?></b>
                                     <span><?php echo htmlspecialchars($ecodSlots[$ecodMyAd['slot']] ?? $ecodMyAd['slot'], ENT_QUOTES, 'UTF-8'); ?>
-                                        · <?php echo (int) $ecodMyAd['days']; ?> 天
+                                        · <?php echo max(1, (int) round((int) $ecodMyAd['days'] / $ecodUnit['days'])); ?> <?php echo $ecodUnitLabel; ?>
                                         · <?php echo date('Y-m-d H:i', (int) $ecodMyAd['created']); ?></span>
                                 </div>
                                 <div class="ecod_adself__adops">

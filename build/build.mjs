@@ -64,23 +64,6 @@ const ENTRIES = [
 ];
 
 /**
- * 关键 CSS 抽取的节编号（源码分节标记 `/* ============ N. 名称 ============ `）。
- * 覆盖首屏所需的全部区块：令牌/基础/布局/导航/暗色 + 首页流与模块、卡片、
- * 分页、侧栏、页脚、顶部进度条、底部 dock、公告横幅、搜索面板、懒加载、
- * 站点级设置变体、排序浮层、首屏 Hero、专题/分类页头——
- * 首帧即完整成形，只有文章正文与特色页等深层内容随完整样式表（异步预加载）补齐。
- * 语法：'N' = 该编号全部节；'N@k' = 该编号第 k 次出现（0 起，源码有重复编号时用）。
- */
-const CRITICAL_SECTIONS = [
-    '0', '1', '2', '3',              // 令牌 / 基础 / 布局 / 导航抽屉
-    '4', '4.5', '5', '6', '7',       // 首页 / 首页模块 / 卡片 / 分页 / 侧栏
-    '10', '11', '11.4b', '11.4c',    // 页脚 / 进度回顶 / 移动端 dock / 公告横幅
-    '12', '13', '16', '18',          // 暗色 / 响应式 / 收藏点赞 / 移动端加固
-    '21', '22', '23@0',              // 搜索面板 / 懒加载+reveal / 站点级设置变体
-    '24@1', '25@1', '27',            // 列表排序浮层 / 首屏 Hero / 专题与分类页头
-];
-
-/**
  * 页面族 CSS 分包（S2）：按「节的宿主模板族」把整份样式表切成若干个
  * 可独立下发的 CSS 文件，页面只加载 CORE + 自己所属族。
  *
@@ -103,18 +86,46 @@ const CRITICAL_SECTIONS = [
 const PAGE_SETS = {
     core: [
         '0', '1', '2', '3', '3.5',                   // 令牌/基础/布局/导航 + 通用组件层
-        '5', '6', '7', '10', '11',                   // 卡片/分页/侧栏/页脚/工具
+        '4', '5', '6', '7', '10', '11',              // 文章流/卡片/分页/侧栏/页脚/工具
         '11.4b', '11.4c', '12', '13', '16', '18',    // dock/公告/暗色/响应式/互动/加固
         '21', '22', '23@0', '26', '27',              // 搜索/懒加载/站点设置/页脚年龄/专题
         '28', '32', '33', '35', '36', '37',          // JustNews 杂项/抽奖页/广告/公告弹窗/挂件/播报
         '38', '39', '40',                            // 商城/toast/打卡
     ],
-    home: ['4', '4.5', '24@1', '25@1'],
+    home: ['4.5', '24@1', '25@1'],
     list: ['24@1'],
-    post: ['8', '9', '9.5', '11.5', '11.6', '14@1', '17', '19.5', '20', '25@0', '34', '41'],
+    post: ['8', '9', '9.5', '11.5', '11.6', '14@1', '17', '19.5', '20', '23.5', '25@0', '34', '41'],
     postext: ['23@1', '31'],
-    user: ['14@1', '24@0', '29', '30'],
+    user: ['14@1', '23.5', '24@0', '29', '30'],
     page: ['8.5', '9', '14@0', '15', '19'],
+};
+
+/**
+ * 分族关键 CSS（S4）：每个页面族一份内联关键样式 = 全站首帧骨架 +
+ * 该族首屏内容块。postext 页面复用 post 份（扩展短代码不进首帧）。
+ *
+ * 取舍原则（S2/S3 之后 CSS 已是「小体积 + 异步非阻塞」，内联只该为首帧防塌服务）：
+ *   留下——首帧可见且会撑骨架的：令牌 / 基础 / 布局 / 导航 / 侧栏 / 暗色 / 响应式 /
+ *          移动端加固 / 移动 dock+公告 / 顶部进度条 / 懒加载占位（防图跳）/
+ *          搜索面板（默认 display:none，缺了会在左上角裸奔原生 input）；
+ *   让出——首帧不可见或只是加速的：通用组件层（按钮·徽标·灯箱·登录弹层，
+ *          27.8KB，首帧多为隐藏态）、页脚装饰、toast。
+ *   ※ 侧栏（§7）实测不能让：晚到 300ms 内是无样式裸文本列表，视觉上像坏了；
+ *     其列宽虽由 §2 布局预留不引发全页重排，但裸文本观感不可接受。
+ * 内联体积实测：home 143.8KB→约 118KB、post 156.5KB→约 118KB（gzip 约 -25%）。
+ */
+const CRITICAL_BASE = [
+    '0', '1', '2', '3', '7',                     // 令牌 / 基础 / 布局 / 导航抽屉 / 侧栏
+    '11', '11.4b', '11.4c',                      // 进度回顶 / 移动端 dock / 公告横幅
+    '12', '13', '18',                            // 暗色 / 响应式 / 移动端加固
+    '21', '22',                                  // 搜索面板 / 懒加载占位（防首屏图片高度跳变）
+];
+const CRITICAL_FAMS = {
+    home: [...CRITICAL_BASE, '4', '4.5', '5', '6', '25@1'],
+    list: [...CRITICAL_BASE, '4', '5', '6', '24@1', '27'],
+    post: [...CRITICAL_BASE, '8', '25@0', '9'],
+    user: [...CRITICAL_BASE, '24@0'],
+    page: [...CRITICAL_BASE, '8.5', '15'],
 };
 
 /**
@@ -152,7 +163,7 @@ function extractCssSections(source, numbers) {
     }
     for (const entry of numbers) {
         const m = entry.match(/^(\d+(?:\.\d+)?[a-z]?)(?:@(\d+))?$/);
-        if (!m) throw new Error(`CRITICAL_SECTIONS 条目格式错误：${entry}`);
+        if (!m) throw new Error(`节条目格式错误：${entry}`);
         const num = m[1];
         const occ = m[2] === undefined ? null : parseInt(m[2], 10);
         const idxs = [];
@@ -174,7 +185,7 @@ function extractCssSections(source, numbers) {
         out = out.concat(lines.slice(marks[k].i, end));
     }
     if (!out.length) {
-        throw new Error('关键 CSS 抽取为空：分节标记与 CRITICAL_SECTIONS 对不上');
+        throw new Error('关键 CSS 抽取为空：分节标记与抽取清单对不上');
     }
     return out.join('\n');
 }
@@ -213,7 +224,7 @@ function assertPageSetsCoverAll(source) {
 /**
  * 首帧防闪守卫：把「全屏浮层」的隐藏态规则强制并入关键 CSS（构建期自动生成）。
  *
- * 背景：关键 CSS 按分节抽取（CRITICAL_SECTIONS）。任何一个全屏浮层
+ * 背景：关键 CSS 按分节抽取（CRITICAL_BASE / CRITICAL_FAMS）。任何一个全屏浮层
  * （position:fixed; inset:0，靠 opacity:0 / visibility:hidden 默认隐藏）如果写在
  * 未纳入抽取的分节里，首帧就完全没有它的规则，浏览器按默认样式（opacity:1、
  * visibility:visible）把它整块画出来，等完整样式表异步到位才过渡到隐藏 ——
@@ -342,52 +353,53 @@ async function main() {
             out: Buffer.byteLength(minified),
         });
 
-        /* 关键 CSS：从主样式表抽出首屏必需的节（令牌/基础/布局/导航/暗色），
-           单独 minify 成 ecod.critical.<hash>.min.css，由 include.php 内联进
-           <head>；完整样式表转异步预加载，首屏不再被 300KB CSS 阻塞。
-           节编号对应源码的 /* ============ N. 名称 ============ 分节标记，
-           想调整首屏覆盖面改这一个数组即可。 */
+        /* 关键 CSS（S4 分族）：每个页面族一份「首帧骨架 + 族首屏区块」，
+           由 include.php 按当前页族内联进 <head>；其余样式随族 CSS 异步预加载。
+           postext 页面复用 post 份（扩展短代码不进首帧）。
+           节编号对应源码的 /* ============ N. 名称 ============ 分节标记。 */
         if (rel === 'assets/css/ecod.css') {
             assertBraceBalance(source, 'ecod.css 源码');
             assertPageSetsCoverAll(source);
-            const sectionSource = extractCssSections(source, CRITICAL_SECTIONS);
-            assertBraceBalance(sectionSource, '关键 CSS 抽取');
-            const criticalSource = sectionSource + '\n' + overlayGuardCss(source, sectionSource);
-            const criticalMin = (
-                await build({
-                    stdin: { contents: criticalSource, loader: 'css', resolveDir: THEME_DIR },
-                    minify: true,
-                    bundle: false,
-                    write: false,
-                    logLevel: 'silent',
-                })
-            ).outputFiles[0].text;
-            if (criticalMin.includes('</style')) {
-                throw new Error('critical CSS 含 </style，内联会截断 head');
+
+            for (const [fam, famSections] of Object.entries(CRITICAL_FAMS)) {
+                const sectionSource = extractCssSections(source, famSections);
+                assertBraceBalance(sectionSource, `关键 CSS（${fam}）抽取`);
+                const criticalSource = sectionSource + '\n' + overlayGuardCss(source, sectionSource);
+                const criticalMin = (
+                    await build({
+                        stdin: { contents: criticalSource, loader: 'css', resolveDir: THEME_DIR },
+                        minify: true,
+                        bundle: false,
+                        write: false,
+                        logLevel: 'silent',
+                    })
+                ).outputFiles[0].text;
+                if (criticalMin.includes('</style')) {
+                    throw new Error('critical CSS 含 </style，内联会截断 head');
+                }
+                const criticalBase = `css/ecod.critical.${fam}`;
+                const criticalRel = `assets/dist/${criticalBase}.${hashOf(criticalMin)}.min.css`;
+                await mkdir(dirname(join(THEME_DIR, criticalRel)), { recursive: true });
+                await writeFile(join(THEME_DIR, criticalRel), criticalMin);
+                await writeFile(join(THEME_DIR, criticalRel) + '.gz', gzipSync(criticalMin, { level: 9 }));
+                await writeFile(join(THEME_DIR, criticalRel) + '.br', brotliCompressSync(criticalMin, {
+                    params: { [zlibConstants.BROTLI_PARAM_QUALITY]: 11 },
+                }));
+                /* opcache 变体：nowdoc 无插值无转义，include.php require 它之后
+                   字符串常驻 opcache 共享内存，省掉每请求一次磁盘读。
+                   nowdoc 闭合标记独占一行，CSS 内容不可能出现该标记 */
+                await writeFile(
+                    join(THEME_DIR, criticalRel) + '.php',
+                    "<?php return <<<'ECODCSS'\n" + criticalMin + '\nECODCSS;\n'
+                );
+                /* 伪源路径键：ecod_dist_resolve('assets/css/ecod.critical.<fam>.css') 可查到 */
+                manifest[`assets/css/ecod.critical.${fam}.css`] = criticalRel;
+                report.push({
+                    file: `css/ecod.critical.${fam}.css (派生)`,
+                    src: Buffer.byteLength(criticalSource),
+                    out: Buffer.byteLength(criticalMin),
+                });
             }
-            const criticalBase = 'css/ecod.critical';
-            const criticalHash = hashOf(criticalMin);
-            const criticalRel = `assets/dist/${criticalBase}.${criticalHash}.min.css`;
-            await mkdir(dirname(join(THEME_DIR, criticalRel)), { recursive: true });
-            await writeFile(join(THEME_DIR, criticalRel), criticalMin);
-            await writeFile(join(THEME_DIR, criticalRel) + '.gz', gzipSync(criticalMin, { level: 9 }));
-            await writeFile(join(THEME_DIR, criticalRel) + '.br', brotliCompressSync(criticalMin, {
-                params: { [zlibConstants.BROTLI_PARAM_QUALITY]: 11 },
-            }));
-            /* opcache 变体：nowdoc 无插值无转义，include.php require 它之后
-               字符串常驻 opcache 共享内存，省掉每请求一次磁盘读。
-               nowdoc 闭合标记独占一行，CSS 内容不可能出现该标记 */
-            await writeFile(
-                join(THEME_DIR, criticalRel) + '.php',
-                "<?php return <<<'ECODCSS'\n" + criticalMin + '\nECODCSS;\n'
-            );
-            /* 伪源路径键：ecod_dist_resolve('assets/css/ecod.critical.css') 可查到 */
-            manifest['assets/css/ecod.critical.css'] = criticalRel;
-            report.push({
-                file: 'css/ecod.critical.css (派生)',
-                src: Buffer.byteLength(criticalSource),
-                out: Buffer.byteLength(criticalMin),
-            });
 
             /* 页面族分包（S2）：每族一个可独立下发的 CSS 文件。
                页面只加载 core + 所属族（见 public/include.php ecod_css_family()）；

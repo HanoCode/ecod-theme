@@ -387,7 +387,8 @@
             var code = pre.querySelector('code');
             var lang = '';
             if (code) {
-                var m = (code.className || '').match(/language-([\w-]+)/);
+                /* HyperDown 输出 lang-xxx，Prism 生态惯例是 language-xxx，两种都认 */
+                var m = (code.className || '').match(/(?:language|lang)-([\w-]+)/);
                 if (m) lang = m[1];
             }
             if (lang) {
@@ -420,7 +421,19 @@
                 var codeText = code ? code.textContent : pre.innerText;
                 var lineCount = codeText.replace(/\n+$/, '').split('\n').length;
                 if (lineCount > 40) {
+                    /* 折叠高度取整行：max-height 若切在半行上，残行透过渐变遮罩
+                       会露出拦腰裁断的字形（看起来像颜色发灰）。按行高取整行数，
+                       再补回 pre 的上下 padding */
+                    var foldTarget = code || pre;
+                    var foldLh = parseFloat(getComputedStyle(foldTarget).lineHeight) || 20;
+                    var foldPad = 0;
+                    try {
+                        var foldCs = getComputedStyle(pre);
+                        foldPad = parseFloat(foldCs.paddingTop) + parseFloat(foldCs.paddingBottom) || 0;
+                    } catch (eFold) {}
+                    var foldRows = Math.max(12, Math.floor((420 - foldPad) / foldLh));
                     box.classList.add('is-folded');
+                    box.style.setProperty('--ecod-fold-h', Math.round(foldRows * foldLh + foldPad) + 'px');
                     var expand = document.createElement('button');
                     expand.type = 'button';
                     expand.className = 'ecod_codeblock__expand';
@@ -439,6 +452,19 @@
             if (code && !(CFG.prism && window.Prism)) {
                 Ecod.highlightCode(code, lang);
             }
+        });
+
+        /* 标题锚点：h2/h3 hover 浮现 # 链接（无 id 自动补，与 initToc 的 ecod-h-N 同命名），
+           原生哈希跳转即可（h2/h3 有 scroll-margin-top 防吸顶遮挡） */
+        content.querySelectorAll('h2, h3').forEach(function (h, i) {
+            if (!h.id) h.id = 'ecod-h-' + (i + 1);
+            if (h.querySelector('.ecod_hanchor')) return;
+            var a = document.createElement('a');
+            a.className = 'ecod_hanchor';
+            a.href = '#' + h.id;
+            a.textContent = '#';
+            a.setAttribute('aria-label', '本节锚点链接');
+            h.appendChild(a);
         });
 
         /* 图表 / 公式：内容驱动按需加载，页面没有 mermaid 代码块或公式时不加载任何资源 */
@@ -469,7 +495,7 @@
     };
     Ecod.initMermaid = function () {
         var found = false;
-        document.querySelectorAll('[data-ecod-content] pre code.language-mermaid').forEach(function (code) {
+        document.querySelectorAll('[data-ecod-content] pre code.language-mermaid, [data-ecod-content] pre code.lang-mermaid').forEach(function (code) {
             var pre = code.closest('pre');
             var box = pre ? pre.closest('.ecod_codeblock') : null;
             var host = box || pre;
@@ -755,42 +781,19 @@
         });
     };
 
-    /* ---------- 侧边悬浮操作栏（act 块 side/both 形态） ----------
-       进度竖条复用 Ecod.readProgress() 口径（与顶部进度条 / 阅读工具条一致）；
-       滚动监听全局只绑一次，PJAX 换页后指向当前页的填充元素 */
+    /* ---------- 侧边悬浮操作栏（act 块 side 形态） ----------
+       位置与侧栏互斥成对：侧栏在右 → 栏在左，其余（左/无侧栏）在右；浮动目录胶囊
+       固定在侧栏对面，与本栏同侧时由 body.ecod-rail-* 标记让位（见 ecod.css §11.4b）。
+       阅读进度与返回顶部由右下角悬浮件承担，本栏不再重复 */
     Ecod.initActRail = function () {
         var rail = document.querySelector('[data-ecod-actsiderail]');
+        document.body.classList.remove('ecod-rail-left', 'ecod-rail-right');
         if (!rail) return;
 
-        /* 贴侧栏边（与阅读工具条竖栏同规则）：侧栏在左 → 栏在左，其余在右 */
         var layout = document.querySelector('.ecod_layout');
-        rail.classList.toggle('is-left', !!(layout && layout.getAttribute('data-aside') === 'left'));
-
-        var top = rail.querySelector('[data-ecod-rail-top]');
-        if (top && !top._ecodRailBound) {
-            top._ecodRailBound = 1;
-            top.addEventListener('click', function () {
-                window.scrollTo({ top: 0, behavior: 'smooth' });
-            });
-        }
-
-        if (!Ecod._railScrollBound) {
-            Ecod._railScrollBound = 1;
-            var raf = 0;
-            var tick = function () {
-                raf = 0;
-                var fill = document.querySelector('[data-ecod-actsiderail] [data-ecod-rail-fill]');
-                if (!fill) return;
-                var pct = Math.min(100, Math.max(0, Ecod.readProgress()));
-                fill.style.transform = 'scaleY(' + pct / 100 + ')';
-            };
-            var onScroll = function () {
-                if (!raf) raf = requestAnimationFrame(tick);
-            };
-            window.addEventListener('scroll', onScroll, { passive: true });
-            window.addEventListener('resize', onScroll);
-            tick();
-        }
+        var onLeft = !!(layout && layout.getAttribute('data-aside') === 'right');
+        rail.classList.toggle('is-left', onLeft);
+        document.body.classList.add(onLeft ? 'ecod-rail-left' : 'ecod-rail-right');
     };
 
     /* ---------- 文章操作条 ---------- */
@@ -1565,6 +1568,9 @@
                 up.classList.toggle('is-edge', cur >= steps[steps.length - 1]);
             };
             var apply = function () {
+                /* 正文基准字号现消费 --ecod-prose-fs（后台「正文排版」随行内样式下发，
+                   优先级高于 --ecod-fs-base），步进器两处同写保证覆盖生效 */
+                content.style.setProperty('--ecod-prose-fs', cur + 'px');
                 content.style.setProperty('--ecod-fs-base', cur + 'px');
                 try { localStorage.setItem(FSK, String(cur)); } catch (e) {}
                 edge();
@@ -1780,6 +1786,8 @@
         var tip = form.querySelector('[data-ecod-tip]');
         var submit = form.querySelector('[data-ecod-submit]');
         var hp = form.querySelector('input[name="ecod_hp"]');
+        var cap = form.querySelector('input[name="captcha"]');
+        var capImg = form.querySelector('[data-ecod-captcha]');
         var loaded = Date.now();
         var sending = false;
 
@@ -1787,6 +1795,77 @@
             if (!tip) return;
             tip.textContent = msg || '';
             tip.hidden = !msg;
+        }
+
+        /* 验证码一次一换：提交失败（含验证码输错）后必须换图，否则重试必然失败 */
+        function refreshCap() {
+            if (capImg && CFG.api) {
+                capImg.src = CFG.api + '?action=captcha&t=' + Date.now();
+            }
+            if (cap) {
+                cap.value = '';
+            }
+        }
+
+        /* 移动端（≤719px）：验证码行隐藏，提交时以底部弹层出现 */
+        var capField = form.querySelector('.ecod_field--cap');
+        var capOk = form.querySelector('[data-ecod-cap-ok]');
+        var capCancel = form.querySelector('[data-ecod-cap-cancel]');
+        var capMq = window.matchMedia('(max-width: 719px)');
+
+        function capSyncReq() {
+            /* 弹层态下隐藏的 required 输入会让原生校验静默卡死，改为 JS 手动验 */
+            if (cap) {
+                cap.required = !capMq.matches;
+            }
+        }
+        capSyncReq();
+        if (capMq.addEventListener) {
+            capMq.addEventListener('change', capSyncReq);
+        }
+
+        function capModalOpen() {
+            if (!capField) return;
+            /* fixed 会被带 transform 的祖先劫持成局部定位，弹层态挂到 body 下 */
+            if (!capField._ecodHome) {
+                capField._ecodHome = { parent: capField.parentNode, next: capField.nextSibling };
+            }
+            if (capField.parentNode !== document.body) {
+                document.body.appendChild(capField);
+            }
+            capField.classList.add('is-modal');
+            setTimeout(function () { if (cap) cap.focus(); }, 90);
+        }
+
+        function capModalClose() {
+            if (!capField) return;
+            capField.classList.remove('is-modal');
+            /* 归位回表单：FormData(form) 只收集表单内控件，提交前必须放回 */
+            var home = capField._ecodHome;
+            if (home && capField.parentNode === document.body) {
+                home.parent.insertBefore(capField, home.next);
+            }
+        }
+
+        if (capField) {
+            if (capOk) {
+                capOk.addEventListener('click', function () {
+                    if (cap && cap.value.trim() === '') {
+                        cap.focus();
+                        return;
+                    }
+                    capModalClose();
+                    /* 回到表单提交：验证码已填，后续校验照常走 */
+                    if (submit) {
+                        submit.click();
+                    } else if (form.requestSubmit) {
+                        form.requestSubmit();
+                    }
+                });
+            }
+            if (capCancel) {
+                capCancel.addEventListener('click', capModalClose);
+            }
         }
 
         function grow() {
@@ -1837,6 +1916,17 @@
             /* 蜜罐：机器人往往会填写所有字段 */
             if (hp && hp.value.trim() !== '') {
                 showTip('提交未通过校验，请刷新页面后重试。');
+                return;
+            }
+            if (cap && cap.value.trim() === '') {
+                if (capMq.matches) {
+                    /* 移动端：弹层里完成验证码 */
+                    showTip('');
+                    capModalOpen();
+                } else {
+                    showTip('请输入图中的验证码。');
+                    cap.focus();
+                }
                 return;
             }
             if (text.length < 2) {
@@ -1892,6 +1982,7 @@
 
                 if (!r.ok) {
                     showTip(extractError(r.html));
+                    refreshCap();
                     if (submit) { submit.disabled = false; submit.textContent = '发表评论'; }
                     return;
                 }
@@ -1951,6 +2042,7 @@
             }).catch(function () {
                 sending = false;
                 showTip('网络异常，请重试。');
+                refreshCap();
                 if (submit) { submit.disabled = false; submit.textContent = '发表评论'; }
             });
         });
@@ -2926,6 +3018,8 @@
         var level = root.getAttribute('data-level') || '1';
         var plan = root.getAttribute('data-plan') || 'month';
         var permalink = root.getAttribute('data-permalink') || '';
+        /* ?order_no= 直达：对已有订单续付，不新建订单 */
+        var existOrder = root.getAttribute('data-order-no') || '';
 
         var submit = root.querySelector('[data-cashier-submit]');
         var pane = root.querySelector('[data-cashier-pane]');
@@ -3006,19 +3100,23 @@
         function submitOrder() {
             if (!submit || submit.disabled) return;
             var fd = new FormData();
-            fd.append('kind', kind);
-            fd.append('cid', cid);
-            fd.append('level', level);
-            fd.append('plan', plan);
+            if (existOrder) {
+                fd.append('order_no', existOrder);
+            } else {
+                fd.append('kind', kind);
+                fd.append('cid', cid);
+                fd.append('level', level);
+                fd.append('plan', plan);
+            }
             fd.append('channel', currentChannel());
             var paytype = currentPaytype();
             if (paytype) fd.append('paytype', paytype);
             fd.append('token', token);
 
             submit.disabled = true;
-            say('正在生成订单…');
+            say(existOrder ? '正在发起支付…' : '正在生成订单…');
 
-            fetch(api + '?action=pay_create', {
+            fetch(api + '?action=' + (existOrder ? 'pay_order' : 'pay_create'), {
                 method: 'POST',
                 body: fd,
                 credentials: 'same-origin'
@@ -3182,10 +3280,19 @@
             var title = form.querySelector('[name="title"]');
             var cat = form.querySelector('[name="category"]');
             var text = form.querySelector('[name="text"]');
+            var cap = form.querySelector('[name="captcha"]');
+
+            /* 服务端强制校验验证码，且一次一换：失败后必须换图重填 */
+            function refreshCap() {
+                var img = form.querySelector('[data-ecod-captcha]');
+                if (img && api) img.src = api + '?action=captcha&t=' + Date.now();
+                if (cap) cap.value = '';
+            }
 
             if (!title || title.value.trim().length < 3) { say('标题至少 3 个字', false); title && title.focus(); return; }
             if (!cat || !cat.value) { say('请选择一个分类', false); cat && cat.focus(); return; }
             if (!text || text.value.trim().length < 10) { say('正文至少 10 个字', false); text && text.focus(); return; }
+            if (cap && cap.value.trim() === '') { say('请输入图中的验证码', false); cap.focus(); return; }
 
             var body = new FormData(form);
             body.append('token', token);
@@ -3202,10 +3309,12 @@
                     setTimeout(function () { window.location.reload(); }, 900);
                 } else {
                     say((data && data.error) || '提交失败，请稍后再试', false);
+                    refreshCap();
                     if (submit) submit.disabled = false;
                 }
             }).catch(function () {
                 say('网络异常，请重试', false);
+                refreshCap();
                 if (submit) submit.disabled = false;
             });
         });
@@ -3353,6 +3462,7 @@
             var meta = poll.querySelector('[data-ecod-poll-meta]');
             var voteBtn = poll.querySelector('[data-ecod-poll-vote]');
             var opts = poll.querySelectorAll('.ecod_poll__opt');
+            var avs = poll.querySelector('[data-ecod-poll-avs]');
 
             function picked() {
                 var out = [];
@@ -3362,10 +3472,36 @@
                 return out;
             }
 
+            function esc(s) {
+                return String(s).replace(/[&<>"]/g, function (c) {
+                    return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c];
+                });
+            }
+
+            /* 投票者头像堆叠：最近 5 位（登录用户头像 + 游客默认占位圆） */
+            function renderVoters(voters) {
+                if (!avs || !Array.isArray(voters) || !voters.length) return;
+                var guestAvatar = '<i class="is-guest">'
+                    + '<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">'
+                    + '<circle cx="12" cy="8" r="3.4"></circle><path d="M5 20c0-3.6 3.1-6.2 7-6.2s7 2.6 7 6.2"></path>'
+                    + '</svg></i>';
+                avs.innerHTML = voters.map(function (v) {
+                    var name = String(v.name || '');
+                    if (v.avatar) {
+                        return '<img src="' + esc(v.avatar) + '" alt="" width="24" height="24" loading="lazy" decoding="async" data-initial="' + esc(name.slice(0, 1)) + '">';
+                    }
+                    /* 游客 / 无昵称：默认占位头像 */
+                    if (v.guest || name === '') return guestAvatar;
+                    return '<i>' + esc(name.slice(0, 1)) + '</i>';
+                }).join('');
+                avs.hidden = false;
+            }
+
             function render(data) {
                 var total = parseInt(data.total, 10) || 0;
                 var counts = data.counts || {};
                 var mine = (data.mine || '').split(',');
+                renderVoters(data.voters);
                 Array.prototype.forEach.call(opts, function (opt) {
                     var i = opt.dataset.opt;
                     var n = parseInt(counts[i], 10) || 0;
@@ -3438,6 +3574,7 @@
                         render(data);
                         return;
                     }
+                    renderVoters(data.voters);
                     if (meta) {
                         meta.textContent = (parseInt(data.total, 10) || 0) > 0
                             ? data.total + ' 人已投票'
@@ -3805,7 +3942,7 @@
         if (!form || !api) return;
 
         var slot = form.querySelector('[data-ecod-adself-slot]');
-        var days = form.querySelector('[data-ecod-adself-days]');
+        var units = form.querySelector('[data-ecod-adself-units]');
         var amount = form.querySelector('[data-ecod-adself-amount]');
         var msg = form.querySelector('[data-ecod-adself-msg]');
         var submit = form.querySelector('[data-ecod-adself-submit]');
@@ -3817,16 +3954,16 @@
             msg.hidden = !text;
         }
 
-        /* 选项文本形如「侧边栏卡片（¥3.00/天）」，从中提取单价 */
+        /* 选项文本形如「侧边栏卡片（¥3.00/周）」，从中提取单价 */
         function unitPrice() {
             if (!slot || !slot.options || !slot.options[slot.selectedIndex]) return 0;
-            var m = slot.options[slot.selectedIndex].textContent.match(/([0-9.]+)\s*\/\s*天/);
+            var m = slot.options[slot.selectedIndex].textContent.match(/([0-9.]+)\s*\/\s*([天周月])/);
             return m ? parseFloat(m[1]) : 0;
         }
 
         function update() {
-            var d = parseInt(days && days.value, 10) || 0;
-            if (amount) amount.textContent = '¥' + (unitPrice() * d).toFixed(2);
+            var u = parseInt(units && units.value, 10) || 0;
+            if (amount) amount.textContent = '¥' + (unitPrice() * u).toFixed(2);
         }
 
         once(form, 'adSelfInput', 'input', update);
@@ -3836,6 +3973,21 @@
         once(form, 'adSelfSubmit', 'submit', function (e) {
             e.preventDefault();
             if (!submit || submit.dataset.busy === '1') return;
+
+            /* 本地逐字段校验：缺哪个、格式错哪个分开通提示，不等到服务端才报「都要填写」 */
+            function fieldVal(name) {
+                var el = form.querySelector('[name="' + name + '"]');
+                return el ? el.value.trim() : '';
+            }
+            var vTitle = fieldVal('title');
+            var vImage = fieldVal('image');
+            var vLink = fieldVal('link');
+            if (vTitle === '') { say('请填写广告标题'); return; }
+            if (vImage === '') { say('请填写图片地址'); return; }
+            if (!/^(https?:\/\/|\/)/i.test(vImage)) { say('图片地址需以 http(s):// 或 / 开头'); return; }
+            if (vLink === '') { say('请填写跳转链接'); return; }
+            if (!/^https?:\/\//i.test(vLink)) { say('跳转链接必须是 http(s) 地址'); return; }
+
             submit.dataset.busy = '1';
             say('');
 

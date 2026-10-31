@@ -157,23 +157,32 @@ $ecodCards = [
         </section>
 
         <section class="ecod_panel">
+            <?php
+            /* 标签云：metas.count 会滞后（文章转草稿不更新），先取全量再用实时篇数重排 */
+            $this->widget('\Widget\Metas\Tag\Cloud')->to($ecodTags);
+            $ecodCensusTagRaw = [];
+            while ($ecodTags->next()) {
+                $ecodCensusTagRaw[] = [
+                    'mid'       => (int) $ecodTags->mid,
+                    'name'      => (string) $ecodTags->name,
+                    'permalink' => (string) $ecodTags->permalink,
+                    'count'     => (int) $ecodTags->count,
+                ];
+            }
+            $ecodCensusTags = ecod_tag_live_rows($ecodCensusTagRaw);
+            ?>
             <header class="ecod_panel__head">
                 <h2><?php echo ecod_icon('hash', 14); ?>标签云</h2>
-                <span><?php echo (int) $ecodStats['tags']; ?> 个标签</span>
+                <span><?php echo count($ecodCensusTags); ?> 个标签</span>
             </header>
             <div class="ecod_tagcloud">
-                <?php
-                $this->widget('\Widget\Metas\Tag\Cloud')->to($ecodTags);
-                if ($ecodTags->have()):
-                    while ($ecodTags->next()):
-                        ?>
-                        <a class="ecod_tagcloud__item" href="<?php $ecodTags->permalink(); ?>">
-                            <?php $ecodTags->name(); ?><i><?php $ecodTags->count(); ?></i>
+                <?php if ($ecodCensusTags): ?>
+                    <?php foreach ($ecodCensusTags as $ecodCensusTag): ?>
+                        <a class="ecod_tagcloud__item" href="<?php echo htmlspecialchars($ecodCensusTag['permalink'], ENT_QUOTES, 'UTF-8'); ?>">
+                            <?php echo htmlspecialchars($ecodCensusTag['name'], ENT_QUOTES, 'UTF-8'); ?><i><?php echo (int) $ecodCensusTag['count']; ?></i>
                         </a>
-                        <?php
-                    endwhile;
-                else:
-                    ?>
+                    <?php endforeach; ?>
+                <?php else: ?>
                     <p class="ecod_panel__empty">还没有标签</p>
                 <?php endif; ?>
             </div>

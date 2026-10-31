@@ -122,13 +122,10 @@ if ($ecodNavMax > 0 && count($ecodNav) > $ecodNavMax) {
     $ecodNavMore = array_slice($ecodNav, $ecodCut);
 }
 
-/* 浮动件坐标标记：窄屏下浮动目录据此让开 dock / 深浅色切换（见 ecod.css §11.4b） */
+/* 浮动件坐标标记：窄屏下浮动目录据此让开 dock（见 ecod.css §11.4b） */
 $ecodBodyClass = [];
 if (ecod_block_on('dock')) {
     $ecodBodyClass[] = 'ecod-has-dock';
-}
-if (ecod_block_on('theme-toggle') && ecod_option('EDark', 'auto') !== 'off') {
-    $ecodBodyClass[] = 'ecod-has-toggle';
 }
 ?>
 <!DOCTYPE html>

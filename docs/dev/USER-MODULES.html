@@ -1,0 +1,755 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ecod · 用户任务 / 消息中心 / 工单 原型</title>
+<style>
+/* ============ 设计令牌（取自 assets/css/ecod.css） ============ */
+:root{
+  --primary:#4f6ef2; --primary-deep:#3b55d9; --primary-soft:#eef1fe;
+  --bg:#f5f6f9; --surface:#fff; --surface-2:#fafbfc;
+  --line:#eef0f5; --line-2:#e4e7ee; --line-strong:#d3d9e4;
+  --ink:#12161d; --ink-2:#5b6472; --ink-3:#6b7280;
+  --accent:#f59e0b; --success:#10b981; --danger:#ef4444;
+  --r-xs:4px; --r-sm:8px; --r:12px; --r-full:999px;
+  --sp-1:4px; --sp-2:8px; --sp-3:12px; --sp-4:16px; --sp-5:20px; --sp-6:24px; --sp-8:32px;
+  --shadow-sm:0 1px 2px rgba(18,22,29,.05),0 2px 8px rgba(18,22,29,.05);
+  --shadow:0 2px 6px rgba(18,22,29,.06),0 8px 24px rgba(18,22,29,.07);
+  --font:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+}
+html[data-theme="dark"]{
+  --primary:#6d86f5; --primary-deep:#9db0ff; --primary-soft:#262d47;
+  --bg:#14161d; --surface:#1d2029; --surface-2:#23262f;
+  --line:#262a34; --line-2:#2c303b; --line-strong:#3a3f4d;
+  --ink:#e6e9f0; --ink-2:#a8b0c0; --ink-3:#8b93a6;
+  --accent:#f59e0b; --success:#34d399; --danger:#f87171;
+  --shadow-sm:0 1px 3px rgba(0,0,0,.3),0 4px 16px rgba(0,0,0,.22);
+  --shadow:0 2px 8px rgba(0,0,0,.35),0 12px 32px rgba(0,0,0,.3);
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{
+  font-family:var(--font); background:var(--bg); color:var(--ink);
+  font-size:14px; line-height:1.6; -webkit-font-smoothing:antialiased;
+}
+button{font:inherit;cursor:pointer;border:0;background:none;color:inherit}
+b{font-weight:600}
+svg{display:block}
+
+/* ============ 顶栏 ============ */
+.top{
+  position:sticky; top:0; z-index:20; display:flex; align-items:center; gap:var(--sp-4);
+  height:56px; padding:0 var(--sp-6);
+  background:color-mix(in srgb,var(--surface) 88%,transparent);
+  backdrop-filter:blur(12px); border-bottom:1px solid var(--line);
+}
+.brand{display:flex;align-items:center;gap:var(--sp-2);font-weight:700;letter-spacing:.02em}
+.brand span{width:24px;height:24px;border-radius:var(--r-sm);background:var(--primary);color:#fff;
+  display:grid;place-items:center;font-size:13px}
+.seg{display:flex;gap:var(--sp-1);background:var(--surface-2);border:1px solid var(--line);border-radius:var(--r-full);padding:3px}
+.seg button{padding:5px 14px;border-radius:var(--r-full);font-size:13px;color:var(--ink-2);transition:.16s}
+.seg button.is-on{background:var(--surface);color:var(--ink);box-shadow:var(--shadow-sm)}
+.top__right{margin-left:auto;display:flex;align-items:center;gap:var(--sp-2)}
+.icobtn{width:32px;height:32px;border-radius:var(--r-sm);display:grid;place-items:center;color:var(--ink-2);border:1px solid var(--line)}
+.icobtn:hover{color:var(--ink);border-color:var(--line-strong)}
+
+/* ============ 布局 ============ */
+.shell{max-width:1120px;margin:0 auto;padding:var(--sp-6);display:grid;grid-template-columns:236px 1fr;gap:var(--sp-6);align-items:start}
+@media (max-width:900px){ .shell{grid-template-columns:1fr;padding:var(--sp-4)} }
+
+/* 侧栏 */
+.side{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:var(--sp-4);position:sticky;top:80px}
+@media (max-width:900px){ .side{position:static} }
+.side__me{display:flex;gap:var(--sp-3);align-items:center;padding-bottom:var(--sp-3);border-bottom:1px solid var(--line)}
+.ava{width:44px;height:44px;border-radius:30%;background:linear-gradient(135deg,var(--primary),#8f7cf0);color:#fff;
+  display:grid;place-items:center;font-weight:600;font-size:16px;flex:none}
+.side__me b{display:block;font-size:14px}
+.side__me span{font-size:12px;color:var(--ink-3)}
+.nav{display:flex;flex-direction:column;gap:2px;margin-top:var(--sp-3)}
+.nav button{display:flex;align-items:center;gap:var(--sp-2);height:38px;padding:0 var(--sp-3);border-radius:var(--r-sm);
+  color:var(--ink-2);font-size:13.5px;transition:.16s;text-align:left;width:100%}
+.nav button:hover{background:var(--surface-2);color:var(--ink)}
+.nav button.is-on{background:var(--primary-soft);color:var(--primary-deep);font-weight:600}
+.nav button .badge{margin-left:auto;min-width:18px;height:18px;padding:0 5px;border-radius:var(--r-full);
+  background:var(--danger);color:#fff;font-size:11px;display:grid;place-items:center;font-weight:600}
+.nav button.is-dim{opacity:.45;cursor:not-allowed}
+
+/* 面板 */
+.panel{display:none;animation:rise .22s ease-out}
+.panel.is-on{display:block}
+@keyframes rise{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.phead{display:flex;align-items:flex-end;gap:var(--sp-3);margin-bottom:var(--sp-4)}
+.phead h2{margin:0;font-size:19px;letter-spacing:-.01em}
+.phead p{margin:0;color:var(--ink-3);font-size:12.5px}
+.phead .spacer{margin-left:auto}
+
+/* 按钮 */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;height:34px;padding:0 14px;
+  border-radius:var(--r-sm);border:1px solid var(--line-2);background:var(--surface);color:var(--ink-2);
+  font-size:13px;transition:.16s;white-space:nowrap}
+.btn:hover{border-color:var(--line-strong);color:var(--ink)}
+.btn--primary{background:var(--primary);border-color:var(--primary);color:#fff;font-weight:600}
+.btn--primary:hover{background:var(--primary-deep);border-color:var(--primary-deep);color:#fff}
+.btn--ghost{background:transparent}
+.btn--sm{height:28px;padding:0 10px;font-size:12.5px;border-radius:var(--r-xs)}
+.btn[disabled]{opacity:.55;cursor:not-allowed}
+.btn[disabled]:hover{border-color:var(--line-2);color:var(--ink-2)}
+
+/* ============ 任务 ============ */
+.sum{display:grid;grid-template-columns:1fr 1fr 1.4fr auto;gap:var(--sp-4);align-items:center;
+  background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:var(--sp-4) var(--sp-5);
+  margin-bottom:var(--sp-6)}
+@media (max-width:760px){ .sum{grid-template-columns:1fr 1fr;row-gap:var(--sp-3)} .sum .btn{grid-column:1/-1;width:100%} }
+.sum__cell small{display:block;font-size:12px;color:var(--ink-3);margin-bottom:2px}
+.sum__cell b{font-size:22px;letter-spacing:-.02em}
+.sum__cell b em{font-size:12px;font-weight:500;color:var(--ink-3);font-style:normal;margin-left:2px}
+.sum__bar{height:6px;border-radius:var(--r-full);background:var(--line);overflow:hidden;margin:6px 0 4px}
+.sum__bar i{display:block;height:100%;background:var(--primary);border-radius:inherit;transition:width .3s ease-out}
+.sum__cell span{font-size:12px;color:var(--ink-3);font-variant-numeric:tabular-nums}
+
+.tgroup{margin-bottom:var(--sp-6)}
+.tgroup__hd{display:flex;align-items:baseline;gap:var(--sp-2);margin-bottom:var(--sp-3)}
+.tgroup__hd b{font-size:14px}
+.tgroup__hd span{font-size:12px;color:var(--ink-3)}
+.tgroup__hd i{margin-left:auto;font-size:12px;color:var(--ink-3);font-style:normal;font-variant-numeric:tabular-nums}
+.tgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(292px,1fr));gap:var(--sp-3)}
+@media (max-width:680px){ .tgrid{grid-template-columns:1fr} }
+
+.tcard{display:grid;grid-template-columns:34px 1fr auto;grid-template-areas:"ic body rw" "foot foot foot";
+  gap:var(--sp-2) var(--sp-3);background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:var(--sp-4);
+  transition:.18s;position:relative}
+.tcard:hover{border-color:var(--line-2);box-shadow:var(--shadow-sm)}
+.tcard__ic{grid-area:ic;width:34px;height:34px;border-radius:var(--r-sm);display:grid;place-items:center;
+  background:var(--primary-soft);color:var(--primary-deep)}
+.tcard__body{grid-area:body;min-width:0}
+.tcard__body b{display:block;font-size:13.5px}
+.tcard__body span{display:block;font-size:12px;color:var(--ink-3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tcard__rw{grid-area:rw;font-size:13px;font-weight:700;color:var(--accent);font-variant-numeric:tabular-nums}
+.tcard__foot{grid-area:foot;display:flex;align-items:center;gap:var(--sp-2);padding-top:var(--sp-2);border-top:1px solid var(--line);margin-top:var(--sp-2)}
+.tcard__bar{flex:1;height:5px;border-radius:var(--r-full);background:var(--line);overflow:hidden}
+.tcard__bar i{display:block;height:100%;background:var(--primary);border-radius:inherit;transition:width .3s}
+.tcard__num{font-size:11.5px;color:var(--ink-3);font-variant-numeric:tabular-nums}
+.tcard.is-claimable{border-color:color-mix(in srgb,var(--primary) 34%,var(--line))}
+.tcard.is-claimable .tcard__bar i{background:var(--success)}
+.tcard.is-claimed{background:var(--surface-2)}
+.tcard.is-claimed .tcard__ic{background:var(--line);color:var(--ink-3)}
+.tcard.is-claimed .tcard__rw{color:var(--ink-3)}
+.tcard__done{display:inline-flex;align-items:center;gap:4px;font-size:12.5px;color:var(--success);font-weight:600}
+
+/* ============ 消息中心 ============ */
+.msgbar{display:flex;align-items:center;gap:var(--sp-2);flex-wrap:wrap;margin-bottom:var(--sp-3)}
+.chip{display:inline-flex;align-items:center;gap:6px;height:30px;padding:0 12px;border-radius:var(--r-full);
+  border:1px solid var(--line-2);background:var(--surface);color:var(--ink-2);font-size:12.5px;transition:.16s}
+.chip:hover{border-color:var(--line-strong);color:var(--ink)}
+.chip.is-on{background:var(--primary);border-color:var(--primary);color:#fff;font-weight:600}
+.chip u{text-decoration:none;font-size:11px;opacity:.72;font-variant-numeric:tabular-nums}
+.msgbar__ops{margin-left:auto;display:flex;gap:var(--sp-2)}
+
+.msglist{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);overflow:hidden}
+.mitem{display:grid;grid-template-columns:32px 1fr auto;gap:var(--sp-3);align-items:center;
+  padding:var(--sp-3) var(--sp-4);border-bottom:1px solid var(--line);cursor:pointer;position:relative;transition:background .16s}
+.mitem:last-child{border-bottom:0}
+.mitem:hover{background:var(--surface-2)}
+.mitem__ic{width:32px;height:32px;border-radius:var(--r-sm);display:grid;place-items:center;background:var(--line);color:var(--ink-2)}
+.mitem[data-k="like"] .mitem__ic,.mitem[data-k="fav"] .mitem__ic{background:color-mix(in srgb,var(--danger) 12%,transparent);color:var(--danger)}
+.mitem[data-k="reply"] .mitem__ic{background:color-mix(in srgb,var(--primary) 12%,transparent);color:var(--primary-deep)}
+.mitem[data-k="notice"] .mitem__ic,.mitem[data-k="friend"] .mitem__ic{background:color-mix(in srgb,var(--accent) 14%,transparent);color:#b26a00}
+.mitem[data-k="ticket"] .mitem__ic{background:color-mix(in srgb,var(--success) 14%,transparent);color:var(--success)}
+.mitem__main{min-width:0}
+.mitem__main b{display:block;font-size:13.5px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mitem__main span{display:block;font-size:12px;color:var(--ink-3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mitem time{font-size:11.5px;color:var(--ink-3);font-variant-numeric:tabular-nums;white-space:nowrap}
+.mitem.is-unread{background:color-mix(in srgb,var(--primary) 4%,var(--surface))}
+.mitem.is-unread .mitem__main b{font-weight:600;color:var(--ink)}
+.mitem.is-unread::before{content:"";position:absolute;left:0;top:0;bottom:0;width:2px;background:var(--primary)}
+.mitem.is-unread time{color:var(--primary-deep);font-weight:600}
+.mitem__more{grid-column:1/-1;font-size:13px;color:var(--ink-2);padding-top:var(--sp-1);display:none}
+.mitem.is-open .mitem__more{display:block}
+.mitem.is-open{background:var(--surface-2)}
+.mitem__more em{display:inline-block;margin-top:var(--sp-2);font-style:normal;font-size:12px;color:var(--primary-deep)}
+.more{display:flex;justify-content:center;padding:var(--sp-4)}
+
+/* ============ 工单 ============ */
+.tstats{display:grid;grid-template-columns:repeat(3,1fr);gap:var(--sp-3);margin-bottom:var(--sp-4)}
+@media (max-width:620px){ .tstats{grid-template-columns:1fr 1fr} .tstats .tstat:last-child{display:none} }
+.tstat{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:var(--sp-4)}
+.tstat small{display:block;font-size:12px;color:var(--ink-3);margin-bottom:2px}
+.tstat b{font-size:22px;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+.tstat[data-s="open"] b{color:var(--accent)}
+.tstat[data-s="replied"] b{color:var(--primary-deep)}
+.tstat[data-s="resolved"] b{color:var(--success)}
+
+.tlist{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);overflow:hidden}
+.tk{border-bottom:1px solid var(--line)}
+.tk:last-child{border-bottom:0}
+.tk__hd{display:grid;grid-template-columns:auto 1fr auto;gap:var(--sp-3);align-items:center;padding:var(--sp-4);cursor:pointer;transition:background .16s}
+.tk__hd:hover{background:var(--surface-2)}
+.tk__no{font-size:11.5px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;color:var(--ink-3);
+  border:1px solid var(--line-2);border-radius:var(--r-xs);padding:1px 6px;white-space:nowrap}
+.tk__title{min-width:0}
+.tk__title b{display:block;font-size:13.5px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tk__meta{display:flex;gap:var(--sp-2);align-items:center;font-size:11.5px;color:var(--ink-3);margin-top:2px}
+.tk__cat{color:var(--ink-2)}
+.tk__right{display:flex;align-items:center;gap:var(--sp-3)}
+.tk__state{display:inline-flex;align-items:center;gap:5px;height:22px;padding:0 8px;border-radius:var(--r-full);font-size:11.5px;font-weight:600}
+.tk__state[data-s="open"]{background:color-mix(in srgb,var(--accent) 14%,transparent);color:#96650b}
+.tk__state[data-s="replied"]{background:var(--primary-soft);color:var(--primary-deep)}
+.tk__state[data-s="resolved"]{background:color-mix(in srgb,var(--success) 14%,transparent);color:#0b7a56}
+.tk__state[data-s="closed"]{background:var(--line);color:var(--ink-3)}
+html[data-theme="dark"] .tk__state[data-s="open"]{color:#f3b64a}
+html[data-theme="dark"] .tk__state[data-s="resolved"]{color:#5ee0b0}
+.tk__dot{width:6px;height:6px;border-radius:50%;background:var(--danger)}
+.tk__chev{color:var(--ink-3);transition:transform .2s}
+.tk.is-open .tk__chev{transform:rotate(90deg)}
+
+.tk__body{display:none;padding:0 var(--sp-4) var(--sp-4);border-top:1px dashed var(--line)}
+.tk.is-open .tk__body{display:block}
+.thread{display:flex;flex-direction:column;gap:var(--sp-3);padding:var(--sp-4) 0}
+.bub{max-width:76%;display:flex;flex-direction:column;gap:4px}
+.bub__meta{font-size:11px;color:var(--ink-3)}
+.bub__txt{background:var(--surface-2);border:1px solid var(--line);border-radius:var(--r);padding:10px 12px;font-size:13px;color:var(--ink-2)}
+.bub--me{align-self:flex-end;align-items:flex-end}
+.bub--me .bub__txt{background:var(--primary-soft);border-color:color-mix(in srgb,var(--primary) 22%,transparent);color:var(--ink)}
+.bub--staff{align-self:flex-start}
+.bub--staff .bub__meta b{color:var(--success)}
+.tk__reply{display:flex;flex-direction:column;gap:var(--sp-2);padding-top:var(--sp-3);border-top:1px solid var(--line)}
+.tk__reply textarea{width:100%;min-height:64px;resize:vertical;border:1px solid var(--line-2);border-radius:var(--r-sm);
+  padding:10px var(--sp-3);font:inherit;font-size:13px;background:var(--surface);color:var(--ink);outline:none}
+.tk__reply textarea:focus{border-color:var(--primary);box-shadow:0 0 0 3px color-mix(in srgb,var(--primary) 18%,transparent)}
+.tk__ops{display:flex;gap:var(--sp-2);align-items:center}
+.tk__ops .spacer{margin-left:auto}
+.tk__closed{font-size:12.5px;color:var(--ink-3);padding:var(--sp-3) 0}
+
+.newform{display:none;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:var(--sp-4);margin-bottom:var(--sp-4)}
+.newform.is-on{display:block}
+.field{display:block;margin-bottom:var(--sp-3)}
+.field>span{display:block;font-size:12px;color:var(--ink-3);margin-bottom:4px}
+.field input,.field select{width:100%;height:36px;border:1px solid var(--line-2);border-radius:var(--r-sm);padding:0 10px;
+  font:inherit;font-size:13px;background:var(--surface);color:var(--ink);outline:none}
+.field textarea{width:100%;min-height:96px;border:1px solid var(--line-2);border-radius:var(--r-sm);padding:10px;
+  font:inherit;font-size:13px;background:var(--surface);color:var(--ink);outline:none;resize:vertical}
+.field input:focus,.field textarea:focus,.field select:focus{border-color:var(--primary);box-shadow:0 0 0 3px color-mix(in srgb,var(--primary) 18%,transparent)}
+.newform__ops{display:flex;gap:var(--sp-2);justify-content:flex-end}
+
+.empty{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:var(--sp-8) var(--sp-4);text-align:center}
+.empty span{width:44px;height:44px;border-radius:var(--r);display:grid;place-items:center;margin:0 auto var(--sp-3);
+  background:var(--surface-2);color:var(--ink-3);border:1px solid var(--line)}
+.empty b{display:block;font-size:14px;margin-bottom:2px}
+.empty p{margin:0 0 var(--sp-4);font-size:12.5px;color:var(--ink-3)}
+
+/* toast */
+.toast{position:fixed;left:50%;bottom:32px;transform:translate(-50%,12px);background:var(--ink);color:var(--bg);
+  padding:9px 16px;border-radius:var(--r-full);font-size:13px;opacity:0;pointer-events:none;transition:.22s;z-index:50}
+.toast.is-on{opacity:1;transform:translate(-50%,0)}
+
+/* 说明条 */
+.note{display:flex;gap:var(--sp-2);align-items:flex-start;font-size:12px;color:var(--ink-3);
+  background:var(--surface-2);border:1px dashed var(--line-2);border-radius:var(--r-sm);padding:10px var(--sp-3);margin-bottom:var(--sp-4)}
+.note b{color:var(--ink-2);font-weight:600}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="brand"><span>E</span>Ecod</div>
+  <div class="seg" id="seg">
+    <button data-go="task" class="is-on">任务中心</button>
+    <button data-go="msg">消息中心</button>
+    <button data-go="ticket">工单</button>
+  </div>
+  <div class="top__right">
+    <button class="icobtn" id="theme" title="切换明暗"></button>
+  </div>
+</header>
+
+<div class="shell">
+  <aside class="side">
+    <div class="side__me">
+      <div class="ava">林</div>
+      <div>
+        <b>林知远</b>
+        <span>UID 10237 · 黄金会员</span>
+      </div>
+    </div>
+    <nav class="nav" id="nav"></nav>
+  </aside>
+
+  <main>
+    <!-- ============ 任务 ============ -->
+    <section class="panel is-on" data-panel="task">
+      <div class="phead">
+        <div>
+          <h2>任务中心</h2>
+          <p>完成任务得积分 · 积分可在积分页兑换会员与卡密</p>
+        </div>
+      </div>
+
+      <div class="sum">
+        <div class="sum__cell">
+          <small>我的积分</small>
+          <b data-balance>1,280</b>
+        </div>
+        <div class="sum__cell">
+          <small>连续签到</small>
+          <b>7<em>天</em></b>
+        </div>
+        <div class="sum__cell">
+          <small>今日任务</small>
+          <div class="sum__bar"><i data-todaybar style="width:50%"></i></div>
+          <span><em data-todaynum>2 / 4</em></span>
+        </div>
+        <button class="btn btn--primary">每日签到 +10</button>
+      </div>
+
+      <div id="tgroups"></div>
+    </section>
+
+    <!-- ============ 消息 ============ -->
+    <section class="panel" data-panel="msg">
+      <div class="phead">
+        <div>
+          <h2>消息中心</h2>
+          <p>互动、公告、审核结果与工单回复都在这里</p>
+        </div>
+      </div>
+
+      <div class="msgbar">
+        <div id="chips" style="display:flex;gap:8px;flex-wrap:wrap"></div>
+        <div class="msgbar__ops">
+          <button class="btn btn--ghost btn--sm" id="readall">全部已读</button>
+          <button class="btn btn--ghost btn--sm" id="clearread">清空已读</button>
+        </div>
+      </div>
+
+      <div class="msglist" id="msglist"></div>
+      <div class="more"><button class="btn btn--ghost btn--sm" id="morebtn">加载更多</button></div>
+    </section>
+
+    <!-- ============ 工单 ============ -->
+    <section class="panel" data-panel="ticket">
+      <div class="phead">
+        <div>
+          <h2>工单</h2>
+          <p>账号、付费、内容问题都可以提，客服回复会推站内消息</p>
+        </div>
+        <div class="spacer"></div>
+        <button class="btn btn--primary" id="newbtn">＋ 新建工单</button>
+      </div>
+
+      <div class="tstats">
+        <div class="tstat" data-s="open"><small>处理中</small><b id="st-open">2</b></div>
+        <div class="tstat" data-s="replied"><small>已回复</small><b id="st-replied">1</b></div>
+        <div class="tstat" data-s="resolved"><small>已解决</small><b id="st-resolved">4</b></div>
+      </div>
+
+      <form class="newform" id="newform" onsubmit="return false">
+        <label class="field">
+          <span>问题分类</span>
+          <select id="f-cat">
+            <option value="pay">付费与订单</option>
+            <option value="account">账号与登录</option>
+            <option value="report">内容举报</option>
+            <option value="idea">功能建议</option>
+            <option value="other">其他</option>
+          </select>
+        </label>
+        <label class="field">
+          <span>标题</span>
+          <input id="f-title" maxlength="60" placeholder="一句话说明问题，4–60 字">
+        </label>
+        <label class="field">
+          <span>详细描述</span>
+          <textarea id="f-body" maxlength="2000" placeholder="复现步骤、订单号、截图链接…"></textarea>
+        </label>
+        <div class="newform__ops">
+          <button type="button" class="btn" id="cancelbtn">取消</button>
+          <button type="button" class="btn btn--primary" id="submitbtn">提交工单</button>
+        </div>
+      </form>
+
+      <div class="tlist" id="tlist"></div>
+    </section>
+  </main>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ---------------- 图标 ---------------- */
+const P = {
+  trophy:'<path d="M7 4h10v4a5 5 0 0 1-10 0V4Z"/><path d="M7 5H4v2a3 3 0 0 0 3 3"/><path d="M17 5h3v2a3 3 0 0 1-3 3"/><path d="M12 13v4"/><path d="M8 21h8"/>',
+  user:'<circle cx="12" cy="8" r="3.5"/><path d="M5 20c0-3.6 3.1-5.5 7-5.5s7 1.9 7 5.5"/>',
+  medal:'<circle cx="12" cy="14" r="5"/><path d="M9 3l2 5M15 3l-2 5"/>',
+  zap:'<path d="M13 3 5 13h6l-1 8 8-10h-6l1-8Z"/>',
+  bell:'<path d="M6 9a6 6 0 0 1 12 0c0 5 2 6 2 6H4s2-1 2-6Z"/><path d="M10 19a2 2 0 0 0 4 0"/>',
+  edit:'<path d="M4 20h4L19 9l-4-4L4 16v4Z"/><path d="M14 6l4 4"/>',
+  comment:'<path d="M20 12a7 7 0 0 1-7 7H8l-4 3v-5.6A7 7 0 0 1 4 12a7 7 0 0 1 7-7h2a7 7 0 0 1 7 7Z"/>',
+  inbox:'<path d="M4 12 6 5h12l2 7v6a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-6Z"/><path d="M4 12h5l1 2h4l1-2h5"/>',
+  headset:'<path d="M4 14v-2a8 8 0 0 1 16 0v2"/><path d="M4 14h3v5H6a2 2 0 0 1-2-2v-3Z"/><path d="M20 14h-3v5h1a2 2 0 0 0 2-2v-3Z"/><path d="M17 20a3 3 0 0 1-3 2h-2"/>',
+  check:'<path d="M5 12.5 10 17.5 19 7"/>',
+  checkc:'<circle cx="12" cy="12" r="8.5"/><path d="M8.5 12.2 11 14.7l4.5-4.8"/>',
+  heart:'<path d="M12 20s-7-4.4-7-9.2A4 4 0 0 1 12 8a4 4 0 0 1 7 2.8C19 15.6 12 20 12 20Z"/>',
+  star:'<path d="m12 4 2.4 4.9 5.4.8-3.9 3.8.9 5.4-4.8-2.5-4.8 2.5.9-5.4L4.2 9.7l5.4-.8L12 4Z"/>',
+  shield:'<path d="M12 3 5 6v6c0 4.4 3 7.6 7 9 4-1.4 7-4.6 7-9V6l-7-3Z"/>',
+  ticket:'<path d="M4 8a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v2a2 2 0 0 0 0 4v2a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-2a2 2 0 0 0 0-4V8Z"/><path d="M12 8v8" stroke-dasharray="2 2"/>',
+  sun:'<circle cx="12" cy="12" r="4"/><path d="M12 3v2M12 19v2M3 12h2M19 12h2M5.6 5.6 7 7M17 17l1.4 1.4M18.4 5.6 17 7M7 17l-1.4 1.4"/>',
+  moon:'<path d="M20 14.5A8 8 0 0 1 9.5 4 8.5 8.5 0 1 0 20 14.5Z"/>',
+  chev:'<path d="m9 6 6 6-6 6"/>',
+  plus:'<path d="M12 5v14M5 12h14"/>',
+  clock:'<circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/>',
+  mail:'<rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/>',
+  alert:'<path d="M12 4 3 20h18L12 4Z"/><path d="M12 10v4M12 17h.01"/>'
+};
+const ic = (n,s=16)=>`<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+  stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">${P[n]||P.bell}</svg>`;
+
+/* ---------------- 状态 ---------------- */
+const state = { tab:'task', balance:1280, msgFilter:'all' };
+
+/* 侧栏 */
+const NAV = [
+  {k:'profile', t:'个人信息', i:'user'},
+  {k:'vip', t:'我的会员', i:'medal'},
+  {k:'task', t:'任务中心', i:'trophy', badge:3},
+  {k:'credits', t:'我的积分', i:'zap'},
+  {k:'msg', t:'消息中心', i:'bell', badge:5},
+  {k:'posts', t:'我的文章', i:'edit'},
+  {k:'social', t:'互动', i:'comment'},
+  {k:'orders', t:'订单', i:'inbox'},
+  {k:'ticket', t:'工单', i:'headset', badge:1}
+];
+const NAV_LIVE = ['task','msg','ticket'];
+
+/* ---------------- 任务数据 ---------------- */
+const GROUPS = [
+  {k:'newbie', t:'新手任务', d:'只能完成一次，完成后永久置灰', items:[
+    {k:'signup', t:'完成注册', d:'注册即达成，欢迎加入', rw:20, p:1, n:1, s:'claimed'},
+    {k:'post_first', t:'首次投稿', d:'发布第一篇免费或付费文章', rw:30, p:1, n:1, s:'claimable'},
+    {k:'comment_first', t:'首次评论', d:'在任意文章下留第一条评论', rw:10, p:0, n:1, s:'doing'},
+    {k:'follow_first', t:'首次关注', d:'关注一位你喜欢的作者', rw:5, p:0, n:1, s:'doing'}
+  ]},
+  {k:'daily', t:'日常任务', d:'每天 00:00 重置，进度按当日行为实时统计', items:[
+    {k:'checkin_daily', t:'每日签到', d:'签到可累计连续天数', rw:10, p:1, n:1, s:'claimed'},
+    {k:'post_daily', t:'每日投稿', d:'今天发布一篇文章', rw:15, p:0, n:1, s:'doing'},
+    {k:'comment_daily', t:'每日评论', d:'今天评论 3 条，可领 3 次', rw:5, p:2, n:3, s:'claimable'},
+    {k:'like_daily', t:'每日点赞', d:'今天点赞 5 次，可领 5 次', rw:2, p:1, n:5, s:'doing'}
+  ]},
+  {k:'total', t:'累计任务', d:'不随日期重置，达成即永久保留', items:[
+    {k:'days_30', t:'注册满 30 天', d:'从注册当日起算，自然日', rw:100, p:18, n:30, s:'doing'},
+    {k:'post_10', t:'累计投稿 10 篇', d:'已发布文章计入，草稿不算', rw:100, p:4, n:10, s:'doing'}
+  ]}
+];
+
+function renderTasks(){
+  const host = document.getElementById('tgroups');
+  host.innerHTML = GROUPS.map(g=>{
+    const done = g.items.filter(i=>i.s==='claimed').length;
+    return `<div class="tgroup">
+      <div class="tgroup__hd"><b>${g.t}</b><span>· ${g.d}</span><i>已完成 ${done}/${g.items.length}</i></div>
+      <div class="tgrid">${g.items.map(taskCard).join('')}</div>
+    </div>`;
+  }).join('');
+  document.getElementById('tgroups').querySelectorAll('[data-claim]').forEach(b=>{
+    b.addEventListener('click',()=>claim(b.dataset.claim));
+  });
+  updateSum();
+}
+
+function taskCard(it){
+  const pct = Math.min(100, Math.round(it.p / it.n * 100));
+  const btn = it.s==='claimed'
+    ? `<span class="tcard__done">${ic('check',13)} 已领取</span>`
+    : it.s==='claimable'
+      ? `<button class="btn btn--primary btn--sm" data-claim="${it.k}">领取 +${it.rw}</button>`
+      : `<button class="btn btn--sm" disabled>还差 ${it.n-it.p}</button>`;
+  return `<article class="tcard is-${it.s}" data-task="${it.k}">
+    <span class="tcard__ic">${ic(it.s==='claimed'?'checkc':'trophy',17)}</span>
+    <div class="tcard__body"><b>${it.t}</b><span>${it.d}</span></div>
+    <span class="tcard__rw">+${it.rw}</span>
+    <div class="tcard__foot">
+      <div class="tcard__bar"><i style="width:${pct}%"></i></div>
+      <span class="tcard__num">${it.p} / ${it.n}</span>
+      ${btn}
+    </div>
+  </article>`;
+}
+
+function claim(key){
+  const it = GROUPS.flatMap(g=>g.items).find(i=>i.k===key);
+  if (!it || it.s!=='claimable') return;
+  it.s = 'claimed'; it.p = it.n;
+  state.balance += it.rw;
+  document.querySelector('[data-balance]').textContent = state.balance.toLocaleString();
+  renderTasks();
+  toast(`领取成功，${ic('zap',13)} +${it.rw} 积分`);
+}
+
+function updateSum(){
+  const daily = GROUPS.find(g=>g.k==='daily').items;
+  const claimed = daily.filter(i=>i.s==='claimed').length;
+  document.querySelector('[data-todaynum]').textContent = `${claimed} / ${daily.length}`;
+  document.querySelector('[data-todaybar]').style.width = (claimed/daily.length*100)+'%';
+}
+
+/* ---------------- 消息数据 ---------------- */
+const MSGS = [
+  {id:1,k:'like',t:'陈屿 赞了你的文章',sub:'《暗色模式是怎么做到不脏的》',time:'2 分钟前',read:false,
+   body:'陈屿 在文章《暗色模式是怎么做到不脏的》给你点了赞。累计点赞 128 次。'},
+  {id:2,k:'reply',t:'苏沐 回复了你的评论',sub:'“这个 token 阶梯我抄了，感谢”',time:'26 分钟前',read:false,
+   body:'苏沐：这个 token 阶梯我抄了，感谢。顺带问下 8px 圆角是硬规定吗？'},
+  {id:3,k:'ticket',t:'工单有新回复',sub:'TK20261031-7F3A · 付费与订单',time:'1 小时前',read:false,
+   body:'客服：已核对你的订单，年付时长已补上，请刷新个人中心查看到期时间。'},
+  {id:4,k:'notice',t:'系统公告：积分规则调整',sub:'11 月 1 日起，投稿奖励上调至 30 积分',time:'今天 09:12',read:false,
+   body:'为鼓励原创，11 月 1 日起首次投稿奖励由 20 上调至 30，累计投稿 10 篇奖励维持 100 不变。'},
+  {id:5,k:'fav',t:'阿禾 收藏了你的文章',sub:'《用 CSS 变量做主题的那点事》',time:'昨天',read:false,
+   body:'阿禾 把你的文章加入了收藏夹「前端设计」。'},
+  {id:6,k:'friend',t:'你的友链申请已通过',sub:'站点：慢半拍 · 已加入友链页',time:'10-28',read:true,
+   body:'审核结果：通过。你的站点已出现在友链页，欢迎回访。'},
+  {id:7,k:'reply',t:'周野 回复了你的评论',sub:'“所以还是要先定字阶”',time:'10-27',read:true,
+   body:'周野：所以还是要先定字阶，再谈字号。'},
+  {id:8,k:'notice',t:'你的投稿已发布',sub:'《Widget 区域的取舍》已上线',time:'10-26',read:true,
+   body:'编辑已通过审核并完成排版，文章现已公开可访问。'}
+];
+const KICON = {like:'heart',fav:'star',reply:'comment',notice:'bell',friend:'shield',ticket:'ticket'};
+const KGROUP = {like:'interact',fav:'interact',reply:'interact',notice:'system',friend:'system',ticket:'system'};
+
+function renderChips(){
+  const unread = MSGS.filter(m=>!m.read).length;
+  const it = MSGS.filter(m=>KGROUP[m.k]==='interact').length;
+  const sys = MSGS.filter(m=>KGROUP[m.k]==='system').length;
+  const chips = [
+    {k:'all',t:'全部',n:MSGS.length},{k:'unread',t:'未读',n:unread},
+    {k:'interact',t:'互动',n:it},{k:'system',t:'系统',n:sys}
+  ];
+  document.getElementById('chips').innerHTML = chips.map(c=>
+    `<button class="chip${state.msgFilter===c.k?' is-on':''}" data-f="${c.k}">${c.t}<u>${c.n}</u></button>`
+  ).join('');
+  document.querySelectorAll('[data-f]').forEach(b=>b.onclick=()=>{ state.msgFilter=b.dataset.f; renderMsgs(); });
+}
+
+function renderMsgs(){
+  renderChips();
+  const list = MSGS.filter(m=> state.msgFilter==='all' ? true
+    : state.msgFilter==='unread' ? !m.read : KGROUP[m.k]===state.msgFilter);
+  const host = document.getElementById('msglist');
+  if (!list.length){
+    host.innerHTML = `<div class="empty"><span>${ic('mail',20)}</span><b>这里空着</b>
+      <p>${state.msgFilter==='unread'?'所有消息都已读完了':'该分类下暂时没有消息'}</p></div>`;
+    return;
+  }
+  host.innerHTML = list.map(m=>`<article class="mitem${m.read?'':' is-unread'}" data-k="${m.k}" data-id="${m.id}">
+    <span class="mitem__ic">${ic(KICON[m.k],16)}</span>
+    <div class="mitem__main"><b>${m.t}</b><span>${m.sub}</span></div>
+    <time>${m.time}</time>
+    <div class="mitem__more">${m.body}<em>查看详情 →</em></div>
+  </article>`).join('');
+  host.querySelectorAll('.mitem').forEach(el=>{
+    el.addEventListener('click',()=>{
+      const m = MSGS.find(x=>x.id==el.dataset.id);
+      if (!m.read){ m.read = true; el.classList.remove('is-unread'); state.navBadge--; paintNav(); }
+      el.classList.toggle('is-open');
+      renderChips();
+    });
+  });
+}
+
+document.getElementById('readall').onclick = ()=>{
+  MSGS.forEach(m=>m.read=true); state.navBadge=0; paintNav(); renderMsgs(); toast('已全部标记为已读');
+};
+document.getElementById('clearread').onclick = ()=>{
+  for (let i=MSGS.length-1;i>=0;i--) if (MSGS[i].read) MSGS.splice(i,1);
+  renderMsgs(); toast('已清空已读消息');
+};
+document.getElementById('morebtn').onclick = ()=> toast('原型：此处请求 offset=20 的下一页');
+
+/* ---------------- 工单数据 ---------------- */
+const CATS = {pay:'付费与订单',account:'账号与登录',report:'内容举报',idea:'功能建议',other:'其他'};
+let TICKETS = [
+  {id:3,no:'TK20261031-7F3A',cat:'pay',title:'会员续费后到期时间没有累加',
+   status:'replied',msgs:2,time:'10 分钟前',unread:true,
+   thread:[
+     {side:'me',who:'我',at:'昨天 20:14',txt:'续费了年付，但个人中心的到期时间还是旧的，重新登录也一样。订单号 EC202610300921。'},
+     {side:'staff',who:'客服 · 阿吉',at:'今天 09:02',txt:'已核对你的订单，年付时长已补上（+365 天），请刷新个人中心查看。若仍未生效请回复本工单。'}
+   ]},
+  {id:2,no:'TK20261030-1B22',cat:'account',title:'换邮箱后收不到验证邮件',
+   status:'open',msgs:1,time:'3 小时前',unread:false,
+   thread:[
+     {side:'me',who:'我',at:'今天 06:20',txt:'把账号邮箱换成 QQ 邮箱后一直收不到验证信，垃圾箱也翻过了。'}
+   ]},
+  {id:1,no:'TK20261024-93C1',cat:'report',title:'某篇文章疑似搬运',
+   status:'resolved',msgs:4,time:'10-24',unread:false,
+   thread:[
+     {side:'me',who:'我',at:'10-24 11:02',txt:'这篇文章和公众号「XXX」的原文几乎一样，请核实。'},
+     {side:'staff',who:'客服 · 阿吉',at:'10-24 15:40',txt:'已核实并下架，感谢反馈。'}
+   ]}
+];
+
+function ticketState(t){
+  if (t.status==='closed') return {k:'closed',t:'已关闭'};
+  if (t.status==='resolved') return {k:'resolved',t:'已解决'};
+  const last = t.thread[t.thread.length-1];
+  return last && last.side==='staff' ? {k:'replied',t:'已回复'} : {k:'open',t:'待处理'};
+}
+
+function renderTickets(){
+  const host = document.getElementById('tlist');
+  if (!TICKETS.length){
+    host.innerHTML = `<div class="empty"><span>${ic('inbox',20)}</span><b>还没有创建任何工单</b>
+      <p>账号、付费、内容问题都可以提，平均 6 小时内回复</p>
+      <button class="btn btn--primary btn--sm" onclick="document.getElementById('newbtn').click()">新建工单</button></div>`;
+  } else {
+    host.innerHTML = TICKETS.map(tk=>{
+      const st = ticketState(tk);
+      return `<div class="tk" data-id="${tk.id}">
+        <div class="tk__hd">
+          <span class="tk__no">${tk.no}</span>
+          <div class="tk__title">
+            <b>${tk.title}</b>
+            <div class="tk__meta"><span class="tk__cat">${CATS[tk.cat]}</span><span>·</span><span>${tk.msgs} 条消息</span><span>·</span><span>${tk.time}</span></div>
+          </div>
+          <div class="tk__right">
+            ${tk.unread?'<span class="tk__dot"></span>':''}
+            <span class="tk__state" data-s="${st.k}">${st.t}</span>
+            <span class="tk__chev">${ic('chev',14)}</span>
+          </div>
+        </div>
+        <div class="tk__body">
+          <div class="thread">${tk.thread.map(b=>`<div class="bub bub--${b.side}">
+            <div class="bub__meta"><b>${b.who}</b> · ${b.at}</div>
+            <div class="bub__txt">${b.txt}</div></div>`).join('')}</div>
+          ${tk.status==='closed'
+            ? `<div class="tk__closed">该工单已关闭，如需继续处理请新建工单。</div>`
+            : `<div class="tk__reply">
+                 <textarea placeholder="继续回复…" data-ta="${tk.id}"></textarea>
+                 <div class="tk__ops">
+                   <button class="btn btn--ghost btn--sm" data-close="${tk.id}">问题已解决，关闭工单</button>
+                   <span class="spacer"></span>
+                   <button class="btn btn--primary btn--sm" data-send="${tk.id}">发送回复</button>
+                 </div>
+               </div>`}
+        </div>
+      </div>`;
+    }).join('');
+  }
+  host.querySelectorAll('.tk__hd').forEach(h=>{
+    h.onclick = ()=>{
+      const card = h.parentNode;
+      const t = TICKETS.find(x=>x.id==card.dataset.id);
+      card.classList.toggle('is-open');
+      if (t.unread){ t.unread=false; renderTickets(); card.classList.add('is-open'); state.navBadge--; paintNav(); }
+    };
+  });
+  host.querySelectorAll('[data-send]').forEach(b=>{
+    b.onclick = e=>{
+      e.stopPropagation();
+      const id = b.dataset.send;
+      const ta = host.querySelector(`[data-ta="${id}"]`);
+      const txt = (ta.value||'').trim();
+      if (!txt){ toast('请输入回复内容'); return; }
+      const t = TICKETS.find(x=>x.id==id);
+      t.thread.push({side:'me',who:'我',at:'刚刚',txt});
+      t.msgs++; t.status='open'; t.time='刚刚';
+      renderTickets();
+      host.querySelector(`.tk[data-id="${id}"]`).classList.add('is-open');
+      toast('已发送，客服会收到提醒');
+    };
+  });
+  host.querySelectorAll('[data-close]').forEach(b=>{
+    b.onclick = e=>{
+      e.stopPropagation();
+      const t = TICKETS.find(x=>x.id==b.dataset.close);
+      t.status='closed'; t.time='刚刚';
+      renderTickets();
+      host.querySelector(`.tk[data-id="${t.id}"]`).classList.add('is-open');
+      toast('工单已关闭');
+    };
+  });
+  paintStats();
+}
+
+function paintStats(){
+  const c = {open:0,replied:0,resolved:0};
+  TICKETS.forEach(t=>{ const k=ticketState(t).k; if (c[k]!==undefined) c[k]++; });
+  document.getElementById('st-open').textContent = c.open;
+  document.getElementById('st-replied').textContent = c.replied;
+  document.getElementById('st-resolved').textContent = c.resolved;
+}
+
+document.getElementById('newbtn').onclick = ()=>{
+  const f = document.getElementById('newform');
+  f.classList.toggle('is-on');
+  if (f.classList.contains('is-on')) document.getElementById('f-title').focus();
+};
+document.getElementById('cancelbtn').onclick = ()=> document.getElementById('newform').classList.remove('is-on');
+document.getElementById('submitbtn').onclick = ()=>{
+  const title = document.getElementById('f-title').value.trim();
+  const body = document.getElementById('f-body').value.trim();
+  if (title.length<4){ toast('标题至少 4 个字'); return; }
+  if (body.length<10){ toast('详细描述至少 10 个字'); return; }
+  const id = Date.now();
+  TICKETS.unshift({id,no:'TK20261031-'+Math.random().toString(16).slice(2,6).toUpperCase(),
+    cat:document.getElementById('f-cat').value,title,status:'open',msgs:1,time:'刚刚',unread:false,
+    thread:[{side:'me',who:'我',at:'刚刚',txt:body}]});
+  document.getElementById('f-title').value=''; document.getElementById('f-body').value='';
+  document.getElementById('newform').classList.remove('is-on');
+  renderTickets();
+  toast('工单已提交，客服会尽快处理');
+};
+
+/* ---------------- 导航 / 切页 ---------------- */
+state.navBadge = 5;
+function paintNav(){
+  document.getElementById('nav').innerHTML = NAV.map(n=>{
+    const live = NAV_LIVE.includes(n.k);
+    const badge = n.k==='msg' ? (state.navBadge>0?state.navBadge:0) : (n.badge||0);
+    return `<button class="${n.k===state.tab?'is-on':''} ${live?'':'is-dim'}" data-tab="${n.k}" ${live?'':'title="原型未覆盖"'}>
+      ${ic(n.i,16)}<span>${n.t}</span>${badge?`<em class="badge">${badge}</em>`:''}</button>`;
+  }).join('');
+  document.querySelectorAll('[data-tab]').forEach(b=>{
+    b.onclick = ()=>{
+      const k = b.dataset.tab;
+      if (!NAV_LIVE.includes(k)){ toast('该标签页不在本次原型范围'); return; }
+      go(k);
+    };
+  });
+}
+function go(k){
+  state.tab = k;
+  document.querySelectorAll('.panel').forEach(p=>p.classList.toggle('is-on', p.dataset.panel===k));
+  document.querySelectorAll('#seg button').forEach(b=>b.classList.toggle('is-on', b.dataset.go===k));
+  paintNav();
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+document.querySelectorAll('#seg button').forEach(b=> b.onclick = ()=>go(b.dataset.go));
+
+/* ---------------- 主题 ---------------- */
+const qs = new URLSearchParams(location.search);
+if (qs.get('theme') === 'dark') document.documentElement.dataset.theme = 'dark';
+if (qs.get('p')) go(qs.get('p'));
+const themeBtn = document.getElementById('theme');
+function paintTheme(){
+  const dark = document.documentElement.dataset.theme==='dark';
+  themeBtn.innerHTML = ic(dark?'sun':'moon',17);
+}
+themeBtn.onclick = ()=>{
+  document.documentElement.dataset.theme =
+    document.documentElement.dataset.theme==='dark' ? 'light' : 'dark';
+  paintTheme();
+};
+
+/* ---------------- toast ---------------- */
+let tt;
+function toast(msg){
+  const el = document.getElementById('toast');
+  el.innerHTML = msg;
+  el.classList.add('is-on');
+  clearTimeout(tt);
+  tt = setTimeout(()=>el.classList.remove('is-on'), 2000);
+}
+
+/* ---------------- init ---------------- */
+paintTheme(); paintNav(); renderTasks(); renderMsgs(); renderTickets();
+</script>
+</body>
+</html>

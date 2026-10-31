@@ -54,7 +54,8 @@ while ($ecodCollCats->next()) {
     $ecodCollItems[] = [
         'mid'    => $ecodCollMid,
         'name'   => (string) $ecodCollCats->name,
-        'count'  => (int) $ecodCollCats->count,
+        /* 实时统计：metas.count 会滞后且不含子分类，与卡片点进去看到的归档条数对不上 */
+        'count'  => (int) (ecod_cat_stats($ecodCollMid)['count'] ?? 0),
         'url'    => $ecodCollUrl,
         'desc'   => trim((string) $ecodCollCats->description),
         'cover'  => $ecodCollCover,

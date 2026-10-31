@@ -194,6 +194,26 @@ $ecodLoginBg = trim((string) ecod_option('ELoginBg', ''));
                         <input class="ecod_input" type="password" name="confirm" required autocomplete="new-password"
                                minlength="8" maxlength="64" placeholder="再输入一次">
                     </label>
+                    <label class="ecod_login__field">
+                        <span>图形验证码</span>
+                        <span class="ecod_login__cap">
+                            <input class="ecod_input" type="text" name="captcha" required autocomplete="off" spellcheck="false"
+                                   inputmode="latin" maxlength="4" placeholder="4 位字符">
+                            <img class="ecod_login__capimg" data-ecod-captcha
+                                 src="<?php echo htmlspecialchars(ecod_api_url(), ENT_QUOTES, 'UTF-8'); ?>?action=captcha&amp;t=<?php echo time(); ?>-<?php echo mt_rand(100, 999); ?>"
+                                 alt="验证码，点击刷新" width="96" height="40">
+                        </span>
+                    </label>
+                    <?php if ($ecodAllowReset): /* 站点邮箱服务未开启时不发码，服务端同步跳过校验 */ ?>
+                    <label class="ecod_login__field">
+                        <span>邮箱验证码</span>
+                        <span class="ecod_login__code">
+                            <input class="ecod_input" type="text" name="code" required autocomplete="one-time-code"
+                                   inputmode="numeric" maxlength="6" placeholder="6 位数字">
+                            <button type="button" class="ecod_login__sendbtn" data-ecod-reg-send>获取验证码</button>
+                        </span>
+                    </label>
+                    <?php endif; ?>
                     <p class="ecod_login__msg" data-ecod-auth-msg="register" hidden></p>
                     <button type="submit" class="ecod-btn ecod_login__submit">注 册</button>
                     <p class="ecod_login__more">注册即代表同意本站点的用户协议与隐私政策。</p>

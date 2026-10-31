@@ -25,7 +25,7 @@ while ($ecodFocus->next()) {
         'date'      => date('Y-m-d', (int) $ecodFocus->created),
         'mdate'     => date('m-d', (int) $ecodFocus->created),
         'views'     => ecod_views($ecodFocus),
-        'comments'  => (int) $ecodFocus->commentsNum,
+        'comments'  => ecod_comment_count((int) $ecodFocus->cid),
         'cover'     => $ecodCover[0] ?? '',
     ];
 }

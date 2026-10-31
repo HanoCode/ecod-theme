@@ -46,6 +46,8 @@ require_once __DIR__ . '/core/site/notifs.php';
 require_once __DIR__ . '/core/pay/pay.php';
 require_once __DIR__ . '/core/pay/pay-channel.php';
 require_once __DIR__ . '/core/user/credits.php';
+require_once __DIR__ . '/core/user/tasks.php';
+require_once __DIR__ . '/core/support/tickets.php';
 require_once __DIR__ . '/core/user/referral.php';
 require_once __DIR__ . '/core/site/lottery.php';
 require_once __DIR__ . '/core/site/ads.php';
@@ -151,6 +153,69 @@ function ecod_api_visitor(): string
 function ecod_api_fingerprint(): string
 {
     return substr(hash('sha256', ecod_api_visitor() . '|ecod'), 0, 40);
+}
+
+/**
+ * 限流桶指纹：纯来源 IP
+ *
+ * 只用于频率账本（reg / flink / report / ai / poll 等动作桶），不进任何存储表。
+ * 不能掺 ecod_api_visitor()：无 cookie 的脚本每请求都会生成新 vid，
+ * 掺进去等于每个请求一个新桶，限流完全失效；纯 IP 下同源请求共享一个桶，
+ * 清 cookie / 不带 cookie 都无法重置。
+ */
+function ecod_api_bucket_fp(): string
+{
+    return (string) ($_SERVER['REMOTE_ADDR'] ?? '');
+}
+
+/**
+ * 轻量窗口限流（写操作）：每 IP 每 window 秒最多 limit 次
+ *
+ * 独立于 ecod_throttle_* 的分级失败账（那张账每 5 分钟返还一次，
+ * 适合验证码试错）；这里窗口内只增不减，表不可用时放行不拦正常用户。
+ *
+ * @return int 需要等待的秒数，0 表示放行
+ */
+function ecod_api_rate_wait(string $kind, int $limit, int $window): int
+{
+    if ($limit <= 0 || $window <= 0 || !ecod_throttle_persistent_ready()) {
+        return 0;
+    }
+    try {
+        $db = \Typecho\Db::get();
+        $key = hash('sha256', 'api:' . $kind . '|' . ($_SERVER['REMOTE_ADDR'] ?? '') . '|' . intdiv(time(), $window));
+        $row = $db->fetchRow(
+            $db->select('n')->from(ecod_throttle_table())->where('thkey = ?', $key)->limit(1)
+        );
+        return ($row && (int) $row['n'] >= $limit) ? max(1, $window - (time() % $window)) : 0;
+    } catch (\Throwable $e) {
+        return 0;
+    }
+}
+
+/**
+ * 窗口限流记一次
+ */
+function ecod_api_rate_hit(string $kind, int $window): void
+{
+    if ($window <= 0 || !ecod_throttle_persistent_ready()) {
+        return;
+    }
+    try {
+        $db = \Typecho\Db::get();
+        $table = ecod_throttle_table();
+        $now = time();
+        $key = hash('sha256', 'api:' . $kind . '|' . ($_SERVER['REMOTE_ADDR'] ?? '') . '|' . intdiv($now, $window));
+        $row = $db->fetchRow($db->select('n')->from($table)->where('thkey = ?', $key)->limit(1));
+        $n = ($row ? (int) $row['n'] : 0) + 1;
+        if ($row) {
+            $db->query($db->update($table)->rows(['n' => $n, 'last' => $now])->where('thkey = ?', $key));
+        } else {
+            $db->query($db->insert($table)->rows(['thkey' => $key, 'n' => $n, 'last' => $now]));
+        }
+    } catch (\Throwable $e) {
+        /* 落库失败只少一层限流，不影响正常请求 */
+    }
 }
 
 /**
@@ -362,7 +427,7 @@ if ($action === 'ai') {
     }
 
     /* 模型调用按次计费：命中缓存的请求不限，真正触发生成的才计一次 */
-    $ecodAiBucket = 'ai:' . ecod_api_fingerprint();
+    $ecodAiBucket = 'ai:' . ecod_api_bucket_fp();
     $ecodAiWait = ecod_throttle_guard($ecodAiBucket);
     if ($ecodAiWait > 0) {
         ecod_api_out(['ok' => false, 'error' => ecod_throttle_error($ecodAiWait)], 403);
@@ -575,7 +640,7 @@ if ($action === 'friend_apply') {
         ecod_api_out(['ok' => true, 'id' => 0, 'msg' => '审核通过后会出现在友链列表里']);
     }
 
-    $ecodBucket = 'flink:' . ecod_api_fingerprint();
+    $ecodBucket = 'flink:' . ecod_api_bucket_fp();
     $ecodWait = ecod_throttle_guard($ecodBucket);
     if ($ecodWait > 0) {
         ecod_api_out(['ok' => false, 'error' => ecod_throttle_error($ecodWait)], 403);
@@ -983,7 +1048,7 @@ if ($action === 'contribute_list') {
                 'title'    => (string) $row['title'],
                 'status'   => (string) $row['status'],
                 'created'  => (int) $row['created'],
-                'comments' => (int) $row['commentsNum'],
+                'comments' => ecod_comment_count((int) $row['cid']),
                 'views'    => (int) ($row['views'] ?? 0),
             ];
         }
@@ -1086,12 +1151,18 @@ if ($action === 'register') {
         ecod_api_out(['ok' => false, 'error' => '令牌校验失败，请刷新页面重试'], 403);
     }
 
-    $ecodBucket = 'reg:' . ecod_api_fingerprint();
+    $ecodBucket = 'reg:' . ecod_api_bucket_fp();
     $ecodWait = ecod_throttle_guard($ecodBucket);
     if ($ecodWait > 0) {
         ecod_api_out(['ok' => false, 'error' => ecod_throttle_error($ecodWait)], 403);
     }
+    /* 每次尝试都计账（成功后 clear），防止拿接口慢慢探测用户名/邮箱 */
     ecod_throttle_fail($ecodBucket);
+
+    /* 图形验证码：注册必须过人机验证（失败计一次，五次后进入分级冷却） */
+    if (!ecod_captcha_verify((string) ($_POST['captcha'] ?? ''))) {
+        ecod_api_out(['ok' => false, 'error' => '验证码不正确，请重新输入'], 403);
+    }
 
     $name = trim((string) ($_POST['name'] ?? ''));
     $mail = trim((string) ($_POST['mail'] ?? ''));
@@ -1106,6 +1177,12 @@ if ($action === 'register') {
     }
     if (!filter_var($mail, FILTER_VALIDATE_EMAIL)) {
         ecod_api_out(['ok' => false, 'error' => '请输入正确的邮箱地址'], 400);
+    }
+    /* 邮箱验证码：证明邮箱归属，杜绝批量占用他人邮箱注册；
+       站点没配邮箱服务时跳过（退回图形验证码 + 限流兜底），否则注册功能整个不可用 */
+    if (ecod_account_mail_ready()
+        && !ecod_account_mailcode_verify($mail, 'register', trim((string) ($_POST['code'] ?? '')))) {
+        ecod_api_out(['ok' => false, 'error' => '邮箱验证码不正确或已过期'], 403);
     }
     if (!ecod_api_password_ok($password)) {
         ecod_api_out(['ok' => false, 'error' => '密码需为 8-64 位且不能是常见弱密码'], 400);
@@ -1649,6 +1726,71 @@ if ($action === 'pay_create') {
     ]);
 }
 
+/* 为已存在的 pending 订单发起支付（收银台 ?order_no= 直达：广告位「去支付」、支付回跳续付） */
+if ($action === 'pay_order') {
+    if ((string) ($_SERVER['REQUEST_METHOD'] ?? 'GET') !== 'POST') {
+        ecod_api_out(['ok' => false, 'error' => 'Method not allowed'], 405);
+    }
+    if (!ecod_api_same_origin()) {
+        ecod_api_out(['ok' => false, 'error' => '非法请求来源'], 403);
+    }
+    if (!ecod_pay_enabled()) {
+        ecod_api_out(['ok' => false, 'error' => '本站暂未开启付费阅读'], 400);
+    }
+
+    $me = ecod_api_user();
+    if (!$me) {
+        ecod_api_out(['ok' => false, 'error' => '请先登录'], 401);
+    }
+    if (!ecod_account_token_ok((string) ($_POST['token'] ?? ''))) {
+        ecod_api_out(['ok' => false, 'error' => '页面已过期，请刷新重试'], 403);
+    }
+
+    $bucket = 'pay:' . (int) $me->uid;
+    $wait = ecod_throttle_guard($bucket);
+    if ($wait > 0) {
+        ecod_api_out(['ok' => false, 'error' => ecod_throttle_error($wait)], 429);
+    }
+    ecod_throttle_fail($bucket);
+
+    $uid = (int) $me->uid;
+    $orderNo = trim((string) ($_POST['order_no'] ?? ''));
+    $order = $orderNo !== '' ? ecod_pay_order_get($orderNo) : null;
+    if (!$order || (int) $order['uid'] !== $uid) {
+        ecod_api_out(['ok' => false, 'error' => '订单不存在'], 404);
+    }
+    if ((string) $order['status'] !== 'pending') {
+        ecod_api_out(['ok' => false, 'error' => '订单当前状态不可支付'], 400);
+    }
+
+    /* 通道：请求里没带就沿用下单时的通道；卡密只适用于新下单（卡自带权益），不适用已有订单 */
+    $channelId = (string) ($_POST['channel'] ?? '');
+    if ($channelId === '') {
+        $channelId = trim((string) $order['channel']) !== '' ? (string) $order['channel'] : ecod_pay_default_channel();
+    }
+    if ($channelId === 'card') {
+        ecod_api_out(['ok' => false, 'error' => '已有订单不能用卡密支付，请返回重新下单并选卡密通道'], 400);
+    }
+
+    try {
+        $channel = ecod_pay_channel($channelId);
+        $paytype = strtolower(trim((string) ($_POST['paytype'] ?? '')));
+        $payload = $channel->create($order, $paytype !== '' ? ['type' => $paytype] : []);
+    } catch (\Throwable $e) {
+        ecod_api_out(['ok' => false, 'error' => '支付通道不可用'], 500);
+    }
+
+    ecod_api_out([
+        'ok'       => true,
+        'order_no' => (string) $order['order_no'],
+        'mode'     => (string) ($payload['mode'] ?? 'manual'),
+        'url'      => (string) ($payload['url'] ?? ''),
+        'html'     => (string) ($payload['html'] ?? ''),
+        'tip'      => (string) ($payload['tip'] ?? ''),
+        'amount'   => (int) $order['amount'],
+    ]);
+}
+
 /* 卡密直兑（个人中心「我的会员」tab）：与收银台 card 通道共用同一核销函数 */
 if ($action === 'pay_redeem') {
     if ((string) ($_SERVER['REQUEST_METHOD'] ?? 'GET') !== 'POST') {
@@ -2001,9 +2143,18 @@ if ($action === 'fav_toggle') {
     if ((string) ($_SERVER['REQUEST_METHOD'] ?? 'GET') !== 'POST') {
         ecod_api_out(['ok' => false, 'error' => 'Method not allowed'], 405);
     }
+    if (!ecod_api_same_origin()) {
+        ecod_api_out(['ok' => false, 'error' => '非法请求来源'], 403);
+    }
     if ($cid <= 0) {
         ecod_api_out(['ok' => false, 'error' => 'Invalid cid'], 400);
     }
+    /* 每 IP 每分钟 20 次：收藏本身幂等，但插入会触发站内通知，裸奔会被刷爆通知箱 */
+    $ecodFavWait = ecod_api_rate_wait('fav', 20, 60);
+    if ($ecodFavWait > 0) {
+        ecod_api_out(['ok' => false, 'error' => '操作太频繁了，请 ' . $ecodFavWait . ' 秒后再试'], 429);
+    }
+    ecod_api_rate_hit('fav', 60);
 
     try {
         $db = \Typecho\Db::get();
@@ -2090,10 +2241,14 @@ if ($ecodNotifAction === 'notif_list') {
         ecod_api_out(['ok' => false, 'error' => '请先登录'], 401);
     }
     $ecodUid = (int) $ecodMe->uid;
+    $ecodLimit = (int) ($_GET['limit'] ?? 20) ?: 20;
+    $ecodOffset = max(0, (int) ($_GET['offset'] ?? 0));
     ecod_api_out([
         'ok'     => true,
         'unread' => ecod_notif_unread($ecodUid),
-        'list'   => ecod_notif_list($ecodUid, (int) ($_GET['limit'] ?? 20) ?: 20),
+        'list'   => ecod_notif_list($ecodUid, $ecodLimit, $ecodOffset),
+        'counts' => ecod_notif_counts($ecodUid),
+        'offset' => $ecodOffset,
     ]);
 }
 
@@ -2149,6 +2304,149 @@ if ($ecodNotifAction === 'notif_broadcast') {
 
     $ecodCount = ecod_notif_broadcast($ecodTitle, trim((string) ($_POST['body'] ?? '')), $ecodLink);
     ecod_api_out(['ok' => true, 'count' => $ecodCount, 'msg' => '已推送给 ' . $ecodCount . ' 位用户']);
+}
+
+/* ------------------------------------------------------------------
+ * 任务中心：登录用户专属
+ *
+ *   GET  ?action=task_list    任务全量（进度实时 COUNT，不落库）
+ *   POST ?action=task_claim   领取（key），幂等靠 ecod_task_claims 唯一键
+ *
+ * 积分总开关关闭时整块不下发——前端 tab 也据此隐藏，避免点了必被拒。
+ * ---------------------------------------------------------------- */
+if ($action === 'task_list') {
+    $ecodMe = ecod_api_user();
+    if (!$ecodMe) {
+        ecod_api_out(['ok' => false, 'error' => '请先登录'], 401);
+    }
+    if (!ecod_credits_enabled()) {
+        ecod_api_out(['ok' => false, 'error' => '积分未开启'], 403);
+    }
+    ecod_api_out(['ok' => true] + ecod_tasks_list((int) $ecodMe->uid));
+}
+
+if ($action === 'task_claim') {
+    if ((string) ($_SERVER['REQUEST_METHOD'] ?? 'GET') !== 'POST') {
+        ecod_api_out(['ok' => false, 'error' => 'Method not allowed'], 405);
+    }
+    if (!ecod_api_same_origin()) {
+        ecod_api_out(['ok' => false, 'error' => '非法请求来源'], 403);
+    }
+    $ecodMe = ecod_api_user();
+    if (!$ecodMe) {
+        ecod_api_out(['ok' => false, 'error' => '请先登录'], 401);
+    }
+    if (!ecod_account_token_ok((string) ($_POST['token'] ?? ''))) {
+        ecod_api_out(['ok' => false, 'error' => '页面已过期，请刷新重试'], 403);
+    }
+    if (!ecod_credits_enabled()) {
+        ecod_api_out(['ok' => false, 'error' => '积分未开启'], 403);
+    }
+
+    $ecodKey = trim((string) ($_POST['key'] ?? ''));
+    if ($ecodKey === '') {
+        ecod_api_out(['ok' => false, 'error' => '缺少任务标识'], 400);
+    }
+
+    $ecodResult = ecod_tasks_claim((int) $ecodMe->uid, $ecodKey);
+    if (empty($ecodResult['ok'])) {
+        ecod_api_out($ecodResult, 400);
+    }
+    ecod_api_out($ecodResult);
+}
+
+/* ------------------------------------------------------------------
+ * 工单：用户侧完整闭环（提交 / 回复 / 关闭）
+ *
+ *   GET  ?action=ticket_list    status? page?
+ *   GET  ?action=ticket_detail  id
+ *   POST ?action=ticket_create  cat title body token
+ *   POST ?action=ticket_reply   id body token
+ *   POST ?action=ticket_close   id token
+ *
+ * 读接口只校验登录（本人 uid 过滤）；写接口额外校验同源 + 令牌。
+ * ---------------------------------------------------------------- */
+if (in_array($action, ['ticket_list', 'ticket_detail', 'ticket_create', 'ticket_reply', 'ticket_close'], true)) {
+    $ecodMe = ecod_api_user();
+    if (!$ecodMe) {
+        ecod_api_out(['ok' => false, 'error' => '请先登录'], 401);
+    }
+    $ecodUid = (int) $ecodMe->uid;
+
+    if ($action === 'ticket_list') {
+        $ecodStatus = (string) ($_GET['status'] ?? '');
+        if (!in_array($ecodStatus, ['', 'pending', 'replied', 'resolved', 'closed'], true)) {
+            $ecodStatus = '';
+        }
+        $ecodPage = max(1, (int) ($_GET['page'] ?? 1));
+        $ecodData = ecod_ticket_list($ecodUid, $ecodStatus, $ecodPage, 20);
+        ecod_api_out([
+            'ok'       => true,
+            'items'    => $ecodData['items'],
+            'stats'    => $ecodData['stats'],
+            'has_more' => $ecodData['has_more'],
+            'page'     => $ecodPage,
+        ]);
+    }
+
+    if ($action === 'ticket_detail') {
+        $ecodId = (int) ($_GET['id'] ?? 0);
+        if ($ecodId <= 0) {
+            ecod_api_out(['ok' => false, 'error' => '缺少工单 id'], 400);
+        }
+        $ecodData = ecod_ticket_detail($ecodUid, $ecodId);
+        ecod_api_out($ecodData, empty($ecodData['ok']) ? 400 : 200);
+    }
+
+    /* 以下为写操作 */
+    if ((string) ($_SERVER['REQUEST_METHOD'] ?? 'GET') !== 'POST') {
+        ecod_api_out(['ok' => false, 'error' => 'Method not allowed'], 405);
+    }
+    if (!ecod_api_same_origin()) {
+        ecod_api_out(['ok' => false, 'error' => '非法请求来源'], 403);
+    }
+    if (!ecod_account_token_ok((string) ($_POST['token'] ?? ''))) {
+        ecod_api_out(['ok' => false, 'error' => '页面已过期，请刷新重试'], 403);
+    }
+
+    if ($action === 'ticket_create') {
+        /* 频控在 ecod_ticket_create 内做（24h ≤5 单、未关闭 ≤3 单），
+           不再叠 throttle——正常用户一天提 5 单不该被锁 */
+        $ecodData = ecod_ticket_create(
+            $ecodUid,
+            (string) ($_POST['cat'] ?? 'other'),
+            (string) ($_POST['title'] ?? ''),
+            (string) ($_POST['body'] ?? '')
+        );
+        if (empty($ecodData['ok'])) {
+            ecod_api_out($ecodData, 400);
+        }
+        ecod_api_out($ecodData);
+    }
+
+    if ($action === 'ticket_reply') {
+        $ecodId = (int) ($_POST['id'] ?? 0);
+        if ($ecodId <= 0) {
+            ecod_api_out(['ok' => false, 'error' => '缺少工单 id'], 400);
+        }
+        $ecodData = ecod_ticket_reply($ecodUid, $ecodId, (string) ($_POST['body'] ?? ''));
+        if (empty($ecodData['ok'])) {
+            ecod_api_out($ecodData, 400);
+        }
+        ecod_api_out($ecodData);
+    }
+
+    if ($action === 'ticket_close') {
+        $ecodId = (int) ($_POST['id'] ?? 0);
+        if ($ecodId <= 0) {
+            ecod_api_out(['ok' => false, 'error' => '缺少工单 id'], 400);
+        }
+        $ecodData = ecod_ticket_close($ecodUid, $ecodId);
+        if (empty($ecodData['ok'])) {
+            ecod_api_out($ecodData, 400);
+        }
+        ecod_api_out($ecodData);
+    }
 }
 
 /* ------------------------------------------------------------------
@@ -2210,7 +2508,7 @@ if ($action === 'report') {
         }
 
         /* 分级限流：与登录同一套账本，重复举报越刷越慢（每次提交都记账，成功不清零） */
-        $ecodRepBucket = 'report:' . ecod_api_fingerprint();
+        $ecodRepBucket = 'report:' . ecod_api_bucket_fp();
         $ecodRepWait = ecod_throttle_guard($ecodRepBucket);
         if ($ecodRepWait > 0) {
             ecod_api_out(['ok' => false, 'error' => ecod_throttle_error($ecodRepWait)], 429);
@@ -2389,6 +2687,20 @@ if ($action === 'favs_sync') {
  * ---------------------------------------------------------------- */
 
 if ($action === 'clike' || $action === 'cstate') {
+    /* 点赞是写操作（插行 + 站内通知），同源 + 每 IP 每分钟 30 次；cstate 是只读查询不限 */
+    $ecodClikePost = $action === 'clike'
+        && (string) ($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST';
+    if ($ecodClikePost) {
+        if (!ecod_api_same_origin()) {
+            ecod_api_out(['ok' => false, 'error' => '非法请求来源'], 403);
+        }
+        $ecodClikeWait = ecod_api_rate_wait('clike', 30, 60);
+        if ($ecodClikeWait > 0) {
+            ecod_api_out(['ok' => false, 'error' => '操作太频繁了，请 ' . $ecodClikeWait . ' 秒后再试'], 429);
+        }
+        ecod_api_rate_hit('clike', 60);
+    }
+
     try {
         $db = \Typecho\Db::get();
         $table = ecod_clikes_table();
@@ -2713,7 +3025,102 @@ function ecod_api_poll_fingerprint(): string
     return ecod_api_fav_fingerprint();
 }
 
-/** 读取一次投票的汇总：各选项票数、总人数、我投了谁 */
+/**
+ * 投票者头像堆叠：最近 5 位投票者
+ *
+ * 登录用户取 uid 对应的昵称 / 头像（口径同 ecod_api_post_likers）；
+ * 游客没有身份信息，给一条 guest 占位记录（前端渲染默认占位头像）。
+ * 表上有 (poll, fp) 唯一索引，一人（指纹 / uid）只会有一行。
+ */
+function ecod_api_poll_voters(\Typecho\Db $db, string $poll, int $limit = 5): array
+{
+    $limit = max(1, min(10, $limit));
+    try {
+        $rows = $db->fetchAll(
+            $db->select('uid', 'fp', 'created')->from('table.ecod_polls_votes')
+                ->where('poll = ?', $poll)
+                ->order('created', \Typecho\Db::SORT_DESC)
+                ->limit($limit * 4)
+        );
+        if (!$rows) {
+            return [];
+        }
+
+        /* 按时间倒序挑人：登录按 uid 去重，游客按指纹去重 */
+        $picked = [];
+        $seenUid = [];
+        $seenFp = [];
+        foreach ($rows as $row) {
+            $uid = (int) ($row['uid'] ?? 0);
+            $fp = (string) ($row['fp'] ?? '');
+            if ($uid > 0) {
+                if (isset($seenUid[$uid])) {
+                    continue;
+                }
+                $seenUid[$uid] = true;
+            } else {
+                if ($fp === '' || isset($seenFp[$fp])) {
+                    continue;
+                }
+                $seenFp[$fp] = true;
+            }
+            $picked[] = $uid;
+            if (count($picked) >= $limit) {
+                break;
+            }
+        }
+        if (!$picked) {
+            return [];
+        }
+
+        /* 批量取登录用户昵称 */
+        $uids = array_values(array_filter($picked, static fn (int $uid): bool => $uid > 0));
+        $names = [];
+        if ($uids) {
+            foreach ($db->fetchAll(
+                $db->select('uid', 'screenName', 'name')->from('table.users')
+                    ->where('uid IN (' . implode(',', $uids) . ')')
+            ) as $u) {
+                $names[(int) $u['uid']] = trim((string) ($u['screenName'] ?: $u['name']));
+            }
+        }
+
+        /* 本地头像池：确定性选图（与 ecod_api_post_likers 同算法） */
+        $pool = glob(__DIR__ . '/assets/avatar/*.webp');
+        if (is_array($pool) && $pool) {
+            sort($pool);
+        } else {
+            $pool = [];
+        }
+
+        $out = [];
+        foreach ($picked as $uid) {
+            if ($uid <= 0) {
+                /* 游客：无昵称、无头像，前端用默认占位头像 */
+                $out[] = ['name' => '', 'avatar' => '', 'guest' => true];
+                continue;
+            }
+            $name = $names[$uid] ?? '';
+            if ($name === '') {
+                $out[] = ['name' => '', 'avatar' => '', 'guest' => true];
+                continue;
+            }
+            $avatar = ecod_account_avatar_url($uid);
+            if ($avatar === '' && $pool) {
+                $file = $pool[abs(crc32('uid:' . $uid)) % count($pool)];
+                /* 主题内相对段：__DIR__ 距站点根去掉前缀，配 mtime 版本号防缓存 */
+                $rel = str_replace(rtrim(__TYPECHO_ROOT_DIR__, '/'), '', __DIR__) . '/assets/avatar/' . basename($file);
+                $avatar = $rel . '?v=' . (string) filemtime($file);
+            }
+            $out[] = ['name' => $name, 'avatar' => $avatar];
+        }
+        return $out;
+    } catch (\Throwable $e) {
+        return [];
+    }
+}
+
+/** 读取一次投票的汇总：各选项票数、总人数、我投了谁、最近投票者头像组 */
 function ecod_api_poll_tally(\Typecho\Db $db, string $poll, string $fp): array
 {
     $rows = $db->fetchAll(
@@ -2723,7 +3130,15 @@ function ecod_api_poll_tally(\Typecho\Db $db, string $poll, string $fp): array
     $total = 0;
     $mine = '';
     foreach ($rows ?: [] as $row) {
-        $opts = array_filter(array_map('intval', explode(',', (string) $row['opts'])));
+        /* 注意：不能 array_filter 直接过，下标 0 是合法选项（会被当假值丢掉），
+           这里只滤掉空串与非数字 */
+        $opts = [];
+        foreach (explode(',', (string) $row['opts']) as $one) {
+            $one = trim($one);
+            if ($one !== '' && ctype_digit($one)) {
+                $opts[] = (int) $one;
+            }
+        }
         if (!$opts) {
             continue;
         }
@@ -2736,7 +3151,7 @@ function ecod_api_poll_tally(\Typecho\Db $db, string $poll, string $fp): array
         }
     }
     ksort($counts);
-    return ['total' => $total, 'counts' => $counts, 'mine' => $mine];
+    return ['total' => $total, 'counts' => $counts, 'mine' => $mine, 'voters' => ecod_api_poll_voters($db, $poll)];
 }
 
 if ($action === 'poll_state') {
@@ -2786,11 +3201,11 @@ if ($action === 'poll_vote') {
     $uid = $me ? (int) $me->uid : 0;
     $fp = ecod_api_poll_fingerprint();
 
-    $wait = ecod_throttle_guard('poll:' . $fp);
+    $wait = ecod_throttle_guard('poll:' . ecod_api_bucket_fp());
     if ($wait > 0) {
         ecod_api_out(['ok' => false, 'error' => ecod_throttle_error($wait)], 429);
     }
-    ecod_throttle_fail('poll:' . $fp);
+    ecod_throttle_fail('poll:' . ecod_api_bucket_fp());
 
     try {
         $db = \Typecho\Db::get();
@@ -3084,7 +3499,7 @@ if ($action === 'ad_apply') {
         'title'   => (string) ($_POST['title'] ?? ''),
         'image'   => (string) ($_POST['image'] ?? ''),
         'link'    => (string) ($_POST['link'] ?? ''),
-        'days'    => (int) ($_POST['days'] ?? 0),
+        'units'   => (int) ($_POST['units'] ?? ($_POST['days'] ?? 0)),
         'channel' => (string) ($_POST['channel'] ?? 'manual'),
     ]);
     if (empty($ecodAdRes['ok'])) {
@@ -3104,6 +3519,18 @@ if ($action !== 'like') {
 
 if ($cid <= 0) {
     ecod_api_out(['ok' => false, 'error' => 'Invalid cid'], 400);
+}
+
+/* 点赞写操作：同源 + 每 IP 每分钟 30 次（插入会触发通知与积分，不能裸奔） */
+if ((string) ($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
+    if (!ecod_api_same_origin()) {
+        ecod_api_out(['ok' => false, 'error' => '非法请求来源'], 403);
+    }
+    $ecodLikeWait = ecod_api_rate_wait('like', 30, 60);
+    if ($ecodLikeWait > 0) {
+        ecod_api_out(['ok' => false, 'error' => '操作太频繁了，请 ' . $ecodLikeWait . ' 秒后再试'], 429);
+    }
+    ecod_api_rate_hit('like', 60);
 }
 
 try {

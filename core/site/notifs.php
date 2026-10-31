@@ -24,6 +24,13 @@ if (!defined('__TYPECHO_ROOT_DIR__')) {
     exit;
 }
 
+/* 被 Console 插件等外部上下文直接 require 时，schema 层不一定已加载
+   （函数.php 只在主题渲染链路里 require 它）——缺了就地补齐，
+   否则 ecod_notifs_ensure 会因 ecod_schema_adapter 未定义而静默失败 */
+if (!function_exists('ecod_schema_adapter')) {
+    require_once __DIR__ . '/../lib/schema.php';
+}
+
 /**
  * 表名（带前缀）
  */
@@ -138,7 +145,7 @@ function ecod_notifs_call(callable $fn)
  */
 function ecod_notif_push(int $uid, string $type, string $title, string $body = '', string $link = '', string $actor = ''): bool
 {
-    if ($uid <= 0 || !in_array($type, ['reply', 'friend', 'like', 'fav', 'notice'], true)) {
+    if ($uid <= 0 || !in_array($type, ['reply', 'friend', 'like', 'fav', 'notice', 'ticket'], true)) {
         return false;
     }
     $title = trim($title);
@@ -196,17 +203,24 @@ function ecod_notif_unread(int $uid): int
 /**
  * 消息列表（倒序，含最新 $limit 条）
  *
+ * $offset 用于「加载更多」增量取数；个人中心消息中心一次拉 50 条，
+ * 分类筛选在前端做（type 只有 6 种，映射成 4 个 chip）。
+ *
  * @return array<int, array{id:int,type:string,title:string,body:string,link:string,actor:string,is_read:int,created:int}>
  */
-function ecod_notif_list(int $uid, int $limit = 20): array
+function ecod_notif_list(int $uid, int $limit = 20, int $offset = 0): array
 {
-    $rows = (array) (ecod_notifs_call(static function (\Typecho\Db $db) use ($uid, $limit) {
+    $limit = max(1, min(50, $limit));
+    $offset = max(0, $offset);
+
+    $rows = (array) (ecod_notifs_call(static function (\Typecho\Db $db) use ($uid, $limit, $offset) {
         return $db->fetchAll(
             $db->select()->from(ecod_notifs_table())
                 ->where('uid = ?', $uid)
                 ->order('created', \Typecho\Db::SORT_DESC)
                 ->order('id', \Typecho\Db::SORT_DESC)
-                ->limit(max(1, min(50, $limit)))
+                ->limit($limit)
+                ->offset($offset)
         );
     }) ?? []);
 
@@ -224,6 +238,46 @@ function ecod_notif_list(int $uid, int $limit = 20): array
         ];
     }
     return $list;
+}
+
+/**
+ * 分类计数（消息中心 chip 上的数字）
+ *
+ * 分类是纯展示映射，表结构零改动：互动 = 点赞/收藏/回复，系统 = 公告/友链/工单。
+ *
+ * @return array{all:int, unread:int, interact:int, system:int}
+ */
+function ecod_notif_counts(int $uid): array
+{
+    $out = ['all' => 0, 'unread' => 0, 'interact' => 0, 'system' => 0];
+    if ($uid <= 0) {
+        return $out;
+    }
+
+    $num = static function (callable $build) {
+        /* 闭包只负责拼 Query，真正执行（fetchRow）在这里做 */
+        $row = ecod_notifs_call(static function (\Typecho\Db $db) use ($build) {
+            return $db->fetchRow($build($db));
+        });
+        return is_array($row) ? (int) ($row['num'] ?? 0) : 0;
+    };
+
+    $out['all'] = $num(static function (\Typecho\Db $db) use ($uid) {
+        return $db->select('COUNT(*) AS num')->from(ecod_notifs_table())->where('uid = ?', $uid);
+    });
+    $out['unread'] = ecod_notif_unread($uid);
+    $out['interact'] = $num(static function (\Typecho\Db $db) use ($uid) {
+        return $db->select('COUNT(*) AS num')->from(ecod_notifs_table())
+            ->where('uid = ?', $uid)
+            ->where('type = ? OR type = ? OR type = ?', 'like', 'fav', 'reply');
+    });
+    $out['system'] = $num(static function (\Typecho\Db $db) use ($uid) {
+        return $db->select('COUNT(*) AS num')->from(ecod_notifs_table())
+            ->where('uid = ?', $uid)
+            ->where('type = ? OR type = ? OR type = ?', 'notice', 'friend', 'ticket');
+    });
+
+    return $out;
 }
 
 /**

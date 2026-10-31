@@ -34,12 +34,40 @@ $ecodPlan = (string) ($_GET['plan'] ?? 'month');
 $ecodOrderNo = trim((string) ($_GET['order_no'] ?? ''));
 
 $ecodError = '';
-$ecodItem = null;      /* ['title'=>..., 'amount'=>0, 'origin'=>0, 'days'=>0, 'kind'=>'post|vip', 'target'=>cid, 'level'=>0, 'plan'=>''] */
+$ecodItem = null;      /* ['title'=>..., 'amount'=>0, 'origin'=>0, 'days'=>0, 'kind'=>'post|vip|ad', 'target'=>cid, 'level'=>0, 'plan'=>''] */
 $ecodOwned = false;
 $ecodPermalink = '';
 
+/* ?order_no= 直达（支付回跳 / 广告位「去支付」）：按已有订单渲染，不按 kind/post 参数新购 */
+$ecodFromOrder = false;
+if ($ecodOrderNo !== '' && $ecodUid > 0 && $ecodCid <= 0 && !isset($_GET['kind'])) {
+    $ecodOrderRow = ecod_pay_order_get($ecodOrderNo);
+    if ($ecodOrderRow && (int) $ecodOrderRow['uid'] === $ecodUid
+        && in_array((string) $ecodOrderRow['kind'], ['post', 'vip', 'ad'], true)) {
+        if (!in_array((string) $ecodOrderRow['status'], ['pending', 'paid'], true)) {
+            $ecodError = '订单已关闭或不可支付，请重新下单';
+        } else {
+            $ecodFromOrder = true;
+            $ecodOrderKind = (string) $ecodOrderRow['kind'];
+            $ecodKind = $ecodOrderKind === 'vip' ? 'vip' : ($ecodOrderKind === 'ad' ? 'ad' : 'post');
+            $ecodItem = [
+                'title'  => (string) $ecodOrderRow['title'],
+                'amount' => (int) $ecodOrderRow['amount'],
+                'origin' => 0,
+                'days'   => (int) $ecodOrderRow['days'],
+                'kind'   => $ecodKind,
+                'target' => (int) $ecodOrderRow['target'],
+                'level'  => (int) $ecodOrderRow['level'],
+                'plan'   => '',
+            ];
+        }
+    }
+}
+
 if (!ecod_pay_enabled()) {
     $ecodError = '本站暂未开启付费阅读';
+} elseif ($ecodFromOrder) {
+    /* 商品信息已按订单行渲染，无需再按 kind/post 解析 */
 } elseif ($ecodKind === 'post') {
     if ($ecodCid <= 0) {
         $ecodError = '缺少要购买的文章';
@@ -137,6 +165,10 @@ if (!ecod_pay_enabled()) {
 }
 
 $ecodChannels = ecod_pay_channel_list();
+/* 已有订单不能用卡密通道：渠道列表里去掉，避免默认选中后点「继续支付」被拒 */
+if ($ecodFromOrder) {
+    unset($ecodChannels['card']);
+}
 $ecodToken = ecod_account_token();
 $ecodLoginHref = ecod_pay_login_url((string) ($_SERVER['REQUEST_URI'] ?? ''));
 $ecodCurrency = ecod_pay_currency();
@@ -168,7 +200,7 @@ $ecodEpayType = (string) ecod_option('EPayEpayType', 'alipay') === 'wxpay' ? 'wx
         <span aria-current="page">收银台</span>
     </nav>
 
-    <?php ecod_page_hero('收银台', '确认订单', '支付成功后立即解锁，权益绑定当前账号。', $ecodMeta); ?>
+    <?php ecod_page_hero('收银台', '确认订单', $ecodKind === 'ad' ? '支付完成后经审核上线，进度可在「广告投放」页查看。' : '支付成功后立即解锁，权益绑定当前账号。', $ecodMeta); ?>
 
     <div class="ecod_cashier" data-ecod-cashier
          data-token="<?php echo htmlspecialchars($ecodToken, ENT_QUOTES, 'UTF-8'); ?>"
@@ -177,6 +209,7 @@ $ecodEpayType = (string) ecod_option('EPayEpayType', 'alipay') === 'wxpay' ? 'wx
          data-cid="<?php echo (int) $ecodCid; ?>"
          data-level="<?php echo (int) $ecodLevel; ?>"
          data-plan="<?php echo htmlspecialchars($ecodPlan, ENT_QUOTES, 'UTF-8'); ?>"
+         <?php if ($ecodFromOrder): ?>data-order-no="<?php echo htmlspecialchars($ecodOrderNo, ENT_QUOTES, 'UTF-8'); ?>"<?php endif; ?>
          data-permalink="<?php echo htmlspecialchars($ecodPermalink, ENT_QUOTES, 'UTF-8'); ?>"
          data-uc="<?php echo htmlspecialchars((function () {
              $uc = function_exists('ecod_pages_url') ? ecod_pages_url('user') : '';
@@ -194,7 +227,7 @@ $ecodEpayType = (string) ecod_option('EPayEpayType', 'alipay') === 'wxpay' ? 'wx
              }
              return $uc;
          })(), ENT_QUOTES, 'UTF-8'); ?>"
-         <?php if ($ecodOrderState === 'pending'): ?>data-resume-order="<?php echo htmlspecialchars($ecodOrderNo, ENT_QUOTES, 'UTF-8'); ?>"<?php endif; ?>>
+         <?php if ($ecodEpayFlag !== '' && $ecodOrderState === 'pending'): ?>data-resume-order="<?php echo htmlspecialchars($ecodOrderNo, ENT_QUOTES, 'UTF-8'); ?>"<?php endif; ?>>
 
         <?php if ($ecodError !== ''): ?>
             <?php ecod_empty('alert', htmlspecialchars($ecodError, ENT_QUOTES, 'UTF-8'), '<a href="' . $this->options->siteUrl . '">返回首页</a>'); ?>
@@ -242,7 +275,7 @@ $ecodEpayType = (string) ecod_option('EPayEpayType', 'alipay') === 'wxpay' ? 'wx
                 <?php else: ?>
                     <?php if ($ecodOrderState === 'paid'): ?>
                         <p class="ecod_cashier__status is-ok">
-                            <?php echo ecod_icon('check', 13); ?>订单已支付，权益已到账。
+                            <?php echo ecod_icon('check', 13); ?><?php echo $ecodKind === 'ad' ? '订单已支付，广告上线进度可在「广告投放」页查看。' : '订单已支付，权益已到账。'; ?>
                         </p>
                     <?php elseif ($ecodOrderState === 'pending'): ?>
                         <p class="ecod_cashier__status <?php echo $ecodEpayFlag === 'fail' ? 'is-bad' : ''; ?>">
@@ -272,7 +305,7 @@ $ecodEpayType = (string) ecod_option('EPayEpayType', 'alipay') === 'wxpay' ? 'wx
                     <?php endif; ?>
 
                     <div class="ecod_cashier__pane" data-cashier-pane>
-                        <p>点击下方按钮生成订单，按提示完成付款后会自动解锁。</p>
+                        <p><?php echo $ecodFromOrder ? '这是尚未支付完成的订单，点击下方按钮继续支付。' : '点击下方按钮生成订单，按提示完成付款后会自动解锁。'; ?></p>
                     </div>
 
                     <div class="ecod_cashier__card" data-cashier-card hidden>
@@ -287,7 +320,7 @@ $ecodEpayType = (string) ecod_option('EPayEpayType', 'alipay') === 'wxpay' ? 'wx
 
                     <p style="margin-top:16px">
                         <button type="button" class="ecod_cashier__pay" data-cashier-submit>
-                            <?php echo ecod_icon('zap', 14); ?>生成订单
+                            <?php echo ecod_icon('zap', 14); ?><?php echo $ecodFromOrder ? '继续支付' : '生成订单'; ?>
                         </button>
                     </p>
                     <p class="ecod_pay__note" data-cashier-order hidden></p>

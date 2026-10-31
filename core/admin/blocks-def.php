@@ -922,10 +922,9 @@ ecod_block_define('act', [
             'default' => 'bottom',
             'options' => [
                 'bottom' => '文末动作条（默认）',
-                'side'   => '侧边悬浮栏（宽屏侧栏，窄屏回落文末）',
-                'both'   => '文末 + 侧边悬浮栏',
+                'side'   => '侧边悬浮栏（宽屏，窄屏回落文末）',
             ],
-            'desc'    => '侧边悬浮栏在 ≥1200px 宽屏出现在正文一侧，附阅读进度竖条与返回顶部',
+            'desc'    => '二选一：侧边悬浮栏在 ≥1200px 宽屏出现在侧栏对面一侧，窄屏自动回落为文末动作条；旧值 both 按文末动作条处理',
         ],
         'like'  => [
             'label'   => '点赞',
@@ -966,7 +965,7 @@ ecod_block_define('act', [
 
 ecod_block_define('tts', [
     'name'   => '阅读工具条',
-    'desc'   => '吸顶工具条：目录 / 朗读（浏览器语音合成）/ 字号 / 阅读进度，吸收原「朗读条」横幅形态；形态可在「全站设置 → 阅读工具条形态」切换为侧栏竖栏',
+    'desc'   => '吸顶工具条：目录 / 朗读（浏览器语音合成）/ 字号 / 阅读进度，吸收原「朗读条」横幅形态；形态可在「全站设置 → 阅读工具条形态」切换为侧栏竖栏或合并到面包屑条',
     'icon'   => 'list',
     'area'   => 'post',
     'pages'  => ['single'],
@@ -1142,15 +1141,6 @@ ecod_block_define('progress', [
     'icon'   => 'chart',
     'area'   => 'footer',
     'order'  => 40,
-    'params' => [],
-]);
-
-ecod_block_define('theme-toggle', [
-    'name'   => '深浅色切换',
-    'desc'   => '右下角悬浮按钮，跟随「深色模式」设置',
-    'icon'   => 'moon',
-    'area'   => 'footer',
-    'order'  => 50,
     'params' => [],
 ]);
 

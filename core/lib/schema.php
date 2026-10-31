@@ -25,7 +25,7 @@ if (!defined('__TYPECHO_ROOT_DIR__')) {
 }
 
 /** 当前数据结构版本，改动表结构时 +1 */
-define('ECOD_SCHEMA_VERSION', 13);
+define('ECOD_SCHEMA_VERSION', 14);
 
 /**
  * 数据库类型：mysql / pgsql / sqlite
@@ -1624,6 +1624,183 @@ function ecod_schema_ensure_shop(\Typecho\Db $db): bool
 }
 
 /**
+ * 任务领取记录表名
+ */
+function ecod_task_claims_table(): string
+{
+    try {
+        return \Typecho\Db::get()->getPrefix() . 'ecod_task_claims';
+    } catch (\Throwable $e) {
+        return 'typecho_ecod_task_claims';
+    }
+}
+
+/**
+ * 任务领取记录（只有「已领取」才有行，进度不落库）
+ *
+ * 唯一键 (uid, task, period, seq) 是幂等闸门：多档任务（每日评论 3 次）
+ * 用 seq 区分档位，并发重复点击时第二条插入必然冲突，不会重复加分。
+ */
+function ecod_schema_ensure_task_claims(\Typecho\Db $db): bool
+{
+    static $ok = null;
+    if ($ok !== null) {
+        return $ok;
+    }
+
+    $table = $db->getPrefix() . 'ecod_task_claims';
+    $adapter = ecod_schema_adapter($db);
+
+    try {
+        if ($adapter === 'sqlite') {
+            $db->query(
+                'CREATE TABLE IF NOT EXISTS "' . $table . '" ('
+                . ' "id" INTEGER PRIMARY KEY AUTOINCREMENT,'
+                . ' "uid" INTEGER NOT NULL,'
+                . ' "task" VARCHAR(24) NOT NULL,'
+                . ' "period" VARCHAR(16) NOT NULL DEFAULT \'\','
+                . ' "seq" INTEGER NOT NULL DEFAULT 1,'
+                . ' "delta" INTEGER NOT NULL DEFAULT 0,'
+                . ' "created" INTEGER NOT NULL)'
+            );
+            $db->query('CREATE UNIQUE INDEX IF NOT EXISTS "' . $table . '_uniq" ON "' . $table . '" ("uid", "task", "period", "seq")');
+            $db->query('CREATE INDEX IF NOT EXISTS "' . $table . '_uid_cr" ON "' . $table . '" ("uid", "created")');
+        } elseif ($adapter === 'pgsql') {
+            $db->query(
+                'CREATE TABLE IF NOT EXISTS "' . $table . '" ('
+                . ' "id" SERIAL PRIMARY KEY,'
+                . ' "uid" INTEGER NOT NULL,'
+                . ' "task" VARCHAR(24) NOT NULL,'
+                . ' "period" VARCHAR(16) NOT NULL DEFAULT \'\','
+                . ' "seq" INTEGER NOT NULL DEFAULT 1,'
+                . ' "delta" INTEGER NOT NULL DEFAULT 0,'
+                . ' "created" INTEGER NOT NULL)'
+            );
+            $db->query('CREATE UNIQUE INDEX IF NOT EXISTS "' . $table . '_uniq" ON "' . $table . '" ("uid", "task", "period", "seq")');
+            $db->query('CREATE INDEX IF NOT EXISTS "' . $table . '_uid_cr" ON "' . $table . '" ("uid", "created")');
+        } else {
+            $db->query(
+                'CREATE TABLE IF NOT EXISTS `' . $table . '` ('
+                . ' `id` INT(10) UNSIGNED NOT NULL AUTO_INCREMENT,'
+                . ' `uid` INT(10) UNSIGNED NOT NULL,'
+                . ' `task` VARCHAR(24) NOT NULL,'
+                . ' `period` VARCHAR(16) NOT NULL DEFAULT \'\','
+                . ' `seq` TINYINT UNSIGNED NOT NULL DEFAULT 1,'
+                . ' `delta` INT NOT NULL DEFAULT 0,'
+                . ' `created` INT(10) UNSIGNED NOT NULL DEFAULT 0,'
+                . ' PRIMARY KEY (`id`),'
+                . ' UNIQUE KEY `uniq` (`uid`, `task`, `period`, `seq`),'
+                . ' KEY `uid_created` (`uid`, `created`)'
+                . ') ENGINE=InnoDB DEFAULT CHARSET=utf8mb4'
+            );
+        }
+        $ok = true;
+    } catch (\Throwable $e) {
+        $ok = false;
+    }
+
+    return $ok;
+}
+
+/**
+ * 工单主表 + 消息表
+ *
+ * 存储状态只有 open / resolved / closed 三种，「已回复 / 待处理」是
+ * 由 last_side 派生的展示态（status=open AND last_side=staff 即已回复）。
+ */
+function ecod_schema_ensure_tickets(\Typecho\Db $db): bool
+{
+    static $ok = null;
+    if ($ok !== null) {
+        return $ok;
+    }
+
+    $prefix = $db->getPrefix();
+    $tTable = $prefix . 'ecod_tickets';
+    $mTable = $prefix . 'ecod_ticket_msgs';
+    $adapter = ecod_schema_adapter($db);
+
+    try {
+        if ($adapter === 'sqlite' || $adapter === 'pgsql') {
+            $idCol = $adapter === 'sqlite' ? '"id" INTEGER PRIMARY KEY AUTOINCREMENT' : '"id" SERIAL PRIMARY KEY';
+            $db->query(
+                'CREATE TABLE IF NOT EXISTS "' . $tTable . '" ('
+                . ' ' . $idCol . ','
+                . ' "uid" INTEGER NOT NULL,'
+                . ' "no" VARCHAR(24) NOT NULL,'
+                . ' "cat" VARCHAR(16) NOT NULL DEFAULT \'other\','
+                . ' "title" VARCHAR(120) NOT NULL,'
+                . ' "status" VARCHAR(12) NOT NULL DEFAULT \'open\','
+                . ' "priority" INTEGER NOT NULL DEFAULT 1,'
+                . ' "created" INTEGER NOT NULL DEFAULT 0,'
+                . ' "updated" INTEGER NOT NULL DEFAULT 0,'
+                . ' "msgs" INTEGER NOT NULL DEFAULT 0,'
+                . ' "last_side" VARCHAR(8) NOT NULL DEFAULT \'user\','
+                . ' "unread_user" INTEGER NOT NULL DEFAULT 0,'
+                . ' "unread_staff" INTEGER NOT NULL DEFAULT 0,'
+                . ' "staff_uid" INTEGER NOT NULL DEFAULT 0,'
+                . ' "closed_at" INTEGER NOT NULL DEFAULT 0)'
+            );
+            $db->query('CREATE UNIQUE INDEX IF NOT EXISTS "' . $tTable . '_no" ON "' . $tTable . '" ("no")');
+            $db->query('CREATE INDEX IF NOT EXISTS "' . $tTable . '_uid_st" ON "' . $tTable . '" ("uid", "status", "updated")');
+            $db->query('CREATE INDEX IF NOT EXISTS "' . $tTable . '_staff" ON "' . $tTable . '" ("status", "unread_staff", "updated")');
+
+            $db->query(
+                'CREATE TABLE IF NOT EXISTS "' . $mTable . '" ('
+                . ' ' . ($adapter === 'sqlite' ? '"id" INTEGER PRIMARY KEY AUTOINCREMENT' : '"id" SERIAL PRIMARY KEY') . ','
+                . ' "tid" INTEGER NOT NULL,'
+                . ' "side" VARCHAR(8) NOT NULL DEFAULT \'user\','
+                . ' "uid" INTEGER NOT NULL DEFAULT 0,'
+                . ' "body" TEXT NOT NULL,'
+                . ' "created" INTEGER NOT NULL DEFAULT 0)'
+            );
+            $db->query('CREATE INDEX IF NOT EXISTS "' . $mTable . '_tid" ON "' . $mTable . '" ("tid", "id")');
+        } else {
+            $db->query(
+                'CREATE TABLE IF NOT EXISTS `' . $tTable . '` ('
+                . ' `id` INT(10) UNSIGNED NOT NULL AUTO_INCREMENT,'
+                . ' `uid` INT(10) UNSIGNED NOT NULL,'
+                . ' `no` VARCHAR(24) NOT NULL,'
+                . ' `cat` VARCHAR(16) NOT NULL DEFAULT \'other\','
+                . ' `title` VARCHAR(120) NOT NULL,'
+                . ' `status` VARCHAR(12) NOT NULL DEFAULT \'open\','
+                . ' `priority` TINYINT UNSIGNED NOT NULL DEFAULT 1,'
+                . ' `created` INT(10) UNSIGNED NOT NULL DEFAULT 0,'
+                . ' `updated` INT(10) UNSIGNED NOT NULL DEFAULT 0,'
+                . ' `msgs` INT(10) UNSIGNED NOT NULL DEFAULT 0,'
+                . ' `last_side` VARCHAR(8) NOT NULL DEFAULT \'user\','
+                . ' `unread_user` TINYINT UNSIGNED NOT NULL DEFAULT 0,'
+                . ' `unread_staff` TINYINT UNSIGNED NOT NULL DEFAULT 0,'
+                . ' `staff_uid` INT(10) UNSIGNED NOT NULL DEFAULT 0,'
+                . ' `closed_at` INT(10) UNSIGNED NOT NULL DEFAULT 0,'
+                . ' PRIMARY KEY (`id`),'
+                . ' UNIQUE KEY `no` (`no`),'
+                . ' KEY `uid_status` (`uid`, `status`, `updated`),'
+                . ' KEY `staff_box` (`status`, `unread_staff`, `updated`)'
+                . ') ENGINE=InnoDB DEFAULT CHARSET=utf8mb4'
+            );
+            $db->query(
+                'CREATE TABLE IF NOT EXISTS `' . $mTable . '` ('
+                . ' `id` INT(10) UNSIGNED NOT NULL AUTO_INCREMENT,'
+                . ' `tid` INT(10) UNSIGNED NOT NULL,'
+                . ' `side` VARCHAR(8) NOT NULL DEFAULT \'user\','
+                . ' `uid` INT(10) UNSIGNED NOT NULL DEFAULT 0,'
+                . ' `body` TEXT NOT NULL,'
+                . ' `created` INT(10) UNSIGNED NOT NULL DEFAULT 0,'
+                . ' PRIMARY KEY (`id`),'
+                . ' KEY `tid` (`tid`, `id`)'
+                . ') ENGINE=InnoDB DEFAULT CHARSET=utf8mb4'
+            );
+        }
+        $ok = true;
+    } catch (\Throwable $e) {
+        $ok = false;
+    }
+
+    return $ok;
+}
+
+/**
  * 结构升级入口：版本号落后时才执行，每个请求最多一次
  */
 function ecod_schema_upgrade(): void
@@ -1661,10 +1838,12 @@ function ecod_schema_upgrade(): void
     $lottery = ecod_schema_ensure_lottery($db);
     $ads = ecod_schema_ensure_ads($db);
     $shop = ecod_schema_ensure_shop($db);
+    $taskClaims = ecod_schema_ensure_task_claims($db);
+    $tickets = ecod_schema_ensure_tickets($db);
     $likesUid = $likes ? ecod_schema_migrate_likes_uid($db, $db->getPrefix() . 'ecod_likes') : false;
 
     /* 全部成功才记版本，否则下次请求重试 */
-    if ($likes && $likesUid && $views && $avatars && $mailcode && $favs && $oauth && $pay && $metameta && $throttle && $usermeta && $clikes && $follows && $polls && $credits && $lottery && $ads && $shop) {
+    if ($likes && $likesUid && $views && $avatars && $mailcode && $favs && $oauth && $pay && $metameta && $throttle && $usermeta && $clikes && $follows && $polls && $credits && $lottery && $ads && $shop && $taskClaims && $tickets) {
         ecod_schema_mark($db, ECOD_SCHEMA_VERSION);
     }
 }

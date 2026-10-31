@@ -81,11 +81,13 @@ $ecodRegisterUrl = rtrim((string) $this->options->adminUrl, '/') . '/register.ph
 $ecodTabs = [
     'profile' => ['个人信息', 'user'],
     'vip'     => ['我的会员', 'medal'],
+    'task'    => ['任务中心', 'trophy'],
     'credits' => ['我的积分', 'zap'],
-    'notifs'  => ['我的消息', 'bell'],
+    'notifs'  => ['消息中心', 'bell'],
     'posts'   => ['我的文章', 'edit'],
     'social'  => ['互动', 'comment'],
     'orders'  => ['订单', 'inbox'],
+    'ticket'  => ['工单', 'headset'],
     'lottery' => ['抽奖记录', 'gift'],
 ];
 
@@ -98,9 +100,30 @@ $ecodSocial = [
 ];
 
 /* 积分总开关关闭（ECrOn=off）时不下发积分入口：
-   否则签到按钮照常显示，点击必然被后端拒（积分未开启 / 400） */
+   否则签到按钮照常显示，点击必然被后端拒（积分未开启 / 400）。
+   任务中心同理——奖励走积分账本，没有积分体系就没有任务中心 */
 if (!ecod_credits_enabled()) {
-    unset($ecodTabs['credits']);
+    unset($ecodTabs['credits'], $ecodTabs['task']);
+}
+
+/* 任务中心：进度实时统计（服务端直出，避免进 tab 才闪一下），
+   领取走 api.php?action=task_claim，成功后由 JS 就地刷新 */
+$ecodTaskData = ['balance' => 0, 'credit' => ecod_credits_name(), 'streak' => 0, 'signed' => false, 'groups' => [], 'today' => ['claimed' => 0, 'total' => 0]];
+$ecodTaskReady = 0;
+if ($ecodLogged && ecod_credits_enabled()) {
+    $ecodTaskData = ecod_tasks_list((int) $ecodUser->uid);
+    $ecodTaskReady = ecod_tasks_ready($ecodTaskData);
+}
+
+/* 工单：统计卡 + 首屏 20 条（服务端直出，展开详情再走接口） */
+$ecodTicketCats = ecod_ticket_cats();
+$ecodTicketStats = ['pending' => 0, 'replied' => 0, 'resolved' => 0, 'closed' => 0];
+$ecodTicketRows = [];
+$ecodTicketUnread = 0;
+if ($ecodLogged) {
+    $ecodTicketStats = ecod_ticket_stats((int) $ecodUser->uid);
+    $ecodTicketRows = ecod_ticket_list((int) $ecodUser->uid, '', 1, 20)['items'];
+    $ecodTicketUnread = ecod_ticket_unread((int) $ecodUser->uid);
 }
 
 /* 我的投稿：服务端直出（状态 / 编辑 / 撤回都在这一屏完成） */
@@ -214,7 +237,20 @@ $ecodLotteryPageUrl = ecod_template_page_url('page-lottery.php');
             <nav class="ecod_uc__menu" aria-label="个人中心菜单">
                 <?php foreach ($ecodTabs as $ecodKey => $ecodTab): ?>
                     <?php /* 我的文章的数量在服务端已知，直接带上；其余由 JS 回填 */ ?>
-                    <?php if ($ecodKey === 'posts'): ?>
+                    <?php if ($ecodKey === 'task'): ?>
+                        <?php /* 任务中心：待领数在服务端已知，直接带上 */ ?>
+                        <button type="button" class="ecod_uc__tab" data-ecod-uc-tab="task">
+                            <?php echo ecod_icon($ecodTab[1], 15); ?>
+                            <span><?php echo $ecodTab[0]; ?></span>
+                            <em data-ecod-uc-count="task"<?php echo $ecodTaskReady > 0 ? '' : ' hidden'; ?>><?php echo $ecodTaskReady > 99 ? '99+' : (int) $ecodTaskReady; ?></em>
+                        </button>
+                    <?php elseif ($ecodKey === 'ticket'): ?>
+                        <button type="button" class="ecod_uc__tab" data-ecod-uc-tab="ticket">
+                            <?php echo ecod_icon($ecodTab[1], 15); ?>
+                            <span><?php echo $ecodTab[0]; ?></span>
+                            <em data-ecod-uc-count="ticket"<?php echo $ecodTicketUnread > 0 ? '' : ' hidden'; ?>><?php echo $ecodTicketUnread > 99 ? '99+' : (int) $ecodTicketUnread; ?></em>
+                        </button>
+                    <?php elseif ($ecodKey === 'posts'): ?>
                         <button type="button" class="ecod_uc__tab" data-ecod-uc-tab="posts">
                             <?php echo ecod_icon($ecodTab[1], 15); ?>
                             <span><?php echo $ecodTab[0]; ?></span>
@@ -375,7 +411,7 @@ $ecodLotteryPageUrl = ecod_template_page_url('page-lottery.php');
                                     <span><?php echo date('Y-m-d', (int) $ecodMyPost['created']); ?>
                                         · <?php echo htmlspecialchars($ecodPostStatusText[$ecodMyStatus] ?? $ecodMyStatus, ENT_QUOTES, 'UTF-8'); ?>
                                         · <?php echo (int) $ecodMyPost['views']; ?> 阅读
-                                        · <?php echo (int) $ecodMyPost['commentsNum']; ?> 评论</span>
+                                        · <?php echo ecod_comment_count((int) $ecodMyPost['cid']); ?> 评论</span>
                                 </div>
                                 <div class="ecod_uc__post-ops">
                                     <?php if ($ecodMyEditable && $ecodContributeUrl !== ''): ?>
@@ -428,6 +464,100 @@ $ecodLotteryPageUrl = ecod_template_page_url('page-lottery.php');
                     </div>
                 <?php endif; ?>
             </div>
+
+            <!-- 任务中心：进度服务端直出，领取走 api task_claim 后就地刷新 -->
+            <?php if (ecod_credits_enabled()): ?>
+            <div class="ecod_uc__panel" data-ecod-uc-panel="task" hidden>
+                <h3 class="ecod_uc__title">任务中心</h3>
+                <?php if (!$ecodLogged): ?>
+                    <div class="ecod_uc__empty">
+                        <?php echo ecod_icon('trophy', 34); ?>
+                        <p>登录后可以查看任务进度，领取<?php echo htmlspecialchars(ecod_credits_name(), ENT_QUOTES, 'UTF-8'); ?>。</p>
+                        <?php if ($ecodLoginUrl !== ''): ?>
+                            <a class="ecod-btn ecod-btn--primary" href="<?php echo htmlspecialchars($ecodLoginUrl, ENT_QUOTES, 'UTF-8'); ?>">去登录</a>
+                        <?php endif; ?>
+                    </div>
+                <?php else: ?>
+                    <?php
+                    $ecodTaskTodayPct = 0;
+                    if ((int) $ecodTaskData['today']['total'] > 0) {
+                        $ecodTaskTodayPct = (int) round($ecodTaskData['today']['claimed'] / $ecodTaskData['today']['total'] * 100);
+                    }
+                    $ecodCheckinReward = max(0, (int) ecod_option('ECrCheckin', 0));
+                    ?>
+                    <p class="ecod_uc__desc">完成任务领取<?php echo htmlspecialchars($ecodTaskData['credit'], ENT_QUOTES, 'UTF-8'); ?>，可在「我的积分」兑换会员与卡密。</p>
+                    <div class="ecod_task" data-ecod-task
+                         data-api="<?php echo htmlspecialchars(ecod_api_url(), ENT_QUOTES, 'UTF-8'); ?>"
+                         data-token="<?php echo htmlspecialchars(ecod_account_token(), ENT_QUOTES, 'UTF-8'); ?>">
+
+                        <div class="ecod_task__sum">
+                            <div class="ecod_task__cell">
+                                <small>我的<?php echo htmlspecialchars($ecodTaskData['credit'], ENT_QUOTES, 'UTF-8'); ?></small>
+                                <b data-ecod-task-balance><?php echo (int) $ecodTaskData['balance']; ?></b>
+                            </div>
+                            <div class="ecod_task__cell">
+                                <small>连续签到</small>
+                                <b><span data-ecod-task-streak><?php echo (int) $ecodTaskData['streak']; ?></span><em>天</em></b>
+                            </div>
+                            <div class="ecod_task__cell ecod_task__cell--bar">
+                                <small>今日任务</small>
+                                <div class="ecod_task__sum-bar"><i data-ecod-task-todaybar style="width:<?php echo $ecodTaskTodayPct; ?>%"></i></div>
+                                <span data-ecod-task-todaynum><?php echo (int) $ecodTaskData['today']['claimed']; ?> / <?php echo (int) $ecodTaskData['today']['total']; ?></span>
+                            </div>
+                            <button type="button" class="ecod-btn ecod-btn--primary" data-ecod-task-signin<?php echo !empty($ecodTaskData['signed']) ? ' disabled' : ''; ?>>
+                                <?php echo ecod_icon('zap', 14); ?><span data-ecod-task-signin-text><?php echo !empty($ecodTaskData['signed']) ? '今日已签到' : '签到 +' . $ecodCheckinReward; ?></span>
+                            </button>
+                        </div>
+
+                        <?php foreach ($ecodTaskData['groups'] as $ecodGroup): ?>
+                            <div class="ecod_task__group" data-group="<?php echo htmlspecialchars($ecodGroup['key'], ENT_QUOTES, 'UTF-8'); ?>">
+                                <div class="ecod_task__ghd">
+                                    <b><?php echo htmlspecialchars($ecodGroup['title'], ENT_QUOTES, 'UTF-8'); ?></b>
+                                    <span>· <?php echo htmlspecialchars($ecodGroup['desc'], ENT_QUOTES, 'UTF-8'); ?></span>
+                                    <i data-ecod-task-gdone>已完成 <?php echo (int) $ecodGroup['done']; ?>/<?php echo (int) $ecodGroup['total']; ?></i>
+                                </div>
+                                <div class="ecod_task__grid">
+                                    <?php foreach ($ecodGroup['items'] as $ecodItem):
+                                        $ecodState = (string) $ecodItem['state'];
+                                        $ecodNeed = max(1, (int) $ecodItem['need']);
+                                        $ecodProgress = min($ecodNeed, (int) $ecodItem['progress']);
+                                        $ecodPct = (int) round($ecodProgress / $ecodNeed * 100);
+                                        $ecodLeft = max(0, $ecodNeed - $ecodProgress);
+                                    ?>
+                                    <div class="ecod_task__card<?php echo $ecodState === 'claimable' ? ' is-claimable' : ($ecodState === 'claimed' ? ' is-claimed' : ''); ?>"
+                                         data-task="<?php echo htmlspecialchars($ecodItem['key'], ENT_QUOTES, 'UTF-8'); ?>"
+                                         data-state="<?php echo htmlspecialchars($ecodState, ENT_QUOTES, 'UTF-8'); ?>">
+                                        <span class="ecod_task__ic"><?php echo ecod_icon((string) $ecodItem['icon'], 17); ?></span>
+                                        <div class="ecod_task__body">
+                                            <b><?php echo htmlspecialchars($ecodItem['title'], ENT_QUOTES, 'UTF-8'); ?></b>
+                                            <span><?php echo htmlspecialchars($ecodItem['desc'], ENT_QUOTES, 'UTF-8'); ?></span>
+                                        </div>
+                                        <em class="ecod_task__rw">+<?php echo (int) $ecodItem['reward']; ?></em>
+                                        <div class="ecod_task__foot">
+                                            <div class="ecod_task__pbar"><i data-ecod-task-pbar style="width:<?php echo $ecodPct; ?>%"></i></div>
+                                            <span class="ecod_task__num" data-ecod-task-pnum><?php echo $ecodProgress; ?>/<?php echo $ecodNeed; ?></span>
+                                            <span class="ecod_task__ops" data-ecod-task-ops>
+                                                <?php if ($ecodState === 'claimable'): ?>
+                                                    <button type="button" class="ecod-btn ecod-btn--primary ecod-btn--sm"
+                                                            data-ecod-task-claim="<?php echo htmlspecialchars($ecodItem['key'], ENT_QUOTES, 'UTF-8'); ?>">领取 +<?php echo (int) $ecodItem['reward']; ?></button>
+                                                <?php elseif ($ecodState === 'claimed'): ?>
+                                                    <em class="ecod_task__done"><?php echo ecod_icon('check', 13); ?>
+                                                        <?php echo (!empty($ecodItem['threshold']) || $ecodNeed <= 1) ? '已领取' : '已领 ' . (int) $ecodItem['claimed'] . '/' . $ecodNeed; ?>
+                                                    </em>
+                                                <?php else: ?>
+                                                    <button type="button" class="ecod-btn ecod-btn--ghost ecod-btn--sm" disabled>还差 <?php echo $ecodLeft; ?></button>
+                                                <?php endif; ?>
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <?php endforeach; ?>
+                                </div>
+                            </div>
+                        <?php endforeach; ?>
+                    </div>
+                <?php endif; ?>
+            </div>
+            <?php endif; ?>
 
             <!-- 我的积分：签到 + 任务 + 流水，JS 拉 credits_state 渲染 -->
             <?php if (ecod_credits_enabled()): ?>
@@ -646,18 +776,35 @@ $ecodLotteryPageUrl = ecod_template_page_url('page-lottery.php');
                 <div class="ecod_uc__list" data-ecod-uc-list="likes"></div>
             </div>
 
-            <!-- 我的消息：站内通知（评论回复 / 友链审核 / 点赞收藏 / 公告），JS 渲染 -->
+            <!-- 消息中心：分类筛选 + 行内展开 + 增量加载（一次拉 50 条，前端分类） -->
             <div class="ecod_uc__panel" data-ecod-uc-panel="notifs" hidden>
-                <h3 class="ecod_uc__title">我的消息</h3>
-                <p class="ecod_uc__desc">评论回复、友链审核结果、点赞收藏与全站公告都会出现在这里。</p>
+                <h3 class="ecod_uc__title">消息中心</h3>
+                <p class="ecod_uc__desc">评论回复、点赞收藏、友链审核、工单回复与全站公告都在这里。</p>
                 <?php if ($ecodLogged): ?>
-                    <div class="ecod_notif__list ecod_uc__notifs" data-ecod-notif-list aria-live="polite"></div>
-                    <div class="ecod_uc__ops">
-                        <button type="button" class="ecod-btn ecod-btn--ghost" data-ecod-notif-readall>全部已读</button>
-                        <button type="button" class="ecod-btn ecod-btn--ghost" data-ecod-notif-clear>清空已读</button>
+                    <div class="ecod_msgc" data-ecod-msgc
+                         data-api="<?php echo htmlspecialchars(ecod_api_url(), ENT_QUOTES, 'UTF-8'); ?>"
+                         data-token="<?php echo htmlspecialchars(ecod_account_token(), ENT_QUOTES, 'UTF-8'); ?>">
+                        <div class="ecod_msgc__bar">
+                            <div class="ecod_msgc__chips" role="tablist" aria-label="消息分类">
+                                <button type="button" class="ecod_msgc__chip is-active" data-ecod-msgc-filter="all">全部 <u data-ecod-msgc-count="all">0</u></button>
+                                <button type="button" class="ecod_msgc__chip" data-ecod-msgc-filter="unread">未读 <u data-ecod-msgc-count="unread">0</u></button>
+                                <button type="button" class="ecod_msgc__chip" data-ecod-msgc-filter="interact">互动 <u data-ecod-msgc-count="interact">0</u></button>
+                                <button type="button" class="ecod_msgc__chip" data-ecod-msgc-filter="system">系统 <u data-ecod-msgc-count="system">0</u></button>
+                            </div>
+                            <div class="ecod_msgc__ops">
+                                <button type="button" class="ecod-btn ecod-btn--ghost ecod-btn--sm" data-ecod-notif-readall>全部已读</button>
+                                <button type="button" class="ecod-btn ecod-btn--ghost ecod-btn--sm" data-ecod-notif-clear>清空已读</button>
+                            </div>
+                        </div>
+                        <div class="ecod_msgc__list" data-ecod-msgc-list aria-live="polite"></div>
+                        <div class="ecod_msgc__more">
+                            <button type="button" class="ecod-btn ecod-btn--ghost ecod-btn--sm" data-ecod-msgc-more hidden>加载更多</button>
+                            <span data-ecod-msgc-end hidden>没有更多了</span>
+                        </div>
                     </div>
                 <?php else: ?>
                     <div class="ecod_uc__empty">
+                        <?php echo ecod_icon('bell', 34); ?>
                         <p>登录后可查看站内消息。</p>
                         <?php if ($ecodLoginUrl !== ''): ?>
                             <a class="ecod-btn ecod-btn--primary" href="<?php echo htmlspecialchars($ecodLoginUrl, ENT_QUOTES, 'UTF-8'); ?>">去登录</a>
@@ -727,6 +874,101 @@ $ecodLotteryPageUrl = ecod_template_page_url('page-lottery.php');
                             </div>
                         <?php endforeach; ?>
                     </div>
+                <?php endif; ?>
+            </div>
+
+            <!-- 工单：列表内联展开详情（少一次跳转，tab 内不破坏滚动位置） -->
+            <div class="ecod_uc__panel" data-ecod-uc-panel="ticket" hidden>
+                <?php if (!$ecodLogged): ?>
+                    <h3 class="ecod_uc__title">工单</h3>
+                    <div class="ecod_uc__empty">
+                        <?php echo ecod_icon('headset', 34); ?>
+                        <p>登录后可提交工单，客服回复会推送到消息中心。</p>
+                        <?php if ($ecodLoginUrl !== ''): ?>
+                            <a class="ecod-btn ecod-btn--primary" href="<?php echo htmlspecialchars($ecodLoginUrl, ENT_QUOTES, 'UTF-8'); ?>">去登录</a>
+                        <?php endif; ?>
+                    </div>
+                <?php else: ?>
+                <div class="ecod_ticket" data-ecod-ticket
+                     data-api="<?php echo htmlspecialchars(ecod_api_url(), ENT_QUOTES, 'UTF-8'); ?>"
+                     data-token="<?php echo htmlspecialchars(ecod_account_token(), ENT_QUOTES, 'UTF-8'); ?>">
+                    <div class="ecod_ticket__head">
+                        <h3 class="ecod_uc__title">工单</h3>
+                        <button type="button" class="ecod-btn ecod-btn--primary ecod-btn--sm" data-ecod-ticket-new>
+                            <?php echo ecod_icon('plus', 13); ?>新建工单
+                        </button>
+                    </div>
+                    <p class="ecod_uc__desc">账号、付费、内容问题都可以提，客服回复会推送到消息中心。</p>
+
+                    <div class="ecod_ticket__stats">
+                        <div class="ecod_ticket__stat" data-s="pending">
+                            <small>待处理</small><b data-ecod-ticket-stat="pending"><?php echo (int) $ecodTicketStats['pending']; ?></b>
+                        </div>
+                        <div class="ecod_ticket__stat" data-s="replied">
+                            <small>已回复</small><b data-ecod-ticket-stat="replied"><?php echo (int) $ecodTicketStats['replied']; ?></b>
+                        </div>
+                        <div class="ecod_ticket__stat" data-s="resolved">
+                            <small>已解决</small><b data-ecod-ticket-stat="resolved"><?php echo (int) $ecodTicketStats['resolved']; ?></b>
+                        </div>
+                    </div>
+
+                    <form class="ecod_ticket__new" data-ecod-ticket-form hidden novalidate>
+                        <label class="ecod_ticket__field">
+                            <span>问题分类</span>
+                            <select data-ecod-ticket-cat>
+                                <?php foreach ($ecodTicketCats as $ecodCatKey => $ecodCatName): ?>
+                                    <option value="<?php echo htmlspecialchars($ecodCatKey, ENT_QUOTES, 'UTF-8'); ?>"><?php echo htmlspecialchars($ecodCatName, ENT_QUOTES, 'UTF-8'); ?></option>
+                                <?php endforeach; ?>
+                            </select>
+                        </label>
+                        <label class="ecod_ticket__field">
+                            <span>标题</span>
+                            <input type="text" maxlength="60" placeholder="一句话说明问题，4–60 字" data-ecod-ticket-title>
+                        </label>
+                        <label class="ecod_ticket__field">
+                            <span>详细描述</span>
+                            <textarea maxlength="2000" rows="4" placeholder="复现步骤、订单号、截图链接…（10–2000 字）" data-ecod-ticket-text></textarea>
+                        </label>
+                        <p class="ecod_ticket__msg" data-ecod-ticket-msg role="status" hidden></p>
+                        <div class="ecod_ticket__newops">
+                            <button type="button" class="ecod-btn ecod-btn--ghost ecod-btn--sm" data-ecod-ticket-cancel>取消</button>
+                            <button type="submit" class="ecod-btn ecod-btn--primary ecod-btn--sm" data-ecod-ticket-submit>提交工单</button>
+                        </div>
+                    </form>
+
+                    <div class="ecod_ticket__list" data-ecod-ticket-list<?php echo $ecodTicketRows ? '' : ' hidden'; ?>>
+                        <?php foreach ($ecodTicketRows as $ecodTk):
+                            $ecodDerived = (string) $ecodTk['derived'];
+                        ?>
+                            <div class="ecod_ticket__item" data-id="<?php echo (int) $ecodTk['id']; ?>" data-derived="<?php echo htmlspecialchars($ecodDerived, ENT_QUOTES, 'UTF-8'); ?>">
+                                <button type="button" class="ecod_ticket__hd" data-ecod-ticket-toggle>
+                                    <span class="ecod_ticket__no"><?php echo htmlspecialchars($ecodTk['no'], ENT_QUOTES, 'UTF-8'); ?></span>
+                                    <span class="ecod_ticket__main">
+                                        <b><?php echo htmlspecialchars($ecodTk['title'], ENT_QUOTES, 'UTF-8'); ?></b>
+                                        <span class="ecod_ticket__meta">
+                                            <?php if (!empty($ecodTk['unread'])): ?><i class="ecod_ticket__dot" aria-label="有新回复"></i><?php endif; ?>
+                                            <em><?php echo htmlspecialchars($ecodTk['catText'], ENT_QUOTES, 'UTF-8'); ?></em>
+                                            · <?php echo (int) $ecodTk['msgs']; ?> 条消息
+                                            · <?php echo date('m-d H:i', (int) $ecodTk['updated']); ?>
+                                        </span>
+                                    </span>
+                                    <span class="ecod_ticket__right">
+                                        <em class="ecod_ticket__state" data-s="<?php echo htmlspecialchars($ecodDerived, ENT_QUOTES, 'UTF-8'); ?>"><?php echo htmlspecialchars(ecod_ticket_state_text($ecodDerived), ENT_QUOTES, 'UTF-8'); ?></em>
+                                        <span class="ecod_ticket__chev"><?php echo ecod_icon('chevron-down', 14); ?></span>
+                                    </span>
+                                </button>
+                                <div class="ecod_ticket__thread" data-ecod-ticket-thread hidden></div>
+                            </div>
+                        <?php endforeach; ?>
+                    </div>
+
+                    <div class="ecod_ticket__empty" data-ecod-ticket-empty<?php echo $ecodTicketRows ? ' hidden' : ''; ?>>
+                        <?php echo ecod_icon('headset', 40); ?>
+                        <b>还没有工单</b>
+                        <p>遇到问题随时提，客服处理后会推送到消息中心。</p>
+                        <button type="button" class="ecod-btn ecod-btn--primary" data-ecod-ticket-new>新建工单</button>
+                    </div>
+                </div>
                 <?php endif; ?>
             </div>
 

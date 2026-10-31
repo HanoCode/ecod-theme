@@ -232,6 +232,16 @@ $ecodUcUrl = ecod_user_center_url();
                     ?></textarea>
                 </label>
 
+                <label class="ecod_ctb__field ecod_ctb__field--cap">
+                    <span>验证码 <i>*</i></span>
+                    <span class="ecod_cap">
+                        <input class="ecod_input" type="text" name="captcha" maxlength="4" autocomplete="off"
+                               spellcheck="false" inputmode="latin" placeholder="4 位字符" required>
+                        <img class="ecod_cap__img" data-ecod-captcha alt="验证码，点击刷新" width="96" height="40"
+                             src="<?php echo htmlspecialchars(ecod_api_url(), ENT_QUOTES, 'UTF-8'); ?>?action=captcha&amp;t=<?php echo time(); ?>-<?php echo mt_rand(100, 999); ?>">
+                    </span>
+                </label>
+
                 <input type="text" name="website" class="ecod_ctb__hp" tabindex="-1" autocomplete="off" aria-hidden="true">
 
                 <p class="ecod_ctb__msg" data-ecod-ctb-msg hidden></p>

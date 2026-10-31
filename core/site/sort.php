@@ -238,7 +238,10 @@ function ecod_sort_query($archive, $select): void
                 $select->order('table.contents.views', \Typecho\Db::SORT_DESC)
                     ->order('table.contents.created', \Typecho\Db::SORT_DESC);
             } elseif ($sort === 'hot') {
-                $select->order('table.contents.commentsNum', \Typecho\Db::SORT_DESC)
+                /* 评论热门按「已通过」实算的条数排（commentsNum 含待审且有滞后），
+                   派生表 1:1 JOIN，不影响计数与分页 */
+                $cmtCol = function_exists('ecod_comment_order_join') ? ecod_comment_order_join($select) : '';
+                $select->order($cmtCol !== '' ? $cmtCol : 'table.contents.commentsNum', \Typecho\Db::SORT_DESC)
                     ->order('table.contents.created', \Typecho\Db::SORT_DESC);
             } elseif ($sort === 'rand') {
                 /* 随机一篇（F3）：按日种子的稳定随机——同一天内顺序不变，

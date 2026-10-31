@@ -119,7 +119,7 @@ if (!$ecodSlider->have()) {
                     <span class="ecod_slider__meta">
                         <time datetime="<?php $ecodSlider->date('Y-m-d'); ?>"><?php $ecodSlider->date('m 月 d 日'); ?></time>
                         <span><?php echo ecod_icon('eye', 12); ?><?php echo ecod_num_short(ecod_views($ecodSlider)); ?></span>
-                        <span><?php echo ecod_icon('comment', 12); ?><?php echo (int) $ecodSlider->commentsNum; ?></span>
+                        <span><?php echo ecod_icon('comment', 12); ?><?php echo ecod_comment_count((int) $ecodSlider->cid); ?></span>
                     </span>
                 </span>
             </a>

@@ -553,11 +553,15 @@ $ecodWgtTerms = new stdClass();
 try {
     \Widget\Metas\Category\Rows::alloc()->to($ecodCatsStack);
     while ($ecodCatsStack->next()) {
+        /* metas.count 会滞后且不含子分类：与前台同口径取实时篇数 */
+        $ecodWgtCatCount = function_exists('ecod_cat_stats')
+            ? (int) ecod_cat_stats((int) $ecodCatsStack->mid)['count']
+            : (int) $ecodCatsStack->count;
         $ecodWgtTerms->{(string) $ecodCatsStack->mid} = sprintf(
             '%s [ID:%d][共%d篇]',
             (string) $ecodCatsStack->name,
             (int) $ecodCatsStack->mid,
-            (int) $ecodCatsStack->count
+            $ecodWgtCatCount
         );
     }
 } catch (\Throwable $e) {

@@ -14,7 +14,7 @@ if (!defined('__TYPECHO_ROOT_DIR__')) {
 }
 $this->need('public/header.php');
 
-$ecodLeaveNum = (int) $this->commentsNum;
+$ecodLeaveNum = ecod_comment_count((int) $this->cid);
 $ecodLeaveMeta = '<span>' . ecod_icon('comment', 13) . $ecodLeaveNum . ' 条留言</span>'
     . '<span>' . ecod_icon('calendar', 13) . '更新于 ' . date('Y-m-d', (int) $this->created) . '</span>';
 ?>

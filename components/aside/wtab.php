@@ -50,7 +50,7 @@ foreach ($ecodWtabDefs as $ecodWtabKey => $ecodWtabDef) {
             'title'    => (string) $ecodWtabQ->title,
             'url'      => (string) $ecodWtabQ->permalink,
             'views'    => ecod_views($ecodWtabQ),
-            'comments' => (int) $ecodWtabQ->commentsNum,
+            'comments' => ecod_comment_count((int) $ecodWtabQ->cid),
             'locked'   => ecod_has_password($ecodWtabQ),
         ];
     }

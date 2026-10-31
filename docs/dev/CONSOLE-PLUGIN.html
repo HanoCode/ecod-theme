@@ -1,0 +1,2297 @@
+<!doctype html>
+<html lang="zh-CN" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ecod Console · 站长控制台插件设计稿</title>
+<style>
+/* ============================================================
+   0. 设计令牌
+   ============================================================ */
+:root{
+  --pri:#4f6ef2; --pri-deep:#3d5be0; --pri-soft:#eef1fe;
+  --bg:#f4f6fa; --sf:#ffffff; --sf2:#fafbfc; --sf3:#f2f4f8;
+  --line:#eef0f5; --line2:#e4e7ee; --line3:#d3d9e4;
+  --ink:#12161d; --ink2:#5b6472; --ink3:#8a919e;
+  --ok:#0f9d76; --ok-soft:#e8f8f2;
+  --warn:#c47c07; --warn-soft:#fdf4e3;
+  --bad:#dc3b3b; --bad-soft:#fdeeee;
+  --teal:#0f8f9d; --teal-soft:#e6f6f7;
+  --r:12px; --r-sm:8px; --r-xs:6px;
+  --sh:0 1px 2px rgba(16,24,40,.04);
+  --sh-2:0 6px 24px -10px rgba(16,24,40,.16);
+  --sh-lg:0 24px 64px -24px rgba(16,24,40,.28);
+  --side-w:236px;
+  --f: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+}
+html[data-theme="dark"]{
+  --pri-soft:rgba(79,110,242,.18);
+  --bg:#0d1117; --sf:#151b23; --sf2:#1a212b; --sf3:#1f2733;
+  --line:#222b36; --line2:#2b3543; --line3:#3a4553;
+  --ink:#e9eef6; --ink2:#a3adbb; --ink3:#8b95a3;
+  --ok:#3ecf9c; --ok-soft:rgba(62,207,156,.14);
+  --warn:#e3a13a; --warn-soft:rgba(227,161,58,.14);
+  --bad:#f0736d; --bad-soft:rgba(240,115,109,.14);
+  --teal:#4fc7d4; --teal-soft:rgba(79,199,212,.14);
+  --sh:0 1px 2px rgba(0,0,0,.4);
+  --sh-2:0 8px 28px -12px rgba(0,0,0,.6);
+  --sh-lg:0 24px 70px -20px rgba(0,0,0,.8);
+  color-scheme: dark;
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{
+  margin:0; background:var(--bg); color:var(--ink);
+  font:14px/1.65 var(--f);
+  -webkit-font-smoothing:antialiased;
+  transition:background .2s ease, color .2s ease;
+}
+button,input,select,textarea{font:inherit; color:inherit}
+a{color:var(--pri); text-decoration:none}
+code{font-family:var(--mono); font-size:.92em}
+::selection{background:rgba(79,110,242,.18)}
+
+/* ============================================================
+   1. 布局
+   ============================================================ */
+.app{display:grid; grid-template-columns:var(--side-w) minmax(0,1fr); min-height:100vh}
+
+.side{
+  position:sticky; top:0; height:100vh; display:flex; flex-direction:column;
+  padding:16px 12px 12px; background:var(--sf); border-right:1px solid var(--line);
+}
+.brand{display:flex; align-items:center; gap:10px; padding:4px 8px 16px}
+.brand .mark{
+  width:28px; height:28px; border-radius:8px; flex:none;
+  background:linear-gradient(145deg, #6b86ff, var(--pri-deep));
+  box-shadow:0 4px 12px -4px rgba(79,110,242,.65);
+  display:grid; place-items:center; color:#fff; font-weight:700; font-size:13px;
+}
+.brand b{font-size:14px; letter-spacing:.1px; display:block; line-height:1.25}
+.brand em{font-style:normal; font-size:11px; color:var(--ink3); display:block}
+
+.nav-group{margin:10px 0 2px; padding:0 10px; font-size:11px; letter-spacing:.6px; color:var(--ink3); text-transform:uppercase}
+.nav{display:flex; flex-direction:column; gap:2px}
+.nav a{
+  display:flex; align-items:center; gap:10px; height:36px; padding:0 10px;
+  border-radius:8px; color:var(--ink2); font-size:13.5px; position:relative;
+  transition:background .15s ease, color .15s ease;
+}
+.nav a:hover{background:var(--sf3); color:var(--ink)}
+.nav a.on{background:var(--pri-soft); color:var(--pri); font-weight:600}
+.nav a .ic{width:16px; height:16px; flex:none; opacity:.9}
+.nav a .cnt{
+  margin-left:auto; min-width:18px; height:18px; padding:0 5px; border-radius:999px;
+  background:var(--bad); color:#fff; font-size:11px; font-weight:600; line-height:18px; text-align:center;
+}
+.nav a.on .cnt{background:var(--pri); color:#fff}
+.nav a .soon{
+  margin-left:auto; font-size:10px; color:var(--ink3); border:1px solid var(--line2);
+  padding:0 5px; border-radius:4px; line-height:15px;
+}
+
+.lic-mini{
+  margin-top:auto; margin-bottom:10px; padding:12px; border-radius:10px;
+  border:1px solid var(--line2); background:var(--sf2);
+}
+.lic-mini .row{display:flex; align-items:center; justify-content:space-between; font-size:12px; color:var(--ink3)}
+.lic-mini b{font-size:12.5px; color:var(--ink)}
+.lic-mini .bar{height:4px; border-radius:999px; background:var(--line2); margin:8px 0 6px; overflow:hidden}
+.lic-mini .bar i{display:block; height:100%; border-radius:999px; background:linear-gradient(90deg,var(--pri),#7d95ff)}
+.side-foot{display:flex; align-items:center; gap:8px; padding:8px; border-top:1px solid var(--line); font-size:12px; color:var(--ink3)}
+
+/* 顶栏 */
+.main{min-width:0; display:flex; flex-direction:column}
+.top{
+  position:sticky; top:0; z-index:30; display:flex; align-items:center; gap:16px;
+  height:60px; padding:0 28px; background:color-mix(in srgb, var(--bg) 86%, transparent);
+  backdrop-filter:blur(12px); border-bottom:1px solid var(--line);
+}
+.crumb{display:flex; align-items:center; gap:8px; font-size:13px; color:var(--ink3)}
+.crumb b{color:var(--ink); font-weight:600}
+.top-actions{margin-left:auto; display:flex; align-items:center; gap:10px}
+.search{
+  display:flex; align-items:center; gap:8px; height:34px; width:250px; padding:0 10px;
+  border:1px solid var(--line2); border-radius:8px; background:var(--sf); color:var(--ink3);
+  font-size:13px; cursor:text;
+}
+.search kbd{margin-left:auto; font-family:var(--f); font-size:11px; border:1px solid var(--line2); border-radius:4px; padding:0 5px; line-height:16px; color:var(--ink3)}
+.icon-btn{
+  width:34px; height:34px; display:grid; place-items:center; border-radius:8px;
+  border:1px solid var(--line2); background:var(--sf); color:var(--ink2); cursor:pointer;
+  transition:background .15s, border-color .15s;
+}
+.icon-btn:hover{background:var(--sf3); border-color:var(--line3)}
+.avatar{
+  width:32px; height:32px; border-radius:10px; display:grid; place-items:center;
+  background:linear-gradient(145deg,#8ea6ff,#4f6ef2); color:#fff; font-size:12px; font-weight:600; flex:none;
+}
+
+.content{padding:24px 28px 64px; max-width:1220px; width:100%}
+
+/* ============================================================
+   2. 通用组件
+   ============================================================ */
+.page{display:none; animation:rise .22s ease both}
+.page.on{display:block}
+@keyframes rise{from{opacity:0; transform:translateY(6px)} to{opacity:1; transform:none}}
+
+.ph{display:flex; align-items:flex-end; gap:16px; margin-bottom:20px}
+.ph h1{margin:0; font-size:21px; letter-spacing:-.2px; font-weight:650}
+.ph p{margin:4px 0 0; font-size:13px; color:var(--ink3)}
+.ph .ph-act{margin-left:auto; display:flex; align-items:center; gap:8px}
+
+.card{background:var(--sf); border:1px solid var(--line); border-radius:var(--r); box-shadow:var(--sh)}
+.card-h{display:flex; align-items:center; gap:10px; padding:16px 18px; border-bottom:1px solid var(--line)}
+.card-h h2{margin:0; font-size:14px; font-weight:600}
+.card-h .sub{font-size:12px; color:var(--ink3)}
+.card-h .right{margin-left:auto; display:flex; align-items:center; gap:8px}
+.card-b{padding:18px}
+
+.btn{
+  display:inline-flex; align-items:center; gap:6px; height:32px; padding:0 12px;
+  border:1px solid var(--line2); border-radius:8px; background:var(--sf); color:var(--ink);
+  font-size:13px; cursor:pointer; white-space:nowrap;
+  transition:background .15s, border-color .15s, transform .06s;
+}
+.btn:hover{background:var(--sf3); border-color:var(--line3)}
+.btn:active{transform:scale(.985)}
+.btn.pri{background:var(--pri); border-color:var(--pri); color:#fff}
+.btn.pri:hover{background:var(--pri-deep); border-color:var(--pri-deep)}
+.btn.danger{color:var(--bad); border-color:color-mix(in srgb,var(--bad) 30%, var(--line2))}
+.btn.danger:hover{background:var(--bad-soft)}
+.btn.ghost{border-color:transparent; background:transparent; color:var(--ink2)}
+.btn.ghost:hover{background:var(--sf3)}
+.btn.sm{height:28px; padding:0 10px; font-size:12px}
+.btn:disabled{opacity:.45; cursor:not-allowed}
+
+.seg{display:inline-flex; padding:3px; border-radius:8px; background:var(--sf3); border:1px solid var(--line)}
+.seg button{
+  border:0; background:transparent; height:26px; padding:0 10px; border-radius:6px;
+  font-size:12.5px; color:var(--ink2); cursor:pointer;
+}
+.seg button.on{background:var(--sf); color:var(--ink); box-shadow:var(--sh); font-weight:600}
+
+.chips{display:flex; gap:6px; flex-wrap:wrap}
+.chip{
+  height:30px; padding:0 12px; border-radius:999px; border:1px solid var(--line2);
+  background:var(--sf); color:var(--ink2); font-size:12.5px; cursor:pointer;
+  transition:all .15s ease;
+}
+.chip:hover{border-color:var(--line3); background:var(--sf3)}
+.chip.on{background:var(--pri-soft); border-color:color-mix(in srgb,var(--pri) 34%, var(--line2)); color:var(--pri); font-weight:600}
+
+.tag{
+  display:inline-flex; align-items:center; gap:5px; height:22px; padding:0 8px;
+  border-radius:999px; font-size:11.5px; font-weight:600; letter-spacing:.1px;
+  background:var(--sf3); color:var(--ink2);
+}
+.tag .dot{width:5px; height:5px; border-radius:50%; background:currentColor}
+.tag.ok{background:var(--ok-soft); color:var(--ok)}
+.tag.warn{background:var(--warn-soft); color:var(--warn)}
+.tag.bad{background:var(--bad-soft); color:var(--bad)}
+.tag.pri{background:var(--pri-soft); color:var(--pri)}
+.tag.teal{background:var(--teal-soft); color:var(--teal)}
+
+.num{font-variant-numeric:tabular-nums}
+
+/* 表格 */
+.tbl{width:100%; border-collapse:separate; border-spacing:0; font-size:13px}
+.tbl th{
+  height:38px; padding:0 14px; text-align:left; font-size:11.5px; font-weight:600;
+  color:var(--ink3); letter-spacing:.3px; background:var(--sf2); border-bottom:1px solid var(--line);
+  white-space:nowrap;
+}
+.tbl th:first-child{border-top-left-radius:var(--r-sm)}
+.tbl th:last-child{border-top-right-radius:var(--r-sm)}
+.tbl td{height:52px; padding:0 14px; border-bottom:1px solid var(--line); vertical-align:middle}
+.tbl tbody tr{transition:background .12s}
+.tbl tbody tr:hover{background:var(--sf2)}
+.tbl tbody tr.sel{background:var(--pri-soft)}
+.tbl tbody tr:last-child td{border-bottom:0}
+.tbl .r{text-align:right}
+.tbl .ono{font-family:var(--mono); font-size:12px; color:var(--ink2)}
+.tbl .who{display:flex; align-items:center; gap:8px}
+.tbl .who i{
+  width:24px; height:24px; border-radius:8px; flex:none; display:grid; place-items:center;
+  font-size:11px; font-weight:600; color:#fff; font-style:normal;
+}
+.tbl .item b{font-weight:500; display:block; line-height:1.4}
+.tbl .item span{font-size:11.5px; color:var(--ink3)}
+.ck{
+  appearance:none; width:15px; height:15px; border:1.5px solid var(--line3); border-radius:4px;
+  background:var(--sf); cursor:pointer; position:relative; vertical-align:middle;
+}
+.ck:checked{background:var(--pri); border-color:var(--pri)}
+.ck:checked::after{
+  content:""; position:absolute; left:4px; top:1px; width:4px; height:8px;
+  border:solid #fff; border-width:0 1.6px 1.6px 0; transform:rotate(42deg);
+}
+
+/* KPI */
+.kpis{display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:14px; margin-bottom:16px}
+.kpi{padding:16px 18px; background:var(--sf); border:1px solid var(--line); border-radius:var(--r); box-shadow:var(--sh); position:relative; overflow:hidden}
+.kpi .k-lab{display:flex; align-items:center; gap:6px; font-size:12px; color:var(--ink3)}
+.kpi .k-val{margin-top:8px; font-size:26px; font-weight:650; letter-spacing:-.6px; line-height:1.1}
+.kpi .k-val small{font-size:14px; font-weight:500; color:var(--ink3); margin-left:2px; letter-spacing:0}
+.kpi .k-delta{margin-top:6px; display:flex; align-items:center; gap:6px; font-size:12px; color:var(--ink3)}
+.kpi .k-delta b{font-weight:600}
+.up{color:var(--ok)} .down{color:var(--bad)}
+.kpi svg{position:absolute; right:14px; bottom:14px; opacity:.9}
+
+/* 网格 */
+.grid-23{display:grid; grid-template-columns:minmax(0,1.62fr) minmax(0,1fr); gap:16px}
+.grid-13{display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1.3fr); gap:16px}
+.stack{display:flex; flex-direction:column; gap:16px}
+
+/* 待办 */
+.todo{display:flex; align-items:center; gap:12px; padding:12px 0; border-bottom:1px dashed var(--line2)}
+.todo:last-child{border-bottom:0; padding-bottom:0}
+.todo .ic{width:32px; height:32px; border-radius:9px; display:grid; place-items:center; flex:none}
+.todo b{display:block; font-size:13px; font-weight:600}
+.todo span{font-size:12px; color:var(--ink3)}
+.todo .go{margin-left:auto}
+
+/* 图例 */
+.legend{display:flex; align-items:center; gap:14px; font-size:12px; color:var(--ink3)}
+.legend i{width:8px; height:8px; border-radius:3px; display:inline-block; margin-right:5px}
+
+/* ============================================================
+   3. 待确认（两栏工作台）
+   ============================================================ */
+.queue{display:grid; grid-template-columns:308px minmax(0,1fr); gap:16px; align-items:start}
+.q-list{background:var(--sf); border:1px solid var(--line); border-radius:var(--r); overflow:hidden; box-shadow:var(--sh)}
+.q-item{
+  display:block; width:100%; text-align:left; border:0; background:transparent; cursor:pointer;
+  padding:13px 14px; border-bottom:1px solid var(--line); position:relative;
+  transition:background .12s;
+}
+.q-item:hover{background:var(--sf2)}
+.q-item.on{background:var(--pri-soft)}
+.q-item.on::before{content:""; position:absolute; left:0; top:0; bottom:0; width:3px; background:var(--pri)}
+.q-item .top-row{display:flex; align-items:center; gap:8px}
+.q-item b{font-size:13px; font-weight:600}
+.q-item .amt{margin-left:auto; font-size:14px; font-weight:650; letter-spacing:-.2px}
+.q-item .meta{margin-top:3px; font-size:11.5px; color:var(--ink3); display:flex; gap:8px; align-items:center}
+.q-item .meta em{font-style:normal; color:var(--warn); font-weight:600}
+.q-foot{padding:10px 14px; font-size:11px; color:var(--ink3); background:var(--sf2); border-top:1px solid var(--line)}
+.q-foot kbd{font-family:var(--f); border:1px solid var(--line2); border-radius:4px; padding:0 4px; margin:0 1px; background:var(--sf)}
+
+.receipt{
+  border:1px dashed var(--line3); border-radius:10px; background:var(--sf2);
+  padding:14px; display:flex; justify-content:center;
+}
+.receipt-inner{
+  width:100%; max-width:290px; border-radius:10px; overflow:hidden; background:var(--sf);
+  border:1px solid var(--line2); box-shadow:var(--sh-2);
+}
+.receipt-hd{background:#1aad19; color:#fff; padding:10px 12px; font-size:12px; display:flex; align-items:center; gap:6px}
+.receipt-bd{padding:12px; font-size:12px}
+.receipt-bd .amt{font-size:22px; font-weight:700; letter-spacing:-.5px; margin-bottom:8px}
+.receipt-bd .line{display:flex; justify-content:space-between; color:var(--ink3); padding:3px 0}
+.receipt-bd .line b{color:var(--ink); font-weight:500}
+.receipt-ft{padding:8px 12px; border-top:1px dashed var(--line2); font-size:10.5px; color:var(--ink3); text-align:center}
+
+.kv{display:grid; grid-template-columns:88px minmax(0,1fr); gap:8px 12px; font-size:13px; align-items:center}
+.kv dt{color:var(--ink3); font-size:12.5px}
+.kv dd{margin:0}
+
+/* ============================================================
+   4. 会员
+   ============================================================ */
+.lv{
+  display:inline-flex; align-items:center; gap:5px; height:22px; padding:0 8px; border-radius:6px;
+  font-size:11.5px; font-weight:600;
+}
+.lv.l1{background:var(--pri-soft); color:var(--pri)}
+.lv.l2{background:linear-gradient(120deg,#fdf2d8,#f8e3b0); color:#8a5a06}
+.lv.l0{background:var(--sf3); color:var(--ink3)}
+html[data-theme="dark"] .lv.l2{background:rgba(226,178,80,.16); color:#e8c06a}
+
+/* ============================================================
+   5. 授权
+   ============================================================ */
+.lic-hero{
+  display:grid; grid-template-columns:minmax(0,1fr) 260px; gap:24px;
+  padding:22px; border-radius:var(--r); border:1px solid var(--line);
+  background:
+    radial-gradient(680px 220px at 8% -30%, rgba(79,110,242,.14), transparent 62%),
+    var(--sf);
+  box-shadow:var(--sh);
+}
+.lic-hero h2{margin:0 0 4px; font-size:16px}
+.lic-hero .dom{font-family:var(--mono); font-size:13px; color:var(--ink2)}
+.lic-actions{display:flex; gap:8px; margin-top:16px; flex-wrap:wrap}
+.ring{display:grid; place-items:center; position:relative}
+.ring .ring-val{position:absolute; text-align:center}
+.ring .ring-val b{display:block; font-size:24px; font-weight:650; letter-spacing:-.6px; line-height:1.1}
+.ring .ring-val span{font-size:11px; color:var(--ink3)}
+.keybox{
+  display:flex; align-items:center; gap:10px; padding:10px 12px; border-radius:8px;
+  background:var(--sf2); border:1px solid var(--line2); font-family:var(--mono); font-size:13px; letter-spacing:.5px;
+}
+.keybox .copy{margin-left:auto}
+
+.mod-row{display:flex; align-items:center; gap:12px; padding:12px 0; border-bottom:1px solid var(--line)}
+.mod-row:last-child{border-bottom:0; padding-bottom:0}
+.mod-row .ic{width:30px; height:30px; border-radius:8px; display:grid; place-items:center; background:var(--sf3); color:var(--ink2); flex:none}
+.mod-row b{font-size:13px; font-weight:600; display:block}
+.mod-row span{font-size:11.5px; color:var(--ink3)}
+.mod-row .sw{margin-left:auto}
+
+.sw{position:relative; width:36px; height:20px; border-radius:999px; background:var(--line3); border:0; cursor:pointer; transition:background .18s}
+.sw::after{content:""; position:absolute; top:2px; left:2px; width:16px; height:16px; border-radius:50%; background:#fff; transition:transform .18s; box-shadow:0 1px 2px rgba(0,0,0,.2)}
+.sw.on{background:var(--pri)}
+.sw.on::after{transform:translateX(16px)}
+.sw:disabled{opacity:.4; cursor:not-allowed}
+
+.tl{position:relative; padding-left:18px}
+.tl::before{content:""; position:absolute; left:4px; top:6px; bottom:6px; width:1px; background:var(--line2)}
+.tl-i{position:relative; padding:0 0 14px}
+.tl-i:last-child{padding-bottom:0}
+.tl-i::before{content:""; position:absolute; left:-18px; top:6px; width:9px; height:9px; border-radius:50%; background:var(--sf); border:2px solid var(--line3)}
+.tl-i.on::before{border-color:var(--pri); background:var(--pri)}
+.tl-i b{font-size:12.5px; font-weight:600; display:block}
+.tl-i span{font-size:11.5px; color:var(--ink3)}
+
+/* ============================================================
+   6. 表单 / 设置
+   ============================================================ */
+.field{display:flex; flex-direction:column; gap:6px}
+.field label{font-size:12px; color:var(--ink3)}
+.input, select.input, textarea.input{
+  height:34px; padding:0 10px; border:1px solid var(--line2); border-radius:8px;
+  background:var(--sf); font-size:13px; outline:none; transition:border-color .15s, box-shadow .15s;
+}
+textarea.input{height:auto; padding:8px 10px; resize:vertical; line-height:1.6}
+.input:focus{border-color:var(--pri); box-shadow:0 0 0 3px rgba(79,110,242,.14)}
+.form-grid{display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:14px}
+.form-grid .full{grid-column:1/-1}
+
+/* ============================================================
+   7. 抽屉 / 提示
+   ============================================================ */
+.scrim{
+  position:fixed; inset:0; background:rgba(12,18,28,.34); backdrop-filter:blur(1.5px);
+  opacity:0; pointer-events:none; transition:opacity .22s; z-index:60;
+}
+.scrim.on{opacity:1; pointer-events:auto}
+.drawer{
+  position:fixed; top:0; right:0; bottom:0; width:min(440px,94vw); z-index:61;
+  background:var(--sf); border-left:1px solid var(--line); box-shadow:var(--sh-lg);
+  transform:translateX(104%); transition:transform .26s cubic-bezier(.32,.72,0,1);
+  display:flex; flex-direction:column;
+}
+.drawer.on{transform:none}
+.drawer-h{display:flex; align-items:flex-start; gap:12px; padding:18px 20px; border-bottom:1px solid var(--line)}
+.drawer-h h3{margin:0; font-size:15px}
+.drawer-h p{margin:2px 0 0; font-size:12px; color:var(--ink3)}
+.drawer-b{padding:18px 20px; overflow:auto; flex:1}
+.drawer-f{padding:14px 20px; border-top:1px solid var(--line); display:flex; gap:8px; background:var(--sf)}
+
+.toasts{position:fixed; right:22px; bottom:22px; z-index:90; display:flex; flex-direction:column; gap:8px}
+.toast{
+  display:flex; align-items:center; gap:9px; padding:11px 14px; border-radius:10px;
+  background:var(--sf); border:1px solid var(--line2); box-shadow:var(--sh-2);
+  font-size:13px; animation:tin .24s ease both;
+}
+.toast.ok{border-color:color-mix(in srgb,var(--ok) 34%, var(--line2))}
+@keyframes tin{from{opacity:0; transform:translateY(8px) scale(.98)} to{opacity:1; transform:none}}
+
+.empty{padding:44px 16px; text-align:center; color:var(--ink3); font-size:13px}
+.empty .ic{width:40px; height:40px; margin:0 auto 10px; border-radius:12px; display:grid; place-items:center; background:var(--sf3); color:var(--ink3)}
+
+/* ============================================================
+   8. 规格页
+   ============================================================ */
+.spec-sec{margin-bottom:28px}
+.spec-sec h3{margin:0 0 4px; font-size:15px}
+.spec-sec > p{margin:0 0 12px; font-size:13px; color:var(--ink2)}
+pre.code{
+  margin:0; padding:14px 16px; border-radius:10px; background:var(--sf2);
+  border:1px solid var(--line2); font-family:var(--mono); font-size:12px; line-height:1.75;
+  color:var(--ink2); overflow:auto;
+}
+pre.code b{color:var(--ink); font-weight:600}
+pre.code i{color:var(--ink3); font-style:normal}
+.note{
+  display:flex; gap:10px; padding:12px 14px; border-radius:10px; background:var(--warn-soft);
+  color:var(--warn); font-size:12.5px; line-height:1.6; border:1px solid color-mix(in srgb,var(--warn) 22%, transparent);
+}
+.note b{color:inherit}
+.check{display:flex; gap:10px; padding:9px 0; border-bottom:1px dashed var(--line2); font-size:13px}
+.check:last-child{border-bottom:0}
+.check .bx{width:16px; height:16px; border-radius:4px; border:1.5px solid var(--line3); flex:none; margin-top:3px}
+.check i{font-style:normal; color:var(--ink3); font-size:12px; display:block}
+
+/* ============================================================
+   9. 工单处理 / 消息推送 / 任务配置
+   ============================================================ */
+/* 工单会话 */
+.tk-wrap{display:grid; grid-template-columns:minmax(0,1fr) 232px; gap:22px; align-items:start}
+@media (max-width:1180px){ .tk-wrap{grid-template-columns:minmax(0,1fr)} }
+.tk-thread{display:flex; flex-direction:column; gap:12px; padding:2px 0 14px}
+.tk-msg{max-width:84%; display:flex; flex-direction:column; gap:4px}
+.tk-msg .meta{font-size:11px; color:var(--ink3); display:flex; gap:6px; align-items:center}
+.tk-msg .meta b{font-weight:600; color:var(--ink2)}
+.tk-msg .body{
+  padding:10px 12px; border-radius:10px; background:var(--sf2); border:1px solid var(--line2);
+  font-size:13px; line-height:1.75; white-space:pre-wrap; color:var(--ink2);
+}
+.tk-msg.me{align-self:flex-end; align-items:flex-end}
+.tk-msg.me .body{background:var(--pri-soft); border-color:transparent; color:var(--ink)}
+.tk-msg.staff .body{background:var(--sf); border-color:var(--line2); color:var(--ink)}
+.tk-msg.note .body{background:var(--warn-soft); border-color:transparent; color:var(--ink2); font-size:12.5px}
+.tk-msg.note .body::before{content:"内部备注 · "; font-weight:600; color:var(--warn)}
+.reply-box{margin-top:2px; border-top:1px solid var(--line); padding-top:14px; display:flex; flex-direction:column; gap:10px}
+.reply-box textarea{
+  width:100%; min-height:78px; resize:vertical; padding:10px 12px; font-size:13px; line-height:1.7;
+  border:1px solid var(--line2); border-radius:10px; background:var(--sf); color:var(--ink); outline:none;
+}
+.reply-box textarea:focus{border-color:var(--pri); box-shadow:0 0 0 3px color-mix(in srgb,var(--pri) 16%, transparent)}
+.quick{display:flex; gap:6px; flex-wrap:wrap}
+.quick button{
+  font-size:11.5px; padding:3px 9px; border-radius:999px; border:1px solid var(--line2);
+  background:transparent; color:var(--ink3); cursor:pointer;
+}
+.quick button:hover{border-color:var(--pri); color:var(--pri)}
+.tk-side{border-left:1px solid var(--line); padding-left:18px}
+@media (max-width:1180px){ .tk-side{border-left:0; border-top:1px solid var(--line); padding:16px 0 0} }
+
+/* 消息推送预览 */
+.nprev{display:flex; gap:10px; padding:12px; border:1px solid var(--line2); border-radius:10px; background:var(--sf2)}
+.nprev .icw{
+  width:30px; height:30px; border-radius:8px; display:grid; place-items:center; flex:none;
+  background:var(--pri-soft); color:var(--pri);
+}
+.nprev b{display:block; font-size:13px; font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+.nprev p{margin:2px 0 0; font-size:12px; color:var(--ink3); line-height:1.5;
+  display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden}
+.nprev time{font-size:11px; color:var(--ink3); margin-left:auto; white-space:nowrap}
+
+/* 任务配置 */
+.rw-in{
+  width:66px; height:30px; text-align:center; border:1px solid var(--line2); border-radius:8px;
+  background:var(--sf); color:var(--ink); font-variant-numeric:tabular-nums; font-size:13px;
+}
+.rw-in:focus{outline:none; border-color:var(--pri); box-shadow:0 0 0 3px color-mix(in srgb,var(--pri) 16%, transparent)}
+.tk-kind{font-size:11.5px; color:var(--ink3); margin-left:6px}
+
+/* 响应式 */
+@media (max-width:1180px){
+  .kpis{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .grid-23,.grid-13{grid-template-columns:minmax(0,1fr)}
+}
+@media (max-width:900px){
+  :root{--side-w:64px}
+  .brand em,.brand b,.nav a span.lbl,.nav-group,.lic-mini,.side-foot span{display:none}
+  .nav a{justify-content:center; padding:0}
+  .nav a .cnt{position:absolute; top:2px; right:6px; min-width:15px; height:15px; line-height:15px; font-size:10px}
+  .search{width:170px}
+  .queue{grid-template-columns:minmax(0,1fr)}
+  .lic-hero{grid-template-columns:minmax(0,1fr)}
+}
+@media (max-width:640px){
+  .content{padding:16px}
+  .top{padding:0 16px}
+  .search{display:none}
+  .form-grid{grid-template-columns:minmax(0,1fr)}
+  .ph{flex-wrap:wrap}
+}
+</style>
+</head>
+<body>
+<div class="app">
+  <!-- ================= 侧栏 ================= -->
+  <aside class="side">
+    <div class="brand">
+      <div class="mark">E</div>
+      <div>
+        <b>Ecod Console</b>
+        <em>站长控制台 · v1.0</em>
+      </div>
+    </div>
+
+    <div class="nav-group">运营</div>
+    <nav class="nav" id="nav">
+      <a href="#dashboard" data-page="dashboard" class="on">
+        <svg class="ic" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="2" width="5" height="5" rx="1.4"/><rect x="9" y="2" width="5" height="5" rx="1.4"/><rect x="2" y="9" width="5" height="5" rx="1.4"/><rect x="9" y="9" width="5" height="5" rx="1.4"/></svg>
+        <span class="lbl">概览</span>
+      </a>
+      <a href="#orders" data-page="orders">
+        <svg class="ic" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 2.5h10v11l-2-1.4-1.7 1.4L7.6 12 6 13.5 4.9 12.6 3 13.5z"/><path d="M5.8 5.6h4.4M5.8 8h4.4"/></svg>
+        <span class="lbl">订单管理</span>
+      </a>
+      <a href="#confirm" data-page="confirm">
+        <svg class="ic" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="5.6"/><path d="M5.6 8.2l1.7 1.7 3.2-3.5"/></svg>
+        <span class="lbl">待确认</span>
+        <span class="cnt" id="navPending">4</span>
+      </a>
+      <a href="#members" data-page="members">
+        <svg class="ic" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="6.2" cy="6" r="2.4"/><path d="M2.2 13.2c0-2.2 1.8-3.6 4-3.6s4 1.4 4 3.6"/><path d="M11 5.2a2.1 2.1 0 010 3.9M12.4 13.2c0-1.5-.5-2.5-1.3-3.2"/></svg>
+        <span class="lbl">会员管理</span>
+      </a>
+
+      <div class="nav-group">用户</div>
+      <a href="#tickets" data-page="tickets">
+        <svg class="ic" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2.6 9.4V7.6a5.4 5.4 0 0110.8 0v1.8"/><rect x="2.6" y="9.2" width="2.6" height="4" rx="1.2"/><rect x="10.8" y="9.2" width="2.6" height="4" rx="1.2"/><path d="M11.4 13.2c-.4.9-1.4 1.4-2.6 1.4H7.6"/></svg>
+        <span class="lbl">工单处理</span>
+        <span class="cnt" id="navTicket">4</span>
+      </a>
+      <a href="#notices" data-page="notices">
+        <svg class="ic" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2.4 6.4h2.4l5.2-3.4v10L4.8 9.6H2.4z"/><path d="M12.6 6.2a2.8 2.8 0 010 3.6"/><path d="M4.8 9.6v3.2"/></svg>
+        <span class="lbl">消息推送</span>
+      </a>
+      <a href="#tasks" data-page="tasks">
+        <svg class="ic" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="7" cy="9" r="4.6"/><circle cx="7" cy="9" r="1.6"/><path d="M10.4 5.6L14 2M11.6 2H14v2.4"/></svg>
+        <span class="lbl">任务配置</span>
+      </a>
+
+      <div class="nav-group">站点</div>
+      <a href="#license" data-page="license">
+        <svg class="ic" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8 1.8l5 2v3.6c0 3-2.1 5.4-5 6.4-2.9-1-5-3.4-5-6.4V3.8z"/><path d="M5.8 7.9l1.5 1.5 2.9-3.1"/></svg>
+        <span class="lbl">主题授权</span>
+      </a>
+      <a href="#ads" data-page="ads">
+        <svg class="ic" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="3" width="12" height="8" rx="1.6"/><path d="M2 13.2h12M5 6.4h4M5 8.6h2.4"/></svg>
+        <span class="lbl">广告位</span>
+        <span class="cnt" style="background:var(--warn)">1</span>
+      </a>
+
+      <div class="nav-group">系统</div>
+      <a href="#settings" data-page="settings">
+        <svg class="ic" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="2.1"/><path d="M8 1.9v1.6M8 12.5v1.6M2.5 8h1.6M11.9 8h1.6M4.1 4.1l1.1 1.1M10.8 10.8l1.1 1.1M11.9 4.1l-1.1 1.1M5.2 10.8l-1.1 1.1"/></svg>
+        <span class="lbl">设置</span>
+      </a>
+      <a href="#spec" data-page="spec">
+        <svg class="ic" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M5.6 3.2H3.4v9.6h2.2M10.4 3.2h2.2v9.6h-2.2"/><path d="M6.4 6.2h3.2M6.4 9.4h3.2"/></svg>
+        <span class="lbl">设计规格</span>
+      </a>
+    </nav>
+
+    <div class="lic-mini">
+      <div class="row"><span>授权状态</span><b style="color:var(--ok)">正常</b></div>
+      <div class="bar"><i style="width:82%"></i></div>
+      <div class="row"><span>Pro · 到期 2027-10-31</span><span>余 365 天</span></div>
+    </div>
+    <div class="side-foot">
+      <div class="avatar" style="width:24px;height:24px;border-radius:7px;font-size:10px">站</div>
+      <span>ecod.cc</span>
+      <span style="margin-left:auto">v1.4.2</span>
+    </div>
+  </aside>
+
+  <!-- ================= 主区 ================= -->
+  <div class="main">
+    <header class="top">
+      <div class="crumb">控制台 <span>/</span> <b id="crumb">概览</b></div>
+      <div class="top-actions">
+        <div class="search" id="searchBox">
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="7.2" cy="7.2" r="4.4"/><path d="M10.5 10.5L14 14"/></svg>
+          <span>搜索订单号 / 用户</span>
+          <kbd>⌘K</kbd>
+        </div>
+        <button class="icon-btn" title="通知">
+          <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8 2.2a3.1 3.1 0 013.1 3.1v2.1l1.2 2.2H3.7l1.2-2.2V5.3A3.1 3.1 0 018 2.2z"/><path d="M6.6 12a1.5 1.5 0 002.8 0"/></svg>
+        </button>
+        <button class="icon-btn" id="themeBtn" title="切换深浅色">
+          <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M13 9.6A5.4 5.4 0 016.4 3a5.5 5.5 0 106.6 6.6z"/></svg>
+        </button>
+        <div class="avatar">站</div>
+      </div>
+    </header>
+
+    <div class="content">
+
+      <!-- ============ 概览 ============ -->
+      <section class="page on" id="page-dashboard">
+        <div class="ph">
+          <div>
+            <h1>概览</h1>
+            <p>2026 年 10 月 31 日 · 站点运行正常，有 9 项待处理</p>
+          </div>
+          <div class="ph-act">
+            <div class="seg" id="rangeSeg">
+              <button data-r="7">近 7 天</button>
+              <button data-r="14" class="on">近 14 天</button>
+              <button data-r="30">近 30 天</button>
+            </div>
+            <button class="btn">导出报表</button>
+          </div>
+        </div>
+
+        <div class="kpis">
+          <div class="kpi">
+            <div class="k-lab">今日收入</div>
+            <div class="k-val num">¥1,284<small>.00</small></div>
+            <div class="k-delta"><b class="up">↑ 18.2%</b><span>较昨日 ¥1,086</span></div>
+            <svg width="58" height="24" viewBox="0 0 58 24" fill="none"><path d="M1 19l7-4 7 2 7-7 7 3 7-6 7 4 7-8" stroke="var(--pri)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" opacity=".85"/></svg>
+          </div>
+          <div class="kpi">
+            <div class="k-lab">待确认订单</div>
+            <div class="k-val num" style="color:var(--warn)">4<small>笔 · ¥487.80</small></div>
+            <div class="k-delta"><span>最早一笔已等待 <b style="color:var(--warn)">42 分钟</b></span></div>
+            <svg width="58" height="24" viewBox="0 0 58 24" fill="none"><path d="M1 10l9 3 9-8 9 12 9-4 9 5 9-13" stroke="var(--warn)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" opacity=".8"/></svg>
+          </div>
+          <div class="kpi">
+            <div class="k-lab">活跃会员</div>
+            <div class="k-val num">128<small>人</small></div>
+            <div class="k-delta"><b class="up">+6</b><span>本月新增 · 续费率 41%</span></div>
+            <svg width="58" height="24" viewBox="0 0 58 24" fill="none"><path d="M1 17l7 1 7-6 7 3 7-8 7 4 7-2 7-5" stroke="var(--ok)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" opacity=".85"/></svg>
+          </div>
+          <div class="kpi">
+            <div class="k-lab">广告位在投</div>
+            <div class="k-val num">2<small>/ 3 位</small></div>
+            <div class="k-delta"><span>侧边栏卡片位空置中</span></div>
+            <svg width="58" height="24" viewBox="0 0 58 24" fill="none"><rect x="2" y="13" width="8" height="8" rx="2" fill="var(--teal)" opacity=".35"/><rect x="14" y="7" width="8" height="14" rx="2" fill="var(--teal)" opacity=".55"/><rect x="26" y="3" width="8" height="18" rx="2" fill="var(--teal)" opacity=".5"/><rect x="38" y="9" width="8" height="12" rx="2" fill="var(--teal)" opacity=".4"/><rect x="50" y="14" width="6" height="7" rx="2" fill="var(--teal)" opacity=".3"/></svg>
+          </div>
+        </div>
+
+        <div class="grid-23" style="margin-bottom:16px">
+          <div class="card">
+            <div class="card-h">
+              <h2>收入构成</h2>
+              <span class="sub">按商品线拆分</span>
+              <div class="right legend">
+                <span><i style="background:var(--pri)"></i>会员</span>
+                <span><i style="background:var(--warn)"></i>广告</span>
+                <span><i style="background:var(--teal)"></i>单篇</span>
+              </div>
+            </div>
+            <div class="card-b" style="padding:14px 10px 8px 4px">
+              <svg id="chart" viewBox="0 0 780 236" width="100%" height="236" preserveAspectRatio="none"></svg>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-h"><h2>待办</h2><span class="sub">5 项</span></div>
+            <div class="card-b" style="padding:6px 18px 16px">
+              <div class="todo">
+                <div class="ic" style="background:var(--warn-soft);color:var(--warn)">
+                  <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="5.6"/><path d="M8 5v3.4l2.2 1.3"/></svg>
+                </div>
+                <div><b>4 笔订单待确认收款</b><span>合计 ¥487.80 · 最久等待 42 分钟</span></div>
+                <button class="btn sm go" data-jump="confirm">处理</button>
+              </div>
+              <div class="todo">
+                <div class="ic" style="background:var(--pri-soft);color:var(--pri)">
+                  <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="3" width="12" height="8" rx="1.6"/><path d="M2 13.2h12"/></svg>
+                </div>
+                <div><b>1 条广告待审核</b><span>侧边栏卡片 · ¥150 / 3 天</span></div>
+                <button class="btn sm go" data-jump="ads">审核</button>
+              </div>
+              <div class="todo">
+                <div class="ic" style="background:var(--teal-soft);color:var(--teal)">
+                  <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2.6 9.4V7.6a5.4 5.4 0 0110.8 0v1.8"/><rect x="2.6" y="9.2" width="2.6" height="4" rx="1.2"/><rect x="10.8" y="9.2" width="2.6" height="4" rx="1.2"/></svg>
+                </div>
+                <div><b>4 单工单待回复</b><span>最久等待 3 小时 · 2 单高优先级</span></div>
+                <button class="btn sm go" data-jump="tickets">处理</button>
+              </div>
+              <div class="todo">
+                <div class="ic" style="background:var(--ok-soft);color:var(--ok)">
+                  <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8 1.8l5 2v3.6c0 3-2.1 5.4-5 6.4-2.9-1-5-3.4-5-6.4V3.8z"/></svg>
+                </div>
+                <div><b>授权将于 365 天后到期</b><span>Pro 版 · ecod.cc</span></div>
+                <button class="btn sm go" data-jump="license">查看</button>
+              </div>
+              <div class="todo">
+                <div class="ic" style="background:var(--teal-soft);color:var(--teal)">
+                  <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8 14V4M8 4L4.6 7.4M8 4l3.4 3.4"/></svg>
+                </div>
+                <div><b>发现新版本 v1.5.0</b><span>新增订单批量结算、授权离线宽限</span></div>
+                <button class="btn sm go" data-jump="license">更新</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-h">
+            <h2>最新订单</h2>
+            <div class="right"><button class="btn sm" data-jump="orders">全部订单</button></div>
+          </div>
+          <div id="dashOrders"></div>
+        </div>
+      </section>
+
+      <!-- ============ 订单管理 ============ -->
+      <section class="page" id="page-orders">
+        <div class="ph">
+          <div>
+            <h1>订单管理</h1>
+            <p>共 <b class="num" id="orderTotal">9</b> 笔 · 支持按状态、商品类型与通道筛选</p>
+          </div>
+          <div class="ph-act">
+            <button class="btn" onclick="toast('已导出 9 笔订单为 CSV','ok')">
+              <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8 2v8M8 10l-3-3M8 10l3-3M2.6 12.4v1.2h10.8v-1.2"/></svg>
+              导出 CSV
+            </button>
+            <button class="btn pri" data-jump="confirm">去确认收款</button>
+          </div>
+        </div>
+
+        <div class="card" style="padding:14px 16px; margin-bottom:16px">
+          <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap">
+            <div class="chips" id="statusChips">
+              <button class="chip on" data-st="all">全部</button>
+              <button class="chip" data-st="pending">待确认 <b class="num" style="opacity:.6">4</b></button>
+              <button class="chip" data-st="paid">已支付</button>
+              <button class="chip" data-st="closed">已关闭</button>
+              <button class="chip" data-st="refunded">已退款</button>
+            </div>
+            <div style="margin-left:auto; display:flex; gap:8px; align-items:center">
+              <select class="input" id="kindFilter" style="width:118px">
+                <option value="all">全部类型</option>
+                <option value="vip">会员</option>
+                <option value="ad">广告</option>
+                <option value="post">单篇</option>
+              </select>
+              <select class="input" id="chFilter" style="width:118px">
+                <option value="all">全部通道</option>
+                <option value="manual">手动</option>
+                <option value="epay">易支付</option>
+                <option value="card">卡密</option>
+              </select>
+              <input class="input" id="orderSearch" placeholder="订单号 / 用户" style="width:180px">
+            </div>
+          </div>
+        </div>
+
+        <div class="card" style="overflow:hidden">
+          <div style="display:flex; align-items:center; gap:10px; padding:10px 16px; border-bottom:1px solid var(--line); font-size:12.5px; color:var(--ink2)">
+            <label style="display:flex; align-items:center; gap:8px; cursor:pointer">
+              <input type="checkbox" class="ck" id="ckAll"> 全选当前页
+            </label>
+            <span id="selHint" style="color:var(--ink3)">未选择</span>
+            <div style="margin-left:auto; display:flex; gap:8px">
+              <button class="btn sm" id="bulkSettle" disabled>批量确认收款</button>
+              <button class="btn sm" id="bulkClose" disabled>批量关闭</button>
+            </div>
+          </div>
+          <div id="orderTable"></div>
+        </div>
+      </section>
+
+      <!-- ============ 待确认 ============ -->
+      <section class="page" id="page-confirm">
+        <div class="ph">
+          <div>
+            <h1>订单确认</h1>
+            <p>先核对到账金额，再确认发放权益；确认后用户端自动刷新</p>
+          </div>
+          <div class="ph-act">
+            <span class="tag warn"><span class="dot"></span>4 笔待处理 · ¥487.80</span>
+          </div>
+        </div>
+
+        <div class="queue">
+          <div>
+            <div class="q-list">
+              <div id="queueList"></div>
+              <div class="q-foot"><kbd>J</kbd><kbd>K</kbd> 切换 · <kbd>Enter</kbd> 确认 · <kbd>⌘Z</kbd> 撤销</div>
+            </div>
+          </div>
+
+          <div class="card" id="confirmPane">
+            <div class="card-h">
+              <h2 id="cfTitle">超级会员 · 年付</h2>
+              <span class="tag warn" style="margin-left:6px" id="cfTag"><span class="dot"></span>待确认</span>
+              <div class="right"><span class="ono num" style="font-family:var(--mono);font-size:12px;color:var(--ink3)" id="cfNo">EC20261031092811550214</span></div>
+            </div>
+            <div class="card-b">
+              <div style="display:grid; grid-template-columns:minmax(0,1fr) 300px; gap:20px; align-items:start">
+                <div>
+                  <dl class="kv">
+                    <dt>下单用户</dt><dd id="cfUser"><b>林深</b> <span style="color:var(--ink3);font-size:12px">UID 12</span></dd>
+                    <dt>商品</dt><dd id="cfItem">超级会员 · 年付（Lv.2）</dd>
+                    <dt>应付金额</dt><dd><b class="num" style="font-size:18px;letter-spacing:-.3px" id="cfAmt">¥128.00</b></dd>
+                    <dt>支付通道</dt><dd id="cfCh">易支付 · 支付宝</dd>
+                    <dt>下单时间</dt><dd id="cfTime">2026-10-31 09:28</dd>
+                    <dt>订单状态</dt><dd><span class="tag warn"><span class="dot"></span>等待到账确认</span></dd>
+                  </dl>
+
+                  <div style="margin-top:18px; padding:12px 14px; border-radius:10px; background:var(--sf2); border:1px solid var(--line2); font-size:12.5px; color:var(--ink2); line-height:1.7">
+                    <b style="color:var(--ink)">确认规则</b><br>
+                    · 确认后立即写入权益（会员按天计算，单篇为一次性解锁）<br>
+                    · 广告订单确认后进入待审核队列，不自动上线<br>
+                    · 操作可撤销 30 秒内，超过后需走退款流程
+                  </div>
+                </div>
+
+                <div>
+                  <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:8px">
+                    <span style="font-size:12px; color:var(--ink3)">用户上传的付款凭证</span>
+                    <button class="btn ghost sm" onclick="toast('已放大查看凭证')">放大</button>
+                  </div>
+                  <div class="receipt">
+                    <div class="receipt-inner">
+                      <div class="receipt-hd">
+                        <svg width="13" height="13" viewBox="0 0 16 16" fill="currentColor"><path d="M8 1.6l2 4 4.4.6-3.2 3.1.8 4.4L8 11.6 4 13.7l.8-4.4L1.6 6.2 6 5.6z"/></svg>
+                        微信支付 · 转账到银行卡
+                      </div>
+                      <div class="receipt-bd">
+                        <div class="amt num">¥128.00</div>
+                        <div class="line"><span>收款方</span><b>Ecod 站点收款</b></div>
+                        <div class="line"><span>付款时间</span><b>10-31 09:31</b></div>
+                        <div class="line"><span>付款备注</span><b>EC…50214</b></div>
+                      </div>
+                      <div class="receipt-ft">凭证由用户上传 · 未经验证</div>
+                    </div>
+                  </div>
+                  <div style="margin-top:10px; display:flex; gap:8px">
+                    <button class="btn sm" style="flex:1" onclick="toast('已标记为「金额不符」，等待用户补充')">金额不符</button>
+                    <button class="btn sm" style="flex:1" onclick="toast('已请求用户重新上传凭证')">要求补图</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="drawer-f" style="border-top:1px solid var(--line); border-radius:0 0 12px 12px">
+              <button class="btn pri" id="cfSettle" style="flex:1; height:38px">
+                <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 8.4l3.2 3.2L13 4.8"/></svg>
+                确认收款并发放权益
+              </button>
+              <button class="btn" style="height:38px" onclick="toast('订单已关闭，用户端将收到通知')">关闭订单</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============ 会员管理 ============ -->
+      <section class="page" id="page-members">
+        <div class="ph">
+          <div>
+            <h1>会员管理</h1>
+            <p>128 位有效会员 · 本月新增 6 人 · 7 天内到期 3 人</p>
+          </div>
+          <div class="ph-act">
+            <button class="btn" onclick="openDrawer('grant')">手动授予</button>
+            <button class="btn pri" onclick="toast('已导出会员明细','ok')">导出</button>
+          </div>
+        </div>
+
+        <div class="kpis" style="grid-template-columns:repeat(4,minmax(0,1fr))">
+          <div class="kpi"><div class="k-lab">有效会员</div><div class="k-val num">128<small>人</small></div><div class="k-delta"><b class="up">+6</b><span>本月</span></div></div>
+          <div class="kpi"><div class="k-lab">本月会员收入</div><div class="k-val num">¥8,420</div><div class="k-delta"><b class="up">↑ 12.4%</b><span>较上月</span></div></div>
+          <div class="kpi"><div class="k-lab">7 天内到期</div><div class="k-val num" style="color:var(--warn)">3<small>人</small></div><div class="k-delta"><span>可发送续费提醒</span></div></div>
+          <div class="kpi"><div class="k-lab">续费率</div><div class="k-val num">41<small>%</small></div><div class="k-delta"><b class="down">↓ 2.1%</b><span>近 30 天</span></div></div>
+        </div>
+
+        <div class="card" style="overflow:hidden">
+          <div style="display:flex; align-items:center; gap:10px; padding:12px 16px; border-bottom:1px solid var(--line)">
+            <div class="chips">
+              <button class="chip on">全部</button>
+              <button class="chip">Lv.2 超级会员</button>
+              <button class="chip">Lv.1 会员</button>
+              <button class="chip">即将到期</button>
+            </div>
+            <input class="input" placeholder="搜索昵称 / UID" style="width:180px; margin-left:auto">
+          </div>
+          <div id="memberTable"></div>
+        </div>
+      </section>
+
+      <!-- ============ 主题授权 ============ -->
+      <section class="page" id="page-tickets">
+        <div class="ph">
+          <div>
+            <h1>工单处理</h1>
+            <p>先看时间线再回复；回复即推送站内信，关闭后用户端只读</p>
+          </div>
+          <div class="ph-act">
+            <span class="tag warn"><span class="dot"></span>4 单待处理</span>
+            <span class="tag">今日已回复 6</span>
+            <span class="tag">平均首响 1.8h</span>
+          </div>
+        </div>
+
+        <div class="chips" style="margin-bottom:12px" id="tkChips">
+          <button class="chip on" data-st="open">待处理 <b class="num" style="margin-left:4px">3</b></button>
+          <button class="chip" data-st="replied">已回复 <b class="num" style="margin-left:4px">2</b></button>
+          <button class="chip" data-st="resolved">已解决 <b class="num" style="margin-left:4px">2</b></button>
+          <button class="chip" data-st="closed">已关闭 <b class="num" style="margin-left:4px">1</b></button>
+          <button class="chip" data-st="all">全部 <b class="num" style="margin-left:4px">8</b></button>
+        </div>
+
+        <div class="queue">
+          <div>
+            <div class="q-list">
+              <div id="tkList"></div>
+              <div class="q-foot"><kbd>J</kbd><kbd>K</kbd> 切换 · <kbd>⌘↵</kbd> 发送回复 · <kbd>⌘⇧R</kbd> 标记已解决</div>
+            </div>
+          </div>
+
+          <div class="card" id="tkPane"></div>
+        </div>
+      </section>
+
+      <section class="page" id="page-notices">
+        <div class="ph">
+          <div>
+            <h1>消息推送</h1>
+            <p>全站公告与定向站内信；写入主题的 ecod_notifs 表，用户端消息中心即时可见</p>
+          </div>
+          <div class="ph-act">
+            <button class="btn pri" onclick="sendNotice()">
+              <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M2.6 8.2l10.2-5-3.2 10-2.2-3.6z"/></svg>
+              发送推送
+            </button>
+          </div>
+        </div>
+
+        <div class="grid-23">
+          <div class="card">
+            <div class="card-h">
+              <h2>新建推送</h2>
+              <span class="tag" style="margin-left:6px">草稿</span>
+            </div>
+            <div class="card-b" style="display:flex; flex-direction:column; gap:14px">
+              <div class="field">
+                <label>推送范围</label>
+                <div class="seg" id="nseg">
+                  <button class="on" data-r="all">全站公告</button>
+                  <button data-r="user">定向用户</button>
+                  <button data-r="group">分群</button>
+                </div>
+              </div>
+              <div class="form-grid">
+                <div class="field">
+                  <label>标题（≤60 字）</label>
+                  <input class="input" id="nTitle" maxlength="60" value="积分规则调整通知">
+                </div>
+                <div class="field">
+                  <label>跳转链接（可空）</label>
+                  <input class="input" id="nLink" placeholder="/archives/4821">
+                </div>
+              </div>
+              <div class="field">
+                <label>正文（≤500 字，纯文本）</label>
+                <textarea class="input" rows="4" id="nBody">11 月 1 日起，首次投稿奖励由 20 上调至 30 积分，累计投稿 10 篇奖励维持 100 不变。</textarea>
+              </div>
+              <div class="form-grid">
+                <div class="field">
+                  <label>发送时间</label>
+                  <select class="input"><option>立即发送</option><option>定时发送（指定时间）</option></select>
+                </div>
+                <div class="field">
+                  <label>触达预估</label>
+                  <input class="input" value="1,284 人 · 全站登录用户" readonly>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="stack">
+            <div class="card">
+              <div class="card-h"><h2>用户端预览</h2></div>
+              <div class="card-b">
+                <div class="nprev">
+                  <div class="icw">
+                    <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 7a4 4 0 018 0c0 3.2 1.2 4 1.2 4H2.8S4 10.2 4 7z"/><path d="M6.6 13a1.6 1.6 0 002.8 0"/></svg>
+                  </div>
+                  <div style="min-width:0">
+                    <b id="pvT">积分规则调整通知</b>
+                    <p id="pvB">11 月 1 日起，首次投稿奖励由 20 上调至 30 积分…</p>
+                  </div>
+                  <time>刚刚</time>
+                </div>
+                <p style="font-size:12px; color:var(--ink3); margin:12px 0 0">落在个人中心「消息中心 · 系统」分类，未读时侧栏 tab 角标 +1；点击跳转 <code>link</code>。</p>
+              </div>
+            </div>
+            <div class="note">
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" style="flex:none;margin-top:2px"><circle cx="8" cy="8" r="6.2"/><path d="M8 4.6v4.2M8 11.2v.6"/></svg>
+              <div>群发不可「撤回」已读：发出的行只能整条删除，删除后用户侧同步消失。因此群发前先在预览里核对标题与链接。</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card" style="margin-top:16px">
+          <div class="card-h">
+            <h2>发送记录</h2>
+            <div style="margin-left:auto"><span class="tag">近 30 天</span></div>
+          </div>
+          <div id="noticeLog"></div>
+        </div>
+      </section>
+
+      <section class="page" id="page-tasks">
+        <div class="ph">
+          <div>
+            <h1>任务配置</h1>
+            <p>奖励数值改完即时生效；关闭的任务前台不展示，已领记录保留</p>
+          </div>
+          <div class="ph-act">
+            <span class="tag ok"><span class="dot"></span>积分体系已开启</span>
+            <button class="btn" onclick="toast('已重置为默认奖励：20/30/10/5 · 10/15/5/2 · 100/100')">恢复默认值</button>
+            <button class="btn pri" onclick="toast('任务配置已保存 · 前台 5 分钟内生效','ok')">保存</button>
+          </div>
+        </div>
+
+        <div class="kpis">
+          <div class="kpi">
+            <div class="k-lab">今日领取</div>
+            <div class="k-val num">128</div>
+            <div class="k-delta"><b class="up">+12%</b> 对比昨日</div>
+          </div>
+          <div class="kpi">
+            <div class="k-lab">今日发放积分</div>
+            <div class="k-val num">1,240</div>
+            <div class="k-delta">人均 9.7</div>
+          </div>
+          <div class="kpi">
+            <div class="k-lab">7 日参与用户</div>
+            <div class="k-val num">96</div>
+            <div class="k-delta">占日活 34%</div>
+          </div>
+          <div class="kpi">
+            <div class="k-lab">任务总开关</div>
+            <div class="k-val" style="font-size:20px">运行中</div>
+            <div class="k-delta">关闭后前台隐藏「任务中心」</div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-h">
+            <h2>任务表</h2>
+            <span class="tag" style="margin-left:6px">10 项</span>
+            <div style="margin-left:auto; font-size:12px; color:var(--ink3)">奖励改动即时生效 · 上限每日重置</div>
+          </div>
+          <div id="taskTable"></div>
+        </div>
+
+        <div class="note" style="margin-top:16px">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" style="flex:none;margin-top:2px"><circle cx="8" cy="8" r="6.2"/><path d="M8 4.6v4.2M8 11.2v.6"/></svg>
+          <div>任务发奖依赖主题积分总开关（<code>ECrOn</code>）。积分关闭时任务中心整块不下发，本页开关只控制单条任务的显隐与奖励，不会绕过积分体系另发货币。</div>
+        </div>
+      </section>
+
+      <section class="page" id="page-license">
+        <div class="ph">
+          <div>
+            <h1>主题授权</h1>
+            <p>授权绑定单域名，含一年更新与技术支援</p>
+          </div>
+          <div class="ph-act">
+            <button class="btn" onclick="toast('已重新校验授权','ok')">重新校验</button>
+          </div>
+        </div>
+
+        <div class="lic-hero" style="margin-bottom:16px">
+          <div>
+            <div style="display:flex; align-items:center; gap:10px; margin-bottom:8px">
+              <h2>Ecod Theme · 专业版</h2>
+              <span class="tag ok"><span class="dot"></span>已授权</span>
+              <span class="tag">单站授权</span>
+            </div>
+            <div class="dom">ecod.cc · 授权码 ECD8-7H2K-9QX4-2M6T</div>
+            <div style="margin-top:14px; display:flex; gap:28px; font-size:12.5px; color:var(--ink3); flex-wrap:wrap">
+              <div><div style="margin-bottom:2px">签发日期</div><b style="color:var(--ink); font-size:13px" class="num">2026-10-31</b></div>
+              <div><div style="margin-bottom:2px">到期日期</div><b style="color:var(--ink); font-size:13px" class="num">2027-10-31</b></div>
+              <div><div style="margin-bottom:2px">可绑定站点</div><b style="color:var(--ink); font-size:13px" class="num">1 / 1</b></div>
+              <div><div style="margin-bottom:2px">最近心跳</div><b style="color:var(--ok); font-size:13px" class="num">2 分钟前</b></div>
+            </div>
+            <div class="lic-actions">
+              <button class="btn pri" onclick="toast('已打开续费页，支持按年续期','ok')">续费一年</button>
+              <button class="btn" onclick="toast('换绑申请已提交，每 90 天可换绑 1 次')">更换绑定域名</button>
+              <button class="btn ghost" onclick="toast('已复制授权码')">复制授权码</button>
+            </div>
+          </div>
+          <div class="ring">
+            <svg width="150" height="150" viewBox="0 0 150 150">
+              <circle cx="75" cy="75" r="62" fill="none" stroke="var(--line2)" stroke-width="10"/>
+              <circle cx="75" cy="75" r="62" fill="none" stroke="url(#g1)" stroke-width="10" stroke-linecap="round"
+                      stroke-dasharray="389.6" stroke-dashoffset="70" transform="rotate(-90 75 75)"/>
+              <defs><linearGradient id="g1" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#7d95ff"/><stop offset="1" stop-color="#4f6ef2"/></linearGradient></defs>
+            </svg>
+            <div class="ring-val"><b class="num">365</b><span>天后到期</span></div>
+          </div>
+        </div>
+
+        <div class="grid-23">
+          <div class="stack">
+            <div class="card">
+              <div class="card-h"><h2>授权模块</h2><span class="sub">关闭后前台入口隐藏，数据保留</span></div>
+              <div class="card-b" style="padding:4px 18px 16px">
+                <div class="mod-row">
+                  <div class="ic"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 2.5h10v11H3z"/><path d="M5.5 6h5M5.5 9h3"/></svg></div>
+                  <div><b>付费阅读</b><span>文章级门禁、试读段落、付费卡</span></div>
+                  <button class="sw on" onclick="this.classList.toggle('on')"></button>
+                </div>
+                <div class="mod-row">
+                  <div class="ic"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="6" cy="6" r="2.2"/><path d="M2.4 13c0-2 1.6-3.3 3.6-3.3s3.6 1.3 3.6 3.3"/><path d="M11.6 5.4l1 1 2-2.2"/></svg></div>
+                  <div><b>会员中心</b><span>会员页、我的权益、续费入口</span></div>
+                  <button class="sw on" onclick="this.classList.toggle('on')"></button>
+                </div>
+                <div class="mod-row">
+                  <div class="ic"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2.5" y="3" width="11" height="7.5" rx="1.4"/><path d="M2 13h12"/></svg></div>
+                  <div><b>自助广告</b><span>广告位定价、在线投放、审核流</span></div>
+                  <button class="sw on" onclick="this.classList.toggle('on')"></button>
+                </div>
+                <div class="mod-row">
+                  <div class="ic"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2.5 5.5A2 2 0 014.5 3.5h7a2 2 0 012 2v5a2 2 0 01-2 2h-7a2 2 0 01-2-2z"/><path d="M2.5 6.5h11"/></svg></div>
+                  <div><b>卡密兑换</b><span>批次生成、SHA-256 存储、直兑</span></div>
+                  <button class="sw on" onclick="this.classList.toggle('on')"></button>
+                </div>
+                <div class="mod-row">
+                  <div class="ic"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8 2.2l1.6 3.3 3.6.5-2.6 2.5.6 3.6L8 10.4 4.8 12.1l.6-3.6L2.8 6l3.6-.5z"/></svg></div>
+                  <div><b>积分商城</b><span>积分获取规则、兑换与发货</span></div>
+                  <button class="sw on" onclick="this.classList.toggle('on')"></button>
+                </div>
+                <div class="mod-row" style="opacity:.55">
+                  <div class="ic"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M5 13.5V7l3-4 1 1-1 2.5h3.4l-1 5z"/></svg></div>
+                  <div><b>多作者分成</b><span>需升级至团队版</span></div>
+                  <button class="sw" disabled></button>
+                </div>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="card-h"><h2>版本与更新</h2><div class="right"><span class="tag pri">有新版 v1.5.0</span></div></div>
+              <div class="card-b">
+                <div style="display:flex; align-items:center; gap:24px; font-size:12.5px; color:var(--ink3)">
+                  <div><div>当前版本</div><b style="color:var(--ink); font-size:15px" class="num">v1.4.2</b></div>
+                  <div><div>最新版本</div><b style="color:var(--pri); font-size:15px" class="num">v1.5.0</b></div>
+                  <div><div>发布时间</div><b style="color:var(--ink)" class="num">2026-10-28</b></div>
+                  <button class="btn" style="margin-left:auto" onclick="toast('更新前会自动备份主题目录','ok')">查看更新说明</button>
+                </div>
+                <div style="margin-top:14px; padding-top:14px; border-top:1px dashed var(--line2); font-size:12.5px; color:var(--ink2); line-height:1.9">
+                  <b style="color:var(--ink)">v1.5.0</b><br>
+                  · 新增：订单批量结算与撤销窗口<br>
+                  · 新增：授权心跳离线宽限 7 天<br>
+                  · 优化：会员列表聚合查询，加载提速 40%<br>
+                  · 修复：广告订单确认后未进入审核队列
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-h"><h2>授权记录</h2></div>
+            <div class="card-b">
+              <div class="tl">
+                <div class="tl-i on"><b>授权校验通过</b><span>2026-10-31 14:52 · 心跳</span></div>
+                <div class="tl-i on"><b>域名绑定 ecod.cc</b><span>2026-10-31 10:02</span></div>
+                <div class="tl-i on"><b>开通专业版 · 一年</b><span>2026-10-31 09:58 · 订单 EC20261031095811</span></div>
+                <div class="tl-i"><b>授权码签发</b><span>2026-10-31 09:57</span></div>
+              </div>
+              <div style="margin-top:16px; padding-top:14px; border-top:1px dashed var(--line2)">
+                <div style="font-size:12px; color:var(--ink3); margin-bottom:6px">站点指纹</div>
+                <div class="keybox" style="font-size:11.5px">a91f·c204·7d3e·5b18
+                  <button class="btn ghost sm copy" onclick="toast('已复制指纹')">复制</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============ 广告位 ============ -->
+      <section class="page" id="page-ads">
+        <div class="ph">
+          <div><h1>广告位</h1><p>3 个位置 · 2 个在投 · 1 条待审核</p></div>
+          <div class="ph-act"><button class="btn pri" data-jump="confirm">审核新投放</button></div>
+        </div>
+        <div class="card" style="overflow:hidden">
+          <div class="card-h"><h2>待审核投放</h2><span class="sub">1 条</span></div>
+          <div style="padding:16px 18px; display:flex; gap:16px; align-items:center">
+            <div style="width:150px; height:64px; border-radius:8px; background:linear-gradient(120deg,#dbe3ff,#eef1fe); display:grid; place-items:center; font-size:11px; color:#5b6b9c">640 × 280 预览</div>
+            <div>
+              <b style="font-size:13.5px">首页顶部通栏 · 3 天</b>
+              <div style="font-size:12px; color:var(--ink3); margin-top:2px">山野 · ¥300.00 · 订单 EC20261031064101869701</div>
+              <div style="font-size:12px; color:var(--ink3)">跳转 https://example.com/</div>
+            </div>
+            <div style="margin-left:auto; display:flex; gap:8px">
+              <button class="btn" onclick="toast('已拒绝，需先在通道方退款')">拒绝</button>
+              <button class="btn pri" onclick="toast('已通过，广告立即上线','ok')">通过</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============ 设置 ============ -->
+      <section class="page" id="page-settings">
+        <div class="ph"><div><h1>设置</h1><p>仅影响控制台插件本身，主题设置仍在 Typecho 后台</p></div>
+          <div class="ph-act"><button class="btn pri" onclick="toast('设置已保存','ok')">保存</button></div>
+        </div>
+        <div class="grid-13">
+          <div class="stack">
+            <div class="card">
+              <div class="card-h"><h2>收款确认</h2></div>
+              <div class="card-b form-grid">
+                <div class="field"><label>手动确认默认通道</label><select class="input"><option>手动转账（微信 / 支付宝）</option><option>易支付</option></select></div>
+                <div class="field"><label>确认后自动刷新用户页</label><select class="input"><option>开启（轮询 3 秒）</option><option>关闭</option></select></div>
+                <div class="field full"><label>付款凭证要求</label>
+                  <select class="input"><option>必须上传凭证（推荐）</option><option>可选</option><option>不需要</option></select>
+                </div>
+                <div class="field full"><label>收款说明（显示在收银台）</label>
+                  <textarea class="input" rows="3">转账后请上传凭证并备注订单号后 6 位，站长会在 12 小时内确认。</textarea>
+                </div>
+              </div>
+            </div>
+            <div class="card">
+              <div class="card-h"><h2>通知</h2></div>
+              <div class="card-b" style="padding:4px 18px 16px">
+                <div class="mod-row"><div><b>新订单邮件提醒</b><span>发到站长邮箱，同一订单只发一次</span></div><button class="sw on" onclick="this.classList.toggle('on')"></button></div>
+                <div class="mod-row"><div><b>会员到期前 7 天提醒</b><span>通过站内信发送给用户</span></div><button class="sw on" onclick="this.classList.toggle('on')"></button></div>
+                <div class="mod-row"><div><b>授权到期提醒</b><span>到期前 30 天在控制台顶部提示</span></div><button class="sw on" onclick="this.classList.toggle('on')"></button></div>
+              </div>
+            </div>
+          </div>
+          <div class="stack">
+            <div class="card">
+              <div class="card-h"><h2>访问与安全</h2></div>
+              <div class="card-b" style="font-size:13px">
+                <div style="display:flex; align-items:center; justify-content:space-between; padding:8px 0; border-bottom:1px dashed var(--line2)">
+                  <div><b>控制台入口</b><div style="font-size:12px; color:var(--ink3); font-family:var(--mono)">/console</div></div>
+                  <button class="btn sm" onclick="toast('入口已改为随机路径 /console-7h2k')">改路径</button>
+                </div>
+                <div style="display:flex; align-items:center; justify-content:space-between; padding:8px 0; border-bottom:1px dashed var(--line2)">
+                  <div><b>仅管理员可访问</b><div style="font-size:12px; color:var(--ink3)">非 administrator 组一律 403</div></div>
+                  <span class="tag ok"><span class="dot"></span>已开启</span>
+                </div>
+                <div style="display:flex; align-items:center; justify-content:space-between; padding:8px 0; border-bottom:1px dashed var(--line2)">
+                  <div><b>操作审计</b><div style="font-size:12px; color:var(--ink3)">保留 180 天，可导出</div></div>
+                  <button class="btn sm" onclick="toast('已导出审计日志')">查看</button>
+                </div>
+                <div style="display:flex; align-items:center; justify-content:space-between; padding:8px 0">
+                  <div><b>二次确认</b><div style="font-size:12px; color:var(--ink3)">超过 ¥500 的订单需输入确认码</div></div>
+                  <button class="sw on" onclick="this.classList.toggle('on')"></button>
+                </div>
+              </div>
+            </div>
+            <div class="card">
+              <div class="card-h"><h2>数据</h2></div>
+              <div class="card-b" style="display:flex; flex-direction:column; gap:10px">
+                <button class="btn" style="justify-content:center">导出订单 CSV</button>
+                <button class="btn" style="justify-content:center">导出会员名单</button>
+                <button class="btn danger" style="justify-content:center">清理 90 天前的已关闭订单</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============ 设计规格 ============ -->
+      <section class="page" id="page-spec">
+        <div class="ph">
+          <div><h1>设计规格</h1><p>插件定位、信息架构、数据模型与实现约定</p></div>
+          <div class="ph-act"><span class="tag">设计稿 v1 · 2026-10-31</span></div>
+        </div>
+
+        <div class="note" style="margin-bottom:22px">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" style="flex:none;margin-top:2px"><circle cx="8" cy="8" r="6.2"/><path d="M8 4.6v4.2M8 11.2v.6"/></svg>
+          <div><b>前提假设</b>：这里的「主题授权」指<strong>本站这份主题的授权状态</strong>——授权码、绑定域名、到期时间、模块解锁、版本更新通道，由主题作者签发、插件负责校验与续期。若你要的是「把主题卖给其他站长、给客户开授权」的<em>发卡侧</em>系统，那属于另一个独立的授权中心，不在本站插件范围内（可复用同一套授权表结构，但入口在服务端）。
+          </div>
+        </div>
+
+        <div class="spec-sec">
+          <h3>01 · 为什么是插件而不是主题页</h3>
+          <p>现在的能力散在 <code>pay-admin.php</code>（498 行、裸表格、无筛选无分页无审计），且主题升级会覆盖它。抽成 Typecho 插件后：主题可换、控制台不动；插件可单独发版；数据表与主题无关；访问走独立路由并做管理员鉴权。</p>
+          <pre class="code"><b>usr/plugins/EcodConsole/</b>
+├── Plugin.php              <i># activate() 建表 / 注册路由 / 后台菜单挂入口</i>
+├── Action.php              <i># 路由控制：GET 渲染页面，POST 分发动作</i>
+├── core/
+│   ├── auth.php            <i># administrator 校验 + 令牌 + 同源 + 限流</i>
+│   ├── orders.php          <i># 列表/筛选/结算/关闭/批量/导出</i>
+│   ├── members.php         <i># 会员聚合、授予、延期、降级、撤销</i>
+│   ├── license.php         <i># 授权校验、心跳、换绑、模块开关</i>
+│   ├── ads.php             <i># 广告审核（复用主题表）</i>
+│   ├── tickets.php         <i># 工单队列 / 会话 / 状态 / 内部备注</i>
+│   ├── notices.php         <i># 站内信推送与发送记录</i>
+│   ├── tasks.php           <i># 任务奖励覆写、显隐、统计</i>
+│   └── audit.php           <i># 写操作留痕</i>
+├── views/
+│   ├── layout.php  dashboard.php  orders.php  confirm.php
+│   ├── members.php  tickets.php  notices.php  tasks.php
+│   ├── license.php  ads.php  settings.php
+└── assets/  console.css  console.js</pre>
+        </div>
+
+        <div class="spec-sec">
+          <h3>02 · 信息架构</h3>
+          <p>九个一级页，分四条线：交易主线「钱进来 → 确认 → 发权益 → 看留存」，用户服务线（工单 / 消息 / 任务），站点线（授权 / 广告），系统线。待确认与工单都独立成页，因为它们都是高频、连续、要看上下文再操作的核对型工作，塞进列表页会拖慢节奏。</p>
+          <pre class="code"><b>运营</b>
+概览        <i>今天该干什么：收入、待办、异常（含待处理工单）</i>
+订单管理    <i>全量检索、筛选、批量、导出</i>
+待确认      <i>核对凭证 → 确认收款 → 发权益（J/K 连续处理）</i>
+会员管理    <i>谁在付费、什么时候到期、消费多少</i>
+
+<b>用户</b>
+工单处理    <i>看时间线 → 回复 → 关单；回复即推站内信（J/K 连续处理）</i>
+消息推送    <i>全站公告 / 定向 / 分群，写 ecod_notifs，可查触达与已读</i>
+任务配置    <i>10 项任务的奖励、上限、显隐；改完即时生效</i>
+
+<b>站点</b>
+主题授权    <i>这张票还能用多久、能开哪些功能、要不要更新</i>
+广告位      <i>投放审核与上线</i>
+
+<b>系统</b>
+设置        <i>确认规则、通知、入口路径、审计与导出</i>
+设计规格    <i>本页</i></pre>
+        </div>
+
+        <div class="spec-sec">
+          <h3>03 · 数据模型</h3>
+          <p>订单、权益、卡密、广告全部复用主题现有表，插件只新增三张表，避免两套账。工单、消息、任务同理<strong>全部落在主题表里</strong>（前台要读，插件不能独占），插件只是这批表的第二个写入口：插件禁用后数据仍在、前台仍可看，只是没人处理。</p>
+          <pre class="code"><b>复用</b>
+typecho_ecod_orders         <i>订单主表（order_no 唯一）</i>
+typecho_ecod_entitlements   <i>权益（vip / post，expire_at=0 永久）</i>
+typecho_ecod_pay_cards      <i>卡密（只存 SHA-256）</i>
+typecho_ecod_ads            <i>广告投放</i>
+
+<b>复用 · 用户侧</b>
+typecho_ecod_notifs         <i>站内消息（uid/type/title/body/link/is_read）</i>
+                            <i># 消息推送写这里；type 需含 notice / ticket</i>
+typecho_ecod_credits        <i>积分流水（任务发奖 type='task'，ref=任务 key）</i>
+typecho_ecod_tickets        <i>工单主表（no 唯一 / status / priority / last_side / unread_*）</i>
+typecho_ecod_ticket_msgs    <i>工单会话（side=user|staff，纯文本）</i>
+typecho_ecod_task_claims    <i>任务领取（uid+task+period 唯一，幂等闸门）</i>
+                            <i># 奖励数值不进表，覆写在插件 option 里</i>
+
+<b>新增</b>
+ecod_console_proof     <i>id, order_no, image, note, uid, created</i>
+                       <i># 收款凭证；一单可多图，取最新为展示主图</i>
+ecod_console_license   <i>id, lic_key, domain, fingerprint, edition,</i>
+                       <i>modules(json), issued_at, expire_at, last_ping, status</i>
+ecod_console_audit     <i>id, uid, action, target, payload(json), ip, ua, created</i>
+                       <i># 所有写操作必写一条；保留 180 天</i></pre>
+        </div>
+
+        <div class="spec-sec">
+          <h3>04 · 路由与动作</h3>
+          <p>单一入口 <code>/console</code>，页面用 <code>?p=</code> 区分，写操作用 POST + 动作名，全部走令牌与同源校验。结算必须幂等：以 <code>order_no</code> 唯一定位、事务内校验 <code>status='pending'</code>，重复确认直接返回「已结算」而非报错。工单回复同理：先写 <code>ticket_msgs</code> 再更新主表 <code>msgs/updated/last_side/unread_user</code>，同一 <code>body</code> 60 秒内重复提交只落一条。</p>
+          <pre class="code">GET  /console?p=dashboard|orders|confirm|members
+                |tickets|notices|tasks|license|ads|settings
+POST /console
+  action=order.settle      order_no
+  action=order.close       order_no
+  action=order.refund      order_no, note      <i># 只标记，不调通道退款</i>
+  action=order.bulk        order_nos[], op
+  action=member.grant      uid|name, kind, level, days
+  action=member.extend     uid, days
+  action=member.revoke     uid, kind, target
+  action=ticket.reply      tid, body, close?    <i># 写入 ticket_msgs(side=staff)</i>
+  action=ticket.status     tid, status          <i># open|resolved|closed</i>
+  action=ticket.priority   tid, priority
+  action=ticket.note       tid, body            <i># 内部备注，side=note，用户不可见</i>
+  action=notice.send       scope, uid|group, title, body, link, at?
+  action=notice.delete     id                  <i># 撤回整行，用户侧同步消失</i>
+  action=task.reward       key, reward, cap?
+  action=task.toggle       key, on
+  action=license.bind      lic_key, domain
+  action=license.ping
+  action=license.module    key, on
+  action=export            type=csv</pre>
+        </div>
+
+        <div class="spec-sec">
+          <h3>05 · 安全约定</h3>
+          <pre class="code">鉴权     <i>Typecho 登录态 + group=administrator，双保险</i>
+令牌     <i>账户令牌（ecod_account_token），所有写操作校验</i>
+同源     <i>Origin/Referer 必须为本站；拒绝跨站表单</i>
+限流     <i>结算 20 次/分、导出 3 次/分，超限 429</i>
+幂等     <i>结算以 order_no 为键，事务内二次校验状态</i>
+审计     <i>写操作记录 uid/动作/目标/IP/UA，可导出</i>
+敏感     <i>凭证图不落公开目录，走带鉴权的读取入口</i>
+降级     <i>授权心跳失败只提示、不锁站（宽限 7 天）</i>
+工单     <i>正文纯文本入库、输出转义；单条 ≤2000 字，回复 30s 1 条</i>
+推送     <i>标题 ≤60 字、正文 ≤500 字；群发 3 次/分，超限 429</i>
+可见性   <i>ticket.note（内部备注）只在控制台渲染，前台 API 永不下发</i></pre>
+        </div>
+
+        <div class="spec-sec">
+          <h3>06 · 交互规范</h3>
+          <p>沿用主题的 4pt 网格与墨色三档，控制台只增加密度，不引入新色。数字全部等宽（tabular-nums），状态只用「色点 + 文案」，不靠颜色单独传达信息。</p>
+          <pre class="code">间距     <i>4 / 8 / 12 / 16 / 24，禁止 5、10、18</i>
+圆角     <i>卡面 12、控件 8、微元素 6，胶囊仅用于标签</i>
+主色     <i>#4f6ef2 只用于主操作与选中态，一屏不超过 2 处实心</i>
+状态     <i>待确认=琥珀、已支付=绿、已退款=红、已关闭=灰</i>
+密度     <i>表格行高 52，页面边距 24/28，卡内 18</i>
+键盘     <i>待确认页 J/K 切换、Enter 确认；工单页 J/K 切换、⌘↵ 发送、Esc 关抽屉</i>
+反馈     <i>写操作 1 秒内出结果，成功用轻提示，失败给原因</i></pre>
+        </div>
+
+        <div class="spec-sec">
+          <h3>07 · 交付验收</h3>
+          <div class="card"><div class="card-b" style="padding:6px 18px">
+            <div class="check"><div class="bx"></div><div>插件启用后自动建表，禁用不删数据<i>activate / deactivate 幂等</i></div></div>
+            <div class="check"><div class="bx"></div><div>非管理员访问 <code>/console</code> 返回 403 且不泄露数据<i>不渲染任何订单字段</i></div></div>
+            <div class="check"><div class="bx"></div><div>待确认页可连续处理 10 笔订单，键盘不离开列表<i>J/K/Enter 全链路</i></div></div>
+            <div class="check"><div class="bx"></div><div>同一订单重复确认不会重复发权益<i>事务 + status 二次校验</i></div></div>
+            <div class="check"><div class="bx"></div><div>广告订单确认后自动进入广告待审队列<i>不直接上线</i></div></div>
+            <div class="check"><div class="bx"></div><div>会员延期、降级、撤销后前台权益立即变化<i>读同一张 entitlements</i></div></div>
+            <div class="check"><div class="bx"></div><div>授权到期 30 天内在展开提示，不影响交易<i>心跳失败宽限 7 天</i></div></div>
+            <div class="check"><div class="bx"></div><div>所有写操作可在审计页查到<i>含失败操作</i></div></div>
+            <div class="check"><div class="bx"></div><div>工单回复后用户侧「消息中心」出现一条，tab 角标 +1<i>reply/notice 同一套未读计数</i></div></div>
+            <div class="check"><div class="bx"></div><div>内部备注不出现在任何前台接口返回里<i>ticket_detail 只回 side=user|staff</i></div></div>
+            <div class="check"><div class="bx"></div><div>关闭工单后用户端回复框禁用、只能新建<i>服务端同样拒绝向 closed 写入</i></div></div>
+            <div class="check"><div class="bx"></div><div>群发触达数等于实际写入行数，删除后用户侧同步消失<i>撤回=删行，不做软删</i></div></div>
+            <div class="check"><div class="bx"></div><div>改任务奖励后前台 5 分钟内生效，已领记录与流水不变<i>覆写配置、不动 claims</i></div></div>
+            <div class="check"><div class="bx"></div><div>积分总开关（ECrOn）关闭时任务页全部置灰并提示<i>不静默失败</i></div></div>
+            <div class="check"><div class="bx"></div><div>390px 宽度可用，表格横向滚动而非挤压<i>移动端只保留确认与查询</i></div></div>
+          </div></div>
+        </div>
+
+        <div class="spec-sec">
+          <h3>08 · 与主题侧的分工</h3>
+          <p>控制台不复制前台逻辑，只对同一批表做第二个写入口。三处联动必须两侧字段对齐，否则会出现「后台改了、前台不认」；同时对「谁可以写哪一侧」有硬约束。</p>
+          <pre class="code"><b>工单</b>
+主题 page-user.php  tab=ticket          <i># 读 ecod_tickets / ecod_ticket_msgs</i>
+主题 api.php        ticket_*            <i># 用户侧建单 / 回复 / 关闭（只写 side=user）</i>
+插件 tickets.php    ticket.reply        <i># 客服回复（只写 side=staff）+ 推站内信</i>
+插件 tickets.php    ticket.note         <i># 内部备注（side=note），前台查询显式过滤</i>
+约束  状态只有 open|resolved|closed；「已回复 / 待处理」由 last_side 派生，<b>不存第四态</b>
+      回复顺序：先 ticket_msgs → 再更新 msgs / updated / last_side / unread_user
+
+<b>消息</b>
+主题 core/site/notifs.php               <i># ecod_notif_broadcast / list / unread / read</i>
+插件 notices.php    notice.send        <i># 直接调主题函数，不另建消息表</i>
+约束  type 白名单必须同时含 notice 与 ticket，否则插入被拒（theme notifs.php:139）
+
+<b>任务</b>
+主题 core/user/tasks.php                <i># 进度 COUNT + 领取 + ecod_credits_add</i>
+插件 tasks.php      task.reward         <i># 只写插件 option：key => [reward, cap, on]</i>
+约束  读侧优先取覆写值、无覆写回落常量表；插件禁用后前台照跑（默认奖励）</pre>
+          <div class="note">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" style="flex:none;margin-top:2px"><circle cx="8" cy="8" r="6.2"/><path d="M8 4.6v4.2M8 11.2v.6"/></svg>
+            <div><b>插件不是必需依赖</b>：禁用插件后工单数据仍在、用户仍可查看自己提交的工单，只是没人回复；消息与任务完全不受影响。这是刻意的——控制台负责「处理效率」，不负责「功能存在」。</div>
+          </div>
+        </div>
+      </section>
+
+    </div>
+  </div>
+</div>
+
+<div class="scrim" id="scrim"></div>
+<aside class="drawer" id="drawer">
+  <div class="drawer-h">
+    <div><h3 id="drTitle">订单详情</h3><p id="drSub">EC20261031064101869701</p></div>
+    <button class="icon-btn" style="margin-left:auto" onclick="closeDrawer()">
+      <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 4l8 8M12 4l-8 8"/></svg>
+    </button>
+  </div>
+  <div class="drawer-b" id="drBody"></div>
+  <div class="drawer-f" id="drFoot">
+    <button class="btn pri" style="flex:1" onclick="toast('已确认收款，权益已发放','ok')">确认收款</button>
+    <button class="btn" onclick="closeDrawer()">关闭</button>
+  </div>
+</aside>
+<div class="toasts" id="toasts"></div>
+
+<script>
+/* ============================================================
+   数据（示例，见 docs/dev/MEMBER-CENTER.md 的真实字段）
+   ============================================================ */
+const ORDERS = [
+  {no:'EC20261031092811550214', uid:12, user:'林深',  kind:'vip',  item:'超级会员 · 年付',            sub:'Lv.2 · 365 天',  amount:128,   ch:'epay',   created:'10-31 09:28', status:'pending',  wait:'12 分钟'},
+  {no:'EC20261031090233771208', uid:33, user:'阿澈',  kind:'post', item:'单篇解锁 · #4821',          sub:'一次性',          amount:19.9,  ch:'manual', created:'10-31 09:02', status:'pending',  wait:'38 分钟'},
+  {no:'EC20261031084420119003', uid:7,  user:'迟野',  kind:'vip',  item:'会员 · 季付',                sub:'Lv.1 · 90 天',    amount:39,    ch:'manual', created:'10-31 08:44', status:'pending',  wait:'56 分钟'},
+  {no:'EC20261031064101869701', uid:1,  user:'山野',  kind:'ad',   item:'自助广告 · 首页顶部通栏',    sub:'3 天',            amount:300,   ch:'manual', created:'10-31 06:41', status:'pending',  wait:'42 分钟'},
+  {no:'EC20261030231144870019', uid:18, user:'北屿',  kind:'post', item:'单篇解锁 · #4802',          sub:'一次性',          amount:9.9,   ch:'epay',   created:'10-30 23:11', status:'paid',     wait:''},
+  {no:'EC20261030214400021187', uid:9,  user:'雾行',  kind:'ad',   item:'自助广告 · 侧边栏卡片',      sub:'30 天',           amount:300,   ch:'epay',   created:'10-30 21:44', status:'paid',     wait:''},
+  {no:'EC20261030190033220117', uid:12, user:'林深',  kind:'vip',  item:'超级会员 · 年付',            sub:'Lv.2 · 365 天',   amount:128,   ch:'card',   created:'10-30 19:00', status:'paid',     wait:''},
+  {no:'EC20261030182210004455', uid:1,  user:'山野',  kind:'post', item:'单篇解锁 · #4790',          sub:'一次性',          amount:19.9,  ch:'manual', created:'10-30 18:22', status:'refunded', wait:''},
+  {no:'EC20261030175500331120', uid:26, user:'含章',  kind:'vip',  item:'会员 · 季付',                sub:'Lv.1 · 90 天',    amount:39,    ch:'epay',   created:'10-30 17:55', status:'closed',   wait:''}
+];
+
+const MEMBERS = [
+  {uid:12, name:'林深',  level:2, exp:'2027-03-12', sum:1280, n:9,  active:'3 分钟前', hue:226},
+  {uid:1,  name:'山野',  level:2, exp:'2026-11-04', sum:942,  n:7,  active:'1 小时前', hue:12, soon:true},
+  {uid:9,  name:'雾行',  level:1, exp:'2026-12-20', sum:468,  n:5,  active:'2 小时前', hue:172},
+  {uid:26, name:'含章',  level:1, exp:'2027-01-08', sum:312,  n:4,  active:'昨天',     hue:276},
+  {uid:33, name:'阿澈',  level:1, exp:'2026-11-02', sum:258,  n:6,  active:'5 分钟前', hue:38,  soon:true},
+  {uid:18, name:'北屿',  level:0, exp:'—',          sum:129,  n:3,  active:'3 天前',   hue:200},
+  {uid:7,  name:'迟野',  level:0, exp:'—',          sum:96,   n:2,  active:'1 周前',   hue:320}
+];
+
+const ST = {
+  pending:{t:'待确认', c:'warn'},
+  paid:{t:'已支付', c:'ok'},
+  closed:{t:'已关闭', c:''},
+  refunded:{t:'已退款', c:'bad'}
+};
+const CH = {manual:'手动转账', epay:'易支付', card:'卡密'};
+const KIND = {vip:'会员', ad:'广告', post:'单篇'};
+
+/* ============================================================
+   用户侧：工单 / 推送记录 / 任务配置
+   数据契约见 docs/dev/USER-MODULES.md（主题表：ecod_tickets 等）
+   ============================================================ */
+const TK_CAT = {pay:'付费与订单', account:'账号与登录', report:'内容举报', idea:'功能建议', other:'其他'};
+const TK_ST = {open:['待处理','warn'], replied:['已回复','pri'], resolved:['已解决','ok'], closed:['已关闭','']};
+
+const TICKETS = [
+  {id:1, no:'TK20261031-7F3A', cat:'pay', uid:12, user:'林深', title:'会员续费后到期时间没有累加',
+   pri:2, status:'replied', unread:1, updated:'10 分钟前', created:'昨天 20:14',
+   msgs:[
+     {side:'user',  who:'林深', at:'昨天 20:14', txt:'续费了年付，但个人中心到期时间还是旧的，重新登录也一样。订单号 EC202610300921。'},
+     {side:'staff', who:'我', at:'今天 09:02', txt:'已核对订单，年付时长已补上（+365 天），请刷新个人中心查看。若仍未生效请回复本工单。'},
+     {side:'note',  who:'内部备注', at:'今天 09:03', txt:'EC202610300921 二次下发成功，ecod_pay_grant 累加正常，非 bug。'}
+   ]},
+  {id:2, no:'TK20261031-1B22', cat:'account', uid:33, user:'阿澈', title:'换邮箱后收不到验证邮件',
+   pri:1, status:'open', unread:0, updated:'3 小时前', created:'今天 06:20',
+   msgs:[
+     {side:'user', who:'阿澈', at:'今天 06:20', txt:'把账号邮箱换成 QQ 邮箱后一直收不到验证信，垃圾箱也翻过了。'}
+   ]},
+  {id:3, no:'TK20261031-0C41', cat:'idea', uid:7, user:'迟野', title:'希望任务中心能自定义奖励数值',
+   pri:1, status:'open', unread:0, updated:'1 小时前', created:'今天 08:10',
+   msgs:[
+     {side:'user', who:'迟野', at:'今天 08:10', txt:'每个站的积分价值不一样，能不能在后台改每项任务的奖励？'}
+   ]},
+  {id:4, no:'TK20261031-93C1', cat:'report', uid:1, user:'山野', title:'某篇文章疑似搬运公众号原文',
+   pri:0, status:'open', unread:0, updated:'22 分钟前', created:'今天 09:40',
+   msgs:[
+     {side:'user', who:'山野', at:'今天 09:40', txt:'这篇文章和公众号「XXX」的原文几乎一样，请核实：/archives/4821'}
+   ]},
+  {id:5, no:'TK20261030-4A77', cat:'pay', uid:9, user:'雾行', title:'卡密兑换提示「已被使用」',
+   pri:1, status:'replied', unread:0, updated:'昨天', created:'昨天 15:02',
+   msgs:[
+     {side:'user',  who:'雾行', at:'昨天 15:02', txt:'刚买的卡密，一次都没用过就提示已被使用。'},
+     {side:'staff', who:'我', at:'昨天 16:20', txt:'查到你 10-29 已用同一张卡兑换过，可能重复购买。已为你补发一张新卡，见站内信。'}
+   ]},
+  {id:6, no:'TK20261029-77B0', cat:'account', uid:26, user:'含章', title:'二次验证绑定后手机丢失，无法登录',
+   pri:2, status:'open', unread:0, updated:'昨天', created:'昨天 11:30',
+   msgs:[
+     {side:'user', who:'含章', at:'昨天 11:30', txt:'打开了二次验证，手机丢了，现在是「验证码错误」进不去，求人工解绑。'}
+   ]},
+  {id:7, no:'TK20261028-2E15', cat:'other', uid:18, user:'北屿', title:'投稿审核一般多久出结果',
+   pri:0, status:'resolved', unread:0, updated:'10-29', created:'10-28 14:00',
+   msgs:[
+     {side:'user',  who:'北屿', at:'10-28 14:00', txt:'想问下投稿审核的时效。'},
+     {side:'staff', who:'我', at:'10-28 18:40', txt:'通常 24 小时内，周末会慢一些。'}
+   ]},
+  {id:8, no:'TK20261027-5D90', cat:'idea', uid:7, user:'迟野', title:'暗色模式下代码块配色偏灰',
+   pri:0, status:'closed', unread:0, updated:'10-27', created:'10-27 10:12',
+   msgs:[
+     {side:'user',  who:'迟野', at:'10-27 10:12', txt:'暗色下代码块对比度有点低。'},
+     {side:'staff', who:'我', at:'10-27 12:00', txt:'已在下个版本调整 token，先关单。'}
+   ]}
+];
+
+const NOTICE_LOG = [
+  {title:'积分规则调整通知',        scope:'全站公告', reach:1284, read:962, by:'站长', at:'10-30 18:20', st:'sent'},
+  {title:'11 月会员价格调整预告',    scope:'全站公告', reach:1284, read:811, by:'站长', at:'10-26 10:00', st:'sent'},
+  {title:'你的投稿已发布',          scope:'定向 · 12 人', reach:12, read:12, by:'系统', at:'10-26 09:12', st:'sent'},
+  {title:'工单有新回复',            scope:'定向 · 1 人',  reach:1,  read:1,  by:'系统', at:'10-25 16:20', st:'sent'},
+  {title:'国庆活动积分翻倍',        scope:'全站公告', reach:1190, read:1043, by:'站长', at:'10-01 09:00', st:'done'}
+];
+
+const TASKS_CONF = [
+  {k:'signup',        t:'完成注册',        g:'新手', cond:'注册即达成',              rw:20,  cap:1,  on:1, n7:23},
+  {k:'post_first',    t:'首次投稿',        g:'新手', cond:'发布 ≥1 篇文章',          rw:30,  cap:1,  on:1, n7:9},
+  {k:'comment_first', t:'首次评论',        g:'新手', cond:'发表 ≥1 条评论',          rw:10,  cap:1,  on:1, n7:6},
+  {k:'follow_first',  t:'首次关注',        g:'新手', cond:'关注 ≥1 位作者',          rw:5,   cap:1,  on:1, n7:4},
+  {k:'checkin_daily', t:'每日签到',        g:'日常', cond:'当日签到',                rw:10,  cap:1,  on:1, n7:214},
+  {k:'post_daily',    t:'每日投稿',        g:'日常', cond:'当日发布 1 篇',            rw:15,  cap:1,  on:1, n7:18},
+  {k:'comment_daily', t:'每日评论',        g:'日常', cond:'当日评论 3 条',            rw:5,   cap:3,  on:1, n7:96},
+  {k:'like_daily',    t:'每日点赞',        g:'日常', cond:'当日点赞 5 次',            rw:2,   cap:5,  on:0, n7:31},
+  {k:'days_30',       t:'注册满 30 天',    g:'累计', cond:'创建时间 ≥30 天前',        rw:100, cap:1,  on:1, n7:3},
+  {k:'post_10',       t:'累计投稿 10 篇',  g:'累计', cond:'已发布文章 ≥10 篇',        rw:100, cap:1,  on:1, n7:1}
+];
+
+const money = n => '¥' + Number(n).toFixed(2);
+const hueColor = h => `hsl(${h} 62% 56%)`;
+
+/* ============================================================
+   导航
+   ============================================================ */
+const TITLES = {dashboard:'概览', orders:'订单管理', confirm:'待确认', members:'会员管理',
+  tickets:'工单处理', notices:'消息推送', tasks:'任务配置',
+  license:'主题授权', ads:'广告位', settings:'设置', spec:'设计规格'};
+function go(page){
+  document.querySelectorAll('.page').forEach(p => p.classList.toggle('on', p.id === 'page-' + page));
+  document.querySelectorAll('#nav a').forEach(a => a.classList.toggle('on', a.dataset.page === page));
+  document.getElementById('crumb').textContent = TITLES[page] || page;
+  history.replaceState(null, '', '#' + page);
+  document.querySelector('.content').scrollIntoView({block:'start'});
+  window.scrollTo({top:0});
+}
+document.getElementById('nav').addEventListener('click', e => {
+  const a = e.target.closest('a[data-page]');
+  if (!a) return;
+  e.preventDefault();
+  go(a.dataset.page);
+});
+document.querySelectorAll('[data-jump]').forEach(b => b.onclick = () => go(b.dataset.jump));
+
+/* 主题切换 */
+const themeBtn = document.getElementById('themeBtn');
+let theme = 'light';
+themeBtn.onclick = () => {
+  theme = theme === 'light' ? 'dark' : 'light';
+  document.documentElement.dataset.theme = theme;
+  renderChart();
+};
+
+/* 搜索框假交互 */
+document.getElementById('searchBox').onclick = () => {
+  go('orders');
+  setTimeout(() => document.getElementById('orderSearch').focus(), 60);
+};
+
+/* ============================================================
+   提示
+   ============================================================ */
+function toast(text, kind){
+  const el = document.createElement('div');
+  el.className = 'toast ' + (kind || '');
+  el.innerHTML = (kind === 'ok'
+      ? '<svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="var(--ok)" stroke-width="1.8"><path d="M3 8.4l3.2 3.2L13 4.8"/></svg>'
+      : '<svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="var(--ink3)" stroke-width="1.6"><circle cx="8" cy="8" r="6.2"/><path d="M8 5v3.4l2.2 1.3"/></svg>')
+    + '<span>' + text + '</span>';
+  document.getElementById('toasts').appendChild(el);
+  setTimeout(() => { el.style.opacity = '0'; el.style.transform = 'translateY(6px)'; el.style.transition = 'all .2s'; }, 2200);
+  setTimeout(() => el.remove(), 2500);
+}
+
+/* ============================================================
+   订单表
+   ============================================================ */
+let filter = {st:'all', kind:'all', ch:'all', q:''};
+let selected = new Set();
+
+function orderRow(o, compact){
+  const st = ST[o.status];
+  const checked = selected.has(o.no) ? 'checked' : '';
+  return `<tr data-no="${o.no}" class="${selected.has(o.no) ? 'sel' : ''}">
+    <td style="width:38px"><input type="checkbox" class="ck row-ck" data-no="${o.no}" ${checked}></td>
+    <td><span class="ono">${o.no}</span></td>
+    <td><div class="who"><i style="background:${hueColor((o.uid * 47) % 360)}">${o.user.slice(0,1)}</i>${o.user}</div></td>
+    <td class="item"><b>${o.item}</b><span>${KIND[o.kind]} · ${o.sub}</span></td>
+    <td class="r num" style="font-weight:600">${money(o.amount)}</td>
+    <td><span style="font-size:12.5px;color:var(--ink2)">${CH[o.ch]}</span></td>
+    <td class="num" style="font-size:12.5px;color:var(--ink3)">${o.created}</td>
+    <td><span class="tag ${st.c}"><span class="dot"></span>${st.t}</span></td>
+    <td style="text-align:right; white-space:nowrap">
+      ${o.status === 'pending'
+        ? `<button class="btn sm pri" onclick="quickSettle('${o.no}', event)">确认</button>
+           <button class="btn sm ghost" onclick="openOrder('${o.no}')">详情</button>`
+        : `<button class="btn sm ghost" onclick="openOrder('${o.no}')">详情</button>`}
+    </td>
+  </tr>`;
+}
+
+function renderOrders(){
+  const rows = ORDERS.filter(o =>
+    (filter.st === 'all' || o.status === filter.st) &&
+    (filter.kind === 'all' || o.kind === filter.kind) &&
+    (filter.ch === 'all' || o.ch === filter.ch) &&
+    (filter.q === '' || o.no.includes(filter.q) || o.user.includes(filter.q))
+  );
+  const box = document.getElementById('orderTable');
+  if (!rows.length){
+    box.innerHTML = `<div class="empty"><div class="ic"><svg width="18" height="18" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="7" cy="7" r="4.4"/><path d="M10.4 10.4L14 14"/></svg></div>没有符合条件的订单</div>`;
+    return;
+  }
+  box.innerHTML = `<table class="tbl">
+    <thead><tr>
+      <th style="width:38px"></th><th>订单号</th><th>用户</th><th>商品</th>
+      <th class="r">金额</th><th>通道</th><th>创建时间</th><th>状态</th><th style="text-align:right">操作</th>
+    </tr></thead>
+    <tbody>${rows.map(o => orderRow(o)).join('')}</tbody>
+  </table>`;
+  document.getElementById('orderTotal').textContent = rows.length;
+  box.querySelectorAll('.row-ck').forEach(ck => {
+    ck.onchange = () => {
+      if (ck.checked) selected.add(ck.dataset.no); else selected.delete(ck.dataset.no);
+      const tr = ck.closest('tr');
+      tr.classList.toggle('sel', ck.checked);
+      syncBulk();
+    };
+  });
+}
+
+function syncBulk(){
+  const n = selected.size;
+  document.getElementById('selHint').textContent = n ? `已选择 ${n} 笔` : '未选择';
+  document.getElementById('bulkSettle').disabled = !n;
+  document.getElementById('bulkClose').disabled = !n;
+  const all = document.querySelectorAll('#orderTable .row-ck');
+  document.getElementById('ckAll').checked = all.length > 0 && [...all].every(c => c.checked);
+}
+
+document.getElementById('ckAll').onchange = e => {
+  document.querySelectorAll('#orderTable .row-ck').forEach(ck => {
+    ck.checked = e.target.checked;
+    if (ck.checked) selected.add(ck.dataset.no); else selected.delete(ck.dataset.no);
+    ck.closest('tr').classList.toggle('sel', ck.checked);
+  });
+  syncBulk();
+};
+document.getElementById('statusChips').onclick = e => {
+  const b = e.target.closest('.chip');
+  if (!b) return;
+  document.querySelectorAll('#statusChips .chip').forEach(c => c.classList.remove('on'));
+  b.classList.add('on');
+  filter.st = b.dataset.st;
+  renderOrders();
+};
+document.getElementById('kindFilter').onchange = e => { filter.kind = e.target.value; renderOrders(); };
+document.getElementById('chFilter').onchange = e => { filter.ch = e.target.value; renderOrders(); };
+document.getElementById('orderSearch').oninput = e => { filter.q = e.target.value.trim(); renderOrders(); };
+
+function quickSettle(no, ev){
+  ev.stopPropagation();
+  const o = ORDERS.find(x => x.no === no);
+  o.status = 'paid';
+  renderOrders(); renderQueue(); renderDash();
+  toast(`已确认收款 ${money(o.amount)} · 权益已发放`, 'ok');
+}
+document.getElementById('bulkSettle').onclick = () => {
+  const list = [...selected];
+  let sum = 0;
+  list.forEach(no => {
+    const o = ORDERS.find(x => x.no === no);
+    if (o && o.status === 'pending'){ o.status = 'paid'; sum += o.amount; }
+  });
+  selected.clear(); syncBulk();
+  renderOrders(); renderQueue(); renderDash();
+  toast(`已批量确认 ${list.length} 笔 · 合计 ${money(sum)}`, 'ok');
+};
+document.getElementById('bulkClose').onclick = () => {
+  selected.forEach(no => { const o = ORDERS.find(x => x.no === no); if (o) o.status = 'closed'; });
+  selected.clear(); syncBulk();
+  renderOrders(); renderQueue(); renderDash();
+  toast('已关闭所选订单');
+};
+
+/* ============================================================
+   待确认队列
+   ============================================================ */
+let activeNo = null;
+function pendingList(){ return ORDERS.filter(o => o.status === 'pending').sort((a,b) => parseFloat(b.wait) - parseFloat(a.wait)); }
+
+function renderQueue(){
+  const list = pendingList();
+  const badge = document.getElementById('navPending');
+  badge.textContent = list.length;
+  badge.style.display = list.length ? '' : 'none';
+
+  const box = document.getElementById('queueList');
+  if (!list.length){
+    box.innerHTML = `<div class="empty" style="padding:38px 16px"><div class="ic"><svg width="18" height="18" viewBox="0 0 16 16" fill="none" stroke="var(--ok)" stroke-width="1.8"><path d="M3 8.4l3.2 3.2L13 4.8"/></svg></div>全部处理完了</div>`;
+    document.getElementById('confirmPane').style.display = 'none';
+    return;
+  }
+  document.getElementById('confirmPane').style.display = '';
+  if (!list.some(o => o.no === activeNo)) activeNo = list[0].no;
+  box.innerHTML = list.map(o => `
+    <button class="q-item ${o.no === activeNo ? 'on' : ''}" data-no="${o.no}">
+      <div class="top-row"><b>${o.user}</b><span class="tag ${KIND[o.kind] === '广告' ? 'pri' : ''}" style="height:19px;font-size:10.5px">${KIND[o.kind]}</span><span class="amt num">${money(o.amount)}</span></div>
+      <div class="meta"><span>${o.item}</span><em>等待 ${o.wait}</em></div>
+    </button>`).join('');
+  box.querySelectorAll('.q-item').forEach(b => b.onclick = () => { activeNo = b.dataset.no; renderQueue(); });
+  renderConfirm();
+}
+
+function renderConfirm(){
+  const o = ORDERS.find(x => x.no === activeNo);
+  if (!o) return;
+  document.getElementById('cfTitle').textContent = o.item;
+  document.getElementById('cfNo').textContent = o.no;
+  document.getElementById('cfUser').innerHTML = `<b>${o.user}</b> <span style="color:var(--ink3);font-size:12px">UID ${o.uid}</span>`;
+  document.getElementById('cfItem').textContent = `${o.item}（${o.sub}）`;
+  document.getElementById('cfAmt').textContent = money(o.amount);
+  document.getElementById('cfCh').textContent = CH[o.ch] + (o.ch === 'epay' ? ' · 支付宝' : '');
+  document.getElementById('cfTime').textContent = '2026-' + o.created;
+}
+
+document.getElementById('cfSettle').onclick = () => {
+  const o = ORDERS.find(x => x.no === activeNo);
+  if (!o) return;
+  const prev = activeNo;
+  o.status = 'paid';
+  const list = pendingList();
+  activeNo = list.length ? list[0].no : null;
+  renderQueue(); renderOrders(); renderDash();
+  toast(`已确认收款 ${money(o.amount)} · ${prev.slice(-6)}`, 'ok');
+};
+
+/* 键盘：J/K/Enter */
+document.addEventListener('keydown', e => {
+  if (!document.getElementById('page-confirm').classList.contains('on')) return;
+  if (e.target.matches('input,textarea,select')) return;
+  const list = pendingList();
+  const i = list.findIndex(o => o.no === activeNo);
+  if (e.key === 'j' || e.key === 'J'){ if (i < list.length - 1){ activeNo = list[i + 1].no; renderQueue(); } e.preventDefault(); }
+  if (e.key === 'k' || e.key === 'K'){ if (i > 0){ activeNo = list[i - 1].no; renderQueue(); } e.preventDefault(); }
+  if (e.key === 'Enter'){ document.getElementById('cfSettle')?.click(); e.preventDefault(); }
+});
+
+/* ============================================================
+   会员表 + 抽屉
+   ============================================================ */
+const LV = {0:'<span class="lv l0">普通</span>', 1:'<span class="lv l1">Lv.1 会员</span>', 2:'<span class="lv l2">Lv.2 超级会员</span>'};
+
+function renderMembers(){
+  document.getElementById('memberTable').innerHTML = `<table class="tbl">
+    <thead><tr><th>用户</th><th>等级</th><th>到期时间</th><th class="r">累计消费</th><th class="r">订单</th><th>最近活跃</th><th style="text-align:right">操作</th></tr></thead>
+    <tbody>${MEMBERS.map(m => `<tr>
+      <td><div class="who"><i style="background:${hueColor(m.hue)}">${m.name.slice(0,1)}</i><div><b style="font-weight:500">${m.name}</b><div style="font-size:11px;color:var(--ink3)">UID ${m.uid}</div></div></div></td>
+      <td>${LV[m.level]}</td>
+      <td class="num" style="font-size:12.5px; ${m.soon ? 'color:var(--warn);font-weight:600' : 'color:var(--ink2)'}">${m.exp}${m.soon ? ' · 即将到期' : ''}</td>
+      <td class="r num" style="font-weight:600">¥${m.sum.toLocaleString()}</td>
+      <td class="r num" style="color:var(--ink2)">${m.n}</td>
+      <td style="font-size:12.5px;color:var(--ink3)">${m.active}</td>
+      <td style="text-align:right"><button class="btn sm ghost" onclick="openMember(${m.uid})">管理</button></td>
+    </tr>`).join('')}</tbody>
+  </table>`;
+}
+
+function openMember(uid){
+  const m = MEMBERS.find(x => x.uid === uid);
+  const orders = ORDERS.filter(o => o.uid === uid);
+  document.getElementById('drTitle').textContent = m.name;
+  document.getElementById('drSub').textContent = `UID ${m.uid} · 累计消费 ¥${m.sum.toLocaleString()} · ${m.n} 笔订单`;
+  document.getElementById('drBody').innerHTML = `
+    <div style="display:flex; align-items:center; gap:12px; margin-bottom:18px">
+      <div style="width:44px;height:44px;border-radius:12px;background:${hueColor(m.hue)};color:#fff;display:grid;place-items:center;font-size:16px;font-weight:600">${m.name.slice(0,1)}</div>
+      <div><div style="font-size:14px;font-weight:600">${m.name}</div><div style="font-size:12px;color:var(--ink3)">${LV[m.level]} · ${m.exp === '—' ? '无会员权益' : '到期 ' + m.exp}</div></div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:18px">
+      <div style="padding:12px;border:1px solid var(--line2);border-radius:10px"><div style="font-size:11.5px;color:var(--ink3)">累计消费</div><b class="num" style="font-size:17px">¥${m.sum.toLocaleString()}</b></div>
+      <div style="padding:12px;border:1px solid var(--line2);border-radius:10px"><div style="font-size:11.5px;color:var(--ink3)">订单数</div><b class="num" style="font-size:17px">${m.n}</b></div>
+    </div>
+    <div style="font-size:12px;color:var(--ink3);margin-bottom:8px">快捷操作</div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:18px">
+      <button class="btn sm" onclick="toast('已延长 30 天','ok')">延长 30 天</button>
+      <button class="btn sm" onclick="toast('已升级为 Lv.2','ok')">升级 Lv.2</button>
+      <button class="btn sm" onclick="toast('已发送续费提醒')">发送续费提醒</button>
+      <button class="btn sm danger" onclick="toast('已撤销该用户全部会员权益')">撤销权益</button>
+    </div>
+    <div style="font-size:12px;color:var(--ink3);margin-bottom:8px">订单记录</div>
+    <div style="border:1px solid var(--line2);border-radius:10px;overflow:hidden">
+      ${orders.length ? orders.map(o => `<div style="display:flex;align-items:center;gap:8px;padding:10px 12px;border-bottom:1px solid var(--line);font-size:12.5px">
+        <div style="min-width:0"><b style="display:block;font-weight:500">${o.item}</b><span style="color:var(--ink3);font-family:var(--mono);font-size:11px">${o.no}</span></div>
+        <span class="num" style="margin-left:auto;font-weight:600">${money(o.amount)}</span>
+        <span class="tag ${ST[o.status].c}">${ST[o.status].t}</span>
+      </div>`).join('') : '<div style="padding:18px;text-align:center;color:var(--ink3);font-size:12.5px">暂无订单</div>'}
+    </div>`;
+  document.getElementById('drFoot').innerHTML = `
+    <button class="btn pri" style="flex:1" onclick="toast('已保存会员变更','ok')">保存变更</button>
+    <button class="btn" onclick="closeDrawer()">关闭</button>`;
+  openDrawer();
+}
+
+/* ============================================================
+   订单抽屉
+   ============================================================ */
+function openOrder(no){
+  const o = ORDERS.find(x => x.no === no);
+  const st = ST[o.status];
+  document.getElementById('drTitle').textContent = o.item;
+  document.getElementById('drSub').textContent = o.no;
+  document.getElementById('drBody').innerHTML = `
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">
+      <span class="tag ${st.c}"><span class="dot"></span>${st.t}</span>
+      <span class="tag">${KIND[o.kind]}</span>
+      <span class="tag">${CH[o.ch]}</span>
+      <span class="num" style="margin-left:auto;font-size:19px;font-weight:650;letter-spacing:-.4px">${money(o.amount)}</span>
+    </div>
+    <dl class="kv" style="margin-bottom:18px">
+      <dt>用户</dt><dd>${o.user} <span style="color:var(--ink3);font-size:12px">UID ${o.uid}</span></dd>
+      <dt>商品</dt><dd>${o.item} · ${o.sub}</dd>
+      <dt>下单时间</dt><dd class="num">2026-${o.created}</dd>
+      <dt>订单号</dt><dd style="font-family:var(--mono);font-size:12px">${o.no}</dd>
+    </dl>
+    <div style="font-size:12px;color:var(--ink3);margin-bottom:8px">操作时间线</div>
+    <div class="tl">
+      <div class="tl-i on"><b>下单成功</b><span>2026-${o.created} · ${CH[o.ch]}</span></div>
+      ${o.status !== 'pending' ? `<div class="tl-i on"><b>${st.t}</b><span>操作人 站长 · 手动确认</span></div>` : `<div class="tl-i"><b>等待确认收款</b><span>已等待 ${o.wait}</span></div>`}
+    </div>
+    <div style="margin-top:18px;padding:12px;border-radius:10px;background:var(--sf2);border:1px solid var(--line2);font-size:12px;color:var(--ink3);line-height:1.7">
+      同一订单重复确认不会重复发放权益；关闭订单不会自动退款，需先在支付通道方处理。
+    </div>`;
+  document.getElementById('drFoot').innerHTML = o.status === 'pending'
+    ? `<button class="btn pri" style="flex:1" onclick="settleFromDrawer('${o.no}')">确认收款</button>
+       <button class="btn" onclick="closeDrawer()">关闭</button>`
+    : `<button class="btn" style="flex:1" onclick="closeDrawer()">关闭</button>`;
+  openDrawer();
+}
+
+function settleFromDrawer(no){
+  const o = ORDERS.find(x => x.no === no);
+  o.status = 'paid';
+  closeDrawer();
+  renderOrders(); renderQueue(); renderDash();
+  toast(`已确认收款 ${money(o.amount)}`, 'ok');
+}
+
+function openDrawer(mode){
+  if (mode === 'grant'){
+    document.getElementById('drTitle').textContent = '手动授予权益';
+    document.getElementById('drSub').textContent = '不产生订单，直接写入 entitlements';
+    document.getElementById('drBody').innerHTML = `
+      <div class="form-grid" style="grid-template-columns:1fr">
+        <div class="field"><label>用户（UID 或用户名）</label><input class="input" placeholder="12 或 林深"></div>
+        <div class="field"><label>类型</label><select class="input"><option>会员</option><option>单篇文章</option></select></div>
+        <div class="field"><label>等级</label><select class="input"><option>Lv.1 会员</option><option>Lv.2 超级会员</option></select></div>
+        <div class="field"><label>天数（0 = 永久）</label><input class="input" type="number" value="30"></div>
+        <div class="field"><label>备注（写入审计）</label><input class="input" placeholder="例如：线下补偿"></div>
+      </div>`;
+    document.getElementById('drFoot').innerHTML = `
+      <button class="btn pri" style="flex:1" onclick="closeDrawer();toast('已授予会员 · 30 天','ok')">授予</button>
+      <button class="btn" onclick="closeDrawer()">取消</button>`;
+  }
+  document.getElementById('scrim').classList.add('on');
+  document.getElementById('drawer').classList.add('on');
+}
+function closeDrawer(){
+  document.getElementById('scrim').classList.remove('on');
+  document.getElementById('drawer').classList.remove('on');
+}
+document.getElementById('scrim').onclick = closeDrawer;
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeDrawer(); });
+
+/* ============================================================
+   概览：最新订单 + 图表
+   ============================================================ */
+function renderDash(){
+  const top = ORDERS.slice(0, 5);
+  document.getElementById('dashOrders').innerHTML = `<table class="tbl">
+    <thead><tr><th>订单号</th><th>用户</th><th>商品</th><th class="r">金额</th><th>状态</th><th style="text-align:right">操作</th></tr></thead>
+    <tbody>${top.map(o => `<tr>
+      <td><span class="ono">${o.no}</span></td>
+      <td><div class="who"><i style="background:${hueColor((o.uid * 47) % 360)}">${o.user.slice(0,1)}</i>${o.user}</div></td>
+      <td class="item"><b>${o.item}</b><span>${o.sub}</span></td>
+      <td class="r num" style="font-weight:600">${money(o.amount)}</td>
+      <td><span class="tag ${ST[o.status].c}"><span class="dot"></span>${ST[o.status].t}</span></td>
+      <td style="text-align:right"><button class="btn sm ghost" onclick="openOrder('${o.no}')">详情</button></td>
+    </tr>`).join('')}</tbody></table>`;
+  // 待办里的笔数
+  const p = pendingList();
+  document.getElementById('navPending').textContent = p.length;
+  document.getElementById('navPending').style.display = p.length ? '' : 'none';
+}
+
+const CHART_DATA = [
+  {l:'10-18', vip:180, ad:0,   post:39},
+  {l:'10-19', vip:0,   ad:300, post:19},
+  {l:'10-20', vip:128, ad:0,   post:59},
+  {l:'10-21', vip:39,  ad:0,   post:29},
+  {l:'10-22', vip:256, ad:150, post:49},
+  {l:'10-23', vip:0,   ad:0,   post:19},
+  {l:'10-24', vip:128, ad:300, post:88},
+  {l:'10-25', vip:78,  ad:0,   post:39},
+  {l:'10-26', vip:128, ad:150, post:29},
+  {l:'10-27', vip:39,  ad:0,   post:49},
+  {l:'10-28', vip:256, ad:0,   post:69},
+  {l:'10-29', vip:128, ad:300, post:39},
+  {l:'10-30', vip:167, ad:150, post:58},
+  {l:'10-31', vip:128, ad:300, post:59}
+];
+
+function renderChart(){
+  const svg = document.getElementById('chart');
+  const W = 780, H = 236, padL = 46, padR = 8, padT = 10, padB = 26;
+  const data = CHART_DATA;
+  const totals = data.map(d => d.vip + d.ad + d.post);
+  const max = Math.ceil(Math.max(...totals) / 100) * 100;
+  const iw = W - padL - padR, ih = H - padT - padB;
+  const bw = iw / data.length;
+  const barW = Math.min(26, bw * 0.56);
+  const y = v => padT + ih - (v / max) * ih;
+  const cs = getComputedStyle(document.documentElement);
+  const grid = cs.getPropertyValue('--line').trim();
+  const ink3 = cs.getPropertyValue('--ink3').trim();
+  const pri = cs.getPropertyValue('--pri').trim();
+  const warn = cs.getPropertyValue('--warn').trim();
+  const teal = cs.getPropertyValue('--teal').trim();
+
+  let out = '';
+  // 网格 + y 轴
+  for (let i = 0; i <= 4; i++){
+    const v = max / 4 * i;
+    const yy = y(v);
+    out += `<line x1="${padL}" y1="${yy}" x2="${W - padR}" y2="${yy}" stroke="${grid}" stroke-width="1"/>`;
+    out += `<text x="${padL - 10}" y="${yy + 4}" fill="${ink3}" font-size="10.5" text-anchor="end" font-family="system-ui">${v === 0 ? '0' : v}</text>`;
+  }
+  // 柱
+  data.forEach((d, i) => {
+    const x = padL + bw * i + (bw - barW) / 2;
+    let acc = 0;
+    [['vip', pri], ['ad', warn], ['post', teal]].forEach(([k, c]) => {
+      const v = d[k];
+      if (!v) return;
+      const h = (v / max) * ih;
+      const yy = padT + ih - ((acc + v) / max) * ih;
+      out += `<rect x="${x}" y="${yy}" width="${barW}" height="${Math.max(h - 1.5, 1)}" rx="2.5" fill="${c}" opacity=".92"><title>${d.l} ${k === 'vip' ? '会员' : k === 'ad' ? '广告' : '单篇'} ¥${v}</title></rect>`;
+      acc += v;
+    });
+    if (i % 2 === 1 || i === data.length - 1){
+      out += `<text x="${x + barW / 2}" y="${H - 8}" fill="${ink3}" font-size="10.5" text-anchor="middle" font-family="system-ui">${d.l}</text>`;
+    }
+  });
+  svg.innerHTML = out;
+}
+
+/* ============================================================
+   工单处理
+   ============================================================ */
+let tkSt = 'open', tkSel = (TICKETS.find(t => t.status === 'open') || TICKETS[0]).id;
+
+const tkOf = id => TICKETS.find(t => t.id === +id);
+
+function renderTkChips(){
+  document.querySelectorAll('#tkChips .chip').forEach(c => {
+    const st = c.dataset.st;
+    const n = st === 'all' ? TICKETS.length : TICKETS.filter(t => t.status === st).length;
+    c.querySelector('.num').textContent = n;
+    c.classList.toggle('on', st === tkSt);
+  });
+  const openN = TICKETS.filter(t => t.status === 'open').length;
+  document.getElementById('navTicket').textContent = openN;
+  document.getElementById('navTicket').style.display = openN ? '' : 'none';
+}
+
+function renderTkList(){
+  const list = TICKETS.filter(t => tkSt === 'all' || t.status === tkSt);
+  const box = document.getElementById('tkList');
+  if (!list.length){
+    box.innerHTML = '<div class="empty">该状态下没有工单</div>';
+  } else {
+    box.innerHTML = list.map(t => {
+      const st = TK_ST[t.status];
+      return `<button class="q-item ${t.id === tkSel ? 'on' : ''}" data-tk="${t.id}">
+        <div class="top-row">
+          <b style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${t.title}</b>
+          ${t.pri === 2 ? '<span class="tag bad" style="height:17px;font-size:10.5px;flex:none">高</span>' : ''}
+          ${t.unread ? '<span style="margin-left:auto;width:6px;height:6px;border-radius:50%;background:var(--bad);flex:none"></span>' : ''}
+        </div>
+        <div class="meta">
+          <span style="font-family:var(--mono);font-size:10.5px">${t.no.slice(-4)}</span>
+          <span>·</span><span>${TK_CAT[t.cat]}</span>
+          <span style="margin-left:auto;color:${t.status === 'open' ? 'var(--warn)' : 'var(--ink3)'};font-weight:${t.status === 'open' ? 600 : 400}">${st[0]}</span>
+        </div>
+      </button>`;
+    }).join('');
+  }
+  box.querySelectorAll('[data-tk]').forEach(b => b.onclick = () => selectTk(+b.dataset.tk));
+  renderTkChips();
+}
+
+function selectTk(id){
+  const t = tkOf(id);
+  if (!t) return;
+  tkSel = t.id;
+  if (t.unread){ t.unread = 0; }
+  renderTkList(); renderTkPane();
+}
+
+function renderTkPane(){
+  const t = tkOf(tkSel);
+  const pane = document.getElementById('tkPane');
+  if (!t){ pane.innerHTML = '<div class="empty">从左侧选择一张工单</div>'; return; }
+  const st = TK_ST[t.status];
+  const closed = t.status === 'closed';
+
+  pane.innerHTML = `
+    <div class="card-h">
+      <h2 style="font-size:15px">${t.title}</h2>
+      <span class="tag ${st[1]}" style="margin-left:6px"><span class="dot"></span>${st[0]}</span>
+      <div style="margin-left:auto"><span style="font-family:var(--mono);font-size:11.5px;color:var(--ink3)">${t.no}</span></div>
+    </div>
+    <div class="card-b">
+      <div class="tk-wrap">
+        <div>
+          <div class="tk-thread">
+            ${t.msgs.map(m => `
+              <div class="tk-msg ${m.side === 'staff' ? 'me' : m.side}">
+                <div class="meta"><b>${m.who}</b><span>·</span><span>${m.at}</span></div>
+                <div class="body">${m.txt}</div>
+              </div>`).join('')}
+          </div>
+          ${closed
+            ? '<div class="note" style="margin-top:4px"><div>工单已关闭，用户端只读。需要继续处理请让用户新建工单，或在下方直接改回「待处理」。</div></div>'
+            : `<div class="reply-box">
+                 <div class="quick">
+                   <button onclick="quickFill('已按你的描述处理完成，请刷新页面确认。')">已处理</button>
+                   <button onclick="quickFill('麻烦补充一下订单号 / 截图链接，方便定位。')">需要更多信息</button>
+                   <button onclick="quickFill('这个需求已记录，会在下个版本评估。')">已记录需求</button>
+                   <button onclick="quickFill('该问题不在支持范围，详见帮助页。')">不在范围</button>
+                 </div>
+                 <textarea id="replyBox" placeholder="回复用户…（⌘↵ 发送）"></textarea>
+                 <div style="display:flex; gap:8px; align-items:center">
+                   <span style="font-size:11.5px; color:var(--ink3)">回复后用户侧「消息中心」立即 +1 条未读</span>
+                   <button class="btn pri sm" style="margin-left:auto" onclick="sendReply()">发送回复</button>
+                 </div>
+               </div>`}
+        </div>
+
+        <div class="tk-side">
+          <dl class="kv" style="grid-template-columns:64px minmax(0,1fr)">
+            <dt>用户</dt><dd><b>${t.user}</b> <span style="color:var(--ink3);font-size:12px">UID ${t.uid}</span></dd>
+            <dt>分类</dt><dd>${TK_CAT[t.cat]}</dd>
+            <dt>优先级</dt><dd>${t.pri === 2 ? '<span class="tag bad">高</span>' : t.pri === 1 ? '普通' : '低'}</dd>
+            <dt>创建</dt><dd style="font-size:12.5px">${t.created}</dd>
+            <dt>更新</dt><dd style="font-size:12.5px">${t.updated}</dd>
+          </dl>
+          <div style="margin-top:14px; display:flex; flex-direction:column; gap:8px">
+            <select class="input" style="height:32px" onchange="setTkStatus(this.value)">
+              <option value="open" ${t.status === 'open' ? 'selected' : ''}>待处理</option>
+              <option value="replied" ${t.status === 'replied' ? 'selected' : ''}>已回复</option>
+              <option value="resolved" ${t.status === 'resolved' ? 'selected' : ''}>已解决</option>
+              <option value="closed" ${t.status === 'closed' ? 'selected' : ''}>已关闭</option>
+            </select>
+            <button class="btn sm" onclick="addNote()">＋ 内部备注</button>
+            <span style="font-size:11.5px; color:var(--ink3); line-height:1.6">备注只保存在工单里，前台接口永不下发。</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="drawer-f" style="border-top:1px solid var(--line); border-radius:0 0 12px 12px">
+      <button class="btn sm" onclick="setTkStatus('resolved')">标记已解决</button>
+      <button class="btn sm" onclick="setTkStatus('closed')">关闭工单</button>
+      <span style="margin-left:auto; font-size:11.5px; color:var(--ink3)">⌘⇧R 标记已解决</span>
+    </div>`;
+}
+
+function quickFill(txt){
+  const box = document.getElementById('replyBox');
+  if (box){ box.value = txt; box.focus(); }
+}
+
+function sendReply(){
+  const box = document.getElementById('replyBox');
+  const t = tkOf(tkSel);
+  if (!box || !t) return;
+  const txt = box.value.trim();
+  if (!txt){ toast('回复内容不能为空'); box.focus(); return; }
+  t.msgs.push({side:'staff', who:'我', at:'刚刚', txt});
+  t.status = 'replied'; t.updated = '刚刚';
+  renderTkList(); renderTkPane();
+  toast('回复已发送 · 用户消息中心 +1 条未读', 'ok');
+}
+
+function setTkStatus(s){
+  const t = tkOf(tkSel);
+  if (!t) return;
+  t.status = s; t.updated = '刚刚';
+  renderTkList(); renderTkPane();
+  toast('状态已更新为「' + TK_ST[s][0] + '」', 'ok');
+}
+
+function addNote(){
+  const t = tkOf(tkSel);
+  if (!t) return;
+  const txt = prompt('内部备注（用户不可见）');
+  if (!txt) return;
+  t.msgs.push({side:'note', who:'内部备注', at:'刚刚', txt});
+  renderTkPane();
+  toast('备注已记录');
+}
+
+document.getElementById('tkChips').onclick = e => {
+  const c = e.target.closest('.chip');
+  if (!c) return;
+  tkSt = c.dataset.st;
+  const first = TICKETS.find(t => tkSt === 'all' || t.status === tkSt);
+  if (first) tkSel = first.id;
+  renderTkList(); renderTkPane();
+};
+
+document.addEventListener('keydown', e => {
+  if (!document.getElementById('page-tickets').classList.contains('on')) return;
+  const typing = /^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName);
+  if (!typing && (e.key === 'j' || e.key === 'k')){
+    const list = TICKETS.filter(t => tkSt === 'all' || t.status === tkSt);
+    const i = list.findIndex(t => t.id === tkSel);
+    const next = e.key === 'j' ? Math.min(list.length - 1, i + 1) : Math.max(0, i - 1);
+    if (list[next] && next !== i) selectTk(list[next].id);
+    e.preventDefault();
+  }
+  if ((e.metaKey || e.ctrlKey) && e.key === 'Enter'){ sendReply(); e.preventDefault(); }
+  if ((e.metaKey || e.ctrlKey) && e.shiftKey && (e.key === 'r' || e.key === 'R')){ setTkStatus('resolved'); e.preventDefault(); }
+});
+
+/* ============================================================
+   消息推送
+   ============================================================ */
+function syncPreview(){
+  const t = document.getElementById('nTitle').value.trim() || '（未填写标题）';
+  const b = document.getElementById('nBody').value.trim().replace(/\s+/g, ' ') || '（正文为空）';
+  document.getElementById('pvT').textContent = t;
+  document.getElementById('pvB').textContent = b;
+}
+['nTitle', 'nBody'].forEach(id => document.getElementById(id).addEventListener('input', syncPreview));
+document.getElementById('nseg').onclick = e => {
+  const b = e.target.closest('button');
+  if (!b) return;
+  document.querySelectorAll('#nseg button').forEach(x => x.classList.remove('on'));
+  b.classList.add('on');
+  toast(`推送范围：${b.textContent}`);
+};
+
+function renderNoticeLog(){
+  document.getElementById('noticeLog').innerHTML = `<table class="tbl">
+    <thead><tr><th>标题</th><th>范围</th><th class="r">触达</th><th class="r">已读率</th><th>发送人</th><th>时间</th><th style="text-align:right">操作</th></tr></thead>
+    <tbody>${NOTICE_LOG.map((n, i) => `<tr>
+      <td><b style="font-weight:500">${n.title}</b></td>
+      <td><span style="font-size:12.5px;color:var(--ink2)">${n.scope}</span></td>
+      <td class="r num">${n.reach.toLocaleString()}</td>
+      <td class="r num">${n.reach ? Math.round(n.read / n.reach * 100) : 0}%</td>
+      <td style="font-size:12.5px;color:var(--ink2)">${n.by}</td>
+      <td class="num" style="font-size:12.5px;color:var(--ink3)">${n.at}</td>
+      <td style="text-align:right;white-space:nowrap">
+        <button class="btn sm ghost" onclick="delNotice(${i})">撤回</button>
+      </td>
+    </tr>`).join('')}</tbody></table>`;
+}
+
+function sendNotice(){
+  const t = document.getElementById('nTitle').value.trim();
+  if (!t){ toast('请填写标题'); return; }
+  const scope = document.querySelector('#nseg button.on').dataset.r;
+  const reach = scope === 'all' ? 1284 : 1;
+  NOTICE_LOG.unshift({title:t, scope: scope === 'all' ? '全站公告' : '定向 · 1 人',
+    reach, read:0, by:'站长', at:'刚刚', st:'sent'});
+  renderNoticeLog();
+  toast(`已推送 · 触达 ${reach.toLocaleString()} 人`, 'ok');
+}
+
+function delNotice(i){
+  const n = NOTICE_LOG[i];
+  NOTICE_LOG.splice(i, 1);
+  renderNoticeLog();
+  toast(`已删除「${n.title}」· 用户侧同步消失`);
+}
+
+/* ============================================================
+   任务配置
+   ============================================================ */
+function renderTaskTable(){
+  document.getElementById('taskTable').innerHTML = `<table class="tbl">
+    <thead><tr><th>任务</th><th>触发条件</th><th class="r">奖励</th><th class="r">每日上限</th><th class="r">近 7 日领取</th><th>前台</th></tr></thead>
+    <tbody>${TASKS_CONF.map((t, i) => `<tr>
+      <td><b style="font-weight:500">${t.t}</b>
+        <span class="tk-kind">${t.g} · ${t.k}</span></td>
+      <td style="font-size:12.5px;color:var(--ink2)">${t.cond}</td>
+      <td class="r"><input class="rw-in" type="number" min="0" max="999" value="${t.rw}"
+          onchange="TASKS_CONF[${i}].rw=+this.value; toast('奖励已改为 ' + this.value + ' 积分')"></td>
+      <td class="r num" style="font-size:12.5px;color:var(--ink2)">${t.cap}</td>
+      <td class="r num" style="font-size:12.5px">${t.n7}</td>
+      <td><button class="sw ${t.on ? 'on' : ''}" onclick="TASKS_CONF[${i}].on=TASKS_CONF[${i}].on?0:1; this.classList.toggle('on'); toast(TASKS_CONF[${i}].on?'已在前台展示':'已从前台隐藏')"></button></td>
+    </tr>`).join('')}</tbody></table>`;
+}
+
+/* ============================================================
+   初始化
+   ============================================================ */
+document.getElementById('rangeSeg').onclick = e => {
+  const b = e.target.closest('button');
+  if (!b) return;
+  document.querySelectorAll('#rangeSeg button').forEach(x => x.classList.remove('on'));
+  b.classList.add('on');
+  toast(`已切换到近 ${b.dataset.r} 天`);
+};
+
+renderOrders(); renderQueue(); renderMembers(); renderDash(); renderChart();
+renderTkList(); renderTkPane(); renderNoticeLog(); renderTaskTable();
+if (location.hash){
+  const p = location.hash.slice(1);
+  if (TITLES[p]) go(p);
+}
+</script>
+</body>
+</html>

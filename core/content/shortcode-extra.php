@@ -24,6 +24,8 @@
  *                                                          也容错「名称 | 链接: url 提取码: xx | 说明」）
  *   [cloud url="…" pwd="…" type=baidu]标题[/cloud]          网盘卡（单条）
  *   [article id="15"]                                      引用文章卡
+ *   [cat slug="dev"] / [cat id=3]                          分类卡
+ *   [tag slug="php"] / [tag id=7]                          标签卡
  *   [github repo="owner/name" desc="…"]                    GitHub 仓库卡
  *   [gallery column=3 ratio=1/1 caption=hover]…[/gallery]  相册图集（灯箱翻页）
  *
@@ -761,9 +763,16 @@ function ecod_sc_posts_rows(array $args): array
         }
 
         if ($order === 'hot') {
-            $select->order($views ? 'table.contents.views' : 'table.contents.commentsNum', \Typecho\Db::SORT_DESC);
+            /* 评论数用「已通过」实算的派生表（与卡片显示的条数同源），
+               失败时回退 commentsNum */
+            $cmtCol = function_exists('ecod_comment_order_join') ? ecod_comment_order_join($select) : '';
+            $select->order(
+                $views ? 'table.contents.views' : ($cmtCol !== '' ? $cmtCol : 'table.contents.commentsNum'),
+                \Typecho\Db::SORT_DESC
+            );
         } elseif ($order === 'comment') {
-            $select->order('table.contents.commentsNum', \Typecho\Db::SORT_DESC);
+            $cmtCol = function_exists('ecod_comment_order_join') ? ecod_comment_order_join($select) : '';
+            $select->order($cmtCol !== '' ? $cmtCol : 'table.contents.commentsNum', \Typecho\Db::SORT_DESC);
         } else {
             $select->order('table.contents.created', \Typecho\Db::SORT_DESC);
         }
@@ -918,7 +927,7 @@ function ecod_sc_posts(string $content): string
             if (isset($row['views'])) {
                 $meta .= '<i>' . ecod_num_short((int) $row['views']) . ' 阅读</i>';
             }
-            $meta .= '<i>' . (int) $row['commentsNum'] . ' 评论</i>';
+            $meta .= '<i>' . ecod_comment_count((int) $row['cid']) . ' 评论</i>';
 
             $items .= '<a class="ecod_posts__item" href="' . $urlAttr . '">'
                 . $thumbHtml
@@ -1041,7 +1050,7 @@ function ecod_sc_article(string $content): string
             . '<b>' . htmlspecialchars((string) $row['title'], ENT_QUOTES, 'UTF-8') . '</b>'
             . '<small>' . htmlspecialchars($desc, ENT_QUOTES, 'UTF-8') . '…</small>'
             . '<span class="ecod_acard__meta">' . date('Y-m-d', (int) $row['created'])
-            . ' · ' . (int) $row['commentsNum'] . ' 条评论</span>'
+            . ' · ' . ecod_comment_count((int) $row['cid']) . ' 条评论</span>'
             . '</span>'
             . '<span class="ecod_acard__go">' . ecod_icon('arrow-up-right', 13) . '</span>'
             . '</a>';
@@ -1605,6 +1614,11 @@ function ecod_sc_extra_block(string $content): string
     $content = ecod_sc_task($content);
     $content = ecod_sc_posts($content);
     $content = ecod_sc_article($content);
+    /* [cat] / [tag]：站内链接卡片的手写入口（core/content/linkcard.php） */
+    if (function_exists('ecod_sc_cat')) {
+        $content = ecod_sc_cat($content);
+        $content = ecod_sc_tag($content);
+    }
     $content = ecod_sc_github($content);
     $content = ecod_sc_bilibili($content);
     $content = ecod_sc_video($content);

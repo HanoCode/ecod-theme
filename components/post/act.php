@@ -17,9 +17,10 @@ $ecodActShare = (int) ecod_p('share', 1) === 1;
 $ecodActReward = (int) ecod_p('reward', 0) === 1;
 $ecodActAlipay = trim((string) ecod_p('alipay', ''));
 $ecodActWechat = trim((string) ecod_p('wechat', ''));
-/* 显示位置：bottom 文末动作条 / side 侧边悬浮栏（窄屏回落文末）/ both 两者都出 */
+/* 显示位置：bottom 文末动作条 / side 侧边悬浮栏（窄屏回落文末）；二选一，
+   旧值 both 按文末动作条处理（两处内容重复，不再允许同时输出） */
 $ecodActMode = (string) ecod_p('mode', 'bottom');
-if (!in_array($ecodActMode, ['bottom', 'side', 'both'], true)) {
+if (!in_array($ecodActMode, ['bottom', 'side'], true)) {
     $ecodActMode = 'bottom';
 }
 /* 收款码缺失时不再隐藏按钮：开关打开即占位显示，弹层输出虚线占位框 */
@@ -158,7 +159,7 @@ if ($ecodActDate === '' && !empty($this->created)) {
         ?>
         <details class="ecod_reward">
             <summary class="ecod_actbtn">
-                <span class="ecod_actbtn__ico"><?php echo ecod_icon('heart', 20); ?></span>
+                <span class="ecod_actbtn__ico"><?php echo ecod_icon('gift', 20); ?></span>
                 <b class="ecod_actbtn__lb">赞赏</b>
             </summary>
             <div class="ecod_reward__pop">
@@ -189,7 +190,7 @@ if ($ecodActDate === '' && !empty($this->created)) {
     $ecodActComments = empty($this->hidden) && !$ecodPayLocked
         && ecod_option('EComment', 'on') !== 'off'
         && $this->allow('comment');
-    $ecodActCmtNum = (int) $this->commentsNum;
+    $ecodActCmtNum = ecod_comment_count((int) $this->cid);
     if ($ecodActComments):
     ?>
         <a class="ecod_actbtn" href="#comments">
@@ -224,10 +225,11 @@ if ($ecodActDate === '' && !empty($this->created)) {
     </div>
 </div>
 <?php
-/* 侧边悬浮栏（Nimbus 对标）：宽屏 sticky 竖栏 = 点赞 / 收藏 / 讨论 / 复制链接 /
-   阅读进度竖条 / 返回顶部。按钮沿用 data-ecod-act + data-cid 委托，点赞收藏的
-   状态回填与计数更新自动同步；窄屏（<1200px）由 CSS 整栏隐藏，操作回落文末动作条 */
-if ($ecodActMode === 'side' || $ecodActMode === 'both'):
+/* 侧边悬浮栏（Nimbus 对标）：宽屏 sticky 竖栏 = 点赞 / 收藏 / 讨论 / 复制链接。
+   位置与侧栏互斥成对：侧栏在右 → 栏在左，侧栏在左 → 栏在右（无侧栏时在右，
+   与浮动目录胶囊同规则错开）。阅读进度与返回顶部由右下角悬浮件承担，此处不再重复；
+   窄屏（<1200px）由 CSS 整栏隐藏，操作回落文末动作条 */
+if ($ecodActMode === 'side'):
     $ecodRailCid = (int) $this->cid;
 ?>
 <aside class="ecod_actsiderail" data-ecod-actsiderail aria-label="文章快捷操作">
@@ -257,10 +259,5 @@ if ($ecodActMode === 'side' || $ecodActMode === 'both'):
         <span>复制</span>
     </button>
     <?php endif; ?>
-    <span class="ecod_actsiderail__line" aria-hidden="true"><i data-ecod-rail-fill></i></span>
-    <button type="button" class="ecod_actsiderail__btn" data-ecod-rail-top title="返回顶部">
-        <?php echo ecod_icon('arrow-up', 18); ?>
-        <span>顶部</span>
-    </button>
 </aside>
 <?php endif; ?>

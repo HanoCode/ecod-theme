@@ -121,6 +121,8 @@ window.ECOD = {
     prismUrl: <?php echo $ecodCode ? json_encode(ecod_asset('assets/vendor/prism/prism.js'), JSON_UNESCAPED_SLASHES) : "''"; ?>,
     qrUrl: <?php echo json_encode(ecod_asset('assets/vendor/ecod-qr.js'), JSON_UNESCAPED_SLASHES); ?>,
     pjax: <?php echo ecod_option('EPjax', 'on') === 'on' ? 'true' : 'false'; ?>,
+    /* 列表加载模式：auto = 触底自动加载；click = 点击「加载更多」；pager = 数字分页 */
+    listLoad: <?php echo json_encode(ecod_option('EListLoad', 'auto')); ?>,
     lightbox: <?php echo $ecodLightbox ? 'true' : 'false'; ?>,
     prism: <?php echo $ecodCode ? 'true' : 'false'; ?>,
     codeFold: <?php echo ecod_option('ECodeFold', 'on') === 'on' ? 'true' : 'false'; ?>,
@@ -163,25 +165,32 @@ if ($ecodCode) {
 }
 ?>
 <?php
-/* 页面族 CSS 分发（S3）+ 关键 CSS 内联：
-   - head 内联关键 CSS（构建期按 CRITICAL_SECTIONS 抽节）；
+/* 页面族 CSS 分发（S3/S4）+ 关键 CSS 内联：
+   - head 内联本族关键 CSS（构建期按 CRITICAL_FAMS 抽节：首帧骨架 + 族首屏）；
    - 页面只异步加载 core + 所属族（ecod_css_family()），不再整包下发；
    - PJAX 跨族换页由 ecod.global.js 的 ensurePageCss() 注入缺失族，
      link 全部 onload 后才派发 ecod:cssready，样式不齐不跑入场动画。
    未构建（无 dist 族产物）时回退整包阻塞加载，行为与旧版一致。 */
 $ecodFams = ecod_css_family($this);
-$ecodCriticalFile = ecod_dist_resolve('assets/css/ecod.critical.css');
 $ecodFamFiles = [];
 foreach ($ecodFams as $ecodFam) {
-    $ecodFamUrl = ecod_asset('assets/css/ecod.fam.' . $ecodFam . '.css');
-    /* 未构建时 ecod_asset 回退源路径（无哈希且文件不存在），据此判断回退 */
     $ecodFamDist = ecod_dist_resolve('assets/css/ecod.fam.' . $ecodFam . '.css');
     if ($ecodFamDist === null) {
         $ecodFamFiles = [];
         break;
     }
-    $ecodFamFiles[$ecodFam] = $ecodFamUrl;
+    $ecodFamFiles[$ecodFam] = ecod_asset('assets/css/ecod.fam.' . $ecodFam . '.css');
 }
+/* 本页的内联关键 CSS 族：按「最具体族优先」选择——postext 复用 post 份；
+   user 页同时带 post/list，但首屏形态是用户中心，应内联 user 份 */
+$ecodCriticalFam = 'list';
+foreach (['postext', 'user', 'page', 'home', 'post', 'list'] as $ecodF) {
+    if (in_array($ecodF, $ecodFams, true)) {
+        $ecodCriticalFam = $ecodF === 'postext' ? 'post' : $ecodF;
+        break;
+    }
+}
+$ecodCriticalFile = ecod_dist_resolve('assets/css/ecod.critical.' . $ecodCriticalFam . '.css');
 if ($ecodCriticalFile !== null && $ecodFamFiles) {
     /* 优先 require 构建期产出的 nowdoc PHP 变体（<同名>.php）：字符串常驻
        opcache，省每请求一次磁盘读；变体缺失（旧构建产物）回退 file_get_contents */

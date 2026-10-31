@@ -40,7 +40,12 @@ $ecodTints = [
             </span>
             <span class="ecod_catnav__body">
                 <b><?php $ecodNavCats->name(); ?></b>
-                <small><?php echo (int) $ecodNavCats->count; ?> 篇文章</small>
+                <?php
+                /* 不用 metas.count：那是 Typecho 的缓存计数，文章改状态后不会更新，
+                   且不含子分类。实时统计与分类页头 / 归档列表同口径。 */
+                $ecodNavStat = ecod_cat_stats((int) $ecodNavCats->mid);
+                ?>
+                <small><?php echo (int) $ecodNavStat['count']; ?> 篇文章</small>
             </span>
             <span class="ecod_catnav__arrow" aria-hidden="true"><?php echo ecod_icon('chevron', 13); ?></span>
         </a>

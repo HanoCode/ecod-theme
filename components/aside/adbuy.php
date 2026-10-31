@@ -68,7 +68,7 @@ $ecodAbNote = trim((string) ecod_p('note', ''));
                     <i class="ecod_adbuy__ratio"><?php echo htmlspecialchars($ecodAbItem['ratio'], ENT_QUOTES, 'UTF-8'); ?></i>
                 <?php endif; ?>
                 <b><?php echo htmlspecialchars($ecodAbItem['name'], ENT_QUOTES, 'UTF-8'); ?></b>
-                <span><?php echo ecod_pay_currency() . $ecodAbItem['money']; ?> / 天</span>
+                <span><?php echo ecod_pay_currency() . $ecodAbItem['money']; ?> / <?php echo ecod_ads_unit()['label']; ?></span>
                 <em><?php echo $ecodAbPageUrl !== '' ? '点击开通' : '暂未开放'; ?><?php echo $ecodAbPageUrl !== '' ? ecod_icon('chevron', 12) : ''; ?></em>
             <?php echo $ecodAbPageUrl !== '' ? '</a>' : '</div>'; ?>
         <?php endforeach; ?>

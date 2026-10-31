@@ -29,7 +29,7 @@ $this->need('public/header.php');
             <?php
             ob_start();
             $this->content();
-            echo ecod_go_rewrite(ecod_lazy_images(ecod_keywords_apply(ecod_oembed_apply(ecod_shortcode_apply((string) ob_get_clean(), $this))), (string) $this->title));
+            echo ecod_go_rewrite(ecod_lazy_images(ecod_keywords_apply(ecod_linkcard_apply(ecod_oembed_apply(ecod_shortcode_apply((string) ob_get_clean(), $this)))), (string) $this->title));
             ?>
         </div>
     </article>

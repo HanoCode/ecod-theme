@@ -53,7 +53,7 @@ foreach ($ecodTpMids as $ecodTpMid) {
             'url'      => (string) $ecodTpQ->permalink,
             'thumb'    => ecod_thumbnails($ecodTpQ, 1, 'side')[0] ?? '',
             'views'    => ecod_views($ecodTpQ),
-            'comments' => (int) $ecodTpQ->commentsNum,
+            'comments' => ecod_comment_count((int) $ecodTpQ->cid),
             'locked'   => ecod_has_password($ecodTpQ),
         ];
     }

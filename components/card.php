@@ -42,6 +42,15 @@ if (!function_exists('ecod_card')) {
         ecod_cards_preload($archive);
 
         $mode = $mode ?: ecod_card_mode($archive);
+        /* 列表统一版式下的 per-post 三图恢复：default / grid 容器与三图卡兼容，
+           文章自定义字段 mode=gallery 时该卡升级为三图；title / compact / item 等
+           纯文本版式不混入，避免行高被撑破（版式显式指定 gallery 时本就生效） */
+        if (($mode === 'default' || $mode === 'grid') && isset($archive->fields) && isset($archive->fields->mode)) {
+            $postMode = (string) $archive->fields->mode;
+            if ($postMode === 'gallery') {
+                $mode = 'gallery';
+            }
+        }
         $images = ecod_thumbnails($archive, 3, 'cover');
         /* 注意：Contents 的 __call 会直接 echo，这里必须用属性取值 */
         $permalink = (string) $archive->permalink;
@@ -54,7 +63,7 @@ if (!function_exists('ecod_card')) {
         $titleAttr = htmlspecialchars($rawTitle, ENT_QUOTES, 'UTF-8');
         $title = $titleAttr;
         $views = ecod_views($archive);
-        $comments = (int) $archive->commentsNum;
+        $comments = ecod_comment_count((int) $archive->cid);
         $created = (int) $archive->created;
         $category = '';
         $categoryUrl = '';
@@ -86,6 +95,25 @@ if (!function_exists('ecod_card')) {
         $tint = ecod_card_tint($archive->cid ?? 0);
         /* 是否加密：与访客身份无关，始终标记 */
         $locked = ecod_has_password($archive);
+
+        /* 作者（meta 行首组合）：$archive->author 是共享 Users widget（同作者一页只 alloc 一次）；
+           头像 = 自定义头像优先 / 本地池，与评论区同源 */
+        $authorName = '';
+        $authorAvatar = '';
+        $authorHref = '';
+        try {
+            $ecodCardAuthor = $archive->author;
+            $ecodAuthorUid = (int) ($ecodCardAuthor->uid ?? 0);
+            $authorName = trim((string) ($ecodCardAuthor->screenName ?: $ecodCardAuthor->name));
+            if ($authorName !== '' && $ecodAuthorUid > 0) {
+                $authorAvatar = ecod_user_avatar($ecodCardAuthor);
+                if (!function_exists('ecod_user_archive_url')) {
+                    require_once __DIR__ . '/../core/user/meta.php';
+                }
+                $authorHref = ecod_user_archive_url($ecodAuthorUid);
+            }
+        } catch (\Throwable $e) {
+        }
 
         /* 首屏第一张封面走 eager + 高优先级（LCP 候选），其余交给浏览器懒加载。
            计数放在所有模式分支之前——item / compact / gallery 等单图分支的首张封面
@@ -146,11 +174,11 @@ if (!function_exists('ecod_card')) {
             echo '<div class="ecod_card__meta">';
             if ($category !== '') {
                 echo $categoryUrl !== ''
-                    ? '<a class="ecod_card__meta-cat" href="' . $categoryUrl . '">' . $category . '</a>'
-                    : '<span class="ecod_card__meta-cat">' . $category . '</span>';
+                    ? '<a class="ecod_card__meta-cat" href="' . $categoryUrl . '">' . ecod_icon('folder', 12) . $category . '</a>'
+                    : '<span class="ecod_card__meta-cat">' . ecod_icon('folder', 12) . $category . '</span>';
             }
             echo ecod_topic_chip($archive);
-            echo '<time datetime="' . $fullDate . '">' . $date . '</time>';
+            echo '<time datetime="' . $fullDate . '">' . ecod_icon('calendar', 12) . $date . '</time>';
             echo '<span>' . ecod_icon('eye', 12) . ecod_num_short($views) . '</span>';
             echo '</div>';
             echo '</div>';
@@ -231,11 +259,11 @@ if (!function_exists('ecod_card')) {
             echo '<div class="ecod_card__meta">';
             if ($category !== '') {
                 echo $categoryUrl !== ''
-                    ? '<a class="ecod_card__meta-cat" href="' . $categoryUrl . '">' . $category . '</a>'
-                    : '<span class="ecod_card__meta-cat">' . $category . '</span>';
+                    ? '<a class="ecod_card__meta-cat" href="' . $categoryUrl . '">' . ecod_icon('folder', 12) . $category . '</a>'
+                    : '<span class="ecod_card__meta-cat">' . ecod_icon('folder', 12) . $category . '</span>';
             }
             echo ecod_topic_chip($archive);
-            echo '<time datetime="' . $fullDate . '">' . $date . '</time>';
+            echo '<time datetime="' . $fullDate . '">' . ecod_icon('calendar', 12) . $date . '</time>';
             echo '<span>' . ecod_icon('eye', 12) . ecod_num_short($views) . '</span>';
             echo '</div>';
             echo '</div>';
@@ -322,10 +350,18 @@ if (!function_exists('ecod_card')) {
 
         /* 元信息 */
         echo '<div class="ecod_card__meta">';
+        if ($authorName !== '') {
+            $ecodAuthorInner = '<img src="' . htmlspecialchars($authorAvatar, ENT_QUOTES, 'UTF-8') . '"'
+                . ' alt="" width="16" height="16" loading="lazy" decoding="async"><b>'
+                . htmlspecialchars($authorName, ENT_QUOTES, 'UTF-8') . '</b>';
+            echo $authorHref !== ''
+                ? '<a class="ecod_card__meta-author" href="' . htmlspecialchars($authorHref, ENT_QUOTES, 'UTF-8') . '">' . $ecodAuthorInner . '</a>'
+                : '<span class="ecod_card__meta-author">' . $ecodAuthorInner . '</span>';
+        }
         if ($category !== '') {
             echo $categoryUrl !== ''
-                ? '<a class="ecod_card__meta-cat" href="' . $categoryUrl . '">' . $category . '</a>'
-                : '<span class="ecod_card__meta-cat">' . $category . '</span>';
+                ? '<a class="ecod_card__meta-cat" href="' . $categoryUrl . '">' . ecod_icon('folder', 12) . $category . '</a>'
+                : '<span class="ecod_card__meta-cat">' . ecod_icon('folder', 12) . $category . '</span>';
         }
         echo implode('', $tags);
         echo ecod_topic_chip($archive);

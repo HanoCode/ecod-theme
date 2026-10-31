@@ -19,7 +19,7 @@ $this->widget('\Widget\Comments\Recent', 'pageSize=' . max(1, (int) ecod_p('coun
         <div class="ecod_rcmt">
             <?php while ($ecodCmts->next()): ?>
                 <a href="<?php $ecodCmts->permalink(); ?>" class="ecod_rcmt__item">
-                    <span class="ecod_rcmt__avatar" aria-hidden="true"><?php echo mb_substr($ecodCmts->author, 0, 1, 'UTF-8'); ?></span>
+                    <span class="ecod_rcmt__avatar" aria-hidden="true"><img src="<?php echo htmlspecialchars(ecod_comment_avatar_url((string) $ecodCmts->mail), ENT_QUOTES, 'UTF-8'); ?>" alt="" width="40" height="40" loading="lazy" decoding="async"></span>
                     <span class="ecod_rcmt__body">
                         <span class="ecod_rcmt__row">
                             <b><?php echo htmlspecialchars($ecodCmts->author); ?></b>

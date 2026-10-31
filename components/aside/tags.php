@@ -4,7 +4,8 @@
  *
  * 标签按热度（文章数）流式排布，带文章数徽章；
  * 字号随文章数轻微放大（WordPress wp_tag_cloud 的做法）。
- * 数量直接用 Typecho metas 表现成的 count 列，不做额外统计查询。
+ * 篇数走 ecod_tag_counts() 实时统计：metas.count 会滞后（文章转草稿不更新），
+ * 直接用它会让徽章数字和标签归档页的条数对不上。
  *
  * @package Ecod Theme
  * @author  Ecod
@@ -16,22 +17,24 @@ if (!defined('__TYPECHO_ROOT_DIR__')) {
 }
 
 $ecodTagLimit = max(0, (int) ecod_p('limit', 0));
+/* 不在 SQL 层 limit：metas.count 会滞后，先按它截断会漏掉真正热门的标签，
+   这里取全量再用实时篇数排序、截断 */
 $this->widget('\Widget\Metas\Tag\Cloud', [
     'sort'           => 'count',
     'desc'           => true,
-    'ignoreZeroCount'=> true,
-    'limit'          => $ecodTagLimit,
 ])->to($ecodTags);
 
 /* 先收进数组算最大/最小文章数，用于字号梯度 */
-$ecodTagRows = [];
+$ecodTagRaw = [];
 while ($ecodTags->next()) {
-    $ecodTagRows[] = [
-        'name'  => (string) $ecodTags->name,
+    $ecodTagRaw[] = [
+        'mid'       => (int) $ecodTags->mid,
+        'name'      => (string) $ecodTags->name,
         'permalink' => (string) $ecodTags->permalink,
-        'count' => (int) $ecodTags->count,
+        'count'     => (int) $ecodTags->count,
     ];
 }
+$ecodTagRows = ecod_tag_live_rows($ecodTagRaw, $ecodTagLimit);
 $ecodTagMax = 0;
 $ecodTagMin = 0;
 foreach ($ecodTagRows as $ecodTagRow) {

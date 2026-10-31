@@ -114,7 +114,7 @@ $ecodSections = [
         ['阅读体验', '过期提醒、浮动目录与图片灯箱', ['EStale', 'EFloatToc', 'ETocProgress', 'ELightbox']],
         ['正文排版', '正文字号、行距与字体档位，落到文章 / 页面正文容器', ['EProseSize', 'EProseLh', 'EProseFont']],
         ['显示更多', '长文按高度折叠 + 展开按钮；正文仍在 HTML 里，不影响 SEO', ['EShowMore', 'EShowMoreH', 'EShowMoreText']],
-        ['代码与嵌入', '代码高亮、长代码折叠、图表公式渲染与视频 / 社交卡片自动嵌入', ['ECode', 'ECodeTheme', 'ECodeFold', 'EMermaid', 'EMath', 'EOembed', 'EOembedSocial']],
+        ['代码与嵌入', '代码高亮、长代码折叠、图表公式渲染与站内外卡片自动嵌入', ['ECode', 'ECodeTheme', 'ECodeFold', 'EMermaid', 'EMath', 'EOembed', 'ELinkCard', 'EOembedSocial']],
         ['互动与版权', '点赞头像、快速评论条与版权声明', ['ELikers', 'EQuickBar', 'ECopyrightSet']],
         ['卡片动效', '磁贴 / 聚合卡等新组件的 hover 动效与图片渐入总开关', ['ECardMotion']],
         ['AI 摘要', 'OpenAI 兼容接口，按文章异步生成摘要卡片', ['EAI', 'EAIProvider', 'EAIEndpoint', 'EAIKey', 'EAIModel', 'EAIPrompt', 'EAIMotion']],
@@ -127,7 +127,7 @@ $ecodSections = [
     'comments' => [
         ['评论服务', '全站开关与评论系统：原生或 Twikoo / Waline 等第三方', ['EComment', 'ECommentProvider', 'ECommentTwikoo', 'ECommentWaline', 'ECommentArtalk', 'ECommentGiscusRepo', 'ECommentGiscusRepoId', 'ECommentGiscusCategory', 'ECommentGiscusCategoryId', 'ECommentGiscusMapping']],
         ['嵌套与展开', '长讨论怎么折叠、怎么展开', ['ECommentFold', 'ECommentExpandMode']],
-        ['反垃圾与人机验证', '敏感词、中文限制、Turnstile 与 Akismet', ['ESensitive', 'ECnOnly', 'EMaxLen', 'ETurnstile', 'ETurnstileSite', 'ETurnstileSecret', 'EAkismet', 'EAkismetKey']],
+        ['反垃圾与人机验证', '敏感词、中文限制、图形验证码、评论频率与 Turnstile / Akismet', ['ESensitive', 'ECnOnly', 'EMaxLen', 'ECommentCaptcha', 'ECmtFirstMod', 'ECmtGap', 'ECmtHour', 'ECmtDay', 'ETurnstile', 'ETurnstileSite', 'ETurnstileSecret', 'EAkismet', 'EAkismetKey']],
         ['表情', '评论框旁的表情选择', ['EEmojiStyle', 'EEmojiCdn']],
     ],
     'interact' => [
@@ -169,9 +169,9 @@ $ecodSections = [
         ['商品列表', '一行一个商品：名称|价格|类型|值|库存|限购', ['EShopItems']],
     ],
     'ads' => [
-        ['自助广告', '总开关、审核开关与投放须知', ['EAdSelf', 'EAdSelfReview', 'EAdSelfNote']],
-        ['广告位定价', '每个位置的单日价格（元/天），留空即不开放该位', ['EAdSelfPriceHomeTop', 'EAdSelfPriceSidebar', 'EAdSelfPricePostBottom']],
-        ['天数限制', '单次投放的天数范围', ['EAdSelfMinDays', 'EAdSelfMaxDays']],
+        ['自助广告', '总开关、定价单位、审核开关与投放须知', ['EAdSelf', 'EAdSelfUnit', 'EAdSelfReview', 'EAdSelfNote']],
+        ['广告位定价', '每个位置的单价（元/定价单位），留空即不开放该位', ['EAdSelfPriceHomeTop', 'EAdSelfPriceSidebar', 'EAdSelfPricePostBottom']],
+        ['时长限制', '单次投放的时长范围（按定价单位的数量）', ['EAdSelfMinDays', 'EAdSelfMaxDays']],
     ],
     'seo' => [
         ['性能与资源', '图片懒加载与静态资源 CDN', ['ELazy', 'ECdn', 'EAssetMode']],
@@ -716,6 +716,11 @@ ecod_admin_field($form, 'select', 'EThumbSide', 'right', '缩略图位置', '列
 ], 'layout', ['data-ecod-show-when' => 'ECardMode:default|feature']);
 ecod_admin_field($form, 'number', 'ENewDays', '7', '「新」角标天数', '文章发布后多少天内显示「新」角标，填 0 关闭该角标', [], 'layout', ['min' => 0, 'max' => 90, 'step' => 1]);
 ecod_admin_field($form, 'number', 'EListPerPage', '0', '每页文章数', '首页 / 分类 / 标签 / 作者 / 搜索列表一次加载几篇，分页与「加载更多」按此计算；填 0 跟随 Typecho 后台「阅读 → 每页文章数」', [], 'layout', ['min' => 0, 'max' => 60, 'step' => 1, 'placeholder' => '0 = 跟随后台设置']);
+ecod_admin_field($form, 'select', 'EListLoad', 'auto', '列表加载方式', '首页 / 分类 / 标签 / 作者列表翻到下一页的方式；搜索页固定为数字分页', [
+    'auto'  => '触底自动加载（默认）',
+    'click' => '点击「加载更多」',
+    'pager' => '数字分页',
+], 'layout');
 ecod_admin_field($form, 'number', 'EExcerpt', '110', '摘要长度', '单位：字符，默认 110；文章里填了「自定义摘要」时以手填内容为准', [], 'layout', ['min' => 40, 'max' => 200, 'step' => 5, 'data-ecod-show-when' => 'ECardMode:!=bare|title|compact']);
 ecod_admin_field($form, 'text', 'EStale', '180', '文章过期提醒', '文章超过这么多天未更新时，正文上方提示内容可能已过时；填 0 关闭', [], 'post');
 ecod_admin_field($form, 'select', 'EProseSize', '16', '正文字号', '文章与页面正文的基准字号，标题随比例微调；默认 16px', [
@@ -768,9 +773,14 @@ ecod_admin_field($form, 'select', 'ECardMotion', 'on', '卡片动效', '磁贴�
     'on'  => '开启（默认）',
     'off' => '关闭',
 ], 'post');
-ecod_admin_field($form, 'select', 'EReadBarMode', 'top', '阅读工具条形态', '文章页「阅读工具条」（目录 / 朗读 / 字号 / 进度）的呈现形态：吸顶横条常驻正文上方，滚动时自动吸顶；侧栏竖栏固定悬浮在侧栏一侧垂直居中，与浮动目录互斥成对（浮目录在侧栏对面边）。窄屏（<900px）两种形态都回落为吸顶横条', [
-    'top'  => '吸顶横条（默认）',
-    'side' => '侧栏竖栏',
+ecod_admin_field($form, 'select', 'EReadBarMode', 'top', '阅读工具条形态', '文章页「阅读工具条」（目录 / 朗读 / 字号 / 进度）的呈现形态：吸顶横条常驻正文上方，滚动时自动吸顶；侧栏竖栏固定悬浮在侧栏一侧垂直居中，与浮动目录互斥成对（浮目录在侧栏对面边）；合并到面包屑——整条工具并进文章页面包屑条右侧，不再单独占一条（可搭配「面包屑吸顶」常驻可见）。窄屏（<900px）侧栏竖栏回落吸顶横条，合并形态保持合并', [
+    'top'   => '吸顶横条（默认）',
+    'side'  => '侧栏竖栏',
+    'crumb' => '合并到面包屑条',
+], 'post');
+ecod_admin_field($form, 'select', 'ECrumbSticky', 'off', '面包屑吸顶', '文章页面包屑条滚动时吸附在 header 下方（header 下滑收起时贴近视口顶），常驻可见；搭配「阅读工具条形态 = 合并到面包屑条」可让目录 / 朗读 / 进度全程可见', [
+    'on'  => '开启',
+    'off' => '关闭（默认）',
 ], 'post');
 ecod_admin_field($form, 'select', 'EDark', 'auto', '深色模式', '关闭后不加载切换按钮与首帧脚本', [
     'auto' => '跟随系统',
@@ -906,6 +916,10 @@ ecod_admin_field($form, 'select', 'EOembedSocial', 'on', '社交卡片第三方�
     'on'  => '加载',
     'off' => '不加载',
 ], 'post', ['data-ecod-show-when' => 'EOembed:on']);
+ecod_admin_field($form, 'select', 'ELinkCard', 'on', '站内链接卡片化', '正文里独占一段的站内地址自动变成卡片：/posts/12.html → 文章卡，/cat/dev/ → 分类卡，/tag/php/ → 标签卡。行内链接与图片链接不处理，给链接加 data-no-card 属性可跳过；也可手写 [cat slug="…"] / [tag slug="…"] 短代码', [
+    'on'  => '开启',
+    'off' => '关闭',
+], 'post');
 ecod_admin_field($form, 'select', 'ELazy', 'on', '图片懒加载', '正文图片进入视口附近才真正请求（data-src 方案），长文首屏更快', [
     'on'  => '开启',
     'off' => '关闭',
@@ -928,6 +942,19 @@ ecod_admin_field($form, 'select', 'ECnOnly', 'off', '必须包含中文', '不�
     'on'  => '必须含中文',
 ], 'comments', ['data-ecod-show-when' => 'EComment:on']);
 ecod_admin_field($form, 'number', 'EMaxLen', '', '评论字数上限', '超出上限的评论转待审；填 0 或留空不限制', [], 'comments', ['min' => 0, 'max' => 3000, 'step' => 50, 'data-ecod-show-when' => 'EComment:on']);
+
+/* 评论防刷：图形验证码 + 纯 IP 频率 + 首评必审（core/site/comment-guard.php） */
+ecod_admin_field($form, 'select', 'ECommentCaptcha', 'on', '评论图形验证码', '访客发评论前要填 4 位字符，登录用户不需要。一次一换，输错要重新填；站点没装 GD 扩展时自动跳过', [
+    'on'  => '开启',
+    'off' => '关闭',
+], 'comments', ['data-ecod-show-when' => 'EComment:on']);
+ecod_admin_field($form, 'select', 'ECmtFirstMod', 'on', '首评必审', '这个邮箱还没有过已通过的评论时，先转「待审核」再公开；同一邮箱之后正常即时显示。用来挡住「发一条就直接挂到页面上」的刷屏', [
+    'on'  => '开启',
+    'off' => '关闭',
+], 'comments', ['data-ecod-show-when' => 'EComment:on']);
+ecod_admin_field($form, 'number', 'ECmtGap', '60', '评论间隔', '同一 IP 两条评论之间至少相隔多少秒，全站算、不分文章；填 0 不限制。Typecho 自带的间隔按文章算，换一篇就重置，挡不住脚本', [], 'comments', ['min' => 0, 'max' => 600, 'step' => 5, 'data-ecod-show-when' => 'EComment:on']);
+ecod_admin_field($form, 'number', 'ECmtHour', '10', '每小时上限', '同一 IP 每小时最多几条评论；填 0 不限制', [], 'comments', ['min' => 0, 'max' => 100, 'step' => 1, 'data-ecod-show-when' => 'EComment:on']);
+ecod_admin_field($form, 'number', 'ECmtDay', '30', '每天上限', '同一 IP 每天最多几条评论；填 0 不限制', [], 'comments', ['min' => 0, 'max' => 500, 'step' => 5, 'data-ecod-show-when' => 'EComment:on']);
 
 /* ---------------- 通知与登录 → 邮件：SMTP 与通知模板（原属「互动」组） ---------------- */
 ecod_admin_field($form, 'select', 'ECommentMail', 'off', '邮件通知总开关', '控制全站发信：评论提醒、回复通知、账户验证码、友链通知都走这里的 SMTP；关闭后以上邮件都不发，发送失败只写日志，不影响评论与申请提交', [
@@ -1316,19 +1343,24 @@ $ecodShopWhen = ['data-ecod-show-when' => 'EShop:on'];
 ecod_admin_field($form, 'textarea', 'EShopItems', "会员 7 天|500|vip|1:7|100|0\n全站文章畅读月卡|2000|vip|2:30|0|0\n定制周边|3000|text|兑换后联系站长发货|5|1", '商品列表', '逐行添加商品：库存 0 = 不限，每人限购 0 = 不限；值随类型变化（会员填「等级:天数」/ 单篇解锁填文章 ID / 待发货填发货说明）', [], 'shop', ['rows' => 6, 'data-ecod-rows' => 'shop'] + $ecodShopWhen);
 ecod_admin_field($form, 'textarea', 'EShopNote', '', '商城说明', '显示在商城页底部：发货时效、联系方式、兑换规则等', [], 'shop', ['rows' => 3] + $ecodShopWhen);
 
-ecod_admin_field($form, 'select', 'EAdSelf', 'off', '自助广告', '总开关（依赖付费阅读）。用户在「广告投放」页（page-ads.php）选位、按天下单，走支付通道付款', [
+ecod_admin_field($form, 'select', 'EAdSelf', 'off', '自助广告', '总开关（依赖付费阅读）。用户在「广告投放」页（page-ads.php）选位、按定价单位下单，走支付通道付款', [
     'on'  => '开启',
     'off' => '关闭（默认）',
 ], 'ads');
+ecod_admin_field($form, 'select', 'EAdSelfUnit', 'day', '定价单位', '广告位单价与投放时长的计费单位；周按 7 天、月按 30 天换算', [
+    'day'   => '天（默认）',
+    'week'  => '周',
+    'month' => '月',
+], 'ads', ['data-ecod-show-when' => 'EAdSelf:on']);
 ecod_admin_field($form, 'select', 'EAdSelfReview', 'on', '上线前审核', '开启 = 支付完成后进入「待审核」，站长在付费管理台点通过才上线（起止时间从通过时算）；关闭 = 支付成功自动上线', [
     'on'  => '需要审核（推荐）',
     'off' => '支付后自动上线',
 ], 'ads', ['data-ecod-show-when' => 'EAdSelf:on']);
-ecod_admin_field($form, 'text', 'EAdSelfPriceHomeTop', '', '首页顶部通栏（元/天）', '留空 = 不开放该广告位', [], 'ads', ['data-ecod-show-when' => 'EAdSelf:on']);
-ecod_admin_field($form, 'text', 'EAdSelfPriceSidebar', '', '侧边栏卡片（元/天）', '侧栏「投放广告」模块展示的图片卡位', [], 'ads', ['data-ecod-show-when' => 'EAdSelf:on']);
-ecod_admin_field($form, 'text', 'EAdSelfPricePostBottom', '', '文章底部通栏（元/天）', '留空 = 不开放该广告位', [], 'ads', ['data-ecod-show-when' => 'EAdSelf:on']);
-ecod_admin_field($form, 'number', 'EAdSelfMinDays', '3', '最短投放天数', '', [], 'ads', ['min' => 1, 'max' => 30, 'step' => 1, 'data-ecod-show-when' => 'EAdSelf:on']);
-ecod_admin_field($form, 'number', 'EAdSelfMaxDays', '90', '最长投放天数', '', [], 'ads', ['min' => 1, 'max' => 365, 'step' => 1, 'data-ecod-show-when' => 'EAdSelf:on']);
+ecod_admin_field($form, 'text', 'EAdSelfPriceHomeTop', '', '首页顶部通栏单价（元）', '按上方「定价单位」计价；留空 = 不开放该广告位', [], 'ads', ['data-ecod-show-when' => 'EAdSelf:on']);
+ecod_admin_field($form, 'text', 'EAdSelfPriceSidebar', '', '侧边栏卡片单价（元）', '按上方「定价单位」计价；侧栏「投放广告」模块展示的图片卡位', [], 'ads', ['data-ecod-show-when' => 'EAdSelf:on']);
+ecod_admin_field($form, 'text', 'EAdSelfPricePostBottom', '', '文章底部通栏单价（元）', '按上方「定价单位」计价；留空 = 不开放该广告位', [], 'ads', ['data-ecod-show-when' => 'EAdSelf:on']);
+ecod_admin_field($form, 'number', 'EAdSelfMinDays', '3', '最短投放时长', '单位跟随「定价单位」（天=1、周=7、月=30）', [], 'ads', ['min' => 1, 'max' => 30, 'step' => 1, 'data-ecod-show-when' => 'EAdSelf:on']);
+ecod_admin_field($form, 'number', 'EAdSelfMaxDays', '90', '最长投放时长', '单位跟随「定价单位」（天=1、周=7、月=30）', [], 'ads', ['min' => 1, 'max' => 365, 'step' => 1, 'data-ecod-show-when' => 'EAdSelf:on']);
 ecod_admin_field($form, 'textarea', 'EAdSelfNote', '', '投放须知', '展示在投放页底部：尺寸建议、内容规范、联系方式等', [], 'ads', ['rows' => 4, 'data-ecod-show-when' => 'EAdSelf:on']);
 
 /* 隐藏：模块状态 */

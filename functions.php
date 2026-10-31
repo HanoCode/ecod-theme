@@ -38,6 +38,9 @@ require_once __DIR__ . '/core/content/shortcode-extra.php';
 /* 正文 oEmbed 自动嵌入（YouTube / B 站 / X 等地址自动转嵌入块） */
 require_once __DIR__ . '/core/content/oembed.php';
 
+/* 站内链接自动卡片化（文章 / 分类 / 标签），并补 [cat] [tag] 短代码 */
+require_once __DIR__ . '/core/content/linkcard.php';
+
 /* 主题配置快照 */
 require_once __DIR__ . '/core/admin/snapshot.php';
 
@@ -83,6 +86,12 @@ require_once __DIR__ . '/core/site/topics.php';
 /* 分类统计（分类页头的篇数 / 阅读 / 最近更新） */
 require_once __DIR__ . '/core/site/catstats.php';
 
+/* 标签实时统计（metas.count 会滞后，标签墙 / 标签云改用实算篇数） */
+require_once __DIR__ . '/core/site/tagstats.php';
+
+/* 评论实时统计（commentsNum 口径含待审且会滞后，前台改用已通过数） */
+require_once __DIR__ . '/core/site/commentstats.php';
+
 /* 分类 / 标签增强：封面与独立 SEO（规格 docs/dev/design-proposal.html §32） */
 require_once __DIR__ . '/core/site/meta-meta.php';
 
@@ -92,6 +101,12 @@ require_once __DIR__ . '/core/pay/pay-channel.php';
 
 /* Credit 积分（签到 / 任务 / AI 与抽奖计费） */
 require_once __DIR__ . '/core/user/credits.php';
+
+/* 任务中心（进度实时算，领取落 ecod_task_claims，奖励进积分账本） */
+require_once __DIR__ . '/core/user/tasks.php';
+
+/* 工单（用户侧提交 / 回复 / 关闭，管理端在 Console 插件） */
+require_once __DIR__ . '/core/support/tickets.php';
 
 /* 账户令牌 / 自定义头像：挂件与功能页的表单令牌对访客也要可用，全局加载 */
 require_once __DIR__ . '/core/user/account.php';
@@ -624,12 +639,39 @@ function ecod_local_avatar_url(string $key): string
 }
 
 /**
- * 评论者头像地址：按邮箱从本地头像池确定性取图
+ * 评论者头像地址：注册用户优先用自定义头像，其余按邮箱从本地头像池确定性取图
+ *
+ * 邮箱能对上注册用户且上传过自定义头像时用自定义头像（与个人中心同源）；
+ * 游客 / 未上传的注册用户按邮箱从本地头像池确定性选图（同一邮箱永远同一张）。
+ * mail → uid 查询按邮箱做静态缓存，同一次请求里同邮箱只查一次。
  */
 function ecod_comment_avatar_url(string $mail): string
 {
     $mail = trim((string) $mail);
-    return ecod_local_avatar_url($mail !== '' ? $mail : 'anonymous');
+    if ($mail === '') {
+        return ecod_local_avatar_url('anonymous');
+    }
+
+    static $custom = [];
+    if (!array_key_exists($mail, $custom)) {
+        $custom[$mail] = '';
+        try {
+            $row = \Typecho\Db::get()->fetchRow(
+                \Typecho\Db::get()->select('uid')->from('table.users')->where('mail = ?', $mail)->limit(1)
+            );
+            if ($row && (int) $row['uid'] > 0) {
+                require_once __DIR__ . '/core/user/account.php';
+                $custom[$mail] = ecod_account_avatar_url((int) $row['uid']);
+            }
+        } catch (\Throwable $e) {
+            $custom[$mail] = '';
+        }
+    }
+    if ($custom[$mail] !== '') {
+        return $custom[$mail];
+    }
+
+    return ecod_local_avatar_url($mail);
 }
 
 /**
@@ -2444,6 +2486,9 @@ function ecod_comments_config(): array
     return $cfg;
 }
 
+/* 评论防刷：纯 IP 频率、图形验证码、首评必审（core/site/comment-guard.php） */
+require_once __DIR__ . '/core/site/comment-guard.php';
+
 /**
  * Feedback:comment 过滤器
  *
@@ -2491,6 +2536,30 @@ function ecod_comment_guard($comment, $archive = null)
         throw new \Typecho\Widget\Exception(_t('提交太快了，请确认内容后再试一次。'), 403);
     }
 
+    /* ---- 纯 IP 频率：Typecho 的 commentsPostInterval 按 (cid, ip) 计，换文章即重置 ---- */
+
+    $rateWait = ecod_comment_rate_wait();
+    if ($rateWait > 0) {
+        throw new \Typecho\Widget\Exception(_t(ecod_comment_rate_error($rateWait)), 403);
+    }
+
+    /* ---- 图形验证码：一次一换，输错要等（重试计数与登录同一套账本） ---- */
+
+    if (ecod_cmt_captcha_on()) {
+        $capWait = ecod_throttle_guard('cmt');
+        if ($capWait > 0) {
+            throw new \Typecho\Widget\Exception(_t(ecod_throttle_error($capWait)), 403);
+        }
+
+        $input = $request->get('captcha');
+        if (!ecod_captcha_verify(is_string($input) ? $input : '')) {
+            ecod_throttle_fail('cmt');
+            throw new \Typecho\Widget\Exception(_t('验证码不正确，请重新输入。'), 403);
+        }
+
+        ecod_throttle_clear('cmt');
+    }
+
     /* ---- 后台可配的三条审核规则：命中转待审，不直接拒绝 ---- */
 
     /* 1. 敏感词：命中任意一个就进审核队列 */
@@ -2517,6 +2586,15 @@ function ecod_comment_guard($comment, $archive = null)
         $comment['status'] = 'waiting';
     }
 
+    /* 3.5 首评必审：这个邮箱没有已通过的评论就先审后发，挡掉「发一条就直接公开」 */
+    if (
+        ecod_option('ECmtFirstMod', 'on') === 'on'
+        && ($comment['status'] ?? 'approved') === 'approved'
+        && ecod_comment_is_first($comment, (string) $request->getIp())
+    ) {
+        $comment['status'] = 'waiting';
+    }
+
     /* ---- 外部服务：人机验证 & 反垃圾 ---- */
 
     /* 4. Cloudflare Turnstile：只作用于原生评论（第三方评论系统不经过这里） */
@@ -2538,6 +2616,9 @@ function ecod_comment_guard($comment, $archive = null)
             $comment['status'] = 'spam';
         }
     }
+
+    /* 全部校验通过：记一条频率（间隔 / 每小时 / 每天） */
+    ecod_comment_rate_hit();
 
     return $comment;
 }

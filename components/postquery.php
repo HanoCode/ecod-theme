@@ -113,22 +113,26 @@ class EcodPostQuery extends \Widget\Base\Contents
             $select->where('table.contents.created >= ?', $this->options->time - (int) $this->parameter->days * 86400);
         }
 
-        /* 排序 */
+        /* 排序：评论相关的一律按「已通过」实算（commentsNum 含待审且有滞后），
+           挂一次按 cid 聚合的派生表，排序值与卡片上显示的评论数完全同源 */
         if ($this->parameter->order === 'views' && ecod_views_available()) {
             $select->order('table.contents.views', \Typecho\Db::SORT_DESC)
                 ->order('table.contents.created', \Typecho\Db::SORT_DESC);
         } elseif ($this->parameter->order === 'weighted') {
             /* 加权热度（设计稿 guaqi-reference §F3）：views + 评论数×20；
                阅读量列不可用时退化为评论数排序，保证有结果 */
+            $cmtCol = function_exists('ecod_comment_order_join') ? ecod_comment_order_join($select) : '';
+            $cmtExpr = $cmtCol !== '' ? 'COALESCE(' . $cmtCol . ', 0)' : 'table.contents.commentsNum';
             if (ecod_views_available()) {
-                $select->order('(table.contents.views + table.contents.commentsNum * 20)', \Typecho\Db::SORT_DESC)
+                $select->order('(table.contents.views + ' . $cmtExpr . ' * 20)', \Typecho\Db::SORT_DESC)
                     ->order('table.contents.created', \Typecho\Db::SORT_DESC);
             } else {
-                $select->order('table.contents.commentsNum', \Typecho\Db::SORT_DESC)
+                $select->order($cmtExpr, \Typecho\Db::SORT_DESC)
                     ->order('table.contents.created', \Typecho\Db::SORT_DESC);
             }
         } elseif ($this->parameter->order === 'hot') {
-            $select->order('table.contents.commentsNum', \Typecho\Db::SORT_DESC)
+            $cmtCol = function_exists('ecod_comment_order_join') ? ecod_comment_order_join($select) : '';
+            $select->order($cmtCol !== '' ? $cmtCol : 'table.contents.commentsNum', \Typecho\Db::SORT_DESC)
                 ->order('table.contents.created', \Typecho\Db::SORT_DESC);
         } else {
             $select->order('table.contents.created', \Typecho\Db::SORT_DESC);

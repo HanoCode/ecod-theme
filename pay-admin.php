@@ -345,7 +345,7 @@ form.inline { display: inline; }
         <?php else: ?>
             <table>
                 <thead><tr>
-                    <th>预览</th><th>用户</th><th>位置 / 天数</th><th>跳转</th><th>提交时间</th><th>操作</th>
+                    <th>预览</th><th>用户</th><th>位置 / 时长</th><th>跳转</th><th>提交时间</th><th>操作</th>
                 </tr></thead>
                 <tbody>
                 <?php foreach ($ecodAdsPending as $ecodAd): ?>
@@ -355,7 +355,7 @@ form.inline { display: inline; }
                         <td><?php
                             $ecodAdSlotNames = ecod_ads_slots();
                             echo htmlspecialchars((string) ($ecodAdSlotNames[(string) $ecodAd['slot']] ?? $ecodAd['slot']), ENT_QUOTES, 'UTF-8');
-                            ?> · <?php echo (int) $ecodAd['days']; ?> 天<br>
+                            ?> · <?php $ecodAdUnit = ecod_ads_unit(); echo max(1, (int) round((int) $ecodAd['days'] / $ecodAdUnit['days'])); ?> <?php echo $ecodAdUnit['label']; ?><br>
                             <b><?php echo htmlspecialchars((string) $ecodAd['title'], ENT_QUOTES, 'UTF-8'); ?></b>
                         </td>
                         <td><a href="<?php echo htmlspecialchars((string) $ecodAd['link'], ENT_QUOTES, 'UTF-8'); ?>" target="_blank" rel="noopener">打开</a></td>

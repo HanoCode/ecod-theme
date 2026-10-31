@@ -121,7 +121,7 @@ function ecod_shortcode_strip(string $excerpt): string
     $excerpt = preg_replace('#\[poll\b[^\]]*\].*?\[/poll\]#is', '', $excerpt) ?? $excerpt;
 
     $excerpt = preg_replace(
-        '#\[/?(?:note|fold|tabs|tab|timeline|mark|kbd|reply|hide|download|alert|message|callout|anote|mtitle|copy|progress|abtn|dotted|lamp|task|card|cards|grid|cloud|article|posts|github|bilibili|video|mp3|music|gallery|tooltip|badge|spoiler|vip1|vip2|poll)\b[^\]]*\]#i',
+        '#\[/?(?:note|fold|tabs|tab|timeline|mark|kbd|reply|hide|download|alert|message|callout|anote|mtitle|copy|progress|abtn|dotted|lamp|task|card|cards|grid|cloud|article|cat|tag|posts|github|bilibili|video|mp3|music|gallery|tooltip|badge|spoiler|vip1|vip2|poll)\b[^\]]*\]#i',
         '',
         $excerpt
     );
@@ -267,7 +267,78 @@ function ecod_sc_fold(string $content): string
 }
 
 /**
- * 投票
+ * 投票组件渲染（公共组件：正文短代码与侧边栏 / widget 均可调用）
+ *
+ *   echo ecod_poll_render([
+ *       'question' => '最喜欢哪个功能？',
+ *       'options'  => ['选项一', '选项二', '选项三'],
+ *       'multi'    => true,          // 可多选
+ *       'closed'   => false,         // true = 只看结果不投票
+ *       'end'      => 0,             // 截止时间戳，0 = 不限
+ *       'id'       => 'p_mySIDEBAR', // 显式 poll id；缺省由 cid + 内容摘要派生
+ *       'cid'      => 0,             // 派生 id 用的文章 cid
+ *   ]);
+ *
+ * 投票身份复用收藏的指纹规则（游客 = 浏览器指纹，登录 = 'u'+uid），一人一票；
+ * 票数落在 ecod_polls_votes，计数与投票走 api.php 的 poll_state / poll_vote。
+ *
+ * @param array{question?:string, options?:array, multi?:bool, closed?:bool, end?:int, id?:string, cid?:int} $args
+ */
+function ecod_poll_render(array $args): string
+{
+    $question = trim((string) ($args['question'] ?? ''));
+    $options = array_values(array_filter(
+        array_map(static fn ($o) => trim((string) $o), (array) ($args['options'] ?? [])),
+        static fn (string $o): bool => $o !== ''
+    ));
+
+    /* 问题 + 至少两个选项才构成投票 */
+    if ($question === '' || count($options) < 2) {
+        return '';
+    }
+    $options = array_slice($options, 0, 10);
+
+    $multi = !empty($args['multi']);
+    $endTs = (int) ($args['end'] ?? 0);
+    $closed = !empty($args['closed']) || ($endTs > 0 && $endTs <= time());
+
+    $cid = (int) ($args['cid'] ?? 0);
+    $pollId = trim((string) ($args['id'] ?? ''));
+    if ($pollId === '') {
+        $pollId = 'p' . substr(sha1($cid . '|' . $question . '|' . implode("\n", $options)), 0, 12);
+    }
+
+    $html = '<div class="ecod_poll" data-ecod-poll data-poll="' . htmlspecialchars($pollId, ENT_QUOTES, 'UTF-8') . '"'
+        . ' data-multi="' . ($multi ? '1' : '0') . '"' . ($closed ? ' data-closed="1"' : '')
+        . ($endTs > 0 ? ' data-end="' . $endTs . '"' : '') . '>'
+        . '<div class="ecod_poll__q">' . htmlspecialchars($question, ENT_QUOTES, 'UTF-8')
+        . ($multi ? '<i class="ecod_poll__multitag">可多选</i>' : '') . '</div>'
+        . '<div class="ecod_poll__opts" role="group" aria-label="' . htmlspecialchars($question, ENT_QUOTES, 'UTF-8') . '">';
+    foreach ($options as $index => $option) {
+        $html .= '<button type="button" class="ecod_poll__opt" data-opt="' . $index . '" aria-pressed="false"'
+            . ($closed ? ' disabled' : '') . '>'
+            . '<i class="ecod_poll__mark" aria-hidden="true">' . ecod_icon($multi ? 'check' : 'star', 12) . '</i>'
+            . '<span class="ecod_poll__otext">' . htmlspecialchars($option, ENT_QUOTES, 'UTF-8') . '</span>'
+            . '<em class="ecod_poll__num" data-ecod-poll-num hidden></em>'
+            . '<span class="ecod_poll__bar" aria-hidden="true"></span>'
+            . '</button>';
+    }
+    $html .= '</div>'
+        . '<div class="ecod_poll__foot">'
+        . '<span class="ecod_poll__avs" data-ecod-poll-avs hidden></span>'
+        . '<span class="ecod_poll__meta" data-ecod-poll-meta>' . ($closed ? '投票已结束' : '加载中…') . '</span>'
+        . ($endTs > 0 && !$closed
+            ? '<em class="ecod_poll__end">' . max(1, (int) ceil(($endTs - time()) / 86400)) . ' 天后结束</em>'
+            : '')
+        . ($closed ? '' : '<button type="button" class="ecod_btn ecod_poll__btn" data-ecod-poll-vote disabled>投票</button>')
+        . '</div>'
+        . '</div>';
+
+    return $html;
+}
+
+/**
+ * 投票短代码
  *
  *   [poll]最喜欢哪个功能？
  *   选项一
@@ -275,19 +346,17 @@ function ecod_sc_fold(string $content): string
  *   选项三[/poll]
  *   [poll multi]可多选；closed 属性 = 只看结果不投票
  *
- * 首行为问题，其余行为选项（2–10 个）。投票身份复用收藏的指纹规则
- * （游客 = 浏览器指纹，登录 = 'u'+uid），一人一票；票数落在
- * ecod_polls_votes，poll id 由「cid + 内容摘要」派生，改选项即开新票。
- * 计数与投票走 api.php 的 poll_state / poll_vote。
+ * 首行为问题，其余行为选项（2–10 个）。渲染统一走 ecod_poll_render() 组件。
  */
 function ecod_sc_poll(string $content, $archive = null): string
 {
     return ecod_sc_block('poll', '(?:\s+[^\]]*)?', static function (string $attrRaw, string $inner) use ($archive): string {
         $attrs = ecod_sc_attrs($attrRaw);
 
-        /* 拆行：首行问题，其余行选项 */
-        $lines = preg_split('/\r\n|\r|\n/', trim($inner)) ?: [];
-        $lines = array_values(array_filter(array_map('trim', $lines), static function (string $line): bool {
+        /* 拆行：编辑器 / Markdown 可能已把换行转成 </p><p> 或 <br>，先归一（对齐 timeline） */
+        $text = trim(preg_replace('#</p>\s*<p>#i', "\n", $inner) ?? $inner);
+        $lines = preg_split('/\r\n|\r|\n|<br\s*\/?>/i', $text) ?: [];
+        $lines = array_values(array_filter(array_map('trim', array_map('strip_tags', $lines)), static function (string $line): bool {
             return $line !== '';
         }));
         if (count($lines) < 3) {
@@ -308,38 +377,15 @@ function ecod_sc_poll(string $content, $archive = null): string
                 $endTs = (int) $parsed;
             }
         }
-        $expired = $endTs > 0 && $endTs <= time();
-        $closed = $closed || $expired;
 
-        $cid = (int) ($archive->cid ?? 0);
-        $pollId = 'p' . substr(sha1($cid . '|' . $question . '|' . implode("\n", $options)), 0, 12);
-
-        $html = '<div class="ecod_poll" data-ecod-poll data-poll="' . htmlspecialchars($pollId, ENT_QUOTES, 'UTF-8') . '"'
-            . ' data-multi="' . ($multi ? '1' : '0') . '"' . ($closed ? ' data-closed="1"' : '')
-            . ($endTs > 0 ? ' data-end="' . $endTs . '"' : '') . '>'
-            . '<div class="ecod_poll__q">' . htmlspecialchars($question, ENT_QUOTES, 'UTF-8')
-            . ($multi ? '<i class="ecod_poll__multitag">可多选</i>' : '') . '</div>'
-            . '<div class="ecod_poll__opts" role="group" aria-label="' . htmlspecialchars($question, ENT_QUOTES, 'UTF-8') . '">';
-        foreach ($options as $index => $option) {
-            $html .= '<button type="button" class="ecod_poll__opt" data-opt="' . $index . '" aria-pressed="false"'
-                . ($closed ? ' disabled' : '') . '>'
-                . '<i class="ecod_poll__mark" aria-hidden="true">' . ecod_icon($multi ? 'check' : 'star', 12) . '</i>'
-                . '<span class="ecod_poll__otext">' . htmlspecialchars($option, ENT_QUOTES, 'UTF-8') . '</span>'
-                . '<em class="ecod_poll__num" data-ecod-poll-num hidden></em>'
-                . '<span class="ecod_poll__bar" aria-hidden="true"></span>'
-                . '</button>';
-        }
-        $html .= '</div>'
-            . '<div class="ecod_poll__foot">'
-            . '<span class="ecod_poll__meta" data-ecod-poll-meta>' . ($closed ? '投票已结束' : '加载中…') . '</span>'
-            . ($endTs > 0 && !$expired
-                ? '<em class="ecod_poll__end">' . max(1, (int) ceil(($endTs - time()) / 86400)) . ' 天后结束</em>'
-                : '')
-            . ($closed ? '' : '<button type="button" class="ecod_btn ecod_poll__btn" data-ecod-poll-vote disabled>投票</button>')
-            . '</div>'
-            . '</div>';
-
-        return $html;
+        return ecod_poll_render([
+            'question' => $question,
+            'options'  => $options,
+            'multi'    => $multi,
+            'closed'   => $closed,
+            'end'      => $endTs,
+            'cid'      => (int) ($archive->cid ?? 0),
+        ]);
     }, $content);
 }
 

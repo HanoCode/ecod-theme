@@ -17,20 +17,23 @@ if (!defined('__TYPECHO_ROOT_DIR__')) {
 }
 $this->need('public/header.php');
 
-/* 全部标签：按文章数降序，忽略零文章标签 */
-$ecodTagItems = [];
+/* 全部标签：按实时文章数降序，忽略零文章标签 */
+$ecodTagRows = [];
 try {
-    $ecodTagWidget = $this->widget('Widget_Metas_Tag_Cloud@tagspage', 'sort=count&desc=1&ignoreZeroCount=1');
+    $ecodTagWidget = $this->widget('Widget_Metas_Tag_Cloud@tagspage', 'sort=count&desc=1');
     while ($ecodTagWidget->next()) {
-        $ecodTagItems[] = [
+        $ecodTagRows[] = [
+            'mid'   => (int) $ecodTagWidget->mid,
             'name'  => (string) $ecodTagWidget->name,
             'url'   => (string) $ecodTagWidget->permalink,
             'count' => (int) $ecodTagWidget->count,
         ];
     }
 } catch (\Throwable $e) {
-    $ecodTagItems = [];
+    $ecodTagRows = [];
 }
+/* metas.count 会滞后（文章转草稿不更新）：用实时篇数覆盖，顺带剔除零篇并重排 */
+$ecodTagItems = ecod_tag_live_rows($ecodTagRows);
 
 /* 字号梯度：sqrt 让热门标签突出但不碾压长尾 */
 $ecodTagMax = 0;

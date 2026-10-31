@@ -62,10 +62,25 @@ function ecod_ads_price(string $slot): ?int
 }
 
 /**
- * 天数限制
+ * 定价单位（天 / 周 / 月），月按 30 天换算
+ * @return array{key:string,label:string,days:int}
+ */
+function ecod_ads_unit(): array
+{
+    $map = [
+        'day'   => ['key' => 'day',   'label' => '天', 'days' => 1],
+        'week'  => ['key' => 'week',  'label' => '周', 'days' => 7],
+        'month' => ['key' => 'month', 'label' => '月', 'days' => 30],
+    ];
+    $key = (string) ecod_option('EAdSelfUnit', 'day');
+    return $map[$key] ?? $map['day'];
+}
+
+/**
+ * 投放时长限制（按定价单位的数量）
  * @return array{min:int,max:int}
  */
-function ecod_ads_days_range(): array
+function ecod_ads_units_range(): array
 {
     return [
         'min' => max(1, (int) ecod_option('EAdSelfMinDays', 3)),
@@ -107,25 +122,43 @@ function ecod_ads_create(int $uid, array $in): array
     }
 
     $title = trim((string) ($in['title'] ?? ''));
-    $image = ecod_ads_clean_url((string) ($in['image'] ?? ''));
-    $link = ecod_ads_clean_url((string) ($in['link'] ?? ''));
-    if ($title === '' || $image === '' || $link === '') {
-        return ['ok' => false, 'error' => '标题、图片与跳转链接都要填写'];
+    $imageRaw = trim((string) ($in['image'] ?? ''));
+    $linkRaw = trim((string) ($in['link'] ?? ''));
+    $image = ecod_ads_clean_url($imageRaw);
+    $link = ecod_ads_clean_url($linkRaw);
+    /* 错误文案逐字段拆开：缺哪个、格式错哪个分开说，避免「填了也提示没填」的误导 */
+    if ($title === '') {
+        return ['ok' => false, 'error' => '请填写广告标题'];
+    }
+    if ($imageRaw === '') {
+        return ['ok' => false, 'error' => '请填写图片地址'];
+    }
+    if ($image === '') {
+        return ['ok' => false, 'error' => '图片地址需以 http(s):// 或 / 开头'];
+    }
+    if ($linkRaw === '') {
+        return ['ok' => false, 'error' => '请填写跳转链接'];
+    }
+    if ($link === '') {
+        return ['ok' => false, 'error' => '跳转链接需以 http(s):// 或 / 开头'];
     }
     if (!preg_match('#^https?://#i', $link)) {
         return ['ok' => false, 'error' => '跳转链接必须是 http(s) 地址'];
     }
 
-    $range = ecod_ads_days_range();
-    $days = (int) ($in['days'] ?? 0);
-    if ($days < $range['min'] || $days > $range['max']) {
-        return ['ok' => false, 'error' => '投放天数需在 ' . $range['min'] . '–' . $range['max'] . ' 天之间'];
+    $unit = ecod_ads_unit();
+    $range = ecod_ads_units_range();
+    $units = (int) ($in['units'] ?? 0);
+    if ($units < $range['min'] || $units > $range['max']) {
+        return ['ok' => false, 'error' => '投放时长需在 ' . $range['min'] . '–' . $range['max'] . ' ' . $unit['label'] . ' 之间'];
     }
 
-    $amount = $price * $days;
+    $amount = $price * $units;
     if ($amount <= 0) {
         return ['ok' => false, 'error' => '金额计算异常'];
     }
+    /* days 列统一存换算后的总天数，起止时间 / 审核逻辑不受单位影响 */
+    $days = $units * $unit['days'];
 
     try {
         $db = \Typecho\Db::get();
@@ -158,7 +191,7 @@ function ecod_ads_create(int $uid, array $in): array
         'uid'     => $uid,
         'kind'    => 'ad',
         'target'  => $adId,
-        'title'   => '自助广告 · ' . (ecod_ads_slots()[$slot] ?? $slot) . ' · ' . $days . ' 天',
+        'title'   => '自助广告 · ' . (ecod_ads_slots()[$slot] ?? $slot) . ' · ' . $units . ' ' . $unit['label'],
         'amount'  => $amount,
         'days'    => $days,
         'channel' => $channel !== '' ? $channel : 'manual',
@@ -238,13 +271,15 @@ function ecod_ads_review(int $adId, string $op): array
         if ($op === 'pass') {
             $now = time();
             $days = max(1, (int) $row['days']);
+            $ecodAdUnitPass = ecod_ads_unit();
+            $ecodAdUnitsPass = max(1, (int) round($days / $ecodAdUnitPass['days']));
             $db->query($db->update('table.ecod_ads')->rows([
                 'status'      => 'active',
                 'start_at'    => $now,
                 'end_at'      => $now + $days * 86400,
                 'reviewed_at' => $now,
             ])->where('id = ?', $adId));
-            return ['ok' => true, 'message' => '已通过，投放 ' . $days . ' 天'];
+            return ['ok' => true, 'message' => '已通过，投放 ' . $ecodAdUnitsPass . ' ' . $ecodAdUnitPass['label']];
         }
 
         $db->query($db->update('table.ecod_ads')->rows([

@@ -65,10 +65,13 @@ foreach (ecod_widget_area_order('bottom_content', 'single') as $ecodStackArea) {
         }
     }
 }
+/* 面包屑：吸顶（ECrumbSticky）；阅读工具条形态 crumb 时整条内嵌到面包屑右侧 */
+$ecodCrumbSticky = ecod_option('ECrumbSticky', 'off') === 'on' ? ' is-sticky' : '';
+$ecodCrumbEmbed = ecod_option('EReadBarMode', 'top') === 'crumb';
 ?>
 <main class="ecod_main" id="ecod-main">
 
-    <nav class="ecod_crumb" aria-label="面包屑">
+    <nav class="ecod_crumb<?php echo $ecodCrumbSticky; ?>" aria-label="面包屑">
         <a class="ecod_crumb__back" href="javascript:history.back()" aria-label="返回"><?php echo ecod_icon('chevron', 13); ?></a>
         <a href="<?php $this->options->siteUrl(); ?>"><?php echo ecod_icon('home', 12); ?>首页</a>
         <?php if (!empty($this->categories)): ?>
@@ -80,6 +83,9 @@ foreach (ecod_widget_area_order('bottom_content', 'single') as $ecodStackArea) {
         <?php endif; ?>
         <span class="ecod_crumb__sep" aria-hidden="true">/</span>
         <span aria-current="page">正文</span>
+        <?php if ($ecodCrumbEmbed): ?>
+            <?php $ecodReadbarEmbed = true; include __DIR__ . '/components/post/tts.php'; ?>
+        <?php endif; ?>
     </nav>
 
     <article class="ecod_article<?php echo $ecodLocked ? ' is-locked' : ''; ?>" data-ecod-article
@@ -177,7 +183,7 @@ foreach (ecod_widget_area_order('bottom_content', 'single') as $ecodStackArea) {
                 <i class="ecod_meta-sep" aria-hidden="true">·</i>
                 <span><?php echo ecod_icon('eye', 13); ?><?php echo ecod_num_short($ecodViews); ?> 阅读</span>
                 <i class="ecod_meta-sep" aria-hidden="true">·</i>
-                <a href="#comments"><?php echo ecod_icon('comment', 13); ?><?php $this->commentsNum('%d 评论'); ?></a>
+                <a href="#comments"><?php echo ecod_icon('comment', 13); ?><?php echo ecod_comment_count((int) $this->cid); ?> 评论</a>
             </div>
             <?php if ($ecodSecItems): ?>
             <div class="ecod_article__metasec">
@@ -256,7 +262,7 @@ foreach (ecod_widget_area_order('bottom_content', 'single') as $ecodStackArea) {
                 $ecodRaw = ecod_pay_teaser_html($ecodRaw, (int) ecod_option('EPayTeaser', 80));
             }
 
-            echo ecod_go_rewrite(ecod_lazy_images(ecod_keywords_apply(ecod_oembed_apply(ecod_shortcode_apply($ecodRaw, $this))), (string) $this->title));
+            echo ecod_go_rewrite(ecod_lazy_images(ecod_keywords_apply(ecod_linkcard_apply(ecod_oembed_apply(ecod_shortcode_apply($ecodRaw, $this)))), (string) $this->title));
             ?>
         </div>
 

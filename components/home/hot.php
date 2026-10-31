@@ -43,7 +43,7 @@ $ecodHotStyle = (string) ecod_p('style', 'grid') === 'rank' ? 'rank' : 'grid';
                     <span class="ecod_hot__rank"><?php echo $ecodHotIndex; ?></span>
                 </span>
                 <b class="ecod_hot__text"><?php if (ecod_has_password($ecodHot)): ?><?php echo ecod_lock_icon(11, 'ecod_hot__lock'); ?><?php endif; ?><?php $ecodHot->title(); ?></b>
-                <span class="ecod_hot__meta"><?php echo $ecodHotSort === 'views' ? ecod_num_short((int) $ecodHot->views) . ' 阅读' : (int) $ecodHot->commentsNum . ' 评论'; ?> · <?php $ecodHot->date('m-d'); ?></span>
+                <span class="ecod_hot__meta"><?php echo $ecodHotSort === 'views' ? ecod_num_short((int) $ecodHot->views) . ' 阅读' : ecod_comment_count((int) $ecodHot->cid) . ' 评论'; ?> · <?php $ecodHot->date('m-d'); ?></span>
             </a>
             <?php $ecodHotIndex++; ?>
         <?php endwhile; ?>

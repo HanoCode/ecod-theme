@@ -66,9 +66,11 @@ $ecodUcUrl = ecod_user_center_url();
     <?php elseif (!$ecodLogged): ?>
         <div class="ecod_uc__hint" style="margin-bottom:24px">
             <?php echo ecod_icon('user', 18); ?>
-            <p>登录后即可与 AI 助手对话。</p>
-            <p style="margin-top:12px"><a class="ecod-btn" data-ecod-login-open data-no-pjax
-                href="<?php echo htmlspecialchars($ecodLoginUrl, ENT_QUOTES, 'UTF-8'); ?>?referer=<?php echo rawurlencode($this->permalink); ?>">登录</a></p>
+            <div>
+                <p>登录后即可与 AI 助手对话。</p>
+                <p style="margin-top:12px"><a class="ecod-btn" data-ecod-login-open data-no-pjax
+                    href="<?php echo htmlspecialchars($ecodLoginUrl, ENT_QUOTES, 'UTF-8'); ?>?referer=<?php echo rawurlencode($this->permalink); ?>">登录</a></p>
+            </div>
         </div>
     <?php else: ?>
         <section class="ecod_aichat" data-ecod-aichat

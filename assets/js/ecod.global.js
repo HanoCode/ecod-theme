@@ -1180,6 +1180,31 @@
     };
 
     /* ---------- 头部用户面板：点外部收起 ---------- */
+    /* 头部 details 弹层（用户面板 / 站内消息铃铛）：桌面端 hover 即展开，
+       移出延时收起——延时盖过 summary → 弹层之间空隙的穿越时间。
+       触屏无 hover，保持原生点击。点外收起 / Esc 由 initPopDismiss 统一负责。 */
+    function hoverCapable() {
+        return !!(window.matchMedia && window.matchMedia('(hover: hover) and (pointer: fine)').matches);
+    }
+    function bindHoverDetails(d, delay) {
+        if (!d || d.dataset.ecodHoverBound === '1') return;
+        d.dataset.ecodHoverBound = '1';
+        var timer = null;
+        d.addEventListener('mouseenter', function () {
+            if (timer) { clearTimeout(timer); timer = null; }
+            /* hover 展开不走 click，initPopDismiss 的「点外收起」管不到，
+               这里手动关掉其他已展开的头部弹层（铃铛 / 用户面板） */
+            document.querySelectorAll('details.ecod_nav__user[open], details.ecod_nav__bell[open]').forEach(function (o) {
+                if (o !== d) o.removeAttribute('open');
+            });
+            if (!d.open) d.open = true;
+        });
+        d.addEventListener('mouseleave', function () {
+            if (timer) clearTimeout(timer);
+            timer = setTimeout(function () { timer = null; d.open = false; }, delay || 160);
+        });
+    }
+
     Ecod.initUserPop = function () {
         /* 下拉面板从触发头像处展开：用 offset 坐标（不受入场 scale 影响），
            summary 与面板同在 .ecod_nav__user 定位上下文内。 */
@@ -1192,6 +1217,7 @@
                 panel.style.setProperty('--ecod-ox', (summary.offsetLeft + summary.offsetWidth / 2) + 'px');
                 panel.style.setProperty('--ecod-oy', (summary.offsetTop + summary.offsetHeight) + 'px');
             });
+            if (hoverCapable()) bindHoverDetails(d);
         });
     };
 
@@ -1214,7 +1240,11 @@
             if (el) {
                 if (el.dataset.ecodLikeNum === 'full') {
                     el.textContent = count > 0 ? shortNum(count) + ' 赞' : '点赞';
+                } else if (el.dataset.ecodLikeNum === 'short') {
+                    /* 文末动作条 / 侧栏：0 赞回落「点赞」文案（与服务端渲染一致，不能留空） */
+                    el.textContent = count > 0 ? shortNum(count) : '点赞';
                 } else {
+                    /* 卡片徽标：0 赞清空 + 摘掉 is-num，徽标整体隐藏 */
                     el.textContent = count > 0 ? shortNum(count) : '';
                 }
             }
@@ -1279,6 +1309,26 @@
             row.querySelector('.ecod_likers__av').innerHTML = av;
             row.querySelector('.ecod_likers__text').innerHTML = text;
         });
+    };
+
+    /* 点赞粒子爆裂：以按钮为圆心撒 8 颗粒子（主色/点赞色交替），方向随机、0.7s 消散 */
+    Ecod.likeBurst = function (btn) {
+        if (!btn) return;
+        var r = btn.getBoundingClientRect();
+        var cx = r.left + r.width / 2;
+        var cy = r.top + r.height / 2;
+        for (var i = 0; i < 8; i++) {
+            var p = document.createElement('i');
+            p.className = 'ecod_likeburst' + (i % 2 ? ' is-alt' : '');
+            var ang = (Math.PI * 2 * i) / 8 + Math.random() * 0.6;
+            var dist = 26 + Math.random() * 18;
+            p.style.left = cx + 'px';
+            p.style.top = cy + 'px';
+            p.style.setProperty('--dx', Math.cos(ang) * dist + 'px');
+            p.style.setProperty('--dy', Math.sin(ang) * dist + 'px');
+            document.body.appendChild(p);
+            setTimeout(function (el) { return function () { el.remove(); }; }(p), 750);
+        }
     };
 
     /* 卡片操作组移入缩略图内定位（与角标同基准，随图片尺寸自适应） */
@@ -1406,6 +1456,7 @@
                     if (data.liked) {
                         btn.classList.add('is-pop');
                         setTimeout(function () { btn.classList.remove('is-pop'); }, 320);
+                        Ecod.likeBurst(btn);
                     }
                     live(data.mine ? '已点赞' : '已取消点赞');
                 }).catch(function () { btn.dataset.busy = ''; });
@@ -2889,7 +2940,7 @@
        其余图统一标 is-error，由 CSS 决定隐藏裂图本体（卡片）或整块撤下（正文）。 */
     Ecod._imgFailed = function (img) {
         if (!img || img.tagName !== 'IMG') return;
-        if (img.closest('.ecod_likers__av')) {
+        if (img.closest('.ecod_likers__av') || img.closest('.ecod_poll__avs')) {
             var ph = document.createElement('i');
             if (img.dataset.initial) ph.textContent = img.dataset.initial;
             img.replaceWith(ph);
@@ -3351,6 +3402,54 @@
             /* 注册 */
             var regForm = auth.querySelector('[data-ecod-auth-form="register"]');
             if (regForm) {
+                /* 获取邮箱验证码（purpose=register，与找回密码共用 send_code 入口） */
+                var regSend = regForm.querySelector('[data-ecod-reg-send]');
+                if (regSend) {
+                    var regSendTimer = null;
+                    regSend.addEventListener('click', function () {
+                        if (regSendTimer) return;
+                        var mailEl = regForm.querySelector('[name="mail"]');
+                        var mail = mailEl ? mailEl.value.trim() : '';
+                        if (!mail) {
+                            authMsg('register', '请先填写邮箱', false);
+                            if (mailEl) mailEl.focus();
+                            return;
+                        }
+                        authMsg('register', '', true);
+                        var btn = regSend;
+                        btn.disabled = true;
+                        btn.textContent = '发送中…';
+                        var fd = new FormData();
+                        fd.append('mail', mail);
+                        fd.append('purpose', 'register');
+                        if (authToken) fd.append('token', authToken);
+                        accPost('send_code', fd).then(function (data) {
+                            if (data && data.ok) {
+                                authMsg('register', '验证码已发送，请查收邮箱（注意垃圾箱）', true);
+                                var left = 60;
+                                regSendTimer = setInterval(function () {
+                                    left -= 1;
+                                    if (left <= 0) {
+                                        clearInterval(regSendTimer);
+                                        regSendTimer = null;
+                                        btn.disabled = false;
+                                        btn.textContent = '重新获取';
+                                    } else {
+                                        btn.textContent = left + ' 秒';
+                                    }
+                                }, 1000);
+                            } else {
+                                authMsg('register', (data && data.error) || '发送失败', false);
+                                btn.disabled = false;
+                                btn.textContent = '获取验证码';
+                            }
+                        }).catch(function () {
+                            authMsg('register', '网络异常，请重试', false);
+                            btn.disabled = false;
+                            btn.textContent = '获取验证码';
+                        });
+                    });
+                }
                 regForm.addEventListener('submit', function (e) {
                     e.preventDefault();
                     if (regForm.querySelector('[name="password"]').value
@@ -3367,9 +3466,12 @@
                             return;
                         }
                         authMsg('register', (data && data.error) || '注册失败', false);
+                        /* 图形验证码一次一换：失败必须换图，否则重试必然失败 */
+                        capRefresh(regForm);
                         if (btn) { btn.disabled = false; btn.textContent = '注 册'; }
                     }).catch(function () {
                         authMsg('register', '网络异常，请重试', false);
+                        capRefresh(regForm);
                         if (btn) { btn.disabled = false; btn.textContent = '注 册'; }
                     });
                 });
@@ -3824,6 +3926,9 @@
                 if (bell.open) fetchList();
             });
 
+            /* 桌面 hover 即展开（与用户面板同语言，点外收起由 initPopDismiss 负责） */
+            if (hoverCapable()) bindHoverDetails(bell);
+
             refreshBadge();
             setInterval(refreshBadge, 90000);
         }
@@ -3837,14 +3942,23 @@
                 if (readAll) {
                     e.preventDefault();
                     post('notif_read', { all: 1 }).then(function (data) {
-                        if (data && data.ok) { setBadge(0); fetchList(); }
+                        if (data && data.ok) {
+                            setBadge(0);
+                            setTabCount(0);
+                            fetchList();
+                            if (Ecod.refreshMsgCenter) Ecod.refreshMsgCenter();
+                        }
                     });
                     return;
                 }
                 var clear = e.target.closest ? e.target.closest('[data-ecod-notif-clear]') : null;
                 if (clear) {
                     e.preventDefault();
-                    post('notif_clear', {}).then(function () { fetchList(); refreshBadge(); });
+                    post('notif_clear', {}).then(function () {
+                        fetchList();
+                        refreshBadge();
+                        if (Ecod.refreshMsgCenter) Ecod.refreshMsgCenter();
+                    });
                     return;
                 }
                 var item = e.target.closest ? e.target.closest('[data-ecod-notif-item]') : null;
@@ -3857,13 +3971,627 @@
             });
         }
 
-        /* 个人中心「我的消息」面板：进入页面就拉一次（tab 隐藏不影响） */
-        Array.prototype.forEach.call(document.querySelectorAll('[data-ecod-uc-panel="notifs"]'), function (panel) {
+        /* 个人中心「我的消息」面板：进入页面就拉一次（tab 隐藏不影响）
+           消息中心改版后用独立容器 [data-ecod-msgc-list]，不再共用铃铛的渲染器 */
+        if (notifListHosts.length) {
             fetchList();
-        });
+        }
 
         /* PJAX 换页后 DOM 可能是新的：重取手势 */
         notifListHosts = [];
+    };
+
+    /* ------------------------------------------------------------------
+     * 任务中心
+     *
+     * 服务端直出首屏（进度是实时 COUNT 出来的，没有缓存要失效）；
+     * 领取走 api?action=task_claim，成功后重拉 task_list 整体同步视图——
+     * 比在 DOM 上算差量少一半分支，多一次请求换来「视图永远等于服务端」。
+     * ---------------------------------------------------------------- */
+    Ecod.initTasks = function () {
+        var root = document.querySelector('[data-ecod-task]');
+        if (!root || root.dataset.taskReady === '1') return;
+        root.dataset.taskReady = '1';
+
+        var api = root.dataset.api || CFG.api || '';
+        var token = root.dataset.token || '';
+
+        function post(action, params) {
+            var body = new URLSearchParams(params || {});
+            return fetch(api + '?action=' + action, {
+                method: 'POST',
+                body: body,
+                credentials: 'same-origin'
+            }).then(function (r) { return r.json(); }).catch(function () { return null; });
+        }
+
+        function get(action, params) {
+            var qs = new URLSearchParams(params || {});
+            return fetch(api + '?action=' + action + '&' + qs.toString(), { credentials: 'same-origin' })
+                .then(function (r) { return r.json(); }).catch(function () { return null; });
+        }
+
+        function setTabCount(n) {
+            Array.prototype.forEach.call(document.querySelectorAll('[data-ecod-uc-count="task"]'), function (em) {
+                if (!n) {
+                    em.hidden = true;
+                    em.textContent = '0';
+                    return;
+                }
+                em.hidden = false;
+                em.textContent = n > 99 ? '99+' : String(n);
+            });
+        }
+
+        function claimBtnHtml(item) {
+            if (item.state === 'claimable') {
+                return '<button type="button" class="ecod-btn ecod-btn--primary ecod-btn--sm"'
+                    + ' data-ecod-task-claim="' + escHtml(item.key) + '">领取 +' + Number(item.reward) + '</button>';
+            }
+            if (item.state === 'claimed') {
+                var doneTxt = item.threshold ? '已领取' : (item.need > 1 ? '已领 ' + item.claimed + '/' + item.need : '已领取');
+                return '<em class="ecod_task__done">' + Ecod.icon('check', 13) + doneTxt + '</em>';
+            }
+            var lack = Math.max(0, item.need - item.progress);
+            return '<button type="button" class="ecod-btn ecod-btn--ghost ecod-btn--sm" disabled title="未达标，领取会被拒绝">还差 '
+                + lack + '</button>';
+        }
+
+        function sync(data) {
+            if (!data || !data.ok) return;
+
+            var bal = root.querySelector('[data-ecod-task-balance]');
+            if (bal) bal.textContent = Number(data.balance || 0).toLocaleString('zh-CN');
+            var streak = root.querySelector('[data-ecod-task-streak]');
+            if (streak) streak.textContent = String(data.streak || 0);
+
+            var today = data.today || { claimed: 0, total: 0 };
+            var bar = root.querySelector('[data-ecod-task-todaybar]');
+            if (bar) {
+                var pct = today.total > 0 ? Math.round(today.claimed / today.total * 100) : 0;
+                bar.style.width = pct + '%';
+            }
+            var num = root.querySelector('[data-ecod-task-todaynum]');
+            if (num) num.textContent = today.claimed + ' / ' + today.total;
+
+            var sign = root.querySelector('[data-ecod-task-signin]');
+            if (sign) {
+                sign.disabled = !!data.signed;
+                /* 只改「已签」文案：未签到时奖励数由服务端渲染，前端不知道 ECrCheckin */
+                var st = sign.querySelector('[data-ecod-task-signin-text]');
+                if (st && data.signed) st.textContent = '今日已签到';
+            }
+
+            var ready = 0;
+            (data.groups || []).forEach(function (group) {
+                var box = root.querySelector('[data-group="' + group.key + '"]');
+                if (!box) return;
+                var doneEl = box.querySelector('[data-ecod-task-gdone]');
+                if (doneEl) doneEl.textContent = '已完成 ' + group.done + '/' + group.total;
+
+                (group.items || []).forEach(function (item) {
+                    if (item.state === 'claimable') ready++;
+                    var card = box.querySelector('.ecod_task__card[data-task="' + item.key + '"]');
+                    if (!card) return;
+                    card.dataset.state = item.state;
+                    card.classList.toggle('is-claimable', item.state === 'claimable');
+                    card.classList.toggle('is-claimed', item.state === 'claimed');
+
+                    var pb = card.querySelector('[data-ecod-task-pbar]');
+                    if (pb) pb.style.width = Math.round(item.progress / Math.max(1, item.need) * 100) + '%';
+                    var pn = card.querySelector('[data-ecod-task-pnum]');
+                    if (pn) pn.textContent = item.progress + '/' + item.need;
+                    var ops = card.querySelector('[data-ecod-task-ops]');
+                    if (ops) ops.innerHTML = claimBtnHtml(item);
+                });
+            });
+
+            setTabCount(ready);
+        }
+
+        function refresh() {
+            return get('task_list').then(function (data) {
+                if (data && data.ok) sync(data);
+                return data;
+            });
+        }
+
+        root.addEventListener('click', function (e) {
+            var claim = e.target.closest ? e.target.closest('[data-ecod-task-claim]') : null;
+            if (claim) {
+                if (claim.dataset.busy) return;
+                claim.dataset.busy = '1';
+                claim.disabled = true;
+                var key = claim.getAttribute('data-ecod-task-claim');
+                post('task_claim', { key: key, token: token }).then(function (data) {
+                    delete claim.dataset.busy;
+                    claim.disabled = false;
+                    if (!data || !data.ok) {
+                        Ecod.toast((data && data.error) || '领取失败，请稍后重试', 'bad');
+                        /* 已领取 / 未达标都要把视图拉回真实状态 */
+                        refresh();
+                        return;
+                    }
+                    Ecod.toast('领取成功 +' + data.delta, 'ok');
+                    refresh();
+                });
+                return;
+            }
+
+            var signin = e.target.closest ? e.target.closest('[data-ecod-task-signin]') : null;
+            if (signin && !signin.disabled) {
+                signin.disabled = true;
+                post('signin', { token: token }).then(function (data) {
+                    if (!data || !data.ok) {
+                        signin.disabled = false;
+                        Ecod.toast((data && data.error) || '签到失败', 'bad');
+                        return;
+                    }
+                    Ecod.toast('签到成功' + (data.delta ? ' +' + data.delta : ''), 'ok');
+                    refresh();
+                });
+            }
+        });
+    };
+
+    /* ------------------------------------------------------------------
+     * 消息中心
+     *
+     * 一次拉 50 条，分类筛选在前端做（type 只有 6 种，映射成 4 个 chip）；
+     * 「加载更多」用 offset 增量取数 —— 表结构零改动。
+     * ---------------------------------------------------------------- */
+    Ecod.initMsgCenter = function () {
+        var root = document.querySelector('[data-ecod-msgc]');
+        if (!root || root.dataset.msgcReady === '1') return;
+        root.dataset.msgcReady = '1';
+
+        var api = root.dataset.api || CFG.api || '';
+        var token = root.dataset.token || '';
+        var listHost = root.querySelector('[data-ecod-msgc-list]');
+        var moreBtn = root.querySelector('[data-ecod-msgc-more]');
+        var endEl = root.querySelector('[data-ecod-msgc-end]');
+        var chips = root.querySelectorAll('[data-ecod-msgc-filter]');
+
+        var ICONS = { reply: 'comment', friend: 'link', like: 'heart', fav: 'star', notice: 'bell', ticket: 'headset' };
+        var GROUP = { like: 'interact', fav: 'interact', reply: 'interact', notice: 'system', friend: 'system', ticket: 'system' };
+        var LIMIT = 50;
+
+        var state = { items: [], filter: 'all', offset: 0, hasMore: false, counts: {}, loading: false };
+
+        function fmtTime(ts) {
+            var d = Date.now() / 1000 - (Number(ts) || 0);
+            if (!isFinite(d) || d < 0) d = 0;
+            if (d < 60) return '刚刚';
+            if (d < 3600) return Math.floor(d / 60) + ' 分钟前';
+            if (d < 86400) return Math.floor(d / 3600) + ' 小时前';
+            if (d < 86400 * 30) return Math.floor(d / 86400) + ' 天前';
+            var t = new Date((Number(ts) || Date.now() / 1000) * 1000);
+            return (t.getMonth() + 1) + '-' + t.getDate();
+        }
+
+        function paintCounts() {
+            chips.forEach(function (chip) {
+                var key = chip.getAttribute('data-ecod-msgc-filter');
+                chip.classList.toggle('is-active', key === state.filter);
+                var u = chip.querySelector('[data-ecod-msgc-count]');
+                if (!u) return;
+                var n = 0;
+                if (key === 'all') n = state.counts.all || 0;
+                else if (key === 'unread') n = state.counts.unread || 0;
+                else n = state.counts[key] || 0;
+                u.textContent = n > 99 ? '99+' : String(n);
+            });
+        }
+
+        function visible() {
+            return state.items.filter(function (it) {
+                if (state.filter === 'all') return true;
+                if (state.filter === 'unread') return !Number(it.is_read);
+                return GROUP[it.type] === state.filter;
+            });
+        }
+
+        function emptyHtml() {
+            var text = state.filter === 'unread' ? '没有未读消息'
+                : (state.filter === 'interact' ? '还没有互动消息' : (state.filter === 'system' ? '还没有系统消息' : '还没有消息'));
+            return '<div class="ecod_msgc__empty">' + Ecod.icon('bell', 30)
+                + '<span>' + text + '</span>'
+                + '<span>收到回复、点赞、公告与工单回复后会出现在这里</span></div>';
+        }
+
+        function render() {
+            if (!listHost) return;
+            var items = visible();
+            if (!items.length) {
+                listHost.innerHTML = emptyHtml();
+                if (moreBtn) moreBtn.hidden = true;
+                if (endEl) endEl.hidden = true;
+                return;
+            }
+            var html = '';
+            items.forEach(function (it) {
+                var unread = Number(it.is_read) ? '' : ' is-unread';
+                html += '<div class="ecod_msgc__item' + unread + '"'
+                    + ' data-ecod-msgc-item="' + Number(it.id) + '"'
+                    + ' data-k="' + escHtml(it.type) + '">'
+                    + '<span class="ecod_msgc__ic">' + Ecod.icon(ICONS[it.type] || 'bell', 15) + '</span>'
+                    + '<span class="ecod_msgc__main">'
+                    + '<b>' + escHtml(it.title) + '</b>'
+                    + (it.body ? '<span>' + escHtml(it.body) + '</span>' : '')
+                    + '</span>'
+                    + '<time>' + fmtTime(it.created) + '</time>'
+                    + '<div class="ecod_msgc__foot">'
+                    + (it.body ? escHtml(it.body) : '')
+                    + (it.link ? '<a href="' + escHtml(it.link) + '">查看详情 →</a>' : '')
+                    + '</div>'
+                    + '</div>';
+            });
+            listHost.innerHTML = html;
+
+            if (moreBtn) moreBtn.hidden = !state.hasMore;
+            if (endEl) endEl.hidden = state.hasMore || state.items.length === 0;
+        }
+
+        function refreshBadge(unread) {
+            var n = Number(unread) || 0;
+            Array.prototype.forEach.call(document.querySelectorAll('[data-ecod-bell-badge]'), function (b) {
+                if (!n) { b.hidden = true; b.textContent = ''; return; }
+                b.hidden = false;
+                b.textContent = n > 99 ? '99+' : String(n);
+            });
+            Array.prototype.forEach.call(document.querySelectorAll('[data-ecod-uc-count="notifs"]'), function (em) {
+                if (!n) { em.hidden = true; em.textContent = '0'; return; }
+                em.hidden = false;
+                em.textContent = n > 99 ? '99+' : String(n);
+            });
+        }
+
+        function load(append) {
+            if (state.loading) return;
+            state.loading = true;
+            if (moreBtn) moreBtn.disabled = true;
+            var offset = append ? state.offset : 0;
+            fetch(api + '?action=notif_list&limit=' + LIMIT + '&offset=' + offset, { credentials: 'same-origin' })
+                .then(function (r) { return r.json(); })
+                .then(function (data) {
+                    state.loading = false;
+                    if (moreBtn) moreBtn.disabled = false;
+                    if (!data || !data.ok) return;
+                    var list = data.list || [];
+                    state.items = append ? state.items.concat(list) : list;
+                    state.offset = state.items.length;
+                    state.hasMore = list.length >= LIMIT;
+                    state.counts = data.counts || {};
+                    paintCounts();
+                    render();
+                    refreshBadge(data.unread);
+                })
+                .catch(function () {
+                    state.loading = false;
+                    if (moreBtn) moreBtn.disabled = false;
+                });
+        }
+
+        function post(action, params) {
+            var body = new URLSearchParams(params || {});
+            return fetch(api + '?action=' + action, {
+                method: 'POST',
+                body: body,
+                credentials: 'same-origin'
+            }).then(function (r) { return r.json(); }).catch(function () { return null; });
+        }
+
+        Ecod.refreshMsgCenter = function () { load(false); };
+
+        chips.forEach(function (chip) {
+            chip.addEventListener('click', function () {
+                state.filter = chip.getAttribute('data-ecod-msgc-filter');
+                paintCounts();
+                render();
+            });
+        });
+
+        if (moreBtn) moreBtn.addEventListener('click', function () { load(true); });
+
+        if (listHost) {
+            listHost.addEventListener('click', function (e) {
+                var item = e.target.closest ? e.target.closest('[data-ecod-msgc-item]') : null;
+                if (!item) return;
+                var link = e.target.closest ? e.target.closest('a') : null;
+                if (link) {
+                    /* 跳转前把这条标已读，回来才不会又亮着 */
+                    if (item.classList.contains('is-unread')) {
+                        post('notif_read', { id: item.getAttribute('data-ecod-msgc-item') }).then(function (data) {
+                            if (data && data.ok) refreshBadge(data.unread);
+                        });
+                    }
+                    return;
+                }
+                item.classList.toggle('is-open');
+                if (item.classList.contains('is-unread')) {
+                    item.classList.remove('is-unread');
+                    state.counts.unread = Math.max(0, (state.counts.unread || 0) - 1);
+                    post('notif_read', { id: item.getAttribute('data-ecod-msgc-item') }).then(function (data) {
+                        if (data && data.ok) refreshBadge(data.unread);
+                    });
+                    paintCounts();
+                }
+            });
+        }
+
+        load(false);
+    };
+
+    /* ------------------------------------------------------------------
+     * 工单
+     *
+     * 列表服务端直出（首屏即可见），展开时才拉详情；回复 / 关闭 / 新建
+     * 之后重拉列表同步状态与统计，避免前端自己算派生状态算错。
+     * ---------------------------------------------------------------- */
+    Ecod.initTickets = function () {
+        var root = document.querySelector('[data-ecod-ticket]');
+        if (!root || root.dataset.tkReady === '1') return;
+        root.dataset.tkReady = '1';
+
+        var api = root.dataset.api || CFG.api || '';
+        var token = root.dataset.token || '';
+        var listBox = root.querySelector('[data-ecod-ticket-list]');
+        var emptyBox = root.querySelector('[data-ecod-ticket-empty]');
+        var form = root.querySelector('[data-ecod-ticket-form]');
+        var msg = root.querySelector('[data-ecod-ticket-msg]');
+
+        var STATE_TEXT = { pending: '待处理', replied: '已回复', resolved: '已解决', closed: '已关闭' };
+
+        function post(action, params) {
+            var body = new URLSearchParams(params || {});
+            return fetch(api + '?action=' + action, {
+                method: 'POST',
+                body: body,
+                credentials: 'same-origin'
+            }).then(function (r) { return r.json(); }).catch(function () { return null; });
+        }
+
+        function get(action, params) {
+            var qs = new URLSearchParams(params || {});
+            return fetch(api + '?action=' + action + '&' + qs.toString(), { credentials: 'same-origin' })
+                .then(function (r) { return r.json(); }).catch(function () { return null; });
+        }
+
+        function fmt(ts) {
+            var t = new Date((Number(ts) || 0) * 1000);
+            var p = function (n) { return n < 10 ? '0' + n : '' + n; };
+            return (t.getMonth() + 1) + '-' + p(t.getDate()) + ' ' + p(t.getHours()) + ':' + p(t.getMinutes());
+        }
+
+        function showMsg(text, bad) {
+            if (!msg) return;
+            msg.hidden = false;
+            msg.textContent = text;
+            msg.classList.toggle('is-error', !!bad);
+        }
+
+        function hideMsg() {
+            if (msg) msg.hidden = true;
+        }
+
+        function setStats(stats) {
+            if (!stats) return;
+            ['pending', 'replied', 'resolved'].forEach(function (k) {
+                var el = root.querySelector('[data-ecod-ticket-stat="' + k + '"]');
+                if (el) el.textContent = String(stats[k] || 0);
+            });
+        }
+
+        function setTabCount(n) {
+            Array.prototype.forEach.call(document.querySelectorAll('[data-ecod-uc-count="ticket"]'), function (em) {
+                if (!n) { em.hidden = true; em.textContent = '0'; return; }
+                em.hidden = false;
+                em.textContent = n > 99 ? '99+' : String(n);
+            });
+        }
+
+        function itemHtml(t) {
+            return '<div class="ecod_ticket__item" data-id="' + Number(t.id) + '" data-derived="' + escHtml(t.derived) + '">'
+                + '<button type="button" class="ecod_ticket__hd" data-ecod-ticket-toggle>'
+                + '<span class="ecod_ticket__no">' + escHtml(t.no) + '</span>'
+                + '<span class="ecod_ticket__main">'
+                + '<b>' + escHtml(t.title) + '</b>'
+                + '<span class="ecod_ticket__meta">'
+                + (t.unread ? '<i class="ecod_ticket__dot"></i>' : '')
+                + '<em>' + escHtml(t.catText) + '</em>'
+                + ' · ' + Number(t.msgs) + ' 条消息'
+                + ' · ' + fmt(t.updated)
+                + '</span></span>'
+                + '<span class="ecod_ticket__right">'
+                + '<em class="ecod_ticket__state" data-s="' + escHtml(t.derived) + '">' + escHtml(STATE_TEXT[t.derived] || t.derived) + '</em>'
+                + '<span class="ecod_ticket__chev">' + Ecod.icon('chevron-down', 14) + '</span>'
+                + '</span></button>'
+                + '<div class="ecod_ticket__thread" data-ecod-ticket-thread hidden></div>'
+                + '</div>';
+        }
+
+        function reload() {
+            return get('ticket_list').then(function (data) {
+                if (!data || !data.ok) return;
+                setStats(data.stats);
+                var items = data.items || [];
+                if (listBox) {
+                    listBox.innerHTML = items.map(itemHtml).join('');
+                    listBox.hidden = !items.length;
+                }
+                if (emptyBox) emptyBox.hidden = !!items.length;
+                /* 未读角标 = 未读条目数（列表里 unread 字段） */
+                var unread = items.filter(function (t) { return t.unread; }).length;
+                setTabCount(unread);
+            });
+        }
+
+        function threadHtml(data) {
+            var t = data.ticket || {};
+            var html = '';
+            (data.msgs || []).forEach(function (m) {
+                var me = m.side !== 'staff';
+                html += '<div class="ecod_ticket__bub ecod_ticket__bub--' + (me ? 'me' : 'staff') + '">'
+                    + '<span class="ecod_ticket__bub-meta">' + (me ? '我' : '<b>客服</b>')
+                    + ' · ' + fmt(m.created) + '</span>'
+                    + '<div class="ecod_ticket__bub-txt">' + escHtml(m.body) + '</div>'
+                    + '</div>';
+            });
+
+            if (t.status === 'closed') {
+                html += '<div class="ecod_ticket__closed">工单已关闭，如需继续请新建工单。</div>';
+                return html;
+            }
+
+            html += '<form class="ecod_ticket__reply" data-ecod-tk-reply>'
+                + '<textarea rows="3" maxlength="2000" placeholder="继续补充说明…" data-ecod-tk-text></textarea>'
+                + '<div class="ecod_ticket__reply-ops">'
+                + '<button type="submit" class="ecod-btn ecod-btn--primary ecod-btn--sm" data-ecod-tk-send>发送</button>'
+                + '<button type="button" class="ecod-btn ecod-btn--ghost ecod-btn--sm ecod-btn--close" data-ecod-tk-close>问题已解决，关闭工单</button>'
+                + '</div></form>';
+            return html;
+        }
+
+        function openItem(item) {
+            var id = item.getAttribute('data-id');
+            var thread = item.querySelector('[data-ecod-ticket-thread]');
+            var willOpen = !item.classList.contains('is-open');
+            item.classList.toggle('is-open', willOpen);
+            if (!thread) return;
+            thread.hidden = !willOpen;
+            if (!willOpen) return;
+
+            if (thread.dataset.loaded === '1') return;
+            thread.innerHTML = '<div class="ecod_ticket__loading">加载中…</div>';
+            get('ticket_detail', { id: id }).then(function (data) {
+                if (!data || !data.ok) {
+                    thread.innerHTML = '<div class="ecod_ticket__loading">' + ((data && data.error) || '加载失败') + '</div>';
+                    return;
+                }
+                thread.dataset.loaded = '1';
+                thread.innerHTML = threadHtml(data);
+                var dot = item.querySelector('.ecod_ticket__dot');
+                if (dot) dot.remove();
+                /* 详情读完服务端已清 unread_user，同步角标 */
+                var dots = root.querySelectorAll('.ecod_ticket__dot').length;
+                setTabCount(dots);
+            });
+        }
+
+        root.addEventListener('click', function (e) {
+            var toggle = e.target.closest ? e.target.closest('[data-ecod-ticket-toggle]') : null;
+            if (toggle) {
+                openItem(toggle.closest('.ecod_ticket__item'));
+                return;
+            }
+
+            var newBtn = e.target.closest ? e.target.closest('[data-ecod-ticket-new]') : null;
+            if (newBtn && form) {
+                form.hidden = false;
+                hideMsg();
+                var title = form.querySelector('[data-ecod-ticket-title]');
+                if (title) title.focus();
+                return;
+            }
+
+            var cancel = e.target.closest ? e.target.closest('[data-ecod-ticket-cancel]') : null;
+            if (cancel && form) {
+                form.hidden = true;
+                hideMsg();
+                return;
+            }
+
+            var closeBtn = e.target.closest ? e.target.closest('[data-ecod-tk-close]') : null;
+            if (closeBtn) {
+                var row = closeBtn.closest('.ecod_ticket__item');
+                if (!row) return;
+                if (!window.confirm('确认关闭这个工单？关闭后不能再继续回复。')) return;
+                closeBtn.disabled = true;
+                post('ticket_close', { id: row.getAttribute('data-id'), token: token }).then(function (data) {
+                    closeBtn.disabled = false;
+                    if (!data || !data.ok) {
+                        Ecod.toast((data && data.error) || '关闭失败', 'bad');
+                        return;
+                    }
+                    Ecod.toast('工单已关闭', 'ok');
+                    reload();
+                });
+            }
+        });
+
+        root.addEventListener('submit', function (e) {
+            var reply = e.target.closest ? e.target.closest('[data-ecod-tk-reply]') : null;
+            if (reply) {
+                e.preventDefault();
+                var row = reply.closest('.ecod_ticket__item');
+                var ta = reply.querySelector('[data-ecod-tk-text]');
+                var text = ta ? String(ta.value || '').trim() : '';
+                if (text.length < 1) {
+                    Ecod.toast('请先输入内容', 'bad');
+                    return;
+                }
+                var send = reply.querySelector('[data-ecod-tk-send]');
+                if (send) send.disabled = true;
+                post('ticket_reply', { id: row.getAttribute('data-id'), body: text, token: token }).then(function (data) {
+                    if (send) send.disabled = false;
+                    if (!data || !data.ok) {
+                        Ecod.toast((data && data.error) || '回复失败', 'bad');
+                        return;
+                    }
+                    if (ta) ta.value = '';
+                    /* 正文已变，重开详情拿最新时间线 */
+                    var thread = row.querySelector('[data-ecod-ticket-thread]');
+                    if (thread) thread.dataset.loaded = '';
+                    Ecod.toast('已发送', 'ok');
+                    reload();
+                    get('ticket_detail', { id: row.getAttribute('data-id') }).then(function (d) {
+                        if (d && d.ok && thread) {
+                            thread.dataset.loaded = '1';
+                            thread.innerHTML = threadHtml(d);
+                        }
+                    });
+                });
+                return;
+            }
+
+            if (e.target === form) {
+                e.preventDefault();
+                var cat = form.querySelector('[data-ecod-ticket-cat]');
+                var titleEl = form.querySelector('[data-ecod-ticket-title]');
+                var bodyEl = form.querySelector('[data-ecod-ticket-text]');
+                var title = titleEl ? String(titleEl.value || '').trim() : '';
+                var body = bodyEl ? String(bodyEl.value || '').trim() : '';
+                if (title.length < 4 || title.length > 60) { showMsg('标题需 4–60 字', true); return; }
+                if (body.length < 10 || body.length > 2000) { showMsg('详细描述需 10–2000 字', true); return; }
+
+                var submit = form.querySelector('[data-ecod-ticket-submit]');
+                if (submit) submit.disabled = true;
+                post('ticket_create', {
+                    cat: cat ? cat.value : 'other',
+                    title: title,
+                    body: body,
+                    token: token
+                }).then(function (data) {
+                    if (submit) submit.disabled = false;
+                    if (!data || !data.ok) {
+                        showMsg((data && data.error) || '提交失败，请稍后重试', true);
+                        return;
+                    }
+                    hideMsg();
+                    form.hidden = true;
+                    if (titleEl) titleEl.value = '';
+                    if (bodyEl) bodyEl.value = '';
+                    Ecod.toast('工单已提交 ' + (data.no || ''), 'ok');
+                    reload().then(function () {
+                        /* 新单默认展开，省一次点击 */
+                        var first = listBox ? listBox.querySelector('.ecod_ticket__item') : null;
+                        if (first && String(first.getAttribute('data-id')) === String(data.id)) openItem(first);
+                    });
+                });
+            }
+        });
+
+        /* 表单里的回车提交走浏览器默认行为，这里只处理取消按钮的点击委托 */
     };
 
     /* ---------- 首次 / 切换后初始化 ---------- */
@@ -3891,130 +4619,6 @@
         });
     };
 
-    /* ---------- 加载更多：把分页换成原地追加（无 JS 退回普通分页） ---------- */
-    Ecod.initLoadMore = function () {
-        var wrap = document.querySelector('[data-ecod-infinite]');
-        var pager = document.querySelector('.ecod_pager');
-        if (!wrap || !pager || wrap.dataset.loadMoreReady === '1') {
-            return;
-        }
-
-        var next = null;
-        Array.prototype.forEach.call(pager.querySelectorAll('a'), function (a) {
-            if (String(a.textContent).trim() === '›') {
-                next = a;
-            }
-        });
-        if (!next) {
-            return; /* 只有一页 */
-        }
-
-        wrap.dataset.loadMoreReady = '1';
-        pager.style.display = 'none';
-
-        var btn = document.createElement('button');
-        btn.type = 'button';
-        btn.className = 'ecod_loadmore';
-        btn.textContent = '加载更多';
-        /* 可访问名须包含可见文字（WCAG 2.5.3）：文字各状态变化时同步更新 */
-        btn.setAttribute('aria-label', '加载更多文章');
-        pager.parentNode.insertBefore(btn, pager.nextSibling);
-
-        btn.addEventListener('click', function () {
-            if (btn.disabled || !next) {
-                return;
-            }
-            btn.disabled = true;
-            btn.textContent = '加载中…';
-            btn.setAttribute('aria-label', '加载中');
-
-            /* 阅读起点锚点：点击瞬间视口里第一张卡（可能被上边界裁掉一半），
-               记下它的文档坐标。追加完成后只抵消「布局位移」，
-               用户自己在等待期间滚了多少都不碰。 */
-            var anchor = null;
-            var anchorDocTop = 0;
-            var cards = wrap.children;
-            for (var i = 0; i < cards.length; i++) {
-                var rect = cards[i].getBoundingClientRect();
-                if (rect.bottom > 0) {
-                    anchor = cards[i];
-                    anchorDocTop = rect.top + window.pageYOffset;
-                    break;
-                }
-            }
-
-            fetch(next.href, { credentials: 'same-origin' })
-                .then(function (res) { return res.text(); })
-                .then(function (html) {
-                    var doc = new DOMParser().parseFromString(html, 'text/html');
-                    var newWrap = doc.querySelector('[data-ecod-infinite]');
-                    var newPager = doc.querySelector('.ecod_pager');
-
-                    if (newWrap) {
-                        var yBefore = window.pageYOffset;
-                        Array.prototype.forEach.call(newWrap.children, function (card) {
-                            wrap.appendChild(document.adoptNode(card));
-                        });
-
-                        /* 位置锁定（三层，缺一不可）：
-                           ① CSS 给 .ecod_main / 列表关掉 overflow-anchor —— 主修复；
-                           ② 追加这一帧里 scrollY 若被浏览器动过（老引擎不认 ①），
-                              直接还原，此刻不可能是用户滚的；
-                           ③ 再按锚点卡的文档坐标抵消布局位移（若将来在上方插入内容）。
-                           全部走瞬时滚动：全局 html{scroll-behavior:smooth}
-                           会把补偿变成一段动画，反而更晃。 */
-                        var yAfter = window.pageYOffset;
-                        var fixY = null;
-                        if (yAfter !== yBefore) {
-                            fixY = yBefore;
-                        } else if (anchor && anchor.isConnected) {
-                            var shift = (anchor.getBoundingClientRect().top + window.pageYOffset) - anchorDocTop;
-                            if (Math.abs(shift) > 1) {
-                                fixY = yAfter + shift;
-                            }
-                        }
-                        if (fixY !== null) {
-                            var root = document.documentElement;
-                            var prevBehavior = root.style.scrollBehavior;
-                            root.style.scrollBehavior = 'auto';
-                            window.scrollTo(0, fixY);
-                            root.style.scrollBehavior = prevBehavior;
-                        }
-                    }
-
-                    /* 新页的「下一页」存在则继续，否则到底收摊 */
-                    var newNext = null;
-                    if (newPager) {
-                        Array.prototype.forEach.call(newPager.querySelectorAll('a'), function (a) {
-                            if (String(a.textContent).trim() === '›') {
-                                newNext = a;
-                            }
-                        });
-                    }
-                    if (newNext && newWrap) {
-                        next.href = newNext.href;
-                        btn.disabled = false;
-                        btn.textContent = '加载更多';
-                        btn.setAttribute('aria-label', '加载更多文章');
-                    } else {
-                        next = null;
-                        btn.textContent = '已经到底了';
-                        btn.setAttribute('aria-label', '已经到底了');
-                        btn.classList.add('is-end');
-                    }
-
-                    /* 追加的卡片重新走一遍增强（懒加载 / 点赞态 / 入场动效） */
-                    Ecod.initImages();
-                    Ecod.initCardAct();
-                    Ecod.initLikeState();
-                    Ecod.initAnimate();
-                })
-                .catch(function () {
-                    btn.disabled = false;
-                    btn.textContent = '加载失败，点击重试';
-                });
-        });
-    };
 
     /* ---------- 列表排序：浮层展开 / 收起 ----------
      * 选项本身是链接，关掉 JS 也能跳转；这里只做展开与关闭。
@@ -4059,6 +4663,119 @@
             var b = open.querySelector('[data-ecod-sort-btn]');
             if (b) b.focus();
         });
+    };
+
+    /* ---------- 列表加载模式（EListLoad，设计稿 §选项卡·通知条·加载与分页） ----------
+       CFG.listLoad 三档：auto = 触底自动加载（默认）；click = 点击「加载更多」；
+       pager = 数字分页（不做增强）。首页/归档/分类流：把下一页卡片原地追加进流，
+       数字分页 .ecod_pager 保留在 DOM（SEO 可抓、无 JS 可用），客户端只做增强劫持。
+       排序/分类内搜索参数由服务端 ecod_sort_pager 已补进分页链接，追加不会串序。
+       PJAX 换页后 refresh() 重新接线，旧观察者随旧 DOM 一起废弃。 */
+    Ecod.initInfinite = function () {
+        var mode = CFG.listLoad || 'auto';
+        if (mode === 'pager') return;
+        var box = document.querySelector('[data-ecod-infinite]');
+        if (!box || box.dataset.infReady === '1') return;
+        box.dataset.infReady = '1';
+
+        var pager = box.nextElementSibling;
+        if (!pager || !pager.classList.contains('ecod_pager')) return;
+        var nextLink = pager.querySelector('a.next');
+        if (!nextLink) return;
+
+        /* 数字分页让位给原地追加，但保留在 DOM 并随加载同步刷新 */
+        pager.classList.add('is-inf');
+
+        var bar = document.createElement('button');
+        bar.type = 'button';
+        bar.className = 'ecod_loadmore';
+        bar.textContent = '加载更多';
+        /* 可访问名须包含可见文字（WCAG 2.5.3）：文字各状态变化时同步更新 */
+        bar.setAttribute('aria-label', '加载更多');
+        pager.parentNode.insertBefore(bar, pager.nextSibling);
+
+        var busy = false;
+        var url = nextLink.getAttribute('href');
+
+        function setBar(state) {
+            var text = state === 'busy' ? '正在加载…'
+                : state === 'error' ? '加载失败，点击重试' : '加载更多';
+            bar.classList.toggle('is-busy', state === 'busy');
+            bar.classList.toggle('is-error', state === 'error');
+            bar.textContent = text;
+            bar.setAttribute('aria-label', text);
+        }
+
+        function load() {
+            if (busy || !url) return;
+            busy = true;
+            setBar('busy');
+            fetch(url, {
+                credentials: 'same-origin',
+                headers: { 'X-Requested-With': 'XMLHttpRequest' }
+            }).then(function (r) {
+                if (!r.ok) throw new Error(r.status);
+                return r.text();
+            }).then(function (html) {
+                var doc = new DOMParser().parseFromString(html, 'text/html');
+                var src = doc.querySelector('[data-ecod-infinite]');
+                var newPager = doc.querySelector('.ecod_pager');
+                if (!src) throw new Error('no stream');
+                /* 逐个搬节点：卡片上的懒加载属性（loading/data-*）原样保留。
+                   按 data-cid 去重：分页窗口重叠或极端并发下同一篇可能出现两次，
+                   重复卡会让「置顶在首位」看起来像被追加到了列表尾部 */
+                var seen = {};
+                Array.prototype.forEach.call(box.querySelectorAll('[data-cid]'), function (el) {
+                    seen[el.getAttribute('data-cid')] = 1;
+                });
+                var frag = document.createDocumentFragment();
+                /* 先 slice 固化：src.children 是活 HTMLCollection，
+                   循环里 adoptNode 会实时缩短集合，forEach 按下标推进
+                   会隔张跳卡（10 篇只显示 8 篇的根因） */
+                Array.prototype.forEach.call(Array.prototype.slice.call(src.children), function (card) {
+                    var cardCid = card.getAttribute('data-cid');
+                    if (cardCid && seen[cardCid]) return;
+                    if (cardCid) seen[cardCid] = 1;
+                    frag.appendChild(document.adoptNode(card));
+                });
+                box.appendChild(frag);
+
+                var link = newPager ? newPager.querySelector('a.next') : null;
+                if (link) {
+                    url = link.getAttribute('href');
+                    pager.innerHTML = newPager.innerHTML;
+                    setBar('idle');
+                } else {
+                    url = '';
+                    bar.classList.add('is-done');
+                    bar.textContent = '已经到底了';
+                    bar.setAttribute('aria-label', '已经到底了');
+                    if (pager.parentNode) pager.parentNode.removeChild(pager);
+                }
+                /* 新卡片补初始化：悬浮操作组归位 / 点赞状态 / 懒加载 / 入场动效 */
+                Ecod.initCardAct();
+                Ecod.initLikeState();
+                Ecod.initImages();
+                Ecod.initAnimate();
+                /* 地址栏同步到当前页码，刷新后不丢位置（链接已带 sort/q 参数） */
+                try { history.replaceState(null, '', url || location.href); } catch (err) {}
+                busy = false;
+            }).catch(function () {
+                busy = false;
+                setBar('error');
+            });
+        }
+
+        bar.addEventListener('click', load);
+        /* click 模式只走按钮；auto 模式距底部 600px 预取（不支持 IO 退化为点击） */
+        if (mode === 'auto' && 'IntersectionObserver' in window) {
+            var io = new IntersectionObserver(function (entries) {
+                Array.prototype.forEach.call(entries, function (entry) {
+                    if (entry.isIntersecting) load();
+                });
+            }, { rootMargin: '600px 0px' });
+            io.observe(bar);
+        }
     };
 
     /* ---------- 我的积分（个人中心 credits 面板） ----------
@@ -4397,6 +5114,7 @@
         Ecod.initCatbar();
         Ecod.initCatTools();
         Ecod.initSort();
+        Ecod.initInfinite();
         Ecod.initRank();
         Ecod.initTp();
         Ecod.initWtabs();
@@ -4413,11 +5131,13 @@
         Ecod.initSearchPanel();
         Ecod.initSearchRecord();
         Ecod.initNotifs();
+        Ecod.initTasks();
+        Ecod.initMsgCenter();
+        Ecod.initTickets();
         Ecod.initSlider();
         Ecod.initCardAct();
         Ecod.initLikeState();
         Ecod.initStream();
-        Ecod.initLoadMore();
         Ecod.runPost('initAi');
         Ecod.runPost('bindPayComment');
         Ecod.runPost('initShowMore');

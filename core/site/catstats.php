@@ -59,6 +59,61 @@ function ecod_cat_meta(string $slug): ?array
 }
 
 /**
+ * 分类及其全部后代分类的 mid
+ *
+ * 归档列表（Archive::categoryHandle）用的是「本分类 + getAllChildIds()」，
+ * 页头统计必须同口径，否则数字和列表条数对不上。
+ *
+ * @param int $mid 分类 id
+ * @return array<int, int>
+ */
+function ecod_cat_mids(int $mid): array
+{
+    /** @var array<int, int>|null $tree mid => parent */
+    static $tree = null;
+    static $cache = [];
+
+    if ($mid <= 0) {
+        return [];
+    }
+    if (isset($cache[$mid])) {
+        return $cache[$mid];
+    }
+
+    if ($tree === null) {
+        $tree = [];
+        try {
+            $db = \Typecho\Db::get();
+            $rows = $db->fetchAll(
+                $db->select('mid', 'parent')->from('table.metas')->where('type = ?', 'category')
+            );
+            foreach ($rows as $row) {
+                $tree[(int) $row['mid']] = (int) $row['parent'];
+            }
+        } catch (\Throwable $e) {
+            $tree = [];
+        }
+    }
+
+    $out = [$mid];
+    $seen = [$mid => true];
+    $queue = [$mid];
+    while ($queue) {
+        $parent = array_shift($queue);
+        foreach ($tree as $child => $p) {
+            if ($p === $parent && !isset($seen[$child])) {
+                $seen[$child] = true;
+                $out[] = $child;
+                $queue[] = $child;
+            }
+        }
+    }
+
+    $cache[$mid] = $out;
+    return $out;
+}
+
+/**
  * 分类统计
  *
  * @param int $mid 分类 id
@@ -79,15 +134,18 @@ function ecod_cat_stats(int $mid): array
     try {
         $db = \Typecho\Db::get();
         $now = (int) (\Widget\Options::alloc()->time ?? time());
-        $viewsCol = ecod_views_available() ? 'SUM(COALESCE(table.contents.views, 0))' : '0';
+
+        /* 含全部后代分类；同一篇文章可能同时挂在多个子分类下（列表里用
+           group by cid 去重），这里先用派生表按 cid 去重再聚合，
+           否则篇数、累计阅读都会重复计算。 */
+        $mids = implode(',', array_map('intval', ecod_cat_mids($mid)));
+        $viewsCol = ecod_views_available() ? 'SUM(c.views)' : '0';
+        $prefix = $db->getPrefix();
         $row = $db->fetchRow(
-            $db->select('COUNT(*) AS num', $viewsCol . ' AS total', 'MAX(table.contents.created) AS latest')
-                ->from('table.contents')
-                ->join('table.relationships', 'table.relationships.cid = table.contents.cid')
-                ->where('table.relationships.mid = ?', $mid)
-                ->where('table.contents.type = ?', 'post')
-                ->where('table.contents.status = ?', 'publish')
-                ->where('table.contents.created < ?', $now)
+            'SELECT COUNT(*) AS num, ' . $viewsCol . ' AS total, MAX(c.created) AS latest'
+            . ' FROM (SELECT DISTINCT cid FROM ' . $prefix . 'relationships WHERE mid IN (' . $mids . ')) AS ecod_rel'
+            . ' JOIN ' . $prefix . 'contents AS c ON c.cid = ecod_rel.cid'
+            . " WHERE c.type = 'post' AND c.status = 'publish' AND c.created < " . $now
         );
         if ($row) {
             $out['count'] = (int) $row['num'];
@@ -133,7 +191,7 @@ function ecod_cat_topics(int $mid, int $limit = 6): array
                 ->join('table.relationships', 'table.relationships.cid = table.fields.cid')
                 ->join('table.contents', 'table.contents.cid = table.fields.cid')
                 ->where('table.fields.name = ?', 'topic')
-                ->where('table.relationships.mid = ?', $mid)
+                ->where('table.relationships.mid IN ?', ecod_cat_mids($mid))
                 ->where('table.contents.type = ?', 'post')
                 ->where('table.contents.status = ?', 'publish')
         );

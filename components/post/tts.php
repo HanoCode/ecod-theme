@@ -28,11 +28,17 @@ if (!empty($this->hidden)) {
 
 $ecodTtsMinutes = max(1, (int) ceil(ecod_word_count((string) $this->content) / 400));
 $ecodTocOn = ecod_option('EFloatToc', 'on') === 'on';
-/* 形态（后台「阅读工具条形态」）：吸顶横条 top / 侧栏竖栏 side；
-   side 由 JS 挂 is-side（≥900px 才生效，窄屏自动回落吸顶横条） */
-$ecodRbSide = ecod_option('EReadBarMode', 'top') === 'side' ? '1' : '0';
+/* 形态（后台「阅读工具条形态」）：吸顶横条 top / 侧栏竖栏 side / 合并到面包屑 crumb；
+   side 由 JS 挂 is-side（≥900px 才生效，窄屏自动回落吸顶横条）。
+   crumb 形态整条并入面包屑 nav（post.php 设 $ecodReadbarEmbed 后内嵌 include 本文件）；
+   组件管理台渲染的实例（未设该标记）不再重复输出 */
+$ecodRbMode = ecod_option('EReadBarMode', 'top');
+if ($ecodRbMode === 'crumb' && empty($ecodReadbarEmbed)) {
+    return;
+}
+$ecodRbSide = $ecodRbMode === 'side' ? '1' : '0';
 ?>
-<div class="ecod_readbar" data-ecod-readbar data-ecod-rb-side="<?php echo $ecodRbSide; ?>" aria-label="阅读工具">
+<div class="ecod_readbar<?php echo $ecodRbMode === 'crumb' ? ' is-crumb' : ''; ?>" data-ecod-readbar data-ecod-rb-side="<?php echo $ecodRbSide; ?>" aria-label="阅读工具">
     <?php if ($ecodTocOn): ?>
         <button type="button" class="ecod_readbar__tool" data-ecod-readbar-toc aria-haspopup="true">
             <?php echo ecod_icon('list', 15); ?><span>目录</span>

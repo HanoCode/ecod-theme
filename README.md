@@ -370,7 +370,7 @@ gzip_types text/css application/javascript application/json image/svg+xml;
 ## 十二、前端构建（可选）
 
 主题**开箱即用不依赖 Node**：仓库里 `assets/` 下的源码就是运行文件，不构建也完整可用。
-构建是开发期的优化步骤：压缩、内容哈希命名、关键 CSS 抽取、预压缩副产物。
+构建是开发期的优化步骤：压缩、内容哈希命名、CSS 按族分包、关键 CSS 抽取、预压缩副产物。
 
 ```bash
 cd build
@@ -387,9 +387,14 @@ npm run build   # 产物写进 assets/dist/，manifest 同步更新
 3. PHP 侧 `core/lib/asset.php` 是唯一查询入口：`ecod_asset()`（前台）、
    `widget.php`、`admin/editor.php` 都先查 manifest，命中发哈希文件，
    未构建 / manifest 缺失 / 产物被删则自动回退源文件 + `?v=filemtime`；
-4. **关键 CSS**：从 `ecod.css` 抽出首屏必需的节（令牌/基础/布局/导航/暗色）内联进
-   `<head>`，完整样式表转异步预加载，首屏渲染不再被 CSS 阻塞；
-   想调整覆盖面改 `build.mjs` 里的 `CRITICAL_SECTIONS` 数组；
+4. **CSS 按页面族分包 + 分族关键 CSS 内联**：整份 `ecod.css` 构建期按「节的宿主
+   模板族」切成 core / home / list / post / postext / user / page 共 7 个族文件
+   （`PAGE_SETS`），页面只异步加载 core + 自己所属的族（`preload` + `onload` 转正，
+   `<noscript>` 兜底），PJAX 跨族换页由 `ensurePageCss()` 补注入；
+   `<head>` 内联的是「首帧骨架 + 本族首屏」的关键 CSS（`CRITICAL_BASE` /
+   `CRITICAL_FAMS`，按页 93–118 KB，gzip 15–19 KB），首屏 0 阻塞且不重复下载
+   首屏可见件；想调覆盖面改这两个数组——构建期自带「不漏节、不引用不存在的节」
+   断言，改错会直接构建失败；
 5. **JS 按页拆包**：`assets/js/ecod.global.js`（全站）+ `assets/js/ecod.post.js`
    （文章/独立页专属：目录、评论、朗读、收银台等 21 个模块），
    页脚按模板输出第二个 `<script>`，PJAX 进入内容页时动态注入——

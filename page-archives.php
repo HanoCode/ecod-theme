@@ -54,7 +54,7 @@ foreach ($ecodRows as $ecodRow) {
     $ecodYears[$year][$month][] = [
         'title'    => (string) $ecodRow['title'],
         'created'  => $ts,
-        'comments' => (int) $ecodRow['commentsNum'],
+        'comments' => ecod_comment_count((int) $ecodRow['cid']),
         'url'      => \Typecho\Router::url('post', $ecodRow, $this->options->index),
     ];
     $ecodTotal++;

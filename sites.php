@@ -82,7 +82,7 @@ foreach ($ecodSitesGroups as $ecodSitesGroup) {
 
     <?php if ($ecodSitesNote !== ''): ?>
         <div class="ecod_content ecod_sites__note" data-ecod-content><?php
-            echo ecod_go_rewrite(ecod_lazy_images(ecod_keywords_apply(ecod_oembed_apply(ecod_shortcode_apply($ecodSitesNote, $this))), (string) $this->title));
+            echo ecod_go_rewrite(ecod_lazy_images(ecod_keywords_apply(ecod_linkcard_apply(ecod_oembed_apply(ecod_shortcode_apply($ecodSitesNote, $this)))), (string) $this->title));
         ?></div>
     <?php endif; ?>
 

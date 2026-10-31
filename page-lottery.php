@@ -140,9 +140,11 @@ $ecodLotPoor = $ecodUid > 0 && $ecodLot && $ecodLot['cost'] > 0 && $ecodLot['bal
             <?php if (!$ecodLogged): ?>
                 <div class="ecod_uc__hint" style="margin:16px 0">
                     <?php echo ecod_icon('user', 18); ?>
-                    <p>登录后即可抽奖。</p>
-                    <p style="margin-top:12px"><a class="ecod-btn" data-ecod-login-open data-no-pjax
-                        href="<?php echo htmlspecialchars($ecodLoginUrl, ENT_QUOTES, 'UTF-8'); ?>?referer=<?php echo rawurlencode($this->permalink); ?>">登录</a></p>
+                    <div>
+                        <p>登录后即可抽奖。</p>
+                        <p style="margin-top:12px"><a class="ecod-btn" data-ecod-login-open data-no-pjax
+                            href="<?php echo htmlspecialchars($ecodLoginUrl, ENT_QUOTES, 'UTF-8'); ?>?referer=<?php echo rawurlencode($this->permalink); ?>">登录</a></p>
+                    </div>
                 </div>
             <?php elseif ($ecodLotPoor && $ecodLotCreditsUrl !== ''): ?>
                 <p class="ecod_lottery__poor">

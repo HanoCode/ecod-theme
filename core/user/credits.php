@@ -18,6 +18,11 @@ if (!defined('__TYPECHO_ROOT_DIR__')) {
     exit;
 }
 
+/* 外部上下文（Console 插件）自举：schema 层可能还没加载 */
+if (!function_exists('ecod_schema_adapter')) {
+    require_once __DIR__ . '/../lib/schema.php';
+}
+
 /**
  * 积分系统是否开启
  */

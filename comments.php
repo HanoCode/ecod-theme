@@ -41,6 +41,8 @@ $ecodCmtTotal = (int) $ecodCmtStats['total'];
 $ecodTurnstile = ecod_option('ETurnstile', 'off') === 'on'
     ? trim((string) ecod_option('ETurnstileSite', ''))
     : '';
+/* 图形验证码：访客必填，登录用户服务端直接放行（与 ecod_comment_guard 保持一致） */
+$ecodCmCaptcha = ecod_option('ECommentCaptcha', 'on') === 'on' && !$this->user->hasLogin();
 
 /* 评论点赞：原生评论区启用；一次查全本文所有评论的赞数，渲染零额外查询 */
 $GLOBALS['ecodCLikeOn'] = ecod_option('ECLike', 'on') !== 'off';
@@ -124,6 +126,24 @@ $GLOBALS['ecodCLikeCounts'] = $GLOBALS['ecodCLikeOn'] ? ecod_comment_like_counts
                 </div>
 
                 <div class="ecod_formfoot">
+                    <?php if ($ecodCmCaptcha): ?>
+                        <div class="ecod_field ecod_field--cap">
+                            <div class="ecod_field__item">
+                                <span class="ecod_cap">
+                                    <input class="ecod_input" type="text" name="captcha" id="ecod-cmt-captcha"
+                                           placeholder="4 位字符" maxlength="4" autocomplete="off" spellcheck="false"
+                                           inputmode="latin" aria-label="验证码" required>
+                                    <img class="ecod_cap__img" data-ecod-captcha alt="验证码，点击刷新" width="96" height="40"
+                                         src="<?php echo htmlspecialchars(ecod_api_url(), ENT_QUOTES, 'UTF-8'); ?>?action=captcha&amp;t=<?php echo time(); ?>-<?php echo mt_rand(100, 999); ?>">
+                                </span>
+                                <?php /* 移动端：验证码行默认隐藏，提交时以底部弹层出现（按钮仅弹层态显示） */ ?>
+                                <div class="ecod_cap__modalfoot">
+                                    <button type="button" class="ecod_cap__cancel" data-ecod-cap-cancel>取消</button>
+                                    <button type="button" class="ecod_cap__ok" data-ecod-cap-ok>确认</button>
+                                </div>
+                            </div>
+                        </div>
+                    <?php endif; ?>
                     <p class="ecod_respond__tip" role="alert" data-ecod-tip hidden></p>
                     <button type="submit" class="ecod_btn" data-ecod-submit>发表评论</button>
                 </div>

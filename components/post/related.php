@@ -81,7 +81,7 @@ if (!empty($this->tags)) {
                     <b class="ecod_rel__title"><?php $ecodRel->title(); ?></b>
                     <span class="ecod_rel__meta">
                         <time datetime="<?php $ecodRel->date('Y-m-d'); ?>"><?php $ecodRel->date('m-d'); ?></time>
-                        <span><?php echo ecod_icon('comment', 12); ?><?php echo (int) $ecodRel->commentsNum; ?></span>
+                        <span><?php echo ecod_icon('comment', 12); ?><?php echo ecod_comment_count((int) $ecodRel->cid); ?></span>
                         <span><?php echo ecod_icon('eye', 12); ?><?php echo ecod_num_short(ecod_views($ecodRel)); ?></span>
                     </span>
                 </span>

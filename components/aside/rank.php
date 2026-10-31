@@ -42,7 +42,7 @@ foreach ($ecodRankKeys as $ecodRankKey) {
             'url'      => (string) $ecodRankQ->permalink,
             'thumb'    => ecod_thumbnails($ecodRankQ, 1, 'side')[0] ?? '',
             'views'    => ecod_views($ecodRankQ),
-            'comments' => (int) $ecodRankQ->commentsNum,
+            'comments' => ecod_comment_count((int) $ecodRankQ->cid),
             'locked'   => ecod_has_password($ecodRankQ),
         ];
     }
