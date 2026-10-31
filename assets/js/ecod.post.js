@@ -26,6 +26,28 @@
     var shortNum = U.shortNum || function (n) { return String(n); };
     var syncFavButtons = U.syncFavButtons || function () {};
 
+    /* 按需注入脚本 / 样式（Mermaid、KaTeX 懒加载用）：同地址不重复注入 */
+    function loadScript(src, done) {
+        if (document.querySelector('script[data-ecod-lazy="' + src + '"]')) {
+            if (done) done();
+            return;
+        }
+        var s = document.createElement('script');
+        s.src = src;
+        s.dataset.ecodLazy = src;
+        s.onload = function () { if (done) done(null); };
+        s.onerror = function () { if (done) done(new Error('load fail: ' + src)); };
+        document.head.appendChild(s);
+    }
+    function loadCss(href) {
+        if (document.querySelector('link[data-ecod-lazy="' + href + '"]')) return;
+        var l = document.createElement('link');
+        l.rel = 'stylesheet';
+        l.href = href;
+        l.dataset.ecodLazy = href;
+        document.head.appendChild(l);
+    }
+
     /* ---------- 目录生成 + 高亮 ----------
      * 默认走「浮动目录」：位置与侧栏互斥（侧栏在右 → 浮在左，侧栏在左 → 浮在右），
      * 不再占用侧栏版面；关闭浮动（后台 EFloatToc=off，无浮动容器）时回退为
@@ -418,6 +440,90 @@
                 Ecod.highlightCode(code, lang);
             }
         });
+
+        /* 图表 / 公式：内容驱动按需加载，页面没有 mermaid 代码块或公式时不加载任何资源 */
+        Ecod.initMermaid();
+        Ecod.initMath();
+    };
+
+    /* ---------- Mermaid 图表（EMermaid；懒加载本地渲染库） ----------
+       ```mermaid 代码块先摘出来替换成 .ecod_mermaid 容器（不再吃代码块外壳与高亮），
+       确认存在后再注入 mermaid.min.js；明暗切换经 MutationObserver 全量重绘 */
+    Ecod._mermaidRender = function () {
+        if (!window.mermaid) return;
+        var els = document.querySelectorAll('.ecod_mermaid');
+        if (!els.length) return;
+        var dark = document.documentElement.getAttribute('data-theme') === 'dark';
+        try {
+            window.mermaid.initialize({ startOnLoad: false, theme: dark ? 'dark' : 'default', fontFamily: 'inherit' });
+        } catch (e) {
+            return;
+        }
+        els.forEach(function (n) {
+            if (!n._src) n._src = n.textContent;
+            n.removeAttribute('data-processed');
+            n.innerHTML = '';
+            n.textContent = n._src;
+        });
+        try { window.mermaid.run({ nodes: Array.prototype.slice.call(els) }); } catch (e) {}
+    };
+    Ecod.initMermaid = function () {
+        var found = false;
+        document.querySelectorAll('[data-ecod-content] pre code.language-mermaid').forEach(function (code) {
+            var pre = code.closest('pre');
+            var box = pre ? pre.closest('.ecod_codeblock') : null;
+            var host = box || pre;
+            if (!host) return;
+            var div = document.createElement('div');
+            div.className = 'ecod_mermaid';
+            div._src = code.textContent;
+            div.textContent = div._src;
+            host.parentNode.replaceChild(div, host);
+            found = true;
+        });
+        if (!found || !CFG.mermaidUrl || Ecod._mermaidLoading) return;
+        Ecod._mermaidLoading = 1;
+        loadScript(CFG.mermaidUrl, function () {
+            Ecod._mermaidRender();
+            if (!Ecod._mermaidThemeObs) {
+                Ecod._mermaidThemeObs = new MutationObserver(function () {
+                    Ecod._mermaidRender();
+                });
+                Ecod._mermaidThemeObs.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+            }
+        });
+    };
+
+    /* ---------- KaTeX 数学公式（EMath；懒加载，代码块内不处理） ---------- */
+    Ecod.renderMath = function () {
+        var content = document.querySelector('[data-ecod-content]');
+        if (!content || !window.renderMathInElement) return;
+        try {
+            window.renderMathInElement(content, {
+                delimiters: [
+                    { left: '$$', right: '$$', display: true },
+                    { left: '\\(', right: '\\)', display: false },
+                    { left: '\\[', right: '\\]', display: true }
+                ],
+                ignoredTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code'],
+                throwOnError: false
+            });
+        } catch (e) {}
+    };
+    Ecod.initMath = function () {
+        var content = document.querySelector('[data-ecod-content]');
+        if (!content || !CFG.katexBase || Ecod._mathLoading) return;
+        var text = content.textContent || '';
+        if (text.indexOf('$$') === -1 && text.indexOf('\\(') === -1 && text.indexOf('\\[') === -1) return;
+        Ecod._mathLoading = 1;
+        loadCss(CFG.katexBase + 'katex.min.css');
+        loadScript(CFG.katexBase + 'katex.min.js', function (err) {
+            if (err) return;
+            loadScript(CFG.katexBase + 'auto-render.min.js', function (err2) {
+                if (err2) return;
+                Ecod.renderMath();
+            });
+        });
     };
 
     /* ---------- 图片灯箱（正文图片 + 壁纸，WordPress 风格） ---------- */
@@ -649,8 +755,47 @@
         });
     };
 
+    /* ---------- 侧边悬浮操作栏（act 块 side/both 形态） ----------
+       进度竖条复用 Ecod.readProgress() 口径（与顶部进度条 / 阅读工具条一致）；
+       滚动监听全局只绑一次，PJAX 换页后指向当前页的填充元素 */
+    Ecod.initActRail = function () {
+        var rail = document.querySelector('[data-ecod-actsiderail]');
+        if (!rail) return;
+
+        /* 贴侧栏边（与阅读工具条竖栏同规则）：侧栏在左 → 栏在左，其余在右 */
+        var layout = document.querySelector('.ecod_layout');
+        rail.classList.toggle('is-left', !!(layout && layout.getAttribute('data-aside') === 'left'));
+
+        var top = rail.querySelector('[data-ecod-rail-top]');
+        if (top && !top._ecodRailBound) {
+            top._ecodRailBound = 1;
+            top.addEventListener('click', function () {
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            });
+        }
+
+        if (!Ecod._railScrollBound) {
+            Ecod._railScrollBound = 1;
+            var raf = 0;
+            var tick = function () {
+                raf = 0;
+                var fill = document.querySelector('[data-ecod-actsiderail] [data-ecod-rail-fill]');
+                if (!fill) return;
+                var pct = Math.min(100, Math.max(0, Ecod.readProgress()));
+                fill.style.transform = 'scaleY(' + pct / 100 + ')';
+            };
+            var onScroll = function () {
+                if (!raf) raf = requestAnimationFrame(tick);
+            };
+            window.addEventListener('scroll', onScroll, { passive: true });
+            window.addEventListener('resize', onScroll);
+            tick();
+        }
+    };
+
     /* ---------- 文章操作条 ---------- */
     Ecod.initPostAct = function () {
+        Ecod.initActRail();
         var bar = document.querySelector('[data-ecod-postact]');
         if (!bar) return;
         syncFavButtons();

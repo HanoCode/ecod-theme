@@ -81,7 +81,7 @@ if ($ecodActDate === '' && !empty($this->created)) {
     <?php if ($ecodActLike): ?>
         <?php $ecodLikeNum = ecod_likes((int) $this->cid); ?>
         <button type="button" class="ecod_actbtn" data-ecod-act="like" data-cid="<?php echo (int) $this->cid; ?>" aria-pressed="false">
-            <?php echo ecod_icon('heart', 20); ?>
+            <span class="ecod_actbtn__ico"><?php echo ecod_icon('heart', 20); ?></span>
             <span class="ecod-sr">点赞</span>
             <b class="ecod_actbtn__lb<?php echo $ecodLikeNum > 0 ? ' is-num' : ''; ?>" data-ecod-like-num="short"><?php echo $ecodLikeNum > 0 ? ecod_num_short($ecodLikeNum) : '点赞'; ?></b>
         </button>
@@ -89,7 +89,7 @@ if ($ecodActDate === '' && !empty($this->created)) {
     <?php if ($ecodActFav): ?>
         <?php $ecodFavNum = ecod_favs_count((int) $this->cid); ?>
         <button type="button" class="ecod_actbtn" data-ecod-act="fav" aria-pressed="false">
-            <?php echo ecod_icon('star', 20); ?>
+            <span class="ecod_actbtn__ico"><?php echo ecod_icon('star', 20); ?></span>
             <span class="ecod-sr">收藏</span>
             <b class="ecod_actbtn__lb<?php echo $ecodFavNum > 0 ? ' is-num' : ''; ?>" data-ecod-fav-num="short"><?php echo $ecodFavNum > 0 ? ecod_num_short($ecodFavNum) : '收藏'; ?></b>
         </button>
@@ -107,7 +107,7 @@ if ($ecodActDate === '' && !empty($this->created)) {
         ?>
         <details class="ecod_share" data-ecod-sharebox>
             <summary class="ecod_actbtn" aria-label="分享文章">
-                <?php echo ecod_icon('share', 20); ?>
+                <span class="ecod_actbtn__ico"><?php echo ecod_icon('share', 20); ?></span>
                 <b class="ecod_actbtn__lb">分享</b>
             </summary>
             <div class="ecod_share__pop">
@@ -158,7 +158,7 @@ if ($ecodActDate === '' && !empty($this->created)) {
         ?>
         <details class="ecod_reward">
             <summary class="ecod_actbtn">
-                <?php echo ecod_icon('heart', 20); ?>
+                <span class="ecod_actbtn__ico"><?php echo ecod_icon('heart', 20); ?></span>
                 <b class="ecod_actbtn__lb">赞赏</b>
             </summary>
             <div class="ecod_reward__pop">
@@ -193,14 +193,14 @@ if ($ecodActDate === '' && !empty($this->created)) {
     if ($ecodActComments):
     ?>
         <a class="ecod_actbtn" href="#comments">
-            <?php echo ecod_icon('comment', 20); ?>
+            <span class="ecod_actbtn__ico"><?php echo ecod_icon('comment', 20); ?></span>
             <span class="ecod-sr">讨论</span>
             <b class="ecod_actbtn__lb<?php echo $ecodActCmtNum > 0 ? ' is-num' : ''; ?>"><?php echo $ecodActCmtNum > 0 ? $ecodActCmtNum . ' 讨论' : '讨论'; ?></b>
         </a>
     <?php endif; ?>
     <details class="ecod_report">
         <summary class="ecod_actbtn" aria-haspopup="dialog" aria-label="报告本文内容问题">
-            <?php echo ecod_icon('alert', 20); ?>
+            <span class="ecod_actbtn__ico"><?php echo ecod_icon('alert', 20); ?></span>
             <b class="ecod_actbtn__lb">报错</b>
         </summary>
         <div class="ecod_report__pop">

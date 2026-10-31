@@ -942,6 +942,74 @@ function ecod_asset(string $path): string
 }
 
 /**
+ * 正文是否用到扩展短代码（构建产物 ecod.fam.postext.css 的下发条件）
+ *
+ * postext 打包了网盘卡 / 相册 / B 站视频 / 播放列表 / 投票等扩展短代码与
+ * 表情的样式（源码 §23@1 / §31，约 44KB min）。大多数文章不含这些标记，
+ * 逐篇检测可以省下整块下载。清单与 core/content/shortcode-extra.php
+ * 头注释保持一致；新增短代码记得同步这里。
+ */
+function ecod_postext_needed(string $content): bool
+{
+    if ($content === '' || !str_contains($content, '[') && !preg_match('/:[a-z_]+:/', $content)) {
+        return false;
+    }
+    return (bool) preg_match(
+        '/\[(alert|callout|anote|message|mtitle|copy|progress|abtn|dotted|lamp|task|cards?|grid|cloud|article|github|gallery|bilibili|video|mp3|music|tooltip|badge|spoiler|poll)[\s\]=\]]|:[a-z_]+:/',
+        $content
+    );
+}
+
+/**
+ * 当前页面应加载的 CSS 页面族（构建 PAGE_SETS 分包，见 build/build.mjs）
+ *
+ * 页面只加载 core + 所属族；PJAX 跨族换页时由前端 ensurePageCss() 注入
+ * 缺失族。族划分原则：拿不准的归 core（宁可多下载，不可静默丢样式）。
+ *
+ * @return string[] 族名列表，core 恒在首位
+ */
+function ecod_css_family($archive): array
+{
+    $fams = ['core'];
+
+    if ($archive->is('index')) {
+        /* 首页 = 首页流 + 列表（分页 / 加载更多沿用列表样式） */
+        $fams[] = 'home';
+        $fams[] = 'list';
+    } elseif ($archive->is('post') || $archive->is('page')) {
+        $fams[] = 'post';
+        /* 扩展短代码按需：post 与独立页正文都可能用到（约 -44KB） */
+        $content = (string) $archive->text;
+        if (isset($archive->row['hidden'])) {
+            $content .= (string) $archive->row['hidden'];
+        }
+        if (ecod_postext_needed($content)) {
+            $fams[] = 'postext';
+        }
+        if ($archive->is('page')) {
+            /* 独立页：个人中心 / 商城族按模板细分，其余归 page 兜底族；
+               list 只有 2.4KB（列表排序浮层），独立页一并带上以覆盖专题页等场景 */
+            $tpl = basename((string) ($archive->template ?? ''));
+            if (preg_match('/^page-(user|shop|vip|cashier|ai|rank)\.php$/', $tpl)) {
+                $fams[] = 'user';
+            } else {
+                $fams[] = 'page';
+            }
+            $fams[] = 'list';
+        }
+    } elseif ($archive->is('archive')) {
+        /* 分类 / 标签 / 归档 / 搜索 */
+        $fams[] = 'list';
+    } else {
+        /* 404 / 未识别路由：page 兜底 + list，宁可多带 */
+        $fams[] = 'page';
+        $fams[] = 'list';
+    }
+
+    return $fams;
+}
+
+/**
  * 提取文章图片（自定义缩略图优先，其次正文图片）
  */
 function ecod_thumbnails($archive, int $limit = 3, string $preset = ''): array

@@ -31,3 +31,4 @@
 ## 功能开关与真源
 - 付费阅读：真源 `docs/paywall-design.md`；门禁四层（post.php 硬门禁 / ecod_excerpt 列表层 / ecod_pay_feed_guard / 搜索剥除）；试读 `ecod_pay_teaser_balance()` 留最后一块不解锁；pay-admin.php 管理台。
 - 前台开关：`ELikers`（D2 头像堆叠）/ `EQuickBar`（D3）/ `EAuthorOnline`（D7）/ `ESearchPanel`+`ESearchHot`（C4）/ `ECatTools`（F3）；C3 目录进度 `syncProgress` 必须放在 `if (next === activeIndex) return` 之前，`Ecod.readProgress()` 唯一 pct 口径。
+- 文章点赞是 **toggle**（2026-10-31 起，api like POST 幂等切换、撤赞删指纹行+uid 行）；计数标签显隐类是 `is-num`（CSS 不认 has-num）；build.mjs 断言失败=全量产物不更新（CSS 是 ENTRIES 首项）。

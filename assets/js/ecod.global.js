@@ -1218,7 +1218,7 @@
                     el.textContent = count > 0 ? shortNum(count) : '';
                 }
             }
-            btn.classList.toggle('has-num', count > 0);
+            btn.classList.toggle('is-num', count > 0);
         });
     }
 
@@ -1233,7 +1233,7 @@
             var id = btn.dataset.cid || (card ? card.dataset.cid : '');
             if (String(id) !== String(cid)) return;
             el.textContent = count > 0 ? shortNum(count) : '收藏';
-            btn.classList.toggle('has-num', count > 0);
+            btn.classList.toggle('is-num', count > 0);
         });
     }
 
@@ -1388,7 +1388,8 @@
             }
 
             if (btn.dataset.ecodAct === 'like') {
-                if (btn.dataset.busy === '1' || btn.classList.contains('is-on')) return;
+                /* toggle：已赞再点 = 取消（is-on 不再拦截，状态以服务端 mine 为准） */
+                if (btn.dataset.busy === '1') return;
                 btn.dataset.busy = '1';
                 fetch((CFG.api || '') + '?action=like&cid=' + encodeURIComponent(cid), {
                     method: 'POST',
@@ -1398,18 +1399,15 @@
                     btn.dataset.busy = '';
                     if (!data || !data.ok) return;
 
-                    /* 状态以服务端为准：mine = 这个访客确实赞过 */
-                    if (data.mine) {
-                        btn.classList.add('is-on');
-                        btn.setAttribute('aria-pressed', 'true');
-                    }
+                    btn.classList.toggle('is-on', !!data.mine);
+                    btn.setAttribute('aria-pressed', data.mine ? 'true' : 'false');
                     if (typeof data.count === 'number') setLikeNum(cid, data.count);
                     if (data.likers) Ecod.renderLikers(cid, data.likers, data.count);
                     if (data.liked) {
                         btn.classList.add('is-pop');
                         setTimeout(function () { btn.classList.remove('is-pop'); }, 320);
                     }
-                    if (data.mine) live('已点赞');
+                    live(data.mine ? '已点赞' : '已取消点赞');
                 }).catch(function () { btn.dataset.busy = ''; });
             }
         });
@@ -2688,9 +2686,12 @@
 
                     if (push) history.pushState({ ecod: 1 }, '', url);
 
-                    /* 目标页是文章/独立页时，先确保内容页增强包就位再跑初始化 */
-                    Ecod.ensurePostBundle(function () {
-                        Ecod.refresh();
+                    /* 目标页是文章/独立页时，先确保内容页增强包就位再跑初始化；
+                       跨族换页先补齐缺失的族 CSS（onload 后）再 refresh */
+                    Ecod.ensurePageCss(function () {
+                        Ecod.ensurePostBundle(function () {
+                            Ecod.refresh();
+                        });
                     });
 
                     /* 无刷新换页对读屏不可见，播报新页面标题 */
@@ -4444,6 +4445,36 @@
         if (typeof fn === 'function') fn();
     };
 
+    /* ---------- 页面族 CSS 调度（S3 分包） ----------
+     * head 只随当前页输出 core + 所属族；PJAX 跨族换页时把缺失的族
+     * 注入 head，全部 onload 后才放行 refresh —— 样式不齐不跑入场动画，
+     * 语义与直载时的 ecod:cssready 完全一致。
+     * 已加载集合：直载时从 head 的 data-ecod-fam 标记收集。 */
+    Ecod._fams = {};
+    Ecod.ensurePageCss = function (done) {
+        var shell = document.getElementById('ecod-shell');
+        var want = shell && shell.getAttribute('data-ecod-fams')
+            ? shell.getAttribute('data-ecod-fams').split(',')
+            : ['core'];
+        var need = [];
+        want.forEach(function (f) {
+            if (f && !Ecod._fams[f]) { Ecod._fams[f] = 1; need.push(f); }
+        });
+        if (!need.length) { if (done) done(); return; }
+        var left = need.length;
+        var settle = function () { if (--left === 0 && done) done(); };
+        need.forEach(function (f) {
+            var url = (CFG.fams || {})[f];
+            if (!url) { settle(); return; }
+            var l = document.createElement('link');
+            l.rel = 'stylesheet';
+            l.setAttribute('data-ecod-fam', f);
+            l.href = url;
+            l.onload = l.onerror = settle;
+            document.head.appendChild(l);
+        });
+    };
+
     Ecod.ensurePostBundle = function (done) {
         var shell = document.getElementById('ecod-shell');
         /* 内容页整包；例外：任何页面出现抽奖组件（首页/侧栏挂件）都至少要 post.js，
@@ -4496,6 +4527,10 @@
         Ecod.initCtxMenu();
         Ecod.runPost('initReply');
         Ecod.initPjax();
+        /* 直载场景：head 里已有本页的族 link，登记进已加载集合（S3） */
+        Array.prototype.forEach.call(document.querySelectorAll('link[data-ecod-fam]'), function (l) {
+            Ecod._fams[l.getAttribute('data-ecod-fam')] = 1;
+        });
         /* 首屏若有抽奖挂件等 post 包组件，先补脚本再初始化（见 ensurePostBundle） */
         Ecod.ensurePostBundle(function () {
             Ecod.refresh();

@@ -4,7 +4,7 @@
  *
  * 直接以独立入口运行，不经过 Typecho 路由：
  *   GET  api.php?action=like&cid=12   读取点赞数
- *   POST api.php?action=like&cid=12   点赞（同访客同文章只计一次）
+ *   POST api.php?action=like&cid=12   点赞 / 取消点赞（幂等切换）
  *   GET  api.php?action=state&cids=1,2,3  批量读取点赞数与「我是否赞过」
  *   GET  api.php?action=ping            健康检查
  *   POST api.php?action=report          文章报错反馈（蜜罐 + 60s 限速，SMTP 通知博主）
@@ -3128,13 +3128,24 @@ try {
         $liked = false;
 
         if ((string) ($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
-            /* 登录用户跨设备幂等：该 uid 已有行（旧设备落的）就不再插，避免多计一票 */
+            /* toggle：已赞（ip 指纹行或 uid 行任一命中）→ 撤赞删行；未赞 → 插行。
+               登录用户可能同时存在旧指纹行与 uid 行（跨设备），撤赞一并删除避免复点复活 */
             $uidHit = $uid > 0 ? (bool) $db->fetchRow(
                 $db->select('cid')->from($table)
                     ->where('cid = ?', $cid)->where('uid = ?', $uid)->limit(1)
             ) : false;
+            $fpHit = (bool) $db->fetchRow(
+                $db->select('cid')->from($table)
+                    ->where('cid = ?', $cid)->where('ip = ?', $fp)->limit(1)
+            );
 
-            if (!$uidHit) {
+            if ($uidHit || $fpHit) {
+                /* 撤赞：指纹行与 uid 行分两条删（Query 无 or()，orWhere 语义不适合 delete） */
+                $db->query($db->delete($table)->where('cid = ?', $cid)->where('ip = ?', $fp));
+                if ($uid > 0) {
+                    $db->query($db->delete($table)->where('cid = ?', $cid)->where('uid = ?', $uid));
+                }
+            } else {
                 try {
                     $row = [
                         'cid'     => $cid,
@@ -3156,7 +3167,7 @@ try {
                         ecod_credits_award($ecodLikeAuthor, 'like_recv', 'post:' . $cid, '文章 #' . $cid . ' 被赞');
                     }
                 } catch (\Throwable $e) {
-                    /* 唯一索引冲突 = 已经赞过，幂等处理 */
+                    /* 唯一索引冲突 = 并发双击已插行，按已赞幂等处理 */
                 }
             }
         }

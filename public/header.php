@@ -35,6 +35,8 @@ ecod_go_intercept();
    <script> 标签，PJAX 换页后 JS 据此动态注入增强包。 */
 $ecodContentPage = $this->is('post') || $this->is('page');
 $ecodBundleAttr = $ecodContentPage ? ' data-ecod-bundle="post"' : '';
+/* 页面族标记：PJAX 换页后 ensurePageCss() 据此注入缺失的族 CSS（S3） */
+$ecodFamAttr = ' data-ecod-fams="' . htmlspecialchars(implode(',', ecod_css_family($this)), ENT_QUOTES, 'UTF-8') . '"';
 
 if (ecod_is_pjax()) {
     $this->widget('\Widget\Contents\Page\Rows')->to($ecodPjaxPages);
@@ -46,6 +48,7 @@ if (ecod_is_pjax()) {
         '<div class="ecod_container" id="ecod-shell"'
         . ($ecodNavActive !== '' ? ' data-ecod-nav-active="' . htmlspecialchars($ecodNavActive, ENT_QUOTES, 'UTF-8') . '"' : '')
         . $ecodBundleAttr
+        . $ecodFamAttr
         . '><div class="ecod_layout" data-aside="'
         . htmlspecialchars(ecod_aside_pos($this), ENT_QUOTES, 'UTF-8') . '">';
     return;
@@ -593,7 +596,7 @@ if (isset($ecodSpanelPostLabels[$ecodSpanelPostOrder])) {
     </div>
 </div>
 <?php endif; ?>
-<div class="ecod_container" id="ecod-shell"<?php echo $ecodNavActive !== '' ? ' data-ecod-nav-active="' . htmlspecialchars($ecodNavActive, ENT_QUOTES, 'UTF-8') . '"' : ''; ?><?php echo $ecodBundleAttr; ?>>
+<div class="ecod_container" id="ecod-shell"<?php echo $ecodNavActive !== '' ? ' data-ecod-nav-active="' . htmlspecialchars($ecodNavActive, ENT_QUOTES, 'UTF-8') . '"' : ''; ?><?php echo $ecodBundleAttr . $ecodFamAttr; ?>>
     <?php ecod_widgets_zone('top_fluid', $this); ?>
     <div class="ecod_layout" data-aside="<?php echo $ecodAside; ?>">
 

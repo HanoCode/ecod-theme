@@ -114,7 +114,7 @@ $ecodSections = [
         ['阅读体验', '过期提醒、浮动目录与图片灯箱', ['EStale', 'EFloatToc', 'ETocProgress', 'ELightbox']],
         ['正文排版', '正文字号、行距与字体档位，落到文章 / 页面正文容器', ['EProseSize', 'EProseLh', 'EProseFont']],
         ['显示更多', '长文按高度折叠 + 展开按钮；正文仍在 HTML 里，不影响 SEO', ['EShowMore', 'EShowMoreH', 'EShowMoreText']],
-        ['代码与嵌入', '代码高亮、长代码折叠与视频 / 社交卡片自动嵌入', ['ECode', 'ECodeTheme', 'ECodeFold', 'EOembed', 'EOembedSocial']],
+        ['代码与嵌入', '代码高亮、长代码折叠、图表公式渲染与视频 / 社交卡片自动嵌入', ['ECode', 'ECodeTheme', 'ECodeFold', 'EMermaid', 'EMath', 'EOembed', 'EOembedSocial']],
         ['互动与版权', '点赞头像、快速评论条与版权声明', ['ELikers', 'EQuickBar', 'ECopyrightSet']],
         ['卡片动效', '磁贴 / 聚合卡等新组件的 hover 动效与图片渐入总开关', ['ECardMotion']],
         ['AI 摘要', 'OpenAI 兼容接口，按文章异步生成摘要卡片', ['EAI', 'EAIProvider', 'EAIEndpoint', 'EAIKey', 'EAIModel', 'EAIPrompt', 'EAIMotion']],
@@ -883,6 +883,14 @@ ecod_admin_field($form, 'select', 'ECodeTheme', 'prism', '高亮配色', 'auto �
     'dark'           => 'dark 深色',
 ], 'post', ['data-ecod-show-when' => 'ECode:on']);
 ecod_admin_field($form, 'select', 'ECodeFold', 'on', '长代码折叠', '超过 40 行的代码块先折叠到 420px 高（底部渐隐 + 「展开全部 · N 行」按钮），点击展开、再点收起；不影响短代码块', [
+    'on'  => '开启（默认）',
+    'off' => '关闭',
+], 'post');
+ecod_admin_field($form, 'select', 'EMermaid', 'on', 'Mermaid 图表', '正文里的 ```mermaid 代码块渲染成流程图 / 时序图等图表；按需加载本地渲染库，页面没有图表代码时不加载任何资源。明暗切换时自动重绘', [
+    'on'  => '开启（默认）',
+    'off' => '关闭（保留代码块原样）',
+], 'post');
+ecod_admin_field($form, 'select', 'EMath', 'on', '数学公式', '正文含 $$…$$、\\(…\\)、\\[…\\] 公式时按需加载 KaTeX 渲染；代码块内不处理，页面没有公式时不加载任何资源', [
     'on'  => '开启（默认）',
     'off' => '关闭',
 ], 'post');

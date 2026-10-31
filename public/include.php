@@ -107,12 +107,26 @@ window.ECOD = {
        prismUrl / qrUrl 供注入链使用：正文页才加载 prism.js（库较大），
        二维码库只服务分享卡；配色 CSS 体积小、需全站在 head 常驻，见下方说明 */
     post: <?php echo json_encode(ecod_asset('assets/js/ecod.post.js'), JSON_UNESCAPED_SLASHES); ?>,
+    /* 页面族 CSS 地址映射（S3）：head 已按当前页输出 core+所属族，
+       PJAX 跨族换页时 ensurePageCss() 据此注入缺失族；未构建时为空对象 */
+    fams: <?php
+        $ecodFamMap = [];
+        foreach (['core', 'home', 'list', 'post', 'postext', 'user', 'page'] as $ecodF) {
+            if (ecod_dist_resolve('assets/css/ecod.fam.' . $ecodF . '.css') !== null) {
+                $ecodFamMap[$ecodF] = ecod_asset('assets/css/ecod.fam.' . $ecodF . '.css');
+            }
+        }
+        echo json_encode($ecodFamMap, JSON_UNESCAPED_SLASHES);
+    ?>,
     prismUrl: <?php echo $ecodCode ? json_encode(ecod_asset('assets/vendor/prism/prism.js'), JSON_UNESCAPED_SLASHES) : "''"; ?>,
     qrUrl: <?php echo json_encode(ecod_asset('assets/vendor/ecod-qr.js'), JSON_UNESCAPED_SLASHES); ?>,
     pjax: <?php echo ecod_option('EPjax', 'on') === 'on' ? 'true' : 'false'; ?>,
     lightbox: <?php echo $ecodLightbox ? 'true' : 'false'; ?>,
     prism: <?php echo $ecodCode ? 'true' : 'false'; ?>,
     codeFold: <?php echo ecod_option('ECodeFold', 'on') === 'on' ? 'true' : 'false'; ?>,
+    /* 图表 / 公式：按需加载的本地渲染库地址，空串 = 后台关闭（post 包内判空跳过） */
+    mermaidUrl: <?php echo ecod_option('EMermaid', 'on') === 'on' ? json_encode(ecod_asset('assets/vendor/mermaid/mermaid.min.js'), JSON_UNESCAPED_SLASHES) : "''"; ?>,
+    katexBase: <?php echo ecod_option('EMath', 'on') === 'on' ? json_encode(ecod_asset('assets/vendor/katex/'), JSON_UNESCAPED_SLASHES) : "''"; ?>,
     ctxmenu: <?php echo ecod_option('ECtxMenu', 'on') === 'on' ? 'true' : 'false'; ?>,
     ctxitems: <?php echo json_encode(ecod_ctx_items(), JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>,
     tocProgress: <?php echo ecod_option('ETocProgress', 'on') === 'on' ? 'true' : 'false'; ?>,
@@ -149,17 +163,26 @@ if ($ecodCode) {
 }
 ?>
 <?php
-/* 关键 CSS 内联：构建产物存在时，首屏必需的节（令牌/基础/布局/导航/暗色/
-   首页流/卡片/侧栏/响应式等，切片清单见 build/build.mjs CRITICAL_SECTIONS）
-   直接进 <head>，完整样式表转异步预加载——首屏渲染不被整包 CSS 阻塞。
-   完整表 onload 后在 <html> 打 data-ecod-cssready 标记并派发 ecod:cssready
-   事件：依赖整包样式的行为（如 reveal 入场动画初始化）必须等标记就位再跑，
-   否则出现「内容先隐再淡入」的频闪。
-   未构建（无 dist）时维持整包阻塞加载，行为与旧版一致。
-   内联块在 brand 之前输出，主色等派生变量的覆盖顺序不变。 */
-$ecodFullCssUrl = ecod_asset('assets/css/ecod.css');
+/* 页面族 CSS 分发（S3）+ 关键 CSS 内联：
+   - head 内联关键 CSS（构建期按 CRITICAL_SECTIONS 抽节）；
+   - 页面只异步加载 core + 所属族（ecod_css_family()），不再整包下发；
+   - PJAX 跨族换页由 ecod.global.js 的 ensurePageCss() 注入缺失族，
+     link 全部 onload 后才派发 ecod:cssready，样式不齐不跑入场动画。
+   未构建（无 dist 族产物）时回退整包阻塞加载，行为与旧版一致。 */
+$ecodFams = ecod_css_family($this);
 $ecodCriticalFile = ecod_dist_resolve('assets/css/ecod.critical.css');
-if ($ecodCriticalFile !== null) {
+$ecodFamFiles = [];
+foreach ($ecodFams as $ecodFam) {
+    $ecodFamUrl = ecod_asset('assets/css/ecod.fam.' . $ecodFam . '.css');
+    /* 未构建时 ecod_asset 回退源路径（无哈希且文件不存在），据此判断回退 */
+    $ecodFamDist = ecod_dist_resolve('assets/css/ecod.fam.' . $ecodFam . '.css');
+    if ($ecodFamDist === null) {
+        $ecodFamFiles = [];
+        break;
+    }
+    $ecodFamFiles[$ecodFam] = $ecodFamUrl;
+}
+if ($ecodCriticalFile !== null && $ecodFamFiles) {
     /* 优先 require 构建期产出的 nowdoc PHP 变体（<同名>.php）：字符串常驻
        opcache，省每请求一次磁盘读；变体缺失（旧构建产物）回退 file_get_contents */
     $ecodCriticalPhp = $ecodCriticalFile . '.php';
@@ -170,15 +193,26 @@ if ($ecodCriticalFile !== null) {
     }
     echo '<style id="ecod-critical">' . $ecodCriticalCss . '</style>' . "\n";
 ?>
-<link rel="preload" href="<?php echo $ecodFullCssUrl; ?>" as="style" onload="this.onload=null;this.rel='stylesheet';document.documentElement.setAttribute('data-ecod-cssready','1');document.dispatchEvent(new Event('ecod:cssready'))">
-<noscript><link rel="stylesheet" href="<?php echo $ecodFullCssUrl; ?>"></noscript>
+<?php foreach ($ecodFamFiles as $ecodFamName => $ecodFamUrl): ?>
+<link rel="preload" data-ecod-fam="<?php echo $ecodFamName; ?>" href="<?php echo $ecodFamUrl; ?>" as="style" onload="this.onload=null;this.rel='stylesheet';if(window.__ecodFamReady)window.__ecodFamReady()">
+<noscript><link rel="stylesheet" data-ecod-fam="<?php echo $ecodFamName; ?>" href="<?php echo $ecodFamUrl; ?>"></noscript>
+<?php endforeach; ?>
+<script>
+/* 页面族就位计数：所有族 link onload 后打 cssready 标记（与旧整包语义一致） */
+window.__ecodFamTotal = <?php echo count($ecodFamFiles); ?>;
+window.__ecodFamReady = window.__ecodFamReady || function () {
+    if (--window.__ecodFamTotal > 0) return;
+    document.documentElement.setAttribute('data-ecod-cssready', '1');
+    document.dispatchEvent(new Event('ecod:cssready'));
+};
+</script>
 <script>
 /* 启动期过渡禁用（.ecod-booting）的兜底解除：正常路径由 ecod.global.js 在
    ecod:cssready 后双帧移除；主脚本缺失/被拦时这里也必须放开，否则全站过渡失效。 */
 setTimeout(function () { document.documentElement.classList.remove('ecod-booting'); }, 1800);
 </script>
 <?php } else { ?>
-<link rel="stylesheet" href="<?php echo $ecodFullCssUrl; ?>">
+<link rel="stylesheet" href="<?php echo ecod_asset('assets/css/ecod.css'); ?>">
 <script>document.documentElement.setAttribute('data-ecod-cssready','1');</script>
 <?php } ?>
 <style id="ecod-brand">
