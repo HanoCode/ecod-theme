@@ -15,7 +15,7 @@
  *   名称丨链接丨一句话描述（第 4 段可选，站点图标地址）
  * 页面正文作为导航页顶部的说明文字。
  */
-if (!defined('__TYPECHO_ROOT_DIR')) {
+if (!defined('__TYPECHO_ROOT_DIR__')) {
     exit;
 }
 $this->need('public/header.php');
@@ -87,11 +87,7 @@ foreach ($ecodSitesGroups as $ecodSitesGroup) {
     <?php endif; ?>
 
     <?php if (!$ecodSitesGroups): ?>
-        <div class="ecod_empty">
-            <div class="ecod_empty__icon" aria-hidden="true"><?php echo ecod_icon('link', 28); ?></div>
-            <h3>还没有配置站点</h3>
-            <p>到「设置 → 站点 → 网址导航数据」里按格式添加</p>
-        </div>
+        <?php ecod_empty('link', '还没有配置站点', '到「设置 → 站点 → 网址导航数据」里按格式添加'); ?>
     <?php else: ?>
         <?php foreach ($ecodSitesGroups as $ecodSitesGroup): ?>
             <?php if (!$ecodSitesGroup['sites']) { continue; } ?>

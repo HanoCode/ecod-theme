@@ -41,7 +41,7 @@ $ecodTopicDesc = (string) ($ecodTopicCard['desc'] ?? '');
         <span class="ecod_tcard__media"<?php if ($ecodTopicCover !== ''): ?> style="background-image:url('<?php echo htmlspecialchars($ecodTopicCover, ENT_QUOTES, 'UTF-8'); ?>')"<?php endif; ?>>
             <span class="ecod_tcard__shade" aria-hidden="true"></span>
             <?php if ($ecodTopicCover === ''): ?>
-                <span class="ecod_tcard__ph" aria-hidden="true"><?php echo htmlspecialchars(mb_substr($ecodTopicName, 0, 1, 'UTF-8'), ENT_QUOTES, 'UTF-8'); ?></span>
+                <span class="ecod_ph ecod_tcard__ph" aria-hidden="true"><?php echo htmlspecialchars(mb_substr($ecodTopicName, 0, 1, 'UTF-8'), ENT_QUOTES, 'UTF-8'); ?></span>
             <?php endif; ?>
             <span class="ecod_tcard__count"><?php echo $ecodTopicCount; ?> 篇</span>
         </span>

@@ -99,6 +99,7 @@ $ecodConfig = [
     'topics'  => $ecodTopicList,
 ];
 ?>
+<link rel="stylesheet" href="<?php echo htmlspecialchars($ecodAssetUrl('assets/admin/tokens.css') . $ecodVer('assets/admin/tokens.css')); ?>">
 <link rel="stylesheet" href="<?php echo htmlspecialchars($ecodAssetUrl('admin/editor.css') . $ecodVer('admin/editor.css')); ?>">
 <link rel="stylesheet" href="<?php echo htmlspecialchars($ecodAssetUrl('assets/admin/media.css') . $ecodVer('assets/admin/media.css')); ?>">
 <?php if ($ecodIsMarkdown): ?>

@@ -12,7 +12,8 @@ if (!defined('__TYPECHO_ROOT_DIR__')) {
 }
 
 $ecodRankCount = max(3, min(10, (int) ecod_p('count', 5)));
-$ecodRankBy = (string) ecod_p('by', 'views') === 'hot' ? 'hot' : 'views';
+$ecodRankByRaw = (string) ecod_p('by', 'views');
+$ecodRankBy = in_array($ecodRankByRaw, ['views', 'hot', 'weighted'], true) ? $ecodRankByRaw : 'views';
 $ecodRankRange = (string) ecod_p('range', 'week');
 $ecodRankGroups = [
     'all'   => ['label' => '总榜', 'days' => 0],

@@ -85,9 +85,9 @@ $ecodSections = [
         ['备案与信息', '页脚备案标识、站点年龄与网址导航数据', ['EICP', 'EPolice', 'EBirth', 'ESites']],
     ],
     'appearance' => [
-        ['明暗与背景', '深色模式与整页背景渐变', ['EDark', 'EBackdrop']],
+        ['明暗与背景', '深色模式、整页背景渐变或自定义背景图', ['EDark', 'EBackdrop', 'EBgImage', 'EBgMask']],
         ['动效与光标', '列表入场动画与鼠标跟随，触屏自动不加载', ['EAnimate', 'ECursor']],
-        ['浏览体验', '无刷新跳转、外链中转与右键菜单', ['EPjax', 'ELinkGo', 'ECtxMenu']],
+        ['浏览体验', '无刷新跳转、外链中转与右键菜单', ['EPjax', 'ELinkGo', 'ECtxMenu', 'ECtxItems']],
         ['字体与自定义样式', '自定义字体、自定义 CSS 与登录页背景', ['EFont', 'ECustomCss', 'ELoginBg']],
     ],
     'layout' => [
@@ -106,16 +106,22 @@ $ecodSections = [
     'nav' => [
         ['菜单行为', '超出折叠进「更多」，以及菜单为空时的兜底链接', ['ENavMax', 'ENavLinks']],
     ],
+    'search' => [
+        ['快捷搜索面板', '⌘K 唤起居中面板：热词与标签', ['ESearchPanel', 'ESearchHot', 'ESearchTagCount']],
+        ['推荐文章', '面板空态多一栏文章列表，按所选维度取前 N 篇；留空不显示', ['ESearchPosts', 'ESearchPostsCount']],
+    ],
     'post' => [
         ['阅读体验', '过期提醒、浮动目录与图片灯箱', ['EStale', 'EFloatToc', 'ETocProgress', 'ELightbox']],
         ['显示更多', '长文按高度折叠 + 展开按钮；正文仍在 HTML 里，不影响 SEO', ['EShowMore', 'EShowMoreH', 'EShowMoreText']],
         ['代码与嵌入', '代码高亮与视频 / 社交卡片自动嵌入', ['ECode', 'ECodeTheme', 'EOembed', 'EOembedSocial']],
         ['互动与版权', '点赞头像、快速评论条与版权声明', ['ELikers', 'EQuickBar', 'ECopyrightSet']],
-        ['AI 摘要', 'OpenAI 兼容接口，按文章异步生成摘要卡片', ['EAI', 'EAIProvider', 'EAIEndpoint', 'EAIKey', 'EAIModel', 'EAIPrompt']],
+        ['卡片动效', '磁贴 / 聚合卡等新组件的 hover 动效与图片渐入总开关', ['ECardMotion']],
+        ['AI 摘要', 'OpenAI 兼容接口，按文章异步生成摘要卡片', ['EAI', 'EAIProvider', 'EAIEndpoint', 'EAIKey', 'EAIModel', 'EAIPrompt', 'EAIMotion']],
     ],
     'topics' => [
         ['专题墙展示', '专题列表页的卡片形态与密度', ['ETopicWallStyle', 'ETopicWallCols', 'ETopicPerPage', 'ETopicMoreCount', 'ETopicCardChip']],
-        ['分类页头', '分类页顶部的名称、封面与相关专题', ['ECatHead', 'ECatHeadBg', 'ECatHeadStats', 'ECatHeadTopics', 'ECatTools']],
+        ['专题页头', '专题详情页顶部大图的统一背景，留空则用各专题自己的封面', ['ETopicHeadBg']],
+        ['分类页头', '分类页顶部的名称、封面与相关专题', ['ECatHead', 'ECatHeadBg', 'ECatHeadImage', 'ECatHeadStats', 'ECatHeadTopics', 'ECatTools']],
     ],
     'comments' => [
         ['评论服务', '全站开关与评论系统：原生或 Twikoo / Waline 等第三方', ['EComment', 'ECommentProvider', 'ECommentTwikoo', 'ECommentWaline', 'ECommentArtalk', 'ECommentGiscusRepo', 'ECommentGiscusRepoId', 'ECommentGiscusCategory', 'ECommentGiscusCategoryId', 'ECommentGiscusMapping']],
@@ -126,6 +132,7 @@ $ecodSections = [
     'interact' => [
         ['点赞与数据', '卡片与评论的点赞、在线点与阅读量统计', ['ELike', 'ECLike', 'EAuthorOnline', 'EViews']],
         ['友链与投稿', '友链一键申请与登录用户前端投稿', ['EFriendApply', 'EContribute', 'EContributeGroup', 'EContributeCats', 'EContributeNote']],
+        ['个人中心', '顶部默认封面，用户可在个人中心上传自己的封面覆盖', ['EUcCover']],
     ],
     'credits' => [
         ['积分基础', '总开关与积分名称，关闭后签到 / AI 计费全部停用', ['ECrOn', 'ECrName', 'ECrTicker']],
@@ -148,12 +155,12 @@ $ecodSections = [
         ['Gitee', '个人开发者零门槛', ['EOAuthGitee', 'EOAuthGiteeId', 'EOAuthGiteeSecret']],
     ],
     'pay' => [
-        ['付费基础', '总开关、货币、试读与付费卡位置', ['EPay', 'EPayCurrency', 'EPayAuthorFree', 'EPayBox', 'EPayTeaser', 'EPayDays', 'EPayAdminUrl']],
+        ['付费基础', '总开关、货币、试读与付费卡位置', ['EPay', 'EPayCurrency', 'EPayAuthorFree', 'EPayBox', 'EPayTeaser', 'EPayDays', 'EPayAdminUrl', 'EPayCommentUnlock', 'EPayResourceCard']],
         ['支付通道', '手动确认、卡密或易支付', ['EPayChannel', 'EPayManualDoc', 'EPayEpayUrl', 'EPayEpayPid', 'EPayEpayKey', 'EPayEpayType']],
         ['会员档位', '两档会员的名称与周期定价，留空即不提供', ['EVip1Name', 'EVip1Month', 'EVip1Quarter', 'EVip1Year', 'EVip1Forever', 'EVip2Name', 'EVip2Month', 'EVip2Quarter', 'EVip2Year', 'EVip2Forever']],
     ],
     'lottery' => [
-        ['抽奖基础', '总开关、标题、单次消耗、每日次数与保底 / 直接兑换', ['ELottery', 'ELotteryTitle', 'ELotteryCost', 'ELotteryDaily', 'ELotteryPity', 'ELotteryExchange', 'ELotteryNote']],
+        ['抽奖基础', '总开关、标题、横幅、单次消耗、每日次数与保底 / 直接兑换', ['ELottery', 'ELotteryTitle', 'ELotteryBanner', 'ELotteryCost', 'ELotteryDaily', 'ELotteryPity', 'ELotteryExchange', 'ELotteryNote']],
         ['奖品池', '一行一个奖品：名称|权重|库存|类型|值', ['ELotteryPrizes']],
     ],
     'shop' => [
@@ -239,6 +246,7 @@ if (!function_exists('ecod_admin_media')) {
 }
 ?>
 
+<link rel="stylesheet" href="<?php echo ecod_asset('assets/admin/tokens.css'); ?>">
 <link rel="stylesheet" href="<?php echo ecod_asset('assets/admin/config.css'); ?>">
 <link rel="stylesheet" href="<?php echo ecod_asset('assets/admin/media.css'); ?>">
 <link rel="stylesheet" href="<?php echo ecod_asset('assets/admin/nav.css'); ?>">
@@ -264,7 +272,7 @@ if (!function_exists('ecod_admin_media')) {
 
         <div class="ecod-admin__search">
             <div class="ecod-search__box">
-                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.6-3.6"/></svg>
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" clip-rule="evenodd" d="M18.319 14.4326C20.7628 11.2941 20.542 6.75347 17.6569 3.86829C14.5327 0.744098 9.46734 0.744098 6.34315 3.86829C3.21895 6.99249 3.21895 12.0578 6.34315 15.182C9.22833 18.0672 13.769 18.2879 16.9075 15.8442C16.921 15.8595 16.9351 15.8745 16.9497 15.8891L21.1924 20.1317C21.5829 20.5223 22.2161 20.5223 22.6066 20.1317C22.9971 19.7412 22.9971 19.1081 22.6066 18.7175L18.364 14.4749C18.3493 14.4603 18.3343 14.4462 18.319 14.4326ZM16.2426 5.28251C18.5858 7.62565 18.5858 11.4246 16.2426 13.7678C13.8995 16.1109 10.1005 16.1109 7.75736 13.7678C5.41421 11.4246 5.41421 7.62565 7.75736 5.28251C10.1005 2.93936 13.8995 2.93936 16.2426 5.28251Z"/></svg>
                 <input type="search" data-ecod-search placeholder="搜索设置项" aria-label="搜索设置项" autocomplete="off">
                 <kbd data-search-hint>/</kbd>
             </div>
@@ -737,6 +745,10 @@ ecod_admin_field($form, 'select', 'EQuickBar', 'on', '快速评论条', '移动�
     'on'  => '开启（默认）',
     'off' => '关闭',
 ], 'post');
+ecod_admin_field($form, 'select', 'ECardMotion', 'on', '卡片动效', '磁贴快捷区、聚合 Tab 卡等模块的 hover 上浮阴影与图片渐入总开关（设计稿 guaqi-reference §F5）；关闭后仅保留状态变色。系统「减少动态效果」始终优先', [
+    'on'  => '开启（默认）',
+    'off' => '关闭',
+], 'post');
 ecod_admin_field($form, 'select', 'EReadBarMode', 'top', '阅读工具条形态', '文章页「阅读工具条」（目录 / 朗读 / 字号 / 进度）的呈现形态：吸顶横条常驻正文上方，滚动时自动吸顶；侧栏竖栏固定悬浮在侧栏一侧垂直居中，与浮动目录互斥成对（浮目录在侧栏对面边）。窄屏（<900px）两种形态都回落为吸顶横条', [
     'top'  => '吸顶横条（默认）',
     'side' => '侧栏竖栏',
@@ -830,10 +842,12 @@ ecod_admin_field($form, 'select', 'EContributeGroup', 'contributor', '投稿用�
 ], 'interact', ['data-ecod-show-when' => 'EContribute:on']);
 ecod_admin_field($form, 'text', 'EContributeCats', '', '可投稿分类', '顶级分类的 mid，逗号分隔；留空表示全部顶级分类都可投稿。mid 可在后台「管理 → 分类」的编辑地址里看到', [], 'interact', ['data-ecod-show-when' => 'EContribute:on']);
 ecod_admin_field($form, 'textarea', 'EContributeNote', "投稿前请先阅读：\n· 内容须为原创或已获授权，严禁抄袭与拼凑；\n· 排版支持 Markdown，代码请放进代码块；\n· 提交后进入待审核，通过后即发布；不通过可在「个人中心 → 我的文章」里修改后重新提交。", '投稿须知', '显示在投稿表单上方的说明文字，支持换行', [], 'interact', ['data-ecod-show-when' => 'EContribute:on']);
-ecod_admin_field($form, 'select', 'ECtxMenu', 'on', '右键菜单', '在文章卡片、文章页与链接上右键时给出「复制链接 / 新标签打开 / 搜索选中文字」等快捷操作；表单与输入框内仍是浏览器原生菜单', [
+ecod_admin_media($form, 'text', 'EUcCover', '', '个人中心默认封面', '个人中心顶部的背景图，从媒体库选图或直接粘贴图片 URL；留空显示主题色渐变。用户可在个人中心上传自己的封面覆盖', 'interact');
+ecod_admin_field($form, 'select', 'ECtxMenu', 'on', '右键菜单', '在页面任意位置右键（输入框、可编辑区除外）给出主题快捷菜单：复制标题 / 复制链接 / 新标签打开 / 搜索选中文字 / 切换深浅色等', [
     'on'  => '开启',
     'off' => '关闭',
 ], 'appearance');
+ecod_admin_field($form, 'textarea', 'ECtxItems', '', '自定义菜单项', '追加到右键菜单底部，一行一项：菜单文字|链接地址|新窗口(1/0)。链接可填站内路径（/about）或完整网址，支持 {url} 占位为当前页地址', [], 'appearance', ['rows' => 4, 'placeholder' => "关于本站|/about|0\n提交反馈|https://github.com/|1", 'data-ecod-rows' => 'ctx', 'data-ecod-show-when' => 'ECtxMenu:on']);
 
 /* 阅读体验（文章页）与收录 */
 ecod_admin_field($form, 'select', 'ECode', 'off', '代码高亮', '开启后由本地 Prism 统一给代码块染色，外壳底色同步跟随下方「高亮配色」；关闭则改用内置高亮器（恒深色块），不加载任何额外资源', [
@@ -1061,6 +1075,10 @@ ecod_admin_field($form, 'text', 'EAIEndpoint', '', 'API 地址', '例如 https:/
 ecod_admin_field($form, 'text', 'EAIKey', '', 'API Key', '在服务方控制台获取；仅保存在站点配置里，不会输出到前台页面', [], 'post', $ecodAiWhen);
 ecod_admin_field($form, 'text', 'EAIModel', '', '模型名称', '例如 deepseek-chat、qwen-plus、glm-4-flash', [], 'post', $ecodAiWhen);
 ecod_admin_field($form, 'textarea', 'EAIPrompt', '', '摘要提示词', '留空使用主题内置提示词；接入后可在这里控制摘要的语气与长度', [], 'post', $ecodAiWhen);
+ecod_admin_field($form, 'select', 'EAIMotion', 'off', '摘要打字机回放', '开启后摘要正文按打字机节奏逐步显示（约 1.5 秒播完）；系统开启「减少动态效果」时自动直出', [
+    'on'  => '开启',
+    'off' => '关闭（默认，直接显示全文）',
+], 'post', $ecodAiWhen);
 
 /* ============================================================
  * 互动 → 积分与 AI：Credit 流水（core/user/credits.php）
@@ -1163,11 +1181,14 @@ ecod_admin_field($form, 'select', 'ECursor', 'off', '鼠标跟随光点', '轻�
     'off' => '关闭',
     'dot' => '光点',
 ], 'appearance');
-ecod_admin_field($form, 'select', 'EBackdrop', 'none', '站点背景', '纯 CSS 渐变，不增加任何请求', [
-    'none' => '纯色',
-    'soft' => '双色柔光',
-    'mesh' => '网格渐变',
+ecod_admin_field($form, 'select', 'EBackdrop', 'none', '站点背景', '纯 CSS 渐变不增加请求；选「自定义图片」后由下方图片与蒙层控制', [
+    'none'  => '纯色',
+    'soft'  => '双色柔光',
+    'mesh'  => '网格渐变',
+    'image' => '自定义图片',
 ], 'appearance');
+ecod_admin_media($form, 'text', 'EBgImage', '', '背景图', '铺满视口并固定，深浅色共用同一张图；建议 1920px 以上的横图，从媒体库选图或直接粘贴 URL', 'appearance', 'single', ['data-ecod-show-when' => 'EBackdrop:image']);
+ecod_admin_field($form, 'number', 'EBgMask', '55', '背景蒙层（%）', '图片上盖一层浅色（深色模式下为深色）半透明遮罩，数值越大文字越清楚、图片越淡', [], 'appearance', ['min' => 0, 'max' => 90, 'step' => 5, 'data-ecod-show-when' => 'EBackdrop:image']);
 
 /* ============================================================
  * 付费与会员（门槛 / 权益 / 交易三层，见 core/pay/pay.php）
@@ -1190,6 +1211,16 @@ ecod_admin_field($form, 'select', 'EPayBox', 'top', '付费卡位置', '解锁�
 ], 'pay', $ecodPayWhen);
 ecod_admin_field($form, 'number', 'EPayTeaser', '80', '试读字数', '没有 <!--paymore--> 标记时，正文只保留前面这么多可见字；填 0 则完全不试读', [], 'pay', ['min' => 0, 'max' => 2000, 'step' => 10, 'data-ecod-show-when' => 'EPay:on,EPayBox:!=off']);
 ecod_admin_field($form, 'number', 'EPayDays', '0', '默认购买有效期（天）', '0 = 永久。作者可在文章里单独填写天数覆盖', [], 'pay', ['min' => 0, 'max' => 3650, 'step' => 1, 'data-ecod-show-when' => 'EPay:on']);
+
+/* 评论解锁（F2）与付费资源卡（F6），设计见 docs/dev/guaqi-reference-design.html */
+ecod_admin_field($form, 'select', 'EPayCommentUnlock', 'off', '评论解锁付费', '开启后，文章自定义字段 pay_comment 填 1 时出现「评论解锁卡」：访客发表一条过审评论即可阅读该篇付费正文（读时校验评论表，删评/转待审自动上锁；会员专属内容不参与）', [
+    'on'  => '开启',
+    'off' => '关闭（默认）',
+], 'pay', $ecodPayWhen);
+ecod_admin_field($form, 'select', 'EPayResourceCard', 'off', '付费资源卡', '开启后单篇购买类付费文章的解锁卡升级为「资源卡」：预览图 + 价格 + 元数据表（自定义字段 pay_meta_size / pay_meta_updated / pay_meta_sys / pay_meta_lang / pay_meta_refund / pay_meta_term，预览图字段 pay_preview）。字段全空时自动回落普通付费卡', [
+    'on'  => '开启',
+    'off' => '关闭（默认）',
+], 'pay', $ecodPayWhen);
 
 /* 管理台入口：主题无法注册后台菜单，这里给出可直接打开的地址 */
 $ecodPayAdminUrl = '';
@@ -1237,11 +1268,12 @@ ecod_admin_field($form, 'select', 'ELottery', 'off', '站点抽奖', '总开关�
 ], 'lottery');
 $ecodLotWhen = ['data-ecod-show-when' => 'ELottery:on'];
 ecod_admin_field($form, 'text', 'ELotteryTitle', '幸运抽奖', '活动标题', '显示在抽奖页顶部', [], 'lottery', $ecodLotWhen);
+ecod_admin_media($form, 'text', 'ELotteryBanner', '', '活动横幅图', '显示在抽奖页数据栏上方（16:7 裁切）；从媒体库选图或直接粘贴 URL，留空不显示', 'lottery', 'single', $ecodLotWhen);
 ecod_admin_field($form, 'number', 'ELotteryCost', '10', '单次消耗', '每抽一次扣多少 Credit；填 0 = 免费抽（仍受每日次数限制）', [], 'lottery', ['min' => 0, 'max' => 1000, 'step' => 1] + $ecodLotWhen);
 ecod_admin_field($form, 'number', 'ELotteryDaily', '3', '每人每日次数', '每天最多抽几次；填 0 不限', [], 'lottery', ['min' => 0, 'max' => 100, 'step' => 1] + $ecodLotWhen);
 ecod_admin_field($form, 'number', 'ELotteryPity', '0', '保底次数', '连续这么多次没中奖后，下一抽必中（guaqi 式保底，进度在抽奖挂件可见）；填 0 关闭', [], 'lottery', ['min' => 0, 'max' => 100, 'step' => 1] + $ecodLotWhen);
 ecod_admin_field($form, 'number', 'ELotteryExchange', '0', '头奖直接兑换价', '用户付这么多 Credit 跳过概率直接拿第一个可抽的有奖奖品（0 = 关闭直接兑换）；兑换不占每日抽奖次数', [], 'lottery', ['min' => 0, 'max' => 100000, 'step' => 10] + $ecodLotWhen);
-ecod_admin_field($form, 'textarea', 'ELotteryPrizes', "谢谢参与|60|0|none|\n10 Credit|25|0|credit|10\n会员 7 天|5|5|vip|1:7", '奖品池', '一行一个奖品，五段用 | 分隔：名称|权重|库存(0=不限)|类型|值。类型：none 谢谢参与 / credit 积分（值=数量）/ vip 会员（值=等级:天数，如 1:7）/ text 实物（值=兑奖说明）。恰好 8 个奖品时抽奖页显示九宫格转盘', [], 'lottery', ['rows' => 6] + $ecodLotWhen);
+ecod_admin_field($form, 'textarea', 'ELotteryPrizes', "谢谢参与|60|0|none|\n10 Credit|25|0|credit|10\n会员 7 天|5|5|vip|1:7", '奖品池', '逐行添加奖品：权重决定中奖概率，库存 0 = 不限，值随类型变化（积分填数量 / 会员填「等级:天数」/ 实物填兑奖说明）。恰好 8 个奖品时抽奖页显示九宫格转盘', [], 'lottery', ['rows' => 6, 'data-ecod-rows' => 'lottery'] + $ecodLotWhen);
 ecod_admin_field($form, 'textarea', 'ELotteryNote', '', '活动说明', '显示在抽奖页底部，例如兑奖方式、活动时间、免责声明', [], 'lottery', ['rows' => 3] + $ecodLotWhen);
 
 /* 兑换商城（core/site/shop.php）：积分当钱花 */
@@ -1250,7 +1282,7 @@ ecod_admin_field($form, 'select', 'EShop', 'off', '兑换商城', '总开关。�
     'off' => '关闭（默认）',
 ], 'shop');
 $ecodShopWhen = ['data-ecod-show-when' => 'EShop:on'];
-ecod_admin_field($form, 'textarea', 'EShopItems', "会员 7 天|500|vip|1:7|100|0\n全站文章畅读月卡|2000|vip|2:30|0|0\n定制周边|3000|text|兑换后联系站长发货|5|1", '商品列表', '一行一个商品，六段用 | 分隔：名称|价格(积分)|类型|值|库存(0=不限)|每人限购(0=不限)。类型：vip 会员（值=等级:天数）/ post 单篇解锁（值=文章ID）/ text 待发货（值=发货说明）', [], 'shop', ['rows' => 6] + $ecodShopWhen);
+ecod_admin_field($form, 'textarea', 'EShopItems', "会员 7 天|500|vip|1:7|100|0\n全站文章畅读月卡|2000|vip|2:30|0|0\n定制周边|3000|text|兑换后联系站长发货|5|1", '商品列表', '逐行添加商品：库存 0 = 不限，每人限购 0 = 不限；值随类型变化（会员填「等级:天数」/ 单篇解锁填文章 ID / 待发货填发货说明）', [], 'shop', ['rows' => 6, 'data-ecod-rows' => 'shop'] + $ecodShopWhen);
 ecod_admin_field($form, 'textarea', 'EShopNote', '', '商城说明', '显示在商城页底部：发货时效、联系方式、兑换规则等', [], 'shop', ['rows' => 3] + $ecodShopWhen);
 
 ecod_admin_field($form, 'select', 'EAdSelf', 'off', '自助广告', '总开关（依赖付费阅读）。用户在「广告投放」页（page-ads.php）选位、按天下单，走支付通道付款', [
@@ -1302,16 +1334,21 @@ ecod_admin_field($form, 'select', 'ETopicCardChip', 'on', '文章卡片显示专
     'off' => '不显示',
 ], 'topics');
 
+/* 专题详情页头：统一大图，留空回落各专题自己的封面 */
+ecod_admin_media($form, 'text', 'ETopicHeadBg', '', '专题页头背景', '所有专题详情页共用的背景大图；留空则用各专题在构建器里设的封面，取不到时用主题色柔光', 'topics');
+
 /* 分类页头（E1） */
 $ecodCatHeadWhen = ['data-ecod-show-when' => 'ECatHead:on'];
 ecod_admin_field($form, 'select', 'ECatHead', 'on', '分类页页头', '分类页顶部显示名称、描述、统计与相关专题；关闭后回到一行标题', [
     'on'  => '显示',
     'off' => '不显示',
 ], 'topics');
-ecod_admin_field($form, 'select', 'ECatHeadBg', 'cover', '页头背景', '封面取该分类最新一篇文章的首图，取不到时用主题色柔光', [
-    'cover' => '最新文章封面',
-    'soft'  => '主题色柔光',
+ecod_admin_field($form, 'select', 'ECatHeadBg', 'cover', '页头背景', '封面取该分类最新一篇文章的首图；也可固定用一张自定义图，或只用主题色柔光', [
+    'cover'  => '最新文章封面',
+    'custom' => '自定义图片',
+    'soft'   => '主题色柔光',
 ], 'topics', $ecodCatHeadWhen);
+ecod_admin_media($form, 'text', 'ECatHeadImage', '', '页头背景图', '所有分类页共用的背景图；某个分类想单独用图，到「分类增强」里给它设封面（优先级更高）', 'topics', 'single', ['data-ecod-show-when' => 'ECatHeadBg:custom']);
 ecod_admin_field($form, 'select', 'ECatHeadStats', 'on', '页头数据', '篇数 / 累计阅读 / 最近更新，一条聚合查询取全', [
     'on'  => '显示',
     'off' => '不显示',
@@ -1337,6 +1374,19 @@ ecod_admin_field($form, 'select', 'ESearchTagCount', '10', '标签个数', '面�
     '10' => '10 个（默认）',
     '12' => '12 个',
 ], 'search', ['data-ecod-show-when' => 'ESearchPanel:on']);
+ecod_admin_field($form, 'select', 'ESearchPosts', 'off', '推荐文章列表', '在面板空态（没输入关键词时）多一栏文章：标题 + 日期，点即跳转；结果按所选维度实时算，缓存 10 分钟', [
+    'off'      => '不显示',
+    'hot'      => '热门（阅读 + 评论）',
+    'likes'    => '点赞最多',
+    'comments' => '评论最多',
+    'views'    => '阅读最多',
+], 'search', ['data-ecod-show-when' => 'ESearchPanel:on']);
+ecod_admin_field($form, 'select', 'ESearchPostsCount', '8', '文章条数', '面板空态展示几篇', [
+    '4'  => '4 条',
+    '6'  => '6 条',
+    '8'  => '8 条（默认）',
+    '10' => '10 条',
+], 'search', ['data-ecod-show-when' => 'ESearchPanel:on,ESearchPosts:!off']);
 
 /* 隐藏：不进导航的页面 slug（由「站长 → 工具与备份」的特色页开关写入，逗号分隔） */
 ecod_admin_field($form, 'hidden', 'ENavHide', '', '', '', [], 'tools');

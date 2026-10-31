@@ -62,8 +62,26 @@ if ($ecodLogoDims === '') {
 $ecodLogoBoth = ecod_option('ELogoBoth', 'off') === 'on';
 $ecodDark = ecod_option('EDark', 'auto');
 $ecodAnim = (string) ecod_option('EAnimate', 'blur');
+/* 卡片动效总开关（设计稿 guaqi-reference §F5）：off 时磁贴/聚合卡等不加 hover 动效与渐入 */
+$ecodMotion = (string) ecod_option('ECardMotion', 'on') === 'on' ? 'on' : 'off';
 $ecodBackdrop = (string) ecod_option('EBackdrop', 'none');
 $ecodCursor = (string) ecod_option('ECursor', 'off');
+
+/* 自定义背景图：没配图时静默退回纯色，避免整站变成空白块 */
+$ecodBgImage = '';
+$ecodBgMask = 55;
+if ($ecodBackdrop === 'image') {
+    $ecodBgImage = trim((string) ecod_option('EBgImage', ''));
+    $ecodBgMask = max(0, min(90, (int) ecod_option('EBgMask', 55)));
+    if ($ecodBgImage === '') {
+        $ecodBackdrop = 'none';
+    }
+}
+$ecodBgStyle = '';
+if ($ecodBgImage !== '') {
+    $ecodBgStyle = "--ecod-bg-img:url('" . str_replace(["'", '"'], '', $ecodBgImage) . "');"
+        . '--ecod-bg-mask:' . number_format($ecodBgMask / 100, 2, '.', '') . ';';
+}
 
 /* 用户区：登录态头像 / 游客登录入口 + 个人中心地址 */
 $ecodUcUrl = ecod_user_center_url();
@@ -100,16 +118,27 @@ if ($ecodNavMax > 0 && count($ecodNav) > $ecodNavMax) {
     $ecodNavHead = array_slice($ecodNav, 0, $ecodCut);
     $ecodNavMore = array_slice($ecodNav, $ecodCut);
 }
+
+/* 浮动件坐标标记：窄屏下浮动目录据此让开 dock / 深浅色切换（见 ecod.css §11.4b） */
+$ecodBodyClass = [];
+if (ecod_block_on('dock')) {
+    $ecodBodyClass[] = 'ecod-has-dock';
+}
+if (ecod_block_on('theme-toggle') && ecod_option('EDark', 'auto') !== 'off') {
+    $ecodBodyClass[] = 'ecod-has-toggle';
+}
 ?>
 <!DOCTYPE html>
 <html lang="zh-CN" class="ecod-booting" data-theme="light" data-dark="<?php echo $ecodDark; ?>"
       data-anim="<?php echo htmlspecialchars($ecodAnim, ENT_QUOTES, 'UTF-8'); ?>"
       data-backdrop="<?php echo htmlspecialchars($ecodBackdrop, ENT_QUOTES, 'UTF-8'); ?>"
-      data-cursor="<?php echo htmlspecialchars($ecodCursor, ENT_QUOTES, 'UTF-8'); ?>">
+      data-cursor="<?php echo htmlspecialchars($ecodCursor, ENT_QUOTES, 'UTF-8'); ?>"
+      data-motion="<?php echo $ecodMotion; ?>"
+      <?php if ($ecodBgStyle !== ''): ?>style="<?php echo htmlspecialchars($ecodBgStyle, ENT_QUOTES, 'UTF-8'); ?>"<?php endif; ?>>
 <head>
     <?php $this->need('public/include.php'); ?>
 </head>
-<body>
+<body class="<?php echo implode(' ', $ecodBodyClass); ?>">
 <a class="ecod_skip" href="#ecod-main">跳到正文</a>
 
 <header class="ecod_header" data-ecod-header>
@@ -481,16 +510,16 @@ if ($ecodNavMax > 0 && count($ecodNav) > $ecodNavMax) {
             <input type="hidden" name="referer" value="<?php echo htmlspecialchars($ecodHere, ENT_QUOTES, 'UTF-8'); ?>">
             <label class="ecod_login__field">
                 <span>用户名或邮箱</span>
-                <input type="text" name="name" required autocomplete="username" placeholder="用户名或邮箱">
+                <input class="ecod_input" type="text" name="name" required autocomplete="username" placeholder="用户名或邮箱">
             </label>
             <label class="ecod_login__field">
                 <span>密码</span>
-                <input type="password" name="password" required autocomplete="current-password" placeholder="密码">
+                <input class="ecod_input" type="password" name="password" required autocomplete="current-password" placeholder="密码">
             </label>
             <label class="ecod_login__field">
                 <span>验证码</span>
                 <span class="ecod_login__cap">
-                    <input type="text" name="captcha" required autocomplete="off" spellcheck="false"
+                    <input class="ecod_input" type="text" name="captcha" required autocomplete="off" spellcheck="false"
                            inputmode="latin" maxlength="4" placeholder="4 位字符">
                     <img class="ecod_login__capimg" data-ecod-captcha
                          src="<?php echo htmlspecialchars(ecod_api_url(), ENT_QUOTES, 'UTF-8'); ?>?action=captcha&amp;t=<?php echo time(); ?>"
@@ -512,7 +541,8 @@ if ($ecodNavMax > 0 && count($ecodNav) > $ecodNavMax) {
 <?php if (ecod_option('ESearchPanel', 'on') === 'on'):
 /* C4 居中搜索面板：导航搜索框 / dock 搜索按钮 / ⌘K 三入口唤起。
    热词来自设置项 ESearchHot（前端 CFG.hotwords），
-   标签按 ESearchTagCount 截取，序列化给前端渲染空态。 */
+   标签按 ESearchTagCount 截取，推荐文章按 ESearchPosts 维度取前 N 篇，
+   两者序列化给前端渲染空态。 */
 $ecodSpanelTagLimit = max(0, min(12, (int) ecod_option('ESearchTagCount', 10)));
 $ecodSpanelTags = [];
 if ($ecodSpanelTagLimit > 0):
@@ -528,9 +558,26 @@ if ($ecodSpanelTagLimit > 0):
         $ecodSpanelTags = [];
     }
 endif;
+
+$ecodSpanelPostOrder = (string) ecod_option('ESearchPosts', 'off');
+$ecodSpanelPostLabels = [
+    'hot'      => '热门文章',
+    'likes'    => '最多点赞',
+    'comments' => '最多评论',
+    'views'    => '最多阅读',
+];
+$ecodSpanelPosts = [];
+$ecodSpanelPostLabel = '';
+if (isset($ecodSpanelPostLabels[$ecodSpanelPostOrder])) {
+    $ecodSpanelPostCount = max(1, min(12, (int) ecod_option('ESearchPostsCount', 8)));
+    $ecodSpanelPosts = ecod_search_featured($ecodSpanelPostCount, $ecodSpanelPostOrder);
+    $ecodSpanelPostLabel = $ecodSpanelPostLabels[$ecodSpanelPostOrder];
+}
 ?>
 <div class="ecod_spanel" data-ecod-spanel aria-hidden="true"
-     data-tags="<?php echo htmlspecialchars(json_encode($ecodSpanelTags, JSON_UNESCAPED_UNICODE), ENT_QUOTES, 'UTF-8'); ?>">
+     data-tags="<?php echo htmlspecialchars(json_encode($ecodSpanelTags, JSON_UNESCAPED_UNICODE), ENT_QUOTES, 'UTF-8'); ?>"
+     data-posts="<?php echo htmlspecialchars(json_encode($ecodSpanelPosts, JSON_UNESCAPED_UNICODE), ENT_QUOTES, 'UTF-8'); ?>"
+     data-posts-label="<?php echo htmlspecialchars($ecodSpanelPostLabel, ENT_QUOTES, 'UTF-8'); ?>">
     <div class="ecod_spanel__mask" data-ecod-spanel-close></div>
     <div class="ecod_spanel__box" role="dialog" aria-modal="true" aria-label="搜索">
         <div class="ecod_spanel__bar">

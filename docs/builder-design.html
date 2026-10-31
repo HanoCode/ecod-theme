@@ -1,0 +1,496 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ecod Builder 设计说明 — 自研页面构建器</title>
+<style>
+:root{
+  --bg:#f6f7f9; --surface:#ffffff; --surface2:#f0f2f5;
+  --text:#1c2330; --muted:#5c6675; --line:#e3e7ee;
+  --accent:#3b6ef0; --accent-soft:#eaf0fe;
+  --green:#1a9e6c; --orange:#d97a1a; --red:#d24545; --purple:#7a4fd0;
+  --code-bg:#101623; --code-text:#dbe4f5;
+  --mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;
+  --sans:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+}
+@media (prefers-color-scheme:dark){
+  :root{
+    --bg:#12151c; --surface:#1a1f2a; --surface2:#222836;
+    --text:#e6ebf4; --muted:#98a2b3; --line:#2c3444;
+    --accent:#6d95f5; --accent-soft:#1d2740;
+    --green:#34b98a; --orange:#e2954a; --red:#e06c6c; --purple:#a583e6;
+    --code-bg:#0c101a; --code-text:#c9d5ee;
+  }
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--text);font-family:var(--sans);font-size:15px;line-height:1.75}
+a{color:var(--accent);text-decoration:none}
+a:hover{text-decoration:underline}
+
+/* ---- 布局 ---- */
+.page{display:flex;max-width:1280px;margin:0 auto;padding:0 20px}
+.toc{width:230px;flex:none;position:sticky;top:0;align-self:flex-start;max-height:100vh;overflow-y:auto;padding:32px 16px 40px 0;font-size:13px}
+.toc b{display:block;color:var(--muted);font-size:12px;letter-spacing:.08em;margin:18px 0 6px}
+.toc a{display:block;color:var(--muted);padding:4px 10px;border-left:2px solid transparent;border-radius:0 6px 6px 0}
+.toc a:hover{color:var(--text);text-decoration:none;background:var(--surface2)}
+.main{flex:1;min-width:0;padding:32px 0 120px 36px;max-width:860px}
+@media (max-width:900px){.page{display:block}.toc{display:none}.main{padding-left:0}}
+
+/* ---- 文本 ---- */
+h1{font-size:30px;line-height:1.3;margin:.4em 0 .2em}
+h2{font-size:22px;margin:2.6em 0 .6em;padding-top:1em;border-top:1px solid var(--line)}
+h3{font-size:17px;margin:1.8em 0 .5em}
+h4{font-size:15px;margin:1.4em 0 .4em;color:var(--muted)}
+p{margin:.6em 0}
+.lead{color:var(--muted);font-size:16px}
+.meta{color:var(--muted);font-size:13px}
+code{font-family:var(--mono);font-size:.88em;background:var(--surface2);padding:.15em .4em;border-radius:5px;word-break:break-all}
+pre{background:var(--code-bg);color:var(--code-text);border-radius:10px;padding:16px 18px;overflow-x:auto;font-size:12.5px;line-height:1.6}
+pre code{background:none;padding:0;font-size:inherit;color:inherit}
+ul,ol{padding-left:1.4em}
+li{margin:.25em 0}
+hr{border:none;border-top:1px solid var(--line);margin:2.2em 0}
+
+/* ---- 表格 ---- */
+table{width:100%;border-collapse:collapse;font-size:13.5px;margin:1em 0}
+th{text-align:left;color:var(--muted);font-weight:500;font-size:12.5px}
+th,td{padding:8px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+tr:last-child td{border-bottom:none}
+
+/* ---- 徽标与提示 ---- */
+.tag{display:inline-block;font-size:11.5px;padding:1px 8px;border-radius:99px;background:var(--surface2);color:var(--muted);vertical-align:1px;white-space:nowrap}
+.tag.blue{background:var(--accent-soft);color:var(--accent)}
+.tag.green{background:color-mix(in srgb,var(--green) 14%,transparent);color:var(--green)}
+.tag.orange{background:color-mix(in srgb,var(--orange) 14%,transparent);color:var(--orange)}
+.tag.red{background:color-mix(in srgb,var(--red) 14%,transparent);color:var(--red)}
+.note{border-left:3px solid var(--accent);background:var(--accent-soft);border-radius:0 10px 10px 0;padding:10px 16px;margin:1.2em 0;font-size:14px}
+.note.warn{border-color:var(--orange);background:color-mix(in srgb,var(--orange) 8%,transparent)}
+.note b{display:block;margin-bottom:2px}
+
+/* ---- 卡片与图 ---- */
+.diagram{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:22px;margin:1.2em 0;overflow-x:auto}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media (max-width:700px){.grid2{grid-template-columns:1fr}}
+.box{border:1px solid var(--line);border-radius:10px;padding:12px 14px;background:var(--surface);font-size:13px}
+.box b{display:block;font-size:13.5px;margin-bottom:4px}
+.box .m{color:var(--muted);font-size:12px}
+.arrow{color:var(--muted);text-align:center;font-size:18px;padding:2px 0}
+
+/* ---- 线框图 ---- */
+.wire{background:var(--surface);border:1px solid var(--line);border-radius:12px;overflow:hidden;font-size:12px;min-width:640px}
+.wire .bar{display:flex;gap:8px;align-items:center;padding:8px 12px;border-bottom:1px solid var(--line);background:var(--surface2)}
+.wire .chip{border:1px solid var(--line);border-radius:6px;padding:2px 10px;background:var(--surface);color:var(--muted);white-space:nowrap}
+.wire .chip.on{background:var(--accent);border-color:var(--accent);color:#fff}
+.wire .cols{display:grid;grid-template-columns:150px 1fr 230px;min-height:380px}
+.wire .panel{border-right:1px solid var(--line);padding:10px}
+.wire .panel:last-child{border-right:none}
+.wire .pt{color:var(--muted);font-size:11px;letter-spacing:.06em;margin-bottom:8px}
+.wire .mitem{border:1px dashed var(--line);border-radius:7px;padding:6px 8px;margin-bottom:6px;display:flex;gap:6px;align-items:center;color:var(--text);background:var(--surface)}
+.wire .mitem .ic{width:14px;height:14px;border-radius:4px;background:var(--accent-soft);flex:none}
+.wire .canvas{background:var(--surface2);padding:14px;position:relative}
+.wire .sec{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:10px;margin-bottom:10px;position:relative}
+.wire .sec.selected{outline:2px solid var(--accent);outline-offset:2px}
+.wire .sec .sl{position:absolute;top:-9px;left:10px;font-size:10px;background:var(--accent);color:#fff;border-radius:4px;padding:0 6px}
+.wire .mod{border:1px solid var(--line);border-radius:6px;padding:8px;margin-bottom:6px;background:var(--surface);color:var(--muted)}
+.wire .mod.sel{border:1px solid var(--accent);color:var(--text);box-shadow:0 0 0 2px var(--accent-soft)}
+.wire .drop{border:2px dashed var(--accent);border-radius:6px;padding:4px;text-align:center;color:var(--accent);margin-bottom:6px;background:var(--accent-soft)}
+.wire .insp-row{display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--line);padding:5px 0}
+.wire .fld{border:1px solid var(--line);border-radius:6px;padding:3px 8px;background:var(--surface);color:var(--muted);min-width:80px}
+.wire .seg{display:flex;border:1px solid var(--line);border-radius:6px;overflow:hidden}
+.wire .seg span{padding:2px 8px;color:var(--muted)}
+.wire .seg span.on{background:var(--accent);color:#fff}
+.wire .ov{position:absolute;top:8px;right:8px;display:flex;gap:4px}
+.wire .ov i{width:18px;height:18px;border-radius:5px;background:var(--surface);border:1px solid var(--line);display:block}
+.wire .badge-new{font-size:10px;color:var(--orange);border:1px solid var(--orange);border-radius:4px;padding:0 5px}
+
+/* ---- 时序 ---- */
+.seq{display:grid;grid-template-columns:repeat(4,1fr);gap:0;font-size:12.5px;min-width:640px}
+.seq .lane{border-left:1px solid var(--line);padding:0 8px}
+.seq .lane b{display:block;text-align:center;font-weight:500;padding:6px 0;border-bottom:2px solid var(--line);margin-bottom:12px}
+.seq .msg{position:relative;margin:14px 0;color:var(--text)}
+.seq .msg small{display:block;color:var(--muted)}
+</style>
+</head>
+<body>
+<div class="page">
+
+<!-- ========== 目录 ========== -->
+<nav class="toc">
+  <b>总览</b>
+  <a href="#s1">1 目标与非目标</a>
+  <a href="#s2">2 总体架构</a>
+  <b>设计</b>
+  <a href="#s3">3 数据模型</a>
+  <a href="#s4">4 组件设计</a>
+  <a href="#s5">5 UI 设计</a>
+  <a href="#s6">6 重要逻辑</a>
+  <b>落地</b>
+  <a href="#s7">7 分期路线</a>
+  <a href="#s8">8 决策记录</a>
+</nav>
+
+<!-- ========== 正文 ========== -->
+<main class="main">
+
+<h1>Ecod Builder 设计说明</h1>
+<p class="lead">自研页面构建器 —— 在现有 blocks 体系上演进「板块堆叠布局 + 页面级归属 + 所见即所得画布」。</p>
+<p class="meta">状态：草案 v1 · 2026-10-31 · 参考：guaqi.com/builder（板块堆叠模式）、既有 <code>core/admin/blocks.php</code> v4 体系</p>
+
+<h2 id="s1">1 目标与非目标</h2>
+<h3>1.1 一句话目标</h3>
+<p>站长在后台以<b>所见即所得</b>方式，把 54 个现有模块与新的「板块」容器自由组合，<b>按页面类型 / 分类 / 单页</b>三个粒度灵活布局网站，前台渲染性能与现有模板持平。</p>
+<h3>1.2 目标</h3>
+<ul>
+  <li><b>灵活布局</b>：板块（全宽 section）→ 内部「主体 + 可选侧栏」→ 模块纵向堆叠，板块控制宽度 / 内边距 / 背景 / 明暗。</li>
+  <li><b>页面级归属</b>：布局可绑定到页面类型（home/page/cat…）、某分类（cat:12）、或某一页（cid:23），带回退链。</li>
+  <li><b>所见即所得</b>：iframe 加载真实前台页面，点击选中、拖放插入、右侧属性面板即时生效。</li>
+  <li><b>零重写</b>：现有 54 个模块模板、params schema、媒体/图标选择器、渲染引擎全部复用；v4 数据自动兼容。</li>
+</ul>
+<h3>1.3 非目标（明确不做）</h3>
+<ul>
+  <li>自由画布 / 任意行列嵌套（参考对象瓜奇也不是这种模式）；</li>
+  <li>设备级三套数据树（用「单数据源 + 容器查询」替代，见 8.1）；</li>
+  <li>第三方运行时插件、多语言字段、云端模板市场、多前端。</li>
+</ul>
+
+<h2 id="s2">2 总体架构</h2>
+<p>不新起平行系统，<b>blocks 体系原地升级 v4 → v5</b>：编辑端新增画布壳，数据层新增「布局文档」，渲染层在 <code>ecod_widgets_render()</code> 之前插入板块渲染器并向下兼容。</p>
+
+<div class="diagram">
+<div class="grid2">
+  <div class="box"><b>编辑端 <span class="tag blue">新增</span></b><span class="m">assets/admin/builder.js / builder.css</span>
+    <ul style="margin:6px 0 0;padding-left:1.2em">
+      <li>画布壳（顶栏 / 模块库 / 大纲）</li>
+      <li>iframe 活体预览 + 覆盖层</li>
+      <li>统一字段渲染器 Inspector</li>
+    </ul>
+  </div>
+  <div class="box"><b>数据层 <span class="tag orange">升级</span></b><span class="m">core/admin/blocks.php + builder.php</span>
+    <ul style="margin:6px 0 0;padding-left:1.2em">
+      <li>布局文档 v5（sections 树）</li>
+      <li>存储：options 行 ELayouts + per-cid 表</li>
+      <li>白名单清洗 + rev 乐观锁（沿用）</li>
+    </ul>
+  </div>
+</div>
+<div class="arrow">▲ 保存（POST + CSRF）　　　▼ 渲染（PHP，前台零 JS）</div>
+<div class="grid2">
+  <div class="box"><b>渲染层 <span class="tag orange">小改</span></b><span class="m">core/admin/blocks.php:ecod_render_block</span>
+    <ul style="margin:6px 0 0;padding-left:1.2em">
+      <li>ecod_layout_render()：板块壳 + 栏分配</li>
+      <li>54 个模块模板零改动继续消费</li>
+      <li>画布模式注入 data-buid + 编辑脚本</li>
+    </ul>
+  </div>
+  <div class="box"><b>复用资产 <span class="tag green">不动</span></b><span class="m">现有基建</span>
+    <ul style="margin:6px 0 0;padding-left:1.2em">
+      <li>blocks-def.php 模块注册表（54 个）</li>
+      <li>EcodMedia.pick / 图标弹层 / build.mjs</li>
+      <li>token 体系 + .ecod_widget 壳</li>
+    </ul>
+  </div>
+</div>
+</div>
+
+<h2 id="s3">3 数据模型</h2>
+
+<h3>3.1 布局文档（Layout Document，v5）</h3>
+<p>核心结构：<b>页面 → 板块列表 → 板块（box 样式 + 栏配置）→ 模块实例</b>。模块实例复用 v4 的 <code>{uid,type,on,params}</code>，叶子完全兼容。</p>
+<pre><code>{
+  "v": 5,
+  "rev": 42,
+  "docs": {
+    "home":   { "sections": [ /* 板块数组 */ ] },
+    "cat:12": { "sections": [ ... ] },
+    "cid:23": { "sections": [ ... ] }
+  }
+}
+
+// 单个板块 section：
+{
+  "uid": "sec_a1b2",
+  "on": 1,
+  "label": "精选推荐",                    // 编辑器里显示的名字
+  "box": {
+    "width": "full",                      // full | boxed
+    "contentMax": 1200,                   // 内容最大宽度 px，0=跟随主题
+    "padY": 48,                           // 上下内边距 px
+    "bg": "", "bgDark": "",               // 明/暗背景（色值或图片 URL）
+    "radius": 0,
+    "tone": "auto"                        // auto | light | dark   板块级明暗
+  },
+  "cols": {
+    "type": "stack",                      // stack | aside-left | aside-right
+    "asideWidth": 320,                    // 侧栏宽度 px，200–420
+    "asideSticky": 1                      // 侧栏吸顶
+  },
+  "main":  [ { "uid":"slider-1","type":"slider","on":1,"params":{...} } ],
+  "aside": [ { "uid":"hot-1","type":"hot","on":1,"params":{...} } ]
+}</code></pre>
+<p>约束：<code>stack</code> 时 <code>aside</code> 必须为空数组；单文档板块数 ≤ 30；每栏模块数 ≤ 20（沿用 ECOD_WIDGET_LIMIT 语义）。</p>
+
+<h3>3.2 存储</h3>
+<table>
+  <tr><th>内容</th><th>位置</th><th>说明</th></tr>
+  <tr><td>页面类型默认布局（home/page/cat/tag/search/author/custom）</td><td>options 表独立行 <code>ELayouts</code>（user=0）</td><td>与 EWidgets 同款：JSON + rev 乐观锁 + schema 版本字段</td></tr>
+  <tr><td>分类 / 单页覆盖（<code>cat:12</code>、<code>cid:23</code>）</td><td>新表 <code>ecod_page_layout</code></td><td><code>id, kind(cat|cid), ref, doc JSON, rev, updated</code>；照抄 core/lib/schema.php 的 ensure 自愈模式；行数少，key 查询走主键</td></tr>
+  <tr><td>v4 旧数据</td><td><code>EWidgets</code> 原样保留</td><td>回退链末级，永不迁移销毁（见 6.4）</td></tr>
+</table>
+
+<h3>3.3 渲染回退链</h3>
+<pre><code>ecod_layout_resolve( 当前页面 ):
+  cid:页cid  →  cat:主分类  →  页面类型默认  →  (未命中) EWidgets v4 旧区域</code></pre>
+<p>每一级都是<b>整页替换</b>而非合并（与瓜奇「按 ID 精确绑定」语义一致），避免局部合并带来的理解成本。未启用 v5 的站点（ELayouts 为空）整个链条短路到 v4，<b>行为与现状完全一致</b>。</p>
+
+<h2 id="s4">4 组件设计</h2>
+
+<h3>4.1 板块容器：注册表扩展而非新体系</h3>
+<p>板块不是「第 55 个模块」，而是布局文档的<b>结构节点</b>；但它在编辑器里以模块库卡片的形式出现。在 <code>blocks-def.php</code> 追加声明：</p>
+<pre><code>ecod_block_define('section', [
+  'name' => '板块', 'icon' => 'gg-layout',
+  'area' => 'layout',                       // 新区域类型：只在布局文档中出现
+  'params' => [
+    'width' => ['type'=>'select','options'=>['full','boxed'],'default'=>'full'],
+    'contentMax' => ['type'=>'number','min'=>0,'max'=>1920],
+    'padY' => ['type'=>'number','min'=>0,'max'=>200,'default'=>48],
+    'bg' => ['type'=>'image'], 'bgDark' => ['type'=>'image'],
+    'tone' => ['type'=>'select','options'=>['auto','light','dark']],
+    // cols / 栏配置为结构字段，不走 params，由文档树直接持有
+  ],
+]);</code></pre>
+
+<h3>4.2 统一字段渲染器（Field Registry）<span class="tag blue">P1 关键</span></h3>
+<p>现状：<code>widget.js:1015-1420</code> 的参数面板是命令式 JS，设置页字段走 Typecho 原生 Element。构建器 Inspector 需要第三处渲染，若再抄一份会形成三套漂移。设计为声明式注册表：</p>
+<pre><code>window.EcodFields = {
+  types: { text, number, switch, select, textarea,
+           image,        // → EcodMedia.pick
+           icon,         // → 图标弹层（合并 nav.js / widget.js 两套现成实现）
+           color, spacing, repeater /* 支持一级嵌套 */ },
+  render(fieldDef, value, onChange) → HTMLElement
+}</code></pre>
+<table>
+  <tr><th>消费方</th><th>改造</th></tr>
+  <tr><td>Builder Inspector（新）</td><td>直接调用 registry</td></tr>
+  <tr><td>widget.js 参数面板</td><td>P1 逐步替换内部实现为 registry，对外行为不变</td></tr>
+  <tr><td>设置页 config.js</td><td>暂不动（原生 Element 是保存载体）；仅新增字段类型时经 registry 出控件</td></tr>
+</table>
+<p><b>嵌套 repeater</b>：服务端 <code>ecod_wgt_clean_repeater()</code> 增加 <code>fields</code> 递归清洗（深度 ≤ 2），前端 registry 的 repeater 渲染器同步支持子 schema。这是现有清洗器的唯一功能性扩展。</p>
+
+<h3>4.3 编辑器前端组件拆分</h3>
+<p><code>assets/admin/builder.js</code> 内部按职责拆为六个模块（esbuild 按 1:1 minify，不 bundle，保持单文件即可，用注释分节）：</p>
+<table>
+  <tr><th>组件</th><th>职责</th><th>来源</th></tr>
+  <tr><td><code>Store</code></td><td>布局文档状态、脏跟踪、undo 栈（环形 50 步，操作粒度=文档 JSON diff）</td><td>新建（纯函数 diff，参考 nav.js 摊平/重建思路）</td></tr>
+  <tr><td><code>Library</code></td><td>左栏模块库：blocks-def 生成、搜索、拖出</td><td>widget.js 现成 DnD 逻辑平移</td></tr>
+  <tr><td><code>Canvas</code></td><td>iframe 加载、覆盖层（选中框/拖放指示）、postMessage 收发</td><td>editor.js iframe 预览经验</td></tr>
+  <tr><td><code>Inspector</code></td><td>右侧属性面板，按选中对象（板块/模块）出 schema 表单</td><td>EcodFields registry</td></tr>
+  <tr><td><code>Outline</code></td><td>板块/模块大纲树，点击定位、拖拽排序</td><td>nav.js 树拖拽算法</td></tr>
+  <tr><td><code>Saver</code></td><td>保存队列、rev 冲突处理、快照（复用 core/admin/snapshot.php）</td><td>widget.js 保存队列平移</td></tr>
+</table>
+
+<h3>4.4 服务端入口 <code>builder.php</code> <span class="tag blue">新增</span></h3>
+<p>独立入口，模式与 <code>widget.php</code> 完全一致（管理员 + CSRF + JSON 响应）：</p>
+<table>
+  <tr><th>action</th><th>说明</th></tr>
+  <tr><td><code>doc.get</code> / <code>doc.save</code></td><td>读/写布局文档；save 携带 rev，白名单清洗后 bump</td></tr>
+  <tr><td><code>layout.list / delete</code></td><td>per-cid / per-cat 覆盖的增删（ecod_page_layout 表）</td></tr>
+  <tr><td><code>canvas.render</code></td><td>带 <code>?ecod_builder=1</code> 标记输出前台 HTML（供 iframe 加载，见 6.2）</td></tr>
+  <tr><td><code>template.export / import</code></td><td>整页模板 JSON 导入导出（P2）</td></tr>
+</table>
+
+<h2 id="s5">5 UI 设计</h2>
+
+<h3>5.1 编辑器整体布局（三段式 + 顶栏）</h3>
+<p>与主题设置页同一视觉语言（token 体系、圆角/描边三档、rest 靠描边不靠阴影）：</p>
+
+<div class="diagram">
+<div class="wire">
+  <div class="bar">
+    <span class="chip">← 退出</span>
+    <span class="chip on">首页</span><span class="chip">cat:12</span><span class="chip">cid:23</span>
+    <span style="flex:1"></span>
+    <span class="seg"><span class="on">桌面</span><span>平板</span><span>手机</span></span>
+    <span class="chip">缩放 75%</span>
+    <span class="chip">撤销</span>
+    <span class="chip on">保存</span><span class="chip">预览</span>
+  </div>
+  <div class="cols">
+    <div class="panel">
+      <div class="pt">模块库</div>
+      <div class="mitem"><span class="ic"></span>板块 <span class="badge-new">新</span></div>
+      <div class="mitem"><span class="ic"></span>轮播图</div>
+      <div class="mitem"><span class="ic"></span>文章列表</div>
+      <div class="mitem"><span class="ic"></span>磁贴区</div>
+      <div class="mitem"><span class="ic"></span>搜索</div>
+      <div class="pt" style="margin-top:10px">大纲</div>
+      <div class="mitem" style="border-style:solid">▾ 精选推荐</div>
+      <div class="mitem" style="border-style:solid;margin-left:14px">slider-1</div>
+      <div class="mitem" style="border-style:solid;margin-left:14px">hot-1</div>
+    </div>
+    <div class="canvas">
+      <div class="sec">
+        <span class="sl">精选推荐 · 全宽</span>
+        <span class="ov"><i></i><i></i><i></i></span>
+        <div class="mod">轮播图（6 张）</div>
+      </div>
+      <div class="sec selected">
+        <span class="sl">最新文章 · 主体+右栏 320px</span>
+        <span class="ov"><i></i><i></i><i></i></span>
+        <div style="display:grid;grid-template-columns:1fr 96px;gap:8px">
+          <div class="mod sel">文章列表 · 网格 3 列</div>
+          <div class="mod">热门</div>
+        </div>
+        <div class="drop">＋ 拖入模块放到此处</div>
+      </div>
+      <div class="sec">
+        <span class="sl">页脚链接</span>
+        <div class="mod">链接列表</div>
+      </div>
+    </div>
+    <div class="panel">
+      <div class="pt">文章列表 · 属性</div>
+      <div class="insp-row"><span>数量</span><span class="fld">6</span></div>
+      <div class="insp-row"><span>布局</span><span class="fld">网格 ▾</span></div>
+      <div class="insp-row"><span>缩略图</span><span class="fld">开 ●</span></div>
+      <div class="pt" style="margin-top:12px">板块设置</div>
+      <div class="insp-row"><span>宽度</span><span class="seg"><span class="on">全宽</span><span>盒式</span></span></div>
+      <div class="insp-row"><span>上/下距</span><span class="fld">48 px</span></div>
+      <div class="insp-row"><span>背景</span><span class="fld">选择图片</span></div>
+      <div class="insp-row"><span>明暗</span><span class="seg"><span class="on">自动</span><span>亮</span><span>暗</span></span></div>
+      <div class="insp-row"><span>移动端隐藏</span><span class="fld">关 ○</span></div>
+    </div>
+  </div>
+</div>
+</div>
+
+<h3>5.2 画布交互状态</h3>
+<table>
+  <tr><th>状态</th><th>呈现</th><th>实现</th></tr>
+  <tr><td><b>悬停</b></td><td>模块外 1px 描边 + 左上角类型小签</td><td>覆盖层 div 按 iframe 上报坐标定位（见 6.3），<b>不在 iframe 内画</b>，避免污染前台样式</td></tr>
+  <tr><td><b>选中</b></td><td>2px 主色描边 + 右侧面板切换；板块选中出「+ 插入模块」虚位</td><td><code>data-buid</code> 定位 <code>getBoundingClientRect()</code> × 当前缩放比</td></tr>
+  <tr><td><b>拖放</b></td><td>插入位置显示主色虚线投放条；从模块库拖出 / 画布内拖动排序共用一套指示</td><td>preview 内上报 <code>nearestUid + before/after</code>，编辑器算目标 slot</td></tr>
+  <tr><td><b>空板块</b></td><td>虚线框 + 「拖入模块」占位（瓜奇同款 move-in 区）</td><td>板块 <code>main</code> 为空时渲染占位节点</td></tr>
+  <tr><td><b>设备预览</b></td><td>切「平板/手机」= iframe 宽度切换 + 画布缩放，<b>不切数据</b>（单数据源，见 8.1）</td><td>iframe width: 768 / 390，容器 transform: scale()</td></tr>
+</table>
+<p class="note"><b>触屏与可访问性</b>：画布编辑仅限桌面端（管理台场景）；模块库/大纲/属性面板全程键盘可达，拖拽均有大纲树内的等价「上移/下移/删除」按钮。hover 相关规则遵守主题的 <code>(hover: hover)</code> 包裹约定。</p>
+
+<h3>5.3 属性面板信息架构</h3>
+<p>右栏随选中对象切换，两组标签页：</p>
+<ul>
+  <li><b>选中模块</b> → 「内容」（params schema 全量字段）/「样式」（壳参数：density、shell、移动端隐藏）；</li>
+  <li><b>选中板块</b> → 「板块设置」（box + cols）/「背景」（明/暗两套图 + 色值）/「高级」（板块级自定义 CSS，P2，见 6.5）。</li>
+</ul>
+<p>模块参数改动<b>即时生效</b>：Inspector onChange → Store 更新 → 对该模块单独发起 <code>canvas.render</code> 片段请求（只重渲染该模块 HTML，替换 iframe 内对应节点），避免整页刷新闪烁。</p>
+
+<h2 id="s6">6 重要逻辑设计</h2>
+
+<h3>6.1 渲染管线（前台）</h3>
+<pre><code>function ecod_layout_render( $page_type, $widget ) {
+  $doc = ecod_layout_resolve( $page_type );        // 3.3 的回退链
+  if ( !$doc ) return ecod_widgets_render_legacy(); // v4 原路径，零风险出口
+  foreach ( $doc['sections'] as $sec ) {
+    if ( empty($sec['on']) ) continue;
+    echo ecod_section_open( $sec );                 // 输出 box 样式 + 栏容器
+      ecod_layout_col( $sec['main']  );             // 复用 ecod_render_block()
+      ecod_layout_col( $sec['aside'] );
+    echo ecod_section_close();
+  }
+}</code></pre>
+<ul>
+  <li>板块壳输出语义化 DOM：<code>&lt;section class="ecod-sec" style="--sec-pad-y:48px;--sec-max:1200px"&gt;</code>，样式走新增的 CSS 分节（ecod.css 追加 <b>「41. Builder 板块」</b>编号头，遵守 critical CSS 分节纪律）；</li>
+  <li>响应式：列表类模块改用 <code>container-type: inline-size</code> 让卡片列数随容器自动减列（板块窄容器自然生效）；板块级只有两个响应式行为——移动端隐藏开关、aside 自动堆叠（≤900px 时侧栏落到主体下方）；</li>
+  <li>缓存：布局文档解析结果并入现有 <code>core/lib/cache.php</code> TTL 文件缓存，保存时按 key 失效。</li>
+</ul>
+
+<h3>6.2 画布模式（iframe 内发生了什么）</h3>
+<p>iframe 加载 <code>?ecod_builder=1</code> 的真实页面（真实登录态、真实数据）：</p>
+<ul>
+  <li>该标记下渲染层做三件事：① 每个板块/模块壳注入 <code>data-buid</code>；② 尾部注入一段<b>很小的</b> bridge.js（拖放命中计算、点击上报、片段替换）；③ 屏蔽前台交互副作用（表单提交、PJAX、弹窗内链跳转改为上报）；</li>
+  <li>bridge.js 只在 builder 标记存在时输出，<b>前台正常访问路径零注入、零 JS</b>；</li>
+  <li>板块样式改动（padY/bg/宽度）通过 postMessage 下发 CSS 变量热更新，不重渲染。</li>
+</ul>
+
+<h3>6.3 postMessage 协议</h3>
+<div class="diagram">
+<div class="seq">
+  <div class="lane"><b>编辑器</b></div>
+  <div class="lane"><b>Canvas</b></div>
+  <div class="lane"><b>iframe(bridge)</b></div>
+  <div class="lane"><b>服务端</b></div>
+  <div class="msg" style="grid-column:2">ready（文档高度、uid 索引）<small>→ 编辑器初始化覆盖层</small></div>
+  <div class="msg" style="grid-column:3">select { uid }<small>点击 → 选中、出 Inspector</small></div>
+  <div class="msg" style="grid-column:3">drag { nearestUid, before }<small>拖放命中 → 编辑器画投放条</small></div>
+  <div class="msg" style="grid-column:2">patch { uid, node }<small>参数变更 → 片段 HTML 替换</small></div>
+  <div class="msg" style="grid-column:2">css { uid, vars }<small>板块样式热更新</small></div>
+  <div class="msg" style="grid-column:4">doc.save { doc, rev }<small>显式保存（Ctrl/Cmd+S）</small></div>
+</div>
+</div>
+<p>安全约束：bridge 与编辑器互相校验 <code>event.origin</code>（同源）+ 一次性 token；服务端所有写操作沿用 <code>ecod_wgt_token</code> CSRF 门禁。</p>
+
+<h3>6.4 保存与迁移（v4 → v5）</h3>
+<ul>
+  <li><b>保存</b>：文档级整存整取（不做板块级增量写），POST 携带 <code>rev</code>，409 时提示「已被另一窗口修改」并支持取回远端 diff——沿用 widget.js 现成的脏队列 + 冲突 UI；</li>
+  <li><b>迁移</b>：惰性——首次进入构建器时若 <code>ELayouts</code> 为空，把 v4 各区域现有实例按顺序包成「每区一个板块」的文档<b>副本</b>（v4 数据保留不动），用户取消则继续走 v4；</li>
+  <li><b>快照</b>：每次保存前自动落一份 <code>ecod-snap-builder-*</code>（复用 core/admin/snapshot.php，上限 10 份滚动）。</li>
+</ul>
+
+<h3>6.5 性能与安全纪律</h3>
+<table>
+  <tr><th>项</th><th>纪律</th></tr>
+  <tr><td>关键 CSS</td><td>板块壳样式必须放 ecod.css 新编号分节，否则进不了 critical 提取；板块背景图默认 <code>loading="lazy"</code></td></tr>
+  <tr><td>自定义 CSS</td><td>板块/模块级自定义 CSS（P2）经 <code>strip_tags</code> + 花括号配平校验后随板块输出为 <code>&lt;style&gt;</code>，仅管理员角色可写；<b>不</b>提供 PHP/短代码执行</td></tr>
+  <tr><td>清洗</td><td>所有 params 走 <code>ecod_wgt_clean_params()</code> 白名单，新增字段类型先补服务端再补前端</td></tr>
+  <tr><td>前台体积</td><td>builder.css/js 仅管理台加载；bridge.js ≤ 3KB 内联；前台路径新增资产为零</td></tr>
+  <tr><td>构建</td><td>builder.js/css 加入 build.mjs ENTRIES，走哈希产物 + manifest，无额外管线成本</td></tr>
+</table>
+
+<h2 id="s7">7 分期路线</h2>
+<table>
+  <tr><th>期</th><th>交付</th><th>主要文件</th></tr>
+  <tr>
+    <td><b>P0 灵活布局</b><br><span class="meta">结构层成立</span></td>
+    <td>布局文档 v5 + ecod_page_layout 表 + 回退链；板块渲染器与板块壳 CSS；<b>编辑仍用现有 widget 管理台</b>（区域盒子内支持「板块分组」折叠）；v4 兼容出口</td>
+    <td>core/admin/blocks.php、新 core/admin/builder-doc.php、blocks-def.php（section 声明）、ecod.css §41、schema.php</td>
+  </tr>
+  <tr>
+    <td><b>P1 所见即所得</b><br><span class="meta">体验层成立</span></td>
+    <td>builder.php 入口 + 画布编辑器（Store/Library/Canvas/Inspector/Outline/Saver 六组件）；bridge.js；统一字段渲染器 EcodFields；设备预览</td>
+    <td>新 builder.php、assets/admin/builder.js/css、widget.js 抽取、build.mjs ENTRIES</td>
+  </tr>
+  <tr>
+    <td><b>P2 对齐打磨</b><br><span class="meta">生态与效率</span></td>
+    <td>整页模板导入导出、批量修改、板块级自定义 CSS、undo/redo 完善、文档同步进 docs/shortcodes.md 与后台帮助</td>
+    <td>builder.js、snapshot.php、docs/</td>
+  </tr>
+</table>
+<p class="note"><b>P0 完成即达成的用户价值</b>：无需写代码即可为首页/任意页面/某分类拼出「全宽 Hero + 双栏内容 + 盒式页脚」类布局——这是「灵活布局网站」的实质；P1 解决「改起来不用来回猜」；P2 解决「搭得快」。</p>
+
+<h2 id="s8">8 决策记录</h2>
+<table>
+  <tr><th>#</th><th>决策</th><th>理由 / 放弃项</th></tr>
+  <tr><td>8.1</td>
+      <td><b>单数据源 + 容器查询</b>，不做瓜奇的三设备数据树</td>
+      <td>三套树需要同步工具与冲突处理（瓜奇为此做了「同步到其他设备」整套机制），单人维护成本差一个数量级；主题已有成熟断点体系，列表减列用 container query 即可覆盖 90% 场景。板块级仅留「移动端隐藏」「aside 自动堆叠」两个逃生口。</td></tr>
+  <tr><td>8.2</td>
+      <td><b>blocks 原地升级 v5</b>，不新建平行 builder 系统</td>
+      <td>渲染端与编辑端本就分离（widget.js 自述渲染走前台块模板）；54 个模块零改动，v4 数据短路兼容，风险分散在三期而非一次重写。</td></tr>
+  <tr><td>8.3</td>
+      <td><b>板块 = 结构节点</b>，不做成第 55 个模块</td>
+      <td>板块承载树结构（main/aside 栏），模块实例不能有 children——避免出现「模块套文档」的递归歧义；但板块的 box 参数仍走 params schema，清洗与面板复用同一套机制。</td></tr>
+  <tr><td>8.4</td>
+      <td><b>覆盖层画选中态</b>，不在 iframe 内注入编辑 UI</td>
+      <td>iframe 内只注入 3KB bridge，前台样式零污染；覆盖层坐标 = getBoundingClientRect × 缩放比，实现简单且随主题暗色模式自动适配。</td></tr>
+  <tr><td>8.5</td>
+      <td><b>整页替换</b>而非局部合并布局</td>
+      <td>回退链任一级命中即整页接管，语义与瓜奇一致、心智简单；「全局区 before/after」的合并语义保留在 v4 路径，v5 文档自身支持显式复用（模板导入）。</td></tr>
+</table>
+
+<hr>
+<p class="meta">相关文档：docs/ARCHITECTURE.md（主题总体架构）· docs/shortcodes.md（内容块）· guaqi 构建器调研记录（2026-10-31 会话）</p>
+
+</main>
+</div>
+</body>
+</html>

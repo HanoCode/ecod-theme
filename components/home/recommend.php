@@ -20,7 +20,7 @@ if (!$ecodReco->have()) {
         <?php $ecodRecoImg = ecod_thumbnails($ecodReco, 1, 'cover')[0] ?? ''; ?>
         <a class="ecod_reco__item" href="<?php $ecodReco->permalink(); ?>">
             <span class="ecod_reco__cover"<?php if ($ecodRecoImg): ?> style="--ecod-cover:url('<?php echo htmlspecialchars($ecodRecoImg); ?>')"<?php endif; ?>>
-                <?php if (!$ecodRecoImg): ?><span class="ecod_reco__ph"><?php echo mb_substr($ecodReco->title, 0, 1, 'UTF-8'); ?></span><?php endif; ?>
+                <?php if (!$ecodRecoImg): ?><span class="ecod_ph ecod_reco__ph"><?php echo mb_substr($ecodReco->title, 0, 1, 'UTF-8'); ?></span><?php endif; ?>
             </span>
             <span class="ecod_reco__body">
                 <b class="ecod_reco__title"><?php $ecodReco->title(); ?></b>

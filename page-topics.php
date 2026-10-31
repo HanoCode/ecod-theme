@@ -65,11 +65,7 @@ $ecodTopicIndex = ecod_topic_index();
     ?>
 
     <?php if (!$ecodTopicsAll): ?>
-        <div class="ecod_empty">
-            <div class="ecod_empty__icon" aria-hidden="true"><?php echo ecod_icon('layers', 30); ?></div>
-            <h3>还没有专题</h3>
-            <p>到「设置 → 专题」新建一个，再从文章里挑几篇加进来</p>
-        </div>
+        <?php ecod_empty('layers', '还没有专题', '到「设置 → 专题」新建一个，再从文章里挑几篇加进来'); ?>
     <?php else: ?>
         <?php
         $ecodWallTopics = $ecodTopicsAll;
@@ -107,17 +103,18 @@ $ecodTopicIndex = ecod_topic_index();
     <?php
     $ecodTopicHead = $ecodTopic;
     $ecodTopicHeadCover = (string) ($ecodCovers[$ecodTopicSlug] ?? '');
+    /* 设置里统一配了专题页头大图时优先用它，留空才回落到专题自己的封面 */
+    $ecodTopicHeadBg = trim((string) ecod_option('ETopicHeadBg', ''));
+    if ($ecodTopicHeadBg !== '') {
+        $ecodTopicHeadCover = $ecodTopicHeadBg;
+    }
     $ecodTopicHeadCount = $ecodTopicCount;
     $ecodTopicHeadLatest = (int) ($ecodTopicIndex[$ecodTopicSlug]['latest'] ?? 0);
     require __DIR__ . '/components/topic/head.php';
     ?>
 
     <?php if ($ecodTopicCount === 0): ?>
-        <div class="ecod_empty">
-            <div class="ecod_empty__icon" aria-hidden="true"><?php echo ecod_icon('inbox', 30); ?></div>
-            <h3>这个专题还没有文章</h3>
-            <p>在文章的自定义字段里把「专题」设为<?php echo htmlspecialchars((string) $ecodTopic['name'], ENT_QUOTES, 'UTF-8'); ?>，或到后台专题里手动挑稿</p>
-        </div>
+        <?php ecod_empty('inbox', '这个专题还没有文章', '在文章的自定义字段里把「专题」设为' . htmlspecialchars((string) $ecodTopic['name'], ENT_QUOTES, 'UTF-8') . '，或到后台专题里手动挑稿'); ?>
     <?php else: ?>
         <?php
         $ecodTopicMode = ecod_list_force_mode();

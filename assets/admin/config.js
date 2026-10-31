@@ -579,10 +579,10 @@
      * 图片字段 → 媒体库选图
      * 原生 input / textarea 仍是值载体，选完只是写值 + 触发事件
      * ---------------------------------------------------------------- */
-    var MD_ICON = '<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" '
-        + 'stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">'
-        + '<rect x="3" y="4" width="18" height="16" rx="3"/><circle cx="8.5" cy="9.5" r="1.5"/>'
-        + '<path d="M21 16l-4.5-4.5L6 20"/></svg>';
+    /* 图标与 components/icons-data.php 同源（css.gg 填充风格，build/icons.mjs 生成） */
+    var MD_ICON = '<svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor">'
+        + '<path fill-rule="evenodd" clip-rule="evenodd" d="M7 7C5.34315 7 4 8.34315 4 10C4 11.6569 5.34315 13 7 13C8.65685 13 10 11.6569 10 10C10 8.34315 8.65685 7 7 7ZM6 10C6 9.44772 6.44772 9 7 9C7.55228 9 8 9.44772 8 10C8 10.5523 7.55228 11 7 11C6.44772 11 6 10.5523 6 10Z"/>'
+        + '<path fill-rule="evenodd" clip-rule="evenodd" d="M3 3C1.34315 3 0 4.34315 0 6V18C0 19.6569 1.34315 21 3 21H21C22.6569 21 24 19.6569 24 18V6C24 4.34315 22.6569 3 21 3H3ZM21 5H3C2.44772 5 2 5.44772 2 6V18C2 18.5523 2.44772 19 3 19H7.31374L14.1924 12.1214C15.364 10.9498 17.2635 10.9498 18.435 12.1214L22 15.6863V6C22 5.44772 21.5523 5 21 5ZM21 19H10.1422L15.6066 13.5356C15.9971 13.145 16.6303 13.145 17.0208 13.5356L21.907 18.4217C21.7479 18.7633 21.4016 19 21 19Z"/></svg>';
 
     /**
      * 给一个文本控件套上「预览 + 选择图片」
@@ -779,6 +779,209 @@
     }
 
     /* ------------------------------------------------------------------
+     * 行表格字段（奖品池 / 商品列表 / 右键自定义项）
+     *
+     * 底层仍是原生 textarea：一行一项、字段用 | 分隔，后端解析零改动，
+     * 旧数据与导出配置完全兼容；JS 不可用时退回原生 textarea 直接编辑。
+     * 列定义（顺序 = 存储顺序）在前端登记，PHP 只输出 data-ecod-rows="<key>"。
+     * ---------------------------------------------------------------- */
+    var ROWSPEC = {
+        lottery: {
+            cols: [
+                { k: 'name', t: '奖品名称', w: 2.0, ph: '谢谢参与' },
+                { k: 'weight', t: '权重', w: .8, type: 'num', ph: '60' },
+                { k: 'stock', t: '库存', w: .8, type: 'num', ph: '0 = 不限' },
+                { k: 'type', t: '类型', w: 1.1, type: 'select', opts: [['none', '谢谢参与'], ['credit', '积分'], ['vip', '会员'], ['text', '实物']] },
+                { k: 'value', t: '值', w: 1.6, ph: '数量 / 等级:天数 / 说明' }
+            ],
+            add: '添加奖品'
+        },
+        shop: {
+            cols: [
+                { k: 'name', t: '商品名称', w: 2.0, ph: '会员 7 天' },
+                { k: 'price', t: '价格', w: .8, type: 'num', ph: '积分' },
+                { k: 'type', t: '类型', w: 1.1, type: 'select', opts: [['vip', '会员'], ['post', '单篇解锁'], ['text', '待发货']] },
+                { k: 'value', t: '值', w: 1.6, ph: '等级:天数 / 文章ID / 发货说明' },
+                { k: 'stock', t: '库存', w: .8, type: 'num', ph: '0 = 不限' },
+                { k: 'limit', t: '限购', w: .8, type: 'num', ph: '0 = 不限' }
+            ],
+            add: '添加商品'
+        },
+        ctx: {
+            cols: [
+                { k: 'label', t: '菜单文字', w: 1.4, ph: '关于本站' },
+                { k: 'url', t: '链接地址', w: 2.6, ph: '/about 或 https://…' },
+                { k: 'blank', t: '新窗口', w: .8, type: 'select', opts: [['0', '否'], ['1', '是']] }
+            ],
+            add: '添加菜单项'
+        }
+    };
+
+    function enhanceRows() {
+        $$('[data-ecod-rows]', admin).forEach(function (ta) {
+            if (!(ta instanceof HTMLTextAreaElement) || ta.dataset.ecodRowsReady === '1') {
+                return;
+            }
+            var spec = ROWSPEC[ta.getAttribute('data-ecod-rows')];
+            if (!spec || !ta.parentNode) {
+                return;
+            }
+            ta.dataset.ecodRowsReady = '1';
+
+            var wrap = document.createElement('div');
+            wrap.className = 'ecod-rows';
+
+            var head = document.createElement('div');
+            head.className = 'ecod-rows__head';
+            head.innerHTML = spec.cols.map(function (c) {
+                return '<span style="flex:' + c.w + '">' + esc(c.t) + '</span>';
+            }).join('') + '<span class="ecod-rows__hdgap"></span>';
+            wrap.appendChild(head);
+
+            var list = document.createElement('div');
+            list.className = 'ecod-rows__list';
+            wrap.appendChild(list);
+
+            var add = document.createElement('button');
+            add.type = 'button';
+            add.className = 'ecod-rows__add';
+            add.textContent = '+ ' + spec.add;
+            wrap.appendChild(add);
+
+            /* 读：按行切，按列序对齐（尾部空字段保留，PHP explode 语义一致） */
+            function readRows() {
+                return String(ta.value || '').split(/\r?\n/).map(function (line) {
+                    return line.replace(/\s+$/, '');
+                }).filter(function (line) {
+                    return line.trim() !== '';
+                }).map(function (line) {
+                    var parts = line.split('|');
+                    var row = {};
+                    spec.cols.forEach(function (c, i) {
+                        row[c.k] = (parts[i] == null ? '' : String(parts[i])).trim();
+                    });
+                    return row;
+                });
+            }
+
+            function writeRows(rows) {
+                ta.value = rows.map(function (row) {
+                    return spec.cols.map(function (c) {
+                        return row[c.k] == null ? '' : String(row[c.k]);
+                    }).join('|');
+                }).join('\n');
+                ta.dispatchEvent(new Event('input', { bubbles: true }));
+                ta.dispatchEvent(new Event('change', { bubbles: true }));
+            }
+
+            function paint() {
+                var rows = readRows();
+                list.innerHTML = '';
+
+                rows.forEach(function (row, index) {
+                    var line = document.createElement('div');
+                    line.className = 'ecod-rows__row';
+
+                    spec.cols.forEach(function (c) {
+                        var input;
+                        if (c.type === 'select') {
+                            input = document.createElement('select');
+                            c.opts.forEach(function (pair) {
+                                var opt = document.createElement('option');
+                                opt.value = pair[0];
+                                opt.textContent = pair[1];
+                                input.appendChild(opt);
+                            });
+                            var known = c.opts.some(function (pair) { return pair[0] === row[c.k]; });
+                            input.value = known ? row[c.k] : c.opts[0][0];
+                        } else {
+                            input = document.createElement('input');
+                            input.type = c.type === 'num' ? 'text' : 'text';
+                            input.inputMode = c.type === 'num' ? 'numeric' : 'text';
+                            input.value = row[c.k] || '';
+                            if (c.ph) {
+                                input.placeholder = c.ph;
+                            }
+                        }
+
+                        input.style.flex = c.w;
+                        input.className = 'ecod-rows__input';
+                        input.setAttribute('aria-label', c.t);
+                        input.addEventListener('input', sync);
+                        input.addEventListener('change', sync);
+
+                        line.appendChild(input);
+                    });
+
+                    var del = document.createElement('button');
+                    del.type = 'button';
+                    del.className = 'ecod-rows__del';
+                    del.title = '删除这一行';
+                    del.setAttribute('aria-label', '删除这一行');
+                    del.innerHTML = '&times;';
+                    line.appendChild(del);
+
+                    list.appendChild(line);
+                });
+
+                if (!rows.length) {
+                    var empty = document.createElement('p');
+                    empty.className = 'ecod-rows__empty';
+                    empty.textContent = '还没有内容，点下面的按钮添加一行';
+                    list.appendChild(empty);
+                }
+            }
+
+            /* DOM → textarea：逐行回收当前输入值 */
+            function sync() {
+                var rows = Array.prototype.map.call(list.querySelectorAll('.ecod-rows__row'), function (line) {
+                    var row = {};
+                    var fields = line.querySelectorAll('.ecod-rows__input');
+                    spec.cols.forEach(function (c, i) {
+                        row[c.k] = fields[i] ? String(fields[i].value || '').trim() : '';
+                    });
+                    return row;
+                });
+                writeRows(rows);
+            }
+
+            list.addEventListener('click', function (e) {
+                var del = e.target.closest ? e.target.closest('.ecod-rows__del') : null;
+                if (!del) {
+                    return;
+                }
+                var line = del.closest('.ecod-rows__row');
+                if (line) {
+                    line.parentNode.removeChild(line);
+                    sync();
+                    if (!list.querySelector('.ecod-rows__row')) {
+                        paint();
+                    }
+                }
+            });
+
+            add.addEventListener('click', function () {
+                var rows = readRows();
+                var blank = {};
+                spec.cols.forEach(function (c) {
+                    blank[c.k] = c.type === 'select' ? c.opts[0][0] : '';
+                });
+                rows.push(blank);
+                writeRows(rows);
+                paint();
+                var last = list.querySelector('.ecod-rows__row:last-child .ecod-rows__input');
+                if (last) {
+                    last.focus();
+                }
+            });
+
+            ta.parentNode.insertBefore(wrap, ta);
+            ta.classList.add('ecod-rows__raw');
+            paint();
+        });
+    }
+
+    /* ------------------------------------------------------------------
      * 颜色字段 → 取色器 + 十六进制文本双向同步
      * 原生 input 仍是值载体，导入导出与保存都不受影响
      * ---------------------------------------------------------------- */
@@ -940,106 +1143,20 @@
     }
 
     /* ------------------------------------------------------------------
-     * 卡片模式预览：版式分组顶部放迷你列表，切换模式即时换骨架
+     * 主色实时同步：改主色时把色值覆盖到根容器 --ea-brand，
+     * 滑块拇指、选中态等即时跟随（原骨架预览卡已移除）
      * ---------------------------------------------------------------- */
-    function enhanceCardPreview() {
-        var host = $('[data-fields="layout"]');
-        if (!host || host.querySelector('[data-ecod-card-preview]')) {
-            return;
-        }
-        /* 字段已被 layout() 移出 form，必须从 admin 面板里找 */
-        var select = $('[name="ECardMode"]', admin);
-
-        var box = document.createElement('div');
-        box.className = 'ecod-cprev';
-        box.setAttribute('data-ecod-card-preview', '1');
-        box.setAttribute('aria-hidden', 'true');
-        box.innerHTML =
-            '<div class="ecod-cprev__list">' +
-            '<span class="ecod-cprev__item"><i class="ecod-cprev__thumb"></i><span><b></b><em></em></span></span>' +
-            '<span class="ecod-cprev__item"><i class="ecod-cprev__thumb"></i><span><b></b><em></em></span></span>' +
-            '<span class="ecod-cprev__item"><i class="ecod-cprev__thumb"></i><span><b></b><em></em></span></span>' +
-            '</div>' +
-            '<small>预览：切换卡片模式即时看到骨架变化，保存后应用到全站</small>';
-
-        function paint() {
-            box.setAttribute('data-mode', select ? select.value : 'default');
-        }
-
-        host.insertBefore(box, host.firstChild);
-        if (select) {
-            select.addEventListener('change', paint);
-        }
-        paint();
-    }
-
-    /* ------------------------------------------------------------------
-     * 站点背景预览：外观分组顶部，切换背景即时看效果
-     * ---------------------------------------------------------------- */
-    function enhanceBackdropPreview() {
-        var host = $('[data-fields="appearance"]');
-        if (!host || host.querySelector('[data-ecod-bd-preview]')) {
-            return;
-        }
-        /* 字段已被 layout() 移出 form，必须从 admin 面板里找 */
-        var select = $('[name="EBackdrop"]', admin);
-
-        var box = document.createElement('div');
-        box.className = 'ecod-bdprev';
-        box.setAttribute('data-ecod-bd-preview', '1');
-        box.setAttribute('aria-hidden', 'true');
-        box.innerHTML =
-            '<div class="ecod-bdprev__stage"><span class="ecod-bdprev__card"><b></b><i></i><i></i></span></div>' +
-            '<small>预览：站点背景为纯 CSS 渐变，不产生额外请求</small>';
-
-        function paint() {
-            box.setAttribute('data-bd', select ? select.value : 'none');
-        }
-
-        host.insertBefore(box, host.firstChild);
-        if (select) {
-            select.addEventListener('change', paint);
-        }
-        paint();
-    }
-
-    /* ------------------------------------------------------------------
-     * 主色迷你预览：站点分组顶部放一张迷你卡片，改主色即时看到效果
-     * ---------------------------------------------------------------- */
-    function enhancePreview() {
-        var host = $('[data-fields="brand"]');
-        if (!host || host.querySelector('[data-ecod-preview]')) {
-            return;
-        }
-        /* 字段已被 layout() 移出 form，必须从 admin 面板里找 */
+    function syncBrandLive() {
         var primary = $('[name="EPrimary"]', admin);
-
-        var box = document.createElement('div');
-        box.className = 'ecod-preview';
-        box.setAttribute('data-ecod-preview', '1');
-        box.setAttribute('aria-hidden', 'true');
-        box.innerHTML =
-            '<div class="ecod-preview__card">' +
-            '<span class="ecod-preview__thumb"></span>' +
-            '<span class="ecod-preview__body">' +
-            '<b>文章标题示例</b>' +
-            '<i></i><i></i>' +
-            '<em>按钮 · 链接 · 高亮都会跟随主色</em>' +
-            '</span></div>' +
-            '<small>预览：修改主色即时生效，保存后应用到全站</small>';
-
+        if (!primary) {
+            return;
+        }
         function paint() {
-            var v = normalizeHex(primary && primary.value) || '#4f6ef2';
-            box.style.setProperty('--ecod-primary', v);
-            /* 同步给其他预览（卡片模式骨架）与滑块拇指色 */
-            admin.style.setProperty('--ecod-primary', v);
+            var v = normalizeHex(primary.value) || '#4f6ef2';
+            admin.style.setProperty('--ea-brand', v);
         }
-
-        host.insertBefore(box, host.firstChild);
-        if (primary) {
-            primary.addEventListener('input', paint);
-            primary.addEventListener('change', paint);
-        }
+        primary.addEventListener('input', paint);
+        primary.addEventListener('change', paint);
         paint();
     }
 
@@ -1124,8 +1241,8 @@
      * 完成态由三类信号判定：字段值 / 面板访问记录（sessionStorage）/
      * 操作标记（localStorage），勾掉一项就少一项焦虑。
      * ---------------------------------------------------------------- */
-    var CHECK_SVG = '<svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" '
-        + 'stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>';
+    var CHECK_SVG = '<svg viewBox="0 0 24 24" width="11" height="11" fill="currentColor">'
+        + '<path d="M10.5858 13.4142L7.75735 10.5858L6.34314 12L10.5858 16.2427L17.6568 9.1716L16.2426 7.75739L10.5858 13.4142Z"/></svg>';
     var FLAG_KEY = 'ecod-admin-flags';
 
     function readFlags() {
@@ -1579,7 +1696,7 @@
 
         /* 窄屏是上下堆叠布局，交回整页滚动 */
         if (window.innerWidth <= 900) {
-            admin.style.removeProperty('--ecod-admin-h');
+            admin.style.removeProperty('--ea-admin-h');
             document.body.classList.remove('ecod-frame');
             return;
         }
@@ -1595,7 +1712,7 @@
         var gap = 14;                     /* 底部留白，别贴着视口底边 */
         var min = 420;                    /* 太矮时保底，避免内容区被压扁 */
         var h = Math.max(min, Math.round(window.innerHeight - top - gap));
-        admin.style.setProperty('--ecod-admin-h', h + 'px');
+        admin.style.setProperty('--ea-admin-h', h + 'px');
     }
 
     function scheduleFrame() {
@@ -1767,11 +1884,10 @@
     enhanceFields();
     initConditions();
     enhanceMedia();
+    enhanceRows();
     enhanceColor();
     enhanceRange();
-    enhancePreview();
-    enhanceCardPreview();
-    enhanceBackdropPreview();
+    syncBrandLive();
 
     buildSearchIndex();
     watchWidth();

@@ -61,7 +61,8 @@ if ($ecodActDate === '' && !empty($this->created)) {
         <span class="ecod_likers__av" aria-hidden="true">
             <?php foreach ($ecodLikers as $ecodLiker): ?>
                 <?php if ($ecodLiker['avatar'] !== ''): ?>
-                    <img src="<?php echo htmlspecialchars($ecodLiker['avatar'], ENT_QUOTES, 'UTF-8'); ?>" alt="" width="24" height="24" loading="lazy" decoding="async">
+                    <?php /* data-initial：头像 URL 失效时 JS 兜底替换成同款首字渐变圆 */ ?>
+                    <img src="<?php echo htmlspecialchars($ecodLiker['avatar'], ENT_QUOTES, 'UTF-8'); ?>" alt="" width="24" height="24" loading="lazy" decoding="async" data-initial="<?php echo htmlspecialchars(mb_substr($ecodLiker['name'], 0, 1, 'UTF-8'), ENT_QUOTES, 'UTF-8'); ?>">
                 <?php else: ?>
                     <i><?php echo htmlspecialchars(mb_substr($ecodLiker['name'], 0, 1, 'UTF-8'), ENT_QUOTES, 'UTF-8'); ?></i>
                 <?php endif; ?>
@@ -76,6 +77,7 @@ if ($ecodActDate === '' && !empty($this->created)) {
         <?php $ecodLikeNum = ecod_likes((int) $this->cid); ?>
         <button type="button" class="ecod_actbtn" data-ecod-act="like" data-cid="<?php echo (int) $this->cid; ?>" aria-pressed="false">
             <?php echo ecod_icon('heart', 20); ?>
+            <span class="ecod-sr">点赞</span>
             <b class="ecod_actbtn__lb<?php echo $ecodLikeNum > 0 ? ' is-num' : ''; ?>" data-ecod-like-num="short"><?php echo $ecodLikeNum > 0 ? ecod_num_short($ecodLikeNum) : '点赞'; ?></b>
         </button>
     <?php endif; ?>
@@ -83,6 +85,7 @@ if ($ecodActDate === '' && !empty($this->created)) {
         <?php $ecodFavNum = ecod_favs_count((int) $this->cid); ?>
         <button type="button" class="ecod_actbtn" data-ecod-act="fav" aria-pressed="false">
             <?php echo ecod_icon('star', 20); ?>
+            <span class="ecod-sr">收藏</span>
             <b class="ecod_actbtn__lb<?php echo $ecodFavNum > 0 ? ' is-num' : ''; ?>" data-ecod-fav-num="short"><?php echo $ecodFavNum > 0 ? ecod_num_short($ecodFavNum) : '收藏'; ?></b>
         </button>
     <?php endif; ?>
@@ -186,6 +189,7 @@ if ($ecodActDate === '' && !empty($this->created)) {
     ?>
         <a class="ecod_actbtn" href="#comments">
             <?php echo ecod_icon('comment', 20); ?>
+            <span class="ecod-sr">讨论</span>
             <b class="ecod_actbtn__lb<?php echo $ecodActCmtNum > 0 ? ' is-num' : ''; ?>"><?php echo $ecodActCmtNum > 0 ? $ecodActCmtNum . ' 讨论' : '讨论'; ?></b>
         </a>
     <?php endif; ?>

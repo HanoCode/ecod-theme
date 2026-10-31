@@ -127,14 +127,6 @@ function ecod_credits_today_amount(int $uid, string $type): int
 /**
  * 每日任务发奖（签到 / 评论 / 被赞 / 投稿共用）
  *
- * 配置：ECr{Task} 单次奖励，ECr{Task}Cap 每日上限（0 = 不限）。
- * 已达上限、奖励为 0 或积分未开启时静默跳过。
- *
- * @return array{ok:bool, delta?:int, balance?:int}
- */
-/**
- * 每日任务发奖（签到 / 评论 / 被赞 / 投稿共用）
- *
  * 配置键显式映射（like_recv 这类带下划线的任务名不能机械拼接，
  * ECrLike_recv 与设置页的 ECrLikeRecv / ECrLikeCap 对不上）。
  * 已达上限、奖励为 0 或积分未开启时静默跳过。
@@ -172,14 +164,64 @@ function ecod_credits_award(int $uid, string $task, string $ref = '', string $no
         return ['ok' => false];
     }
 
-    return ecod_credits_add($uid, $delta, $task, $ref, $note);
+    $out = ecod_credits_add($uid, $delta, $task, $ref, $note);
+    /* 前端要拿实际到账数展示「+N」；记账成功才带 */
+    if (!empty($out['ok'])) {
+        $out['delta'] = $delta;
+    }
+
+    return $out;
+}
+
+/**
+ * 连续签到天数
+ *
+ * 口径是「截至今天的连续签到天数」：今天签了 → 含今天；今天还没签 →
+ * 算到昨天（挂件显示「已连续 N 天，今天还没打卡」，打卡成功后正好 N+1）。
+ * 逐日对账最多回看 90 天，中断即停；日期在 PHP 侧归一化
+ * （FROM_UNIXTIME / date() 各库方言不同，不走 SQL）。
+ */
+function ecod_credits_streak(int $uid): int
+{
+    if ($uid <= 0) {
+        return 0;
+    }
+
+    try {
+        $db = \Typecho\Db::get();
+        $rows = $db->fetchAll(
+            $db->select('created')->from('table.ecod_credits')
+                ->where('uid = ?', $uid)->where('type = ?', 'checkin')
+                ->where('created >= ?', ecod_credits_day_start() - 89 * 86400)
+        );
+    } catch (\Throwable $e) {
+        return 0;
+    }
+
+    $set = [];
+    foreach ($rows ?: [] as $one) {
+        $set[date('Y-m-d', (int) $one['created'])] = true;
+    }
+
+    $start = ecod_credits_day_start();
+    /* 今天还没签就从昨天起算：刚过 0 点时连签不该显示成 0 */
+    $from = isset($set[date('Y-m-d', $start)]) ? 0 : 1;
+    $streak = 0;
+    for ($i = $from; $i <= $from + 89; $i++) {
+        if (!isset($set[date('Y-m-d', $start - $i * 86400)])) {
+            break;
+        }
+        $streak++;
+    }
+
+    return $streak;
 }
 
 /**
  * 每日签到（独立的 type=checkin，一天只允许一条）
  *
- * 连续天数按「含今天的连续 checkin 日」计算：从今天往前逐日对账，
- * 最多回看 90 天，中断即停。
+ * 连续天数按「含今天的连续 checkin 日」计算，与挂件展示共用
+ * ecod_credits_streak()：签到前的「截至昨天」天数 + 1。
  *
  * @return array{ok:bool, error?:string, delta?:int, balance?:int, streak?:int, signed?:bool}
  */
@@ -203,25 +245,9 @@ function ecod_credits_checkin(int $uid): array
             return ['ok' => false, 'error' => '今天已经签到过了', 'signed' => true];
         }
 
-        /* 连续天数：今天记一条后，从今天往回数连续有 checkin 的日子。
-           日期在 PHP 侧归一化（FROM_UNIXTIME / date() 各库方言不同，不走 SQL） */
-        $rows = $db->fetchAll(
-            $db->select('created')->from('table.ecod_credits')
-                ->where('uid = ?', $uid)->where('type = ?', 'checkin')
-                ->where('created >= ?', ecod_credits_day_start() - 89 * 86400)
-        );
-        $set = [];
-        foreach ($rows ?: [] as $one) {
-            $set[date('Y-m-d', (int) $one['created'])] = true;
-        }
-        $streak = 1;
-        for ($i = 1; $i <= 90; $i++) {
-            if (isset($set[date('Y-m-d', ecod_credits_day_start() - $i * 86400)])) {
-                $streak++;
-            } else {
-                break;
-            }
-        }
+        /* 今天还没记流水，helper 返回的是截至昨天的连签，本次 +1 */
+        $prev = ecod_credits_streak($uid);
+        $streak = $prev > 0 ? $prev + 1 : 1;
 
         $result = ecod_credits_award($uid, 'checkin', 'streak:' . $streak, '连续签到 ' . $streak . ' 天');
         if (empty($result['ok'])) {
@@ -312,38 +338,63 @@ function ecod_credits_type_label(string $type, string $note = ''): string
 }
 
 /**
- * 最新积分动态（侧栏「更新动态」滚动播报的数据源，guaqi 式）
+ * 公开动态取数（签到挂件的打卡列表 / 侧栏滚动播报共用）
  *
- * 只取收入事件（delta > 0）并关联用户名；开关 ECrTicker 控制是否对外展示。
+ * 只取收入事件（delta > 0）；用户名走两步查询（join 别名在 Typecho 里
+ * 不可靠，且换库方言时 raw SQL 会先坏）。用户已删除的流水按无名丢弃。
  *
+ * @param string            $type    只取某个流水类型；空串 = 全部类型
+ * @param array<int,string> $exclude 不对外展示的类型（管理员手工调整属于账务，不播报）
  * @return array<int, array{uid:int,name:string,type:string,delta:int,created:int}>
  */
-function ecod_credits_ticker(int $limit = 10): array
+function ecod_credits_public_rows(int $limit, string $type = '', array $exclude = []): array
 {
+    $limit = max(1, min(30, $limit));
+
     try {
         $db = \Typecho\Db::get();
-        $creditsTable = ecod_credits_table();
-        $usersTable = $db->getPrefix() . 'users';
-        $rows = $db->fetchAll(
-            'SELECT c.delta, c.type, c.created, u.uid, u.screenName, u.name'
-            . ' FROM ' . $creditsTable . ' c'
-            . ' INNER JOIN ' . $usersTable . ' u ON u.uid = c.uid'
-            . ' WHERE c.delta > 0'
-            . ' ORDER BY c.id DESC'
-            . ' LIMIT ' . max(1, min(30, $limit))
+
+        $query = $db->select('uid', 'type', 'delta', 'created')->from('table.ecod_credits')
+            ->where('delta > 0');
+        if ($type !== '') {
+            $query->where('type = ?', $type);
+        }
+        if ($exclude) {
+            $query->where('type NOT IN ?', array_values($exclude));
+        }
+        $rows = $db->fetchAll($query->order('id', \Typecho\Db::SORT_DESC)->limit($limit));
+        if (!$rows) {
+            return [];
+        }
+
+        $names = [];
+        $uids = array_values(array_unique(array_map('intval', array_column($rows, 'uid'))));
+        if (!$uids) {
+            return [];
+        }
+        $users = $db->fetchAll(
+            $db->select('uid', 'screenName', 'name')->from('table.users')
+                ->where('uid IN ?', $uids)
         );
-        $out = [];
-        foreach ($rows ?: [] as $row) {
-            $name = (string) ($row['screenName'] ?? '');
+        foreach ($users ?: [] as $user) {
+            $name = (string) ($user['screenName'] ?? '');
             if ($name === '') {
-                $name = (string) ($row['name'] ?? '');
+                $name = (string) ($user['name'] ?? '');
             }
-            if ($name === '') {
-                continue;
+            if ($name !== '') {
+                $names[(int) $user['uid']] = $name;
+            }
+        }
+
+        $out = [];
+        foreach ($rows as $row) {
+            $uid = (int) $row['uid'];
+            if (!isset($names[$uid])) {
+                continue;   /* 用户已删除：不留无名动态 */
             }
             $out[] = [
-                'uid'     => (int) $row['uid'],
-                'name'    => $name,
+                'uid'     => $uid,
+                'name'    => $names[$uid],
                 'type'    => (string) $row['type'],
                 'delta'   => (int) $row['delta'],
                 'created' => (int) $row['created'],
@@ -354,3 +405,30 @@ function ecod_credits_ticker(int $limit = 10): array
         return [];
     }
 }
+
+/**
+ * 最新打卡动态（签到挂件的动态列表数据源）
+ *
+ * 只取 type=checkin 的收入事件并带上用户名；对外展示与否沿用
+ * 「动态播报」隐私开关 ECrTicker（事件涉及用户名，尊重隐私口径）。
+ *
+ * @return array<int, array{uid:int,name:string,type:string,delta:int,created:int}>
+ */
+function ecod_credits_checkin_feed(int $limit = 8): array
+{
+    return ecod_credits_public_rows($limit, 'checkin');
+}
+
+/**
+ * 最新积分动态（侧栏「更新动态」滚动播报的数据源，guaqi 式）
+ *
+ * 收入事件（delta > 0）并带用户名；`admin` 是站长手工调账，
+ * 属于账务不属于「用户赚到分」，不进公开播报。
+ *
+ * @return array<int, array{uid:int,name:string,type:string,delta:int,created:int}>
+ */
+function ecod_credits_ticker(int $limit = 10): array
+{
+    return ecod_credits_public_rows($limit, '', ['admin']);
+}
+

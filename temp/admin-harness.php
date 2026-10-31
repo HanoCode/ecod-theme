@@ -31,6 +31,11 @@ namespace Widget {
             return $a . '?_=stub';
         }
 
+        public function getToken(string $suffix = null): string
+        {
+            return 'stub-token';
+        }
+
         public static function alloc(): self
         {
             static $i;

@@ -64,7 +64,7 @@
             var t = document.getElementById(id);
             if (!t) return;
             var y = t.getBoundingClientRect().top + window.scrollY - headerOffset() + 12;
-            window.scrollTo({ top: Math.max(y, 0), behavior: 'smooth' });
+            window.scrollTo({ top: Math.max(y, 0), behavior: Ecod.scrollBehavior() });
             if (history.replaceState) history.replaceState(null, '', '#' + id);
         }
 
@@ -111,7 +111,7 @@
                 var cur = links[next];
                 if (cur && list.scrollHeight > list.clientHeight + 8) {
                     var top = cur.offsetTop - list.clientHeight / 2 + cur.offsetHeight / 2;
-                    list.scrollTo({ top: Math.max(top, 0), behavior: 'smooth' });
+                    list.scrollTo({ top: Math.max(top, 0), behavior: Ecod.scrollBehavior() });
                 }
             }
 
@@ -136,7 +136,7 @@
             var showProg = CFG.tocProgress !== false;
             floatBox.innerHTML =
                 '<button type="button" class="ecod_floattoc__btn" data-ecod-ft-btn aria-expanded="false" aria-haspopup="true">'
-                + '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 6h13M8 12h13M8 18h13"/><path d="M3 6h.01M3 12h.01M3 18h.01"/></svg>'
+                + '<svg viewBox="0 0 24 24" width="15" height="15" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" clip-rule="evenodd" d="M20 4H4C3.44771 4 3 4.44772 3 5V19C3 19.5523 3.44772 20 4 20H20C20.5523 20 21 19.5523 21 19V5C21 4.44771 20.5523 4 20 4ZM4 2C2.34315 2 1 3.34315 1 5V19C1 20.6569 2.34315 22 4 22H20C21.6569 22 23 20.6569 23 19V5C23 3.34315 21.6569 2 20 2H4ZM6 7H8V9H6V7ZM11 7C10.4477 7 10 7.44772 10 8C10 8.55228 10.4477 9 11 9H17C17.5523 9 18 8.55228 18 8C18 7.44772 17.5523 7 17 7H11ZM8 11H6V13H8V11ZM10 12C10 11.4477 10.4477 11 11 11H17C17.5523 11 18 11.4477 18 12C18 12.5523 17.5523 13 17 13H11C10.4477 13 10 12.5523 10 12ZM8 15H6V17H8V15ZM10 16C10 15.4477 10.4477 15 11 15H17C17.5523 15 18 15.4477 18 16C18 16.5523 17.5523 17 17 17H11C10.4477 17 10 16.5523 10 16Z"/></svg>'
                 + '<span>目录</span>'
                 + '</button>'
                 + '<div class="ecod_floattoc__pop" data-ecod-ft-pop role="menu" aria-label="文章目录">'
@@ -181,14 +181,27 @@
             once(floatBox, 'ftLink', 'click', function (e) {
                 if (e.target.closest('.ecod_floattoc__list a')) setOpen(false);
             });
-            /* 点击外部 / Esc 收起；PJAX 换页后容器被替换，监听自动解绑 */
+            /* 点击外部 / Esc 收起；↑↓ 在目录项间循环（role=menu 的键盘约定）；
+               PJAX 换页后容器被替换，监听自动解绑 */
             document.addEventListener('click', function onDoc(e) {
                 if (!floatBox.isConnected) { document.removeEventListener('click', onDoc); return; }
                 if (floatBox.classList.contains('is-open') && !floatBox.contains(e.target)) setOpen(false);
             });
             document.addEventListener('keydown', function onKey(e) {
                 if (!floatBox.isConnected) { document.removeEventListener('keydown', onKey); return; }
-                if (e.key === 'Escape' && floatBox.classList.contains('is-open')) setOpen(false);
+                if (e.key === 'Escape' && floatBox.classList.contains('is-open') && !Ecod.dialogActive()) { setOpen(false); return; }
+                if (e.key !== 'ArrowDown' && e.key !== 'ArrowUp') return;
+                if (!floatBox.classList.contains('is-open')) return;
+                var items = Array.prototype.slice.call(list.querySelectorAll('a'));
+                if (!items.length) return;
+                var active = document.activeElement;
+                var cur = items.indexOf(active);
+                if (cur < 0 && active !== btn) return;
+                e.preventDefault();
+                var next = cur < 0
+                    ? (e.key === 'ArrowDown' ? 0 : items.length - 1)
+                    : (e.key === 'ArrowDown' ? (cur + 1) % items.length : (cur - 1 + items.length) % items.length);
+                items[next].focus();
             });
             return;
         }
@@ -400,7 +413,7 @@
                 + '<div class="ecod_lightbox__bar">'
                 + '  <span class="ecod_lightbox__cap"><b data-lb-name></b><span data-lb-meta></span></span>'
                 + '  <span class="ecod_lightbox__actions">'
-                + '    <a class="ecod_lightbox__btn" data-lb-download download target="_blank" rel="noopener">' + Ecod.icon('download', 14) + '下载</a>'
+                + '    <a class="ecod_lightbox__btn" data-lb-download href="#" download target="_blank" rel="noopener">' + Ecod.icon('download', 14) + '下载</a>'
                 + '    <button type="button" class="ecod_lightbox__btn" data-lb-close>' + Ecod.icon('x', 14) + '关闭</button>'
                 + '  </span>'
                 + '</div>';
@@ -455,7 +468,7 @@
             isOpen = false;
             lb.classList.remove('is-open');
             img.removeAttribute('src');
-            Ecod.dialogClose();
+            Ecod.dialogClose(lb);
         }
 
         function open(src, alt, group, start) {
@@ -465,7 +478,8 @@
             isOpen = true;
             render();
             lb.classList.add('is-open');
-            Ecod.dialogOpen(lb, lb.querySelector('[data-lb-close]'));
+            /* onClose：Esc 由弹层原语统一收口，触发本组件的视觉关闭 */
+            Ecod.dialogOpen(lb, lb.querySelector('[data-lb-close]'), close);
         }
 
         function nav(step) {
@@ -486,13 +500,10 @@
         prevBtn.addEventListener('click', function () { nav(-1); });
         nextBtn.addEventListener('click', function () { nav(1); });
 
-        /* 键盘：ESC 关闭，← → 切换 */
+        /* 键盘：← → 切换（Esc 由弹层原语承担，经 onClose 调 close()） */
         document.addEventListener('keydown', function (e) {
             if (!isOpen) return;
-            if (e.key === 'Escape') {
-                e.preventDefault();
-                close();
-            } else if (e.key === 'ArrowLeft') {
+            if (e.key === 'ArrowLeft') {
                 e.preventDefault();
                 nav(-1);
             } else if (e.key === 'ArrowRight') {
@@ -784,9 +795,11 @@
             e.preventDefault();
             var target = document.getElementById('comments');
             if (!target) return;
-            target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            target.scrollIntoView({ behavior: Ecod.scrollBehavior(), block: 'start' });
             setTimeout(function () {
-                if (window.innerWidth > 768) return;
+                /* 与 quickbar 显示断点（CSS ≤680px）对齐，768 会导致 681~768px 区间
+                   quickbar 可见但永远走不进聚焦分支 */
+                if (window.innerWidth > 680) return;
                 var ta = document.getElementById('textarea');
                 if (ta) ta.focus({ preventScroll: true });
             }, 480);
@@ -808,7 +821,7 @@
             '<div class="ecod_shcard__panel" role="dialog" aria-modal="true" aria-label="文章分享图片">' +
             '  <div class="ecod_shcard__head">分享图片' +
             '    <button type="button" class="ecod_shcard__x" data-ecod-shcard-close aria-label="关闭">' +
-            '      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg>' +
+            '      <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M6.2253 4.81108C5.83477 4.42056 5.20161 4.42056 4.81108 4.81108C4.42056 5.20161 4.42056 5.83477 4.81108 6.2253L10.5858 12L4.81114 17.7747C4.42062 18.1652 4.42062 18.7984 4.81114 19.1889C5.20167 19.5794 5.83483 19.5794 6.22535 19.1889L12 13.4142L17.7747 19.1889C18.1652 19.5794 18.7984 19.5794 19.1889 19.1889C19.5794 18.7984 19.5794 18.1652 19.1889 17.7747L13.4142 12L19.189 6.2253C19.5795 5.83477 19.5795 5.20161 19.189 4.81108C18.7985 4.42056 18.1653 4.42056 17.7748 4.81108L12 10.5858L6.2253 4.81108Z"/></svg>' +
             '    </button>' +
             '  </div>' +
             '  <div class="ecod_shcard__body">' +
@@ -817,7 +830,7 @@
             '  </div>' +
             '  <div class="ecod_shcard__ops">' +
             '    <button type="button" class="ecod_shcard__save" data-ecod-shcard-save>' +
-            '      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5M12 15V3"/></svg>' +
+            '      <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M11 5C11 4.44772 11.4477 4 12 4C12.5523 4 13 4.44772 13 5V12.1578L16.2428 8.91501L17.657 10.3292L12.0001 15.9861L6.34326 10.3292L7.75748 8.91501L11 12.1575V5Z"/><path d="M4 14H6V18H18V14H20V18C20 19.1046 19.1046 20 18 20H6C4.89543 20 4 19.1046 4 18V14Z"/></svg>' +
             '      保存图片' +
             '    </button>' +
             '    <span class="ecod_shcard__tip">手机端可长按图片保存 / 转发</span>' +
@@ -829,9 +842,6 @@
             if (modal.hidden || !e.target.closest || !e.target.closest('[data-ecod-shcard-close]')) return;
             close();
         });
-        once(document, 'shcard-esc', 'keydown', function (e) {
-            if (e.key === 'Escape' && !modal.hidden) close();
-        });
         once(document, 'shcard-save', 'click', function (e) {
             /* 必须点在「保存图片」上且弹层打开，否则页面任意点击都会触发下载 */
             if (modal.hidden || !e.target.closest || !e.target.closest('[data-ecod-shcard-save]')) return;
@@ -841,16 +851,15 @@
             save(img);
         });
 
+        /* Esc / 焦点陷阱 / 滚动锁由弹层原语承担 */
         function open() {
             modal.hidden = false;
-            document.documentElement.classList.add('ecod-shcard-lock');
-            Ecod.dialogOpen(modal.querySelector('.ecod_shcard__panel'), modal.querySelector('.ecod_shcard__x'));
+            Ecod.dialogOpen(modal.querySelector('.ecod_shcard__panel'), modal.querySelector('.ecod_shcard__x'), close);
         }
         function close() {
             modal.hidden = true;
-            document.documentElement.classList.remove('ecod-shcard-lock');
             modal.dataset.busy = '';
-            Ecod.dialogClose();
+            Ecod.dialogClose(modal.querySelector('.ecod_shcard__panel'));
         }
 
         function save(img) {
@@ -1539,7 +1548,7 @@
         });
 
         once(document, 'emojiEsc', 'keydown', function (e) {
-            if (e.key === 'Escape') emojiClose();
+            if (e.key === 'Escape' && !Ecod.dialogActive()) emojiClose();
         });
     };
 
@@ -1555,31 +1564,41 @@
             var panels = box.querySelectorAll('[data-ecod-panel]');
             if (!nav) return;
 
+            function activate(index, moveFocus) {
+                var key = btns[index].getAttribute('data-ecod-tab');
+                Array.prototype.forEach.call(btns, function (one, i) {
+                    var on = i === index;
+                    one.classList.toggle('is-active', on);
+                    one.setAttribute('aria-selected', on ? 'true' : 'false');
+                    /* roving tabindex：Tab 只进当前页签，页签间用方向键 */
+                    one.setAttribute('tabindex', on ? '0' : '-1');
+                    if (on && moveFocus) one.focus();
+                });
+                Array.prototype.forEach.call(panels, function (one) {
+                    one.classList.toggle('is-active', one.getAttribute('data-ecod-panel') === key);
+                });
+            }
+
             nav.addEventListener('click', function (e) {
                 var btn = e.target.closest ? e.target.closest('[data-ecod-tab]') : null;
                 if (!btn) return;
                 e.preventDefault();
-
-                var index = btn.getAttribute('data-ecod-tab');
-                Array.prototype.forEach.call(btns, function (one) {
-                    var on = one.getAttribute('data-ecod-tab') === index;
-                    one.classList.toggle('is-active', on);
-                    one.setAttribute('aria-selected', on ? 'true' : 'false');
-                });
-                Array.prototype.forEach.call(panels, function (one) {
-                    one.classList.toggle('is-active', one.getAttribute('data-ecod-panel') === index);
-                });
+                activate(Array.prototype.indexOf.call(btns, btn), false);
             });
 
+            /* 与登录页三合一 tabs 同一套键盘约定：←→↑↓ 循环 + Home/End */
             nav.addEventListener('keydown', function (e) {
-                if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
                 var list = Array.prototype.slice.call(btns);
                 var current = list.indexOf(document.activeElement);
                 if (current < 0) return;
+                var next = -1;
+                if (e.key === 'ArrowRight' || e.key === 'ArrowDown') next = (current + 1) % list.length;
+                else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') next = (current - 1 + list.length) % list.length;
+                else if (e.key === 'Home') next = 0;
+                else if (e.key === 'End') next = list.length - 1;
+                if (next < 0) return;
                 e.preventDefault();
-                var next = (current + (e.key === 'ArrowRight' ? 1 : -1) + list.length) % list.length;
-                list[next].focus();
-                list[next].click();
+                activate(next, true);
             });
         });
     };
@@ -1745,7 +1764,7 @@
                         || document.getElementById('comment-' + maxId);
                     if (target) {
                         try {
-                            target.scrollIntoView({ block: 'center', behavior: 'smooth' });
+                            target.scrollIntoView({ block: 'center', behavior: Ecod.scrollBehavior() });
                         } catch (err) {
                             target.scrollIntoView();
                         }
@@ -1852,7 +1871,7 @@
                 try { ta.focus({ preventScroll: true }); } catch (err) { ta.focus(); }
             }
             try {
-                box.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+                box.scrollIntoView({ block: 'nearest', behavior: Ecod.scrollBehavior() });
             } catch (err) {
                 box.scrollIntoView(false);
             }
@@ -2220,7 +2239,9 @@
         });
     };
 
-    /* ---------- AI 摘要：文章页异步取数，失败静默隐藏 ---------- */
+    /* ---------- AI 摘要：文章页异步取数，失败静默隐藏 ----------
+       v2（设计稿 guaqi-reference §F1）：模型名角标、字数统计、
+       EAIMotion 打字机回放（尊重系统减少动态效果） */
     Ecod.initAi = function () {
         var box = document.querySelector('[data-ecod-ai]');
         if (!box || box.dataset.aiReady === '1') {
@@ -2240,15 +2261,60 @@
                     return;
                 }
                 var body = box.querySelector('[data-ecod-ai-body]');
+                var tag = box.querySelector('[data-ecod-ai-tag]');
+                var count = box.querySelector('[data-ecod-ai-count]');
+                if (tag && data.model) {
+                    tag.textContent = data.model;
+                    tag.hidden = false;
+                }
+                if (count) {
+                    var n = data.summary.replace(/\s/g, '').length;
+                    count.textContent = n + ' 字';
+                    count.hidden = false;
+                }
                 if (body) {
                     body.removeAttribute('aria-busy');
-                    body.textContent = data.summary;
+                    var typeOn = CFG.aiMotion && !Ecod.reduceMotion();
+                    if (!typeOn) {
+                        body.textContent = data.summary;
+                    } else {
+                        /* 打字机回放：rAF 步进，2.5s 内播完，期间不阻塞交互 */
+                        body.textContent = '';
+                        var total = data.summary.length;
+                        var start = 0;
+                        var step = Math.max(2, Math.ceil(total / 90));
+                        var tick = function () {
+                            start = Math.min(total, start + step);
+                            body.textContent = data.summary.slice(0, start);
+                            if (start < total) {
+                                requestAnimationFrame(tick);
+                            }
+                        };
+                        requestAnimationFrame(tick);
+                    }
                 }
                 box.hidden = false;
             })
             .catch(function () {
                 box.hidden = true;
             });
+    };
+
+    /* ---------- 评论解锁卡（F2）：平滑滚到评论区并聚焦输入框 ---------- */
+    Ecod.bindPayComment = function () {
+        document.querySelectorAll('[data-ecod-paycomment]').forEach(function (btn) {
+            if (btn.dataset.ecodBound) { return; }
+            btn.dataset.ecodBound = '1';
+            btn.addEventListener('click', function () {
+                var target = document.getElementById('comments');
+                if (!target) { return; }
+                target.scrollIntoView({ behavior: Ecod.reduceMotion() ? 'auto' : 'smooth', block: 'start' });
+                var input = document.getElementById('textarea');
+                if (input && window.matchMedia('(min-width: 769px)').matches) {
+                    setTimeout(function () { input.focus({ preventScroll: true }); }, Ecod.reduceMotion() ? 0 : 450);
+                }
+            });
+        });
     };
 
     /* 友链一键申请：弹窗提交 + 管理员待审核面板 */
@@ -2276,10 +2342,11 @@
 
             var show = function (on) {
                 modal.hidden = !on;
-                document.documentElement.classList.toggle('ecod-modal-lock', on);
+                /* Esc / 焦点陷阱 / 滚动锁 / 焦点还原由弹层原语承担 */
                 if (on) {
-                    var first = modal.querySelector('[name="name"]');
-                    if (first) { try { first.focus({ preventScroll: true }); } catch (err) {} }
+                    Ecod.dialogOpen(modal, modal.querySelector('[name="name"]'), function () { show(false); });
+                } else {
+                    Ecod.dialogClose(modal);
                 }
             };
 
@@ -2353,18 +2420,7 @@
                 }
             });
 
-            /* Esc：绑在 document 上只做一次，换页后重新查询当前弹窗 */
-            if (!document.documentElement.dataset.ecodFlinkEsc) {
-                document.documentElement.dataset.ecodFlinkEsc = '1';
-                document.addEventListener('keydown', function (e) {
-                    if (e.key !== 'Escape') { return; }
-                    var m = document.querySelector('[data-ecod-flink]');
-                    if (m && !m.hidden) {
-                        m.hidden = true;
-                        document.documentElement.classList.remove('ecod-modal-lock');
-                    }
-                });
-            }
+            /* Esc 关闭由弹层原语承担 */
 
             if (fform) {
                 fform.addEventListener('submit', function (e) {
@@ -2424,7 +2480,10 @@
                 if (!m) { return; }
                 if (m._ecodOpen) { m._ecodOpen(); return; }
                 m.hidden = false;
-                document.documentElement.classList.add('ecod-modal-lock');
+                Ecod.dialogOpen(m, m.querySelector('[name="name"]'), function () {
+                    m.hidden = true;
+                    Ecod.dialogClose(m);
+                });
             });
         });
 
@@ -3012,12 +3071,13 @@
             }).then(function (r) { return r.json(); }).then(function (data) {
                 if (data && data.ok) {
                     if (item) item.remove();
+                    Ecod.toast('已撤回');
                 } else {
-                    window.alert((data && data.error) || '撤回失败，请稍后再试');
+                    Ecod.toast((data && data.error) || '撤回失败，请稍后再试', 'bad');
                     btn.disabled = false;
                 }
             }).catch(function () {
-                window.alert('网络异常，请重试');
+                Ecod.toast('网络异常，请重试', 'bad');
                 btn.disabled = false;
             });
         });
@@ -3325,6 +3385,46 @@
         var roots = document.querySelectorAll('[data-ecod-lottery]');
         if (!roots.length) return;
 
+        /* 结果弹窗：document 级单例，同页多个抽奖组件共用 */
+        var lotModal = null;
+        function lotModalOpen(prize) {
+            if (!lotModal) {
+                lotModal = document.createElement('div');
+                lotModal.className = 'ecod_lotmodal';
+                lotModal.hidden = true;
+                lotModal.innerHTML =
+                    '<div class="ecod_lotmodal__mask" data-lm-close></div>'
+                    + '<div class="ecod_lotmodal__panel" role="dialog" aria-modal="true" aria-label="抽奖结果">'
+                    + '<div class="ecod_lotmodal__head"><span data-lm-title>抽奖结果</span>'
+                    + '<button type="button" class="ecod_lotmodal__x" data-lm-close aria-label="关闭">'
+                    + '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>'
+                    + '<div class="ecod_lotmodal__card"><b data-lm-name></b><span data-lm-tip></span></div>'
+                    + '<div class="ecod_lotmodal__ops">'
+                    + '<button type="button" class="ecod-btn ecod-btn--ghost" data-lm-cancel>取消</button>'
+                    + '<button type="button" class="ecod-btn" data-lm-ok>领取</button>'
+                    + '</div></div>';
+                document.body.appendChild(lotModal);
+            }
+            var panel = lotModal.querySelector('.ecod_lotmodal__panel');
+            var win = prize && prize.type !== 'none';
+            lotModal.querySelector('[data-lm-title]').textContent = win ? '领取抽奖奖励' : '抽奖结果';
+            lotModal.querySelector('[data-lm-name]').textContent = win ? '恭喜获得奖励：' + (prize.name || '') : '谢谢参与';
+            lotModal.querySelector('[data-lm-tip]').textContent = prize && prize.tip ? prize.tip : (win ? '' : '再抽一次说不定就中了');
+            var ok = lotModal.querySelector('[data-lm-ok]');
+            var cancel = lotModal.querySelector('[data-lm-cancel]');
+            ok.hidden = !win;
+            cancel.textContent = win ? '取消' : '知道了';
+            var close = function () { Ecod.dialogClose(panel); };
+            if (!panel.dataset.lmBound) {
+                panel.dataset.lmBound = '1';
+                lotModal.addEventListener('click', function (e) {
+                    if (e.target.closest('[data-lm-close]') || e.target.closest('[data-lm-cancel]') || e.target.closest('[data-lm-ok]')) close();
+                });
+            }
+            lotModal.hidden = false;
+            Ecod.dialogOpen(panel, win ? ok : cancel, function () { lotModal.hidden = true; });
+        }
+
         Array.prototype.forEach.call(roots, function (root) {
             if (root.dataset.lotteryReady === '1') return;
             root.dataset.lotteryReady = '1';
@@ -3415,7 +3515,7 @@
                 });
             }
 
-            function settle(data, verb) {
+            function settle(data, verb, showModal) {
                 busy = false;
                 if (go) { go.classList.remove('is-busy'); go.disabled = false; }
                 if (exBtn) exBtn.classList.remove('is-busy');
@@ -3432,6 +3532,8 @@
                 }
                 say((prize.type === 'none' ? '🎲 ' : '🎉 ' + verb + '：') + (prize.name || '谢谢参与')
                     + (prize.tip ? '（' + prize.tip + '）' : ''), prize.type !== 'none');
+                /* 抽奖结果弹窗（兑换走行内提示，不打断） */
+                if (showModal) lotModalOpen(prize);
                 setBalance(data.balance);
                 if (leftEl && typeof data.left === 'number') {
                     leftEl.textContent = data.left < 0 ? '剩余次数不限' : '今日剩余 ' + data.left + ' 次';
@@ -3446,7 +3548,7 @@
                     go.classList.add('is-busy');
                     go.disabled = true;
                     say('');
-                    request('lottery_draw', function (data) { settle(data, '抽中'); });
+                    request('lottery_draw', function (data) { settle(data, '抽中', true); });
                 });
             }
 
@@ -3460,40 +3562,66 @@
                 });
             }
 
-            /* 我的记录：展开时拉一次（之后复用，不重复请求） */
-            if (recToggle && recBox) {
-                once(recToggle, 'lotteryRec', 'click', function () {
-                    if (recBox.dataset.recLoaded === '1') return;
-                    recBox.dataset.recLoaded = '1';
-                    recBox.innerHTML = '<p class="ecod_lottery__recempty">加载中…</p>';
-                    recBox.hidden = false;
-                    fetch(api + '?action=lottery_state', { credentials: 'same-origin' })
-                        .then(function (r) { return r.json(); }).then(function (state) {
-                            if (!state || !state.ok) {
-                                recBox.innerHTML = '<p class="ecod_lottery__recempty">暂无记录</p>';
-                                return;
-                            }
-                            if (state.pity && state.pity.on) setPity(state.pity.now, state.pity.n);
-                            setBalance(state.balance);
-                            var rows = state.mine || [];
-                            if (!rows.length) {
-                                recBox.innerHTML = '<p class="ecod_lottery__recempty">还没有记录，抽一次试试手气。</p>';
-                                return;
-                            }
-                            var html = '';
-                            rows.forEach(function (row) {
-                                var d = new Date(row.created * 1000);
-                                html += '<div class="ecod_lottery__rec' + (row.type === 'none' ? ' is-none' : '') + '">'
-                                    + '<span>' + esc(row.name || '谢谢参与') + '</span>'
-                                    + (row.type === 'exchange' ? '<i>兑换</i>' : (row.type !== 'none' ? '<i>中奖</i>' : ''))
-                                    + '<time>' + d.getMonth() + 1 + '-' + d.getDate() + ' ' + String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0') + '</time>'
-                                    + '</div>';
-                            });
-                            recBox.innerHTML = html;
-                        }).catch(function () {
-                            recBox.innerHTML = '<p class="ecod_lottery__recempty">加载失败</p>';
+            /* 我的记录：首次展开时拉一次（之后复用，不重复请求） */
+            function loadRecords() {
+                if (!recBox || recBox.dataset.recLoaded === '1') return;
+                recBox.dataset.recLoaded = '1';
+                recBox.innerHTML = '<p class="ecod_lottery__recempty">加载中…</p>';
+                recBox.hidden = false;
+                fetch(api + '?action=lottery_state', { credentials: 'same-origin' })
+                    .then(function (r) { return r.json(); }).then(function (state) {
+                        if (!state || !state.ok) {
+                            recBox.innerHTML = '<p class="ecod_lottery__recempty">暂无记录</p>';
+                            return;
+                        }
+                        if (state.pity && state.pity.on) setPity(state.pity.now, state.pity.n);
+                        setBalance(state.balance);
+                        var rows = state.mine || [];
+                        if (!rows.length) {
+                            recBox.innerHTML = '<p class="ecod_lottery__recempty">还没有记录，抽一次试试手气。</p>';
+                            return;
+                        }
+                        var html = '';
+                        rows.forEach(function (row) {
+                            var d = new Date(row.created * 1000);
+                            html += '<div class="ecod_lottery__rec' + (row.type === 'none' ? ' is-none' : '') + '">'
+                                + '<span>' + esc(row.name || '谢谢参与') + '</span>'
+                                + (row.type === 'exchange' ? '<i>兑换</i>' : (row.type !== 'none' ? '<i>中奖</i>' : ''))
+                                + '<time>' + d.getMonth() + 1 + '-' + d.getDate() + ' ' + String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0') + '</time>'
+                                + '</div>';
                         });
+                        recBox.innerHTML = html;
+                    }).catch(function () {
+                        recBox.innerHTML = '<p class="ecod_lottery__recempty">加载失败</p>';
+                    });
+            }
+
+            /* 页面版：原生 summary 展开（details 自带开合），首次点开时拉记录 */
+            if (recBox) {
+                Array.prototype.forEach.call(root.querySelectorAll('[data-ecod-lottery-records]'), function (recEl) {
+                    once(recEl, 'lotteryRec', 'click', loadRecords);
                 });
+            }
+
+            /* 挂件版：标题行「我的记录」只是个人中心 #lottery 深链 —— 记录统一在
+               个人中心「抽奖记录」tab 展示，侧栏不再就地展开面板 */
+            var isWidget = root.classList.contains('ecod_lottery--widget');
+            var widgetTitle = root.querySelector('.ecod_widget__title');
+            var recUcUrl = root.dataset.uc || '';
+            if (isWidget && widgetTitle && recUcUrl && !root.dataset.recHead) {
+                root.dataset.recHead = '1';
+                var recBtn = document.createElement('a');
+                recBtn.className = 'ecod_widget__more ecod_lottery__recbtn';
+                recBtn.textContent = '我的记录';
+                recBtn.href = recUcUrl;
+                var moreLink = widgetTitle.querySelector('.ecod_widget__more');
+                if (moreLink) {
+                    widgetTitle.insertBefore(recBtn, moreLink);
+                    moreLink.style.marginLeft = '8px';
+                } else {
+                    widgetTitle.appendChild(recBtn);
+                }
+                recBtn.style.marginLeft = 'auto';
             }
         });
     };

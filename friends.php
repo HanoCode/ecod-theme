@@ -100,11 +100,7 @@ $ecodMailReady = function_exists('ecod_mail_ready') && ecod_mail_ready();
             <?php endforeach; ?>
         </div>
     <?php else: ?>
-        <div class="ecod_empty">
-            <div class="ecod_empty__icon" aria-hidden="true"><?php echo ecod_icon('link', 28); ?></div>
-            <h3>还没有添加友链</h3>
-            <p>点下方「一键申请」提交站点信息，通过后会出现在这里</p>
-        </div>
+        <?php ecod_empty('link', '还没有添加友链', '点下方「一键申请」提交站点信息，通过后会出现在这里'); ?>
     <?php endif; ?>
 
     <?php if ($ecodHasNote || $ecodApplyOpen): ?>

@@ -44,6 +44,7 @@ const ENTRIES = [
     'assets/js/ecod.global.js',
     'assets/js/ecod.post.js',
     // 后台设置页 / 模块管理台 / 选图器
+    'assets/admin/tokens.css',
     'assets/admin/config.css',
     'assets/admin/config.js',
     'assets/admin/media.css',

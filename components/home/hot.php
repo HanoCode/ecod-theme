@@ -11,12 +11,12 @@ if (!defined('__TYPECHO_ROOT_DIR__')) {
     exit;
 }
 $ecodHotSortRaw = (string) ecod_p('sort', 'comments');
-$ecodHotSort = in_array($ecodHotSortRaw, ['views', 'rand'], true) ? $ecodHotSortRaw : 'hot';
+$ecodHotSort = in_array($ecodHotSortRaw, ['views', 'weighted', 'rand'], true) ? $ecodHotSortRaw : 'hot';
 $this->widget('EcodPostQuery@hot', 'pageSize=' . max(2, (int) ecod_p('count', 4)) . '&order=' . $ecodHotSort)->to($ecodHot);
 if (!$ecodHot->have()) {
     return;
 }
-$ecodHotNotes = ['views' => '按阅读量', 'rand' => '随机推荐', 'hot' => '按讨论热度'];
+$ecodHotNotes = ['views' => '按阅读量', 'weighted' => '按加权热度', 'rand' => '随机推荐', 'hot' => '按讨论热度'];
 $ecodHotStyle = (string) ecod_p('style', 'grid') === 'rank' ? 'rank' : 'grid';
 ?>
 <?php if ($ecodHotStyle === 'rank'): ?>
@@ -39,7 +39,7 @@ $ecodHotStyle = (string) ecod_p('style', 'grid') === 'rank' ? 'rank' : 'grid';
             <?php $ecodHotImg = ecod_thumbnails($ecodHot, 1, 'side')[0] ?? ''; ?>
             <a class="ecod_hot__item" href="<?php $ecodHot->permalink(); ?>">
                 <span class="ecod_hot__cover"<?php if ($ecodHotImg): ?> style="--ecod-cover:url('<?php echo htmlspecialchars($ecodHotImg); ?>')"<?php endif; ?>>
-                    <?php if (!$ecodHotImg): ?><span class="ecod_hot__ph"><?php echo mb_substr($ecodHot->title, 0, 1, 'UTF-8'); ?></span><?php endif; ?>
+                    <?php if (!$ecodHotImg): ?><span class="ecod_ph ecod_hot__ph"><?php echo mb_substr($ecodHot->title, 0, 1, 'UTF-8'); ?></span><?php endif; ?>
                     <span class="ecod_hot__rank"><?php echo $ecodHotIndex; ?></span>
                 </span>
                 <b class="ecod_hot__text"><?php if (ecod_has_password($ecodHot)): ?><?php echo ecod_lock_icon(11, 'ecod_hot__lock'); ?><?php endif; ?><?php $ecodHot->title(); ?></b>

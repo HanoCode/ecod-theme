@@ -90,17 +90,9 @@ if ($ecodMinYear > 0) {
     <?php ecod_page_hero('归档', (string) $this->title, '按时间倒序排列的全部文章，点年份展开。', $ecodMeta); ?>
 
     <?php if ($ecodError !== ''): ?>
-        <div class="ecod_empty">
-            <div class="ecod_empty__icon" aria-hidden="true"><?php echo ecod_icon('alert', 30); ?></div>
-            <h3><?php echo $ecodError; ?></h3>
-            <p>请稍后重试，或检查数据库连接</p>
-        </div>
+        <?php ecod_empty('alert', $ecodError, '请稍后重试，或检查数据库连接'); ?>
     <?php elseif (!$ecodYears): ?>
-        <div class="ecod_empty">
-            <div class="ecod_empty__icon" aria-hidden="true"><?php echo ecod_icon('inbox', 30); ?></div>
-            <h3>还没有文章</h3>
-            <p>发布第一篇之后，这里会自动生成时间轴</p>
-        </div>
+        <?php ecod_empty('inbox', '还没有文章', '发布第一篇之后，这里会自动生成时间轴'); ?>
     <?php else: ?>
         <div class="ecod_arch">
             <?php foreach ($ecodYears as $ecodYear => $ecodMonths): ?>

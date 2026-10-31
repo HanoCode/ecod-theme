@@ -364,6 +364,55 @@ function ecod_option(string $key, $default = '')
     return isset($options->{$key}) && $options->{$key} !== '' ? $options->{$key} : $default;
 }
 
+/**
+ * 右键菜单自定义项
+ *
+ * 真源是设置项 ECtxItems：一行一项，`菜单文字|链接地址|新窗口(1/0)`。
+ * 只放行 http(s)、站内路径与锚点，避免把 javascript: 之类的地址渲染进菜单；
+ * 链接里可用 {url} 占位当前页地址（例如分享/收藏当前页）。
+ *
+ * @return array<int, array{label:string, url:string, blank:bool}>
+ */
+function ecod_ctx_items(): array
+{
+    static $cache = null;
+    if (is_array($cache)) {
+        return $cache;
+    }
+
+    $cache = [];
+    $raw = trim((string) ecod_option('ECtxItems', ''));
+    if ($raw === '') {
+        return $cache;
+    }
+
+    foreach (preg_split('/\r\n|\r|\n/', $raw) ?: [] as $line) {
+        $line = trim($line);
+        if ($line === '' || $line[0] === '#') {
+            continue;
+        }
+        $parts = array_map('trim', explode('|', $line));
+        $label = mb_substr((string) ($parts[0] ?? ''), 0, 20, 'UTF-8');
+        $url = (string) ($parts[1] ?? '');
+        if ($label === '' || $url === '') {
+            continue;
+        }
+        if (!preg_match('#^(https?://|/|\#|mailto:|tel:|\{url\})#i', $url)) {
+            continue;
+        }
+        $cache[] = [
+            'label' => $label,
+            'url'   => mb_substr($url, 0, 300, 'UTF-8'),
+            'blank' => (string) ($parts[2] ?? '') === '1',
+        ];
+        if (count($cache) >= 10) {
+            break;
+        }
+    }
+
+    return $cache;
+}
+
 /* ------------------------------------------------------------------
  * 站点身份：配色 / 图标 / 头像源
  * ---------------------------------------------------------------- */
@@ -423,6 +472,46 @@ function ecod_primary_deep(): string
 }
 
 /**
+ * 主色按钮底（--ecod-primary-btn）：保证白字对比度 ≥ WCAG AA(4.5) 的最小必要加深。
+ * 品牌色白字已达标则原色返回（视觉零变化）；不达标时向黑混色到刚好达标
+ * （默认靛蓝 #4f6ef2 白字 4.33 → 混黑 4% 得 #4c6ae8，白字 4.64）。
+ * 供 .ecod_btn / .ecod-btn / 页码当前项等「主色底 + 白字」面使用。
+ */
+function ecod_primary_btn(): string
+{
+    $primary = ecod_primary();
+    if (ecod_color_contrast($primary, '#ffffff') >= 4.5) {
+        return $primary;
+    }
+    for ($t = 0.02; $t <= 0.6; $t += 0.02) {
+        $candidate = ecod_color_mix($primary, '#000000', $t);
+        if (ecod_color_contrast($candidate, '#ffffff') >= 4.5) {
+            return $candidate;
+        }
+    }
+    return ecod_color_mix($primary, '#000000', 0.16);
+}
+
+/**
+ * 全站统一空状态：图标 + 标题 + 说明（+ 可选行动按钮）。
+ * $title / $text 原样输出（模板侧自行转义），样式见 .ecod_empty；
+ * 侧栏 / 弹层内的紧凑场景传 $class = 'ecod_empty--compact'。
+ */
+function ecod_empty(string $icon, string $title, string $text = '', string $actionUrl = '', string $actionText = '', string $class = ''): void
+{
+    echo '<div class="ecod_empty' . ($class !== '' ? ' ' . htmlspecialchars($class, ENT_QUOTES, 'UTF-8') : '') . '">';
+    echo '<div class="ecod_empty__icon" aria-hidden="true">' . ecod_icon($icon, 30) . '</div>';
+    echo '<h3>' . $title . '</h3>';
+    if ($text !== '') {
+        echo '<p>' . $text . '</p>';
+    }
+    if ($actionUrl !== '' && $actionText !== '') {
+        echo '<a class="ecod_btn ecod_empty__act" href="' . htmlspecialchars($actionUrl, ENT_QUOTES, 'UTF-8') . '">' . $actionText . '</a>';
+    }
+    echo '</div>';
+}
+
+/**
  * WCAG 2.x 相对亮度：对比度换算用，勿用于视觉色彩调整
  */
 function ecod_color_luma(string $hex): float
@@ -446,12 +535,20 @@ function ecod_color_contrast(string $a, string $b): float
 }
 
 /**
- * 主色填充（胶囊 / 按钮底）上的文字颜色：白字对比度 < 4.5 时切深墨色。
- * 用户后台选浅暖色（如琥珀 #f59e0b）时，白字对比只有 2.1，必须自动换深色。
+ * 主色填充（胶囊 / 按钮底）上的文字颜色：三档取首个达标 WCAG AA(4.5) 者。
+ * 白字 ≥4.5 用白；否则深墨 #12161d ≥4.5 用深墨（浅暖色如琥珀）；
+ * 中明度主色（如默认靛蓝，白 4.33 / 深墨 4.19 均不达标）退纯黑（4.85）。
  */
 function ecod_primary_ink(): string
 {
-    return ecod_color_contrast(ecod_primary(), '#ffffff') >= 4.5 ? '#ffffff' : '#12161d';
+    $primary = ecod_primary();
+    if (ecod_color_contrast($primary, '#ffffff') >= 4.5) {
+        return '#ffffff';
+    }
+    if (ecod_color_contrast($primary, '#12161d') >= 4.5) {
+        return '#12161d';
+    }
+    return '#000000';
 }
 
 /**

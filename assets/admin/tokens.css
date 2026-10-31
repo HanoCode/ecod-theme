@@ -1,0 +1,60 @@
+/**
+ * Ecod Theme · 管理端共享设计 tokens
+ *
+ * 后台所有样式（config / media / nav / topics / widget / editor）的颜色、
+ * 圆角、阴影、z-index、动效统一从这里取值；各文件里残留的 --ea-* / --md-* /
+ * --ed-* / --c* 等局部前缀只是本文件的别名，改值改这里一处即可。
+ *
+ * Copyright (c) 2026 Ecod. All Rights Reserved. · https://ecod.cc
+ */
+
+:root {
+    /* ---- 颜色（与前台同源值的后台抄本） ---- */
+    --ea-ink: #1c2130;
+    --ea-sub: #7b8297;
+    --ea-line: #e6e9f2;
+    --ea-soft: #f7f8fc;
+    --ea-brand: #4f6ef2;
+    --ea-brand-deep: #3d5be0;
+    --ea-brand-soft: #eef1fe;
+    --ea-ok: #10b981;
+    --ea-warn: #f59e0b;
+    --ea-bad: #ef4444;
+
+    /* ---- 圆角 ---- */
+    --ea-radius: 12px;
+    --ea-radius-sm: 8px;
+    --ea-radius-xs: 4px;
+    --ea-radius-full: 999px;
+
+    /* ---- 字号（与前台 11/12/13/14/16 五档对齐；后台不再出现半像素值） ---- */
+    --ea-fs-2xs: 11px;
+    --ea-fs-xs: 12px;
+    --ea-fs-sm: 13px;
+    --ea-fs-md: 14px;
+    --ea-fs-lg: 16px;
+
+    /* ---- soft-shadow（与前台同构：近距贴地 + 远距弥散，基色 18,22,29 同前台） ---- */
+    --ea-shadow: 0 1px 3px rgba(18, 22, 29, .06), 0 4px 16px rgba(18, 22, 29, .05);
+    --ea-shadow-hover: 0 8px 28px rgba(18, 22, 29, .12);
+    --ea-shadow-pop: 0 8px 28px rgba(18, 22, 29, .16), 0 2px 6px rgba(18, 22, 29, .08);
+    --ea-shadow-modal: 0 24px 70px rgba(15, 22, 45, .28);  /* 全屏弹窗级（压暗整个后台） */
+
+    /* ---- 焦点环（键盘可达性统一外圈；strong 用于选中/脏状态等强调） ---- */
+    --ea-ring: 0 0 0 3px color-mix(in srgb, var(--ea-brand) 12%, transparent);
+    --ea-ring-strong: 0 0 0 3px color-mix(in srgb, var(--ea-brand) 30%, transparent);
+
+    /* ---- z-index 阶梯（语义见注释，改值前先确认与 Typecho 后台自身层级的关系）
+       注意：与前台 --ecod-z-* 同名不同值是有意的——后台要压过 Typecho 自带 UI，
+       两套 z 值不可互换，前台组件不要在后台复用这些变量。 ---- */
+    --ea-z-drop: 60;            /* 页内下拉 / 卡片浮层 */
+    --ea-z-editor-tip: 9950;    /* 编辑器自定义 tooltip（刻意低于全屏态） */
+    --ea-z-modal: 9999;         /* 需盖过 Typecho 后台 UI 的弹层 / 编辑器全屏态 */
+    --ea-z-editor-emoji: 10050; /* 编辑器表情面板（压过全屏态） */
+    --ea-z-topmost: 100100;     /* 全屏选图器：盖过后台一切 UI 的天花板 */
+
+    /* ---- 动效（与前台同构：fast 140 / 默认 200 / 大位移 300） ---- */
+    --ea-dur: .2s;
+    --ea-dur-fast: .14s;
+    --ea-dur-slow: .3s;
+}

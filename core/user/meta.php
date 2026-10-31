@@ -114,7 +114,7 @@ function ecod_user_group_label(string $group): string
 /**
  * 组装「作者卡」数据：公开作者主页头卡与文章页文末作者卡共用
  *
- * @return array{uid:int,name:string,url:string,group:string,avatar:string,intro:string,posts:int,comments:int,joined:int}|null
+ * @return array{uid:int,name:string,url:string,group:string,avatar:string,intro:string,posts:int,comments:int,joined:int,mail:string}|null
  */
 function ecod_user_card(int $uid): ?array
 {
@@ -161,6 +161,7 @@ function ecod_user_card(int $uid): ?array
             'posts'    => $posts,
             'comments' => $comments,
             'joined'   => (int) $row['created'],
+            'mail'     => (string) $row['mail'],
         ];
     } catch (\Throwable $e) {
         return null;

@@ -1137,6 +1137,7 @@ function ecod_block_head_icons(): array
         'aside/tags'       => 'hash',
         'aside/feed'       => 'radio',
         'aside/flash'      => 'zap',
+        'aside/checkin'    => 'calendar',
         'aside/title-list' => 'list',
     ];
     return $map;

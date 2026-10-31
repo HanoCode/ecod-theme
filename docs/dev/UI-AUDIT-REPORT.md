@@ -188,3 +188,42 @@ image       → 媒体库选图（已有，保留）
 | P2 PWA manifest | ✅ manifest.php 独立入口（站点名/主色/Favicon 自动带入），include.php 已引用 |
 | P2 AI 摘要 / 高亮跟随明暗 | ✅ AI 摘要已接入（core/content/ai.php）；高亮主题含 auto |
 | P2 设置页迷你预览区 | ✅ 三处预览已实现：站点分组主色迷你卡片、版式分组卡片骨架、外观分组背景渐变；本次修复三处联动监听取错容器（字段已被 layout() 移出 form）导致预览不跟随的 bug，实测全部联动 |
+
+---
+
+## 设计系统治理记录（2026-10-31，对照 soft-shadow / floating-geometry / component-variants / radix-primitives / toast / empty-state 规范维度）
+
+### 已落地
+
+**P0（功能正确性）**
+- 浮动件重叠：header 输出 `body.ecod-has-dock / ecod-has-toggle` 标记，浮动目录窄屏据此让开 totop / 深浅色切换 / dock；`body:has(.ecod_dock)` 兼容性问题一并修掉。
+- Modal 原语：`Ecod.dialogOpen/dialogClose` 升级为栈式原语（焦点陷阱 / Esc / 引用计数滚动锁 `html.ecod-modal-lock` / 焦点还原），登录弹窗、公告弹窗、抽屉、友链弹窗、裁剪弹窗、分享卡、搜索面板全部迁移；`body.is-locked`、`html.ecod-shcard-lock` 两套旧锁已删除。
+- 按钮：§23.8 内容区 `.ecod_btn` 收窄为 `.ecod_content .ecod_btn`（原为无作用域全局覆盖）；补定义 page-user 在用的 `.ecod-btn--primary`。
+
+**P1（规范集成）**
+- soft-shadow：新增 `--ecod-shadow-sm`（双层贴地）、`--ecod-ring`（焦点环）、`--ecod-text-shadow(-soft)`（图片上白字压暗两档），dark 全套覆写；ecod.css 内等价硬编码阴影 / text-shadow 已收编。
+- toast：前台 `Ecod.toast(msg, type)`（§39），alert ×3 已替换；撤回投稿 confirm 保留（删除类操作的阻塞确认）。
+- empty-state：`ecod_empty($icon, $title, $text, $actionUrl, $actionText, $class)` helper（functions.php），15 个模板 18 处手抄空状态全部迁移；`.ecod_empty` 增加行动槽位与 `--compact` 变体。
+
+**P2（体系收编）**
+- admin tokens：新增 `assets/admin/tokens.css`（颜色 / 圆角 / soft-shadow 含 `--ea-shadow-modal` / 焦点环 `--ea-ring(-strong)` / z-index 阶梯 / 动效），config/nav/media/topics/widget/editor 五套局部 token 全部改为别名；魔法 z-index（9999 / 100100 / 9950 / 10050）换成语义 token。
+- 组件：按钮 `--sm/--lg/--block` 尺寸变体；`.ecod_input/.ecod_select/.ecod_textarea` 表单基类（登录弹窗 / 登录页 / 评论 / 投稿已采用）；卡片徽章"封面实底 vs 行内浅底"确认是两个语境的有意区分，已注释防止误合并。
+- floating-geometry：`--ecod-float-gap(-sm)` 统一浮动件边距；viewport 加 `viewport-fit=cover`（全套 safe-area 代码自此生效）；侧栏吸顶模块与锚点 scroll-margin 跟随 `is-hd-off` 联动补全；footer 自定义代码位注明第三方悬浮件避让规则。
+
+### 已知保留项（有意不做）
+- 撤回投稿的 `confirm()`：删除类操作保留阻塞确认。
+- 侧栏 / 弹层内的 JS 紧凑空状态（`ecod_uc__empty` / `ecod_favs__empty`）：与页面级空状态密度不同，保留独立实现。
+- admin 中深色弹窗阴影（media.css 631/1048）、页面外壳阴影（config.css 24）、拖拽控件小阴影等：非等价值，未强行归 token。
+- 断点 680/861/900 无法走 CSS 变量（@media 限制），已用注释标注含义。
+
+### 第二批收尾（2026-10-31 续，清零遗留）
+
+- **Tabs 三套合一**：`Ecod.initTabs`（正文短代码 tabs）升级到与登录页三合一相同的键盘约定（←→↑↓ 循环 + Home/End + roving tabindex）；`initWtabs` 本就达标，三套实现行为已一致。
+- **下拉键盘与 aria**：`initPopDismiss` 统一给 details 系下拉同步 `aria-expanded` / `aria-haspopup`（capture 接不冒泡的 toggle 事件），并对打开的下拉补 ↑↓ 菜单项循环；浮动目录（role=menu）补 ↑↓ 导航。
+- **搜索联想 combobox**：输入框挂 `role=combobox` + `aria-controls` + `aria-expanded`（跟随显隐），联想结果补 ↑↓ 焦点移动。
+- **占位收编**：无封面首字占位实为 **8 份拷贝**（card×3 / tcard / section / reco / hot / focus / coll），抽 `.ecod_ph` 基类（白字 + 800 字重 + 压暗阴影），组件只保留定位与字号差；两份浅底 chip 占位（acard / posts）合并居中骨架。
+- **卡片表面去重**：`.ecod_list--plain/--grid` 对卡片的整体表面重写合并为一条共享声明，只保留 padding / overflow 差量。
+- **前台 token 残留清零**：7 处 `0 0 0 3px var(--ecod-primary-soft)` 焦点环 → `--ecod-ring`；14px / 9px / 6px / 999px 等圆角残留归 token（气泡尖角 2px、箭头菱形 2px、`calc()` 派生值为结构性用途，保留）。
+- **editor.css 圆角收编**：15 处与 token 等值（12/8/999px）归 `--ea-radius*`；7/9/14/16/6/3/2/1.5px 为组件专属小值，保留。
+- **组件按钮按压反馈统一**：`.ecod-btn`（胶囊族）此前全局缺按压态，连同 loadmore / oauth / poll / more / copybox / fsbtn（translateY 系）与 shop / sort / tabs / floattoc / lightbox / wsearch / slider dots（scale 系）补进共享按压分组；`.ecod_actbtn` 的双 :active 定义（scale .94 vs .98）修为单一来源。
+- **组件按钮收编结论**：pay / shop / actbtn 等 20+ 组件按钮各有语境化形态（胶囊族、图标栅格、链接态、虚线加载），强改组合会造成视觉回归；`.ecod_apply__btn` 已示范组合式（`.ecod-btn` + 尺寸修饰），后续组件改动时按此模式顺手迁移即可——此为有意保留项。

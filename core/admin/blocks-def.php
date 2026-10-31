@@ -192,6 +192,7 @@ ecod_block_define('hot', [
             'options' => [
                 'comments' => '评论数',
                 'views'    => '阅读量',
+                'weighted' => '加权热度（阅读 + 评论×20）',
                 'rand'     => '随机',
             ],
         ],
@@ -547,6 +548,12 @@ ecod_block_define('about', [
             'default' => '',
             'desc'    => '留空则使用站点描述',
         ],
+        'cover' => [
+            'label'   => '横幅图',
+            'type'    => 'image',
+            'default' => '',
+            'desc'    => '卡片顶部横幅，留空则显示主题色渐变占位',
+        ],
         'stats' => [
             'label'   => '显示文章/评论/分类数',
             'type'    => 'switch',
@@ -823,8 +830,9 @@ ecod_block_define('rank', [
             'type'    => 'select',
             'default' => 'views',
             'options' => [
-                'views' => '阅读量',
-                'hot'   => '评论数',
+                'views'    => '阅读量',
+                'hot'      => '评论数',
+                'weighted' => '加权热度（阅读 + 评论×20）',
             ],
         ],
         'tabs'  => [
@@ -1137,11 +1145,68 @@ ecod_block_define('theme-toggle', [
 
 ecod_block_define('dock', [
     'name'   => '移动端底部 dock',
-    'desc'   => '手机端底部快捷栏（首页/搜索/深浅色/回顶部），启用后移动端悬浮按钮由 dock 接管',
+    'desc'   => '手机端底部快捷栏：内置入口可开关，支持追加自定义链接，5 套样式可选；启用后移动端悬浮按钮由 dock 接管',
     'icon'   => 'list',
     'area'   => 'footer',
     'order'  => 60,
-    'params' => [],
+    'params' => [
+        'style' => [
+            'label'   => '样式',
+            'type'    => 'select',
+            'default' => 'card',
+            'options' => [
+                'card'  => '经典卡片（白底圆角）',
+                'glass' => '毛玻璃胶囊（半透明悬浮）',
+                'ios'   => 'iOS 风格（毛玻璃 + 图标弹起）',
+                'float' => '分离圆钮（独立磨砂圆钮）',
+                'glow'  => '滑动高亮（指示器跟随选中项）',
+            ],
+            'desc'    => '选一套移动端底栏的视觉风格，均自动适配深浅色与安全区',
+        ],
+        'labels' => [
+            'label'   => '文字标签',
+            'type'    => 'select',
+            'default' => 'show',
+            'options' => [
+                'show'   => '全部显示',
+                'active' => '仅选中项显示',
+                'hide'   => '不显示（纯图标）',
+            ],
+        ],
+        'show_home' => [
+            'label'   => '显示「首页」',
+            'type'    => 'switch',
+            'default' => 1,
+        ],
+        'show_search' => [
+            'label'   => '显示「搜索」',
+            'type'    => 'switch',
+            'default' => 1,
+        ],
+        'show_theme' => [
+            'label'   => '显示「深浅」',
+            'type'    => 'switch',
+            'default' => 1,
+            'desc'    => '「深色模式」设为关闭时此项强制隐藏',
+        ],
+        'show_top' => [
+            'label'   => '显示「顶部」',
+            'type'    => 'switch',
+            'default' => 1,
+        ],
+        'items' => [
+            'label'   => '自定义条目',
+            'type'    => 'repeater',
+            'max'     => 3,
+            'default' => '',
+            'fields'  => [
+                ['key' => 'icon', 'label' => '图标', 'type' => 'icon', 'placeholder' => '选择图标'],
+                ['key' => 'label', 'label' => '文字', 'placeholder' => '如：友链'],
+                ['key' => 'link', 'label' => '链接', 'placeholder' => 'https://…'],
+            ],
+            'desc'    => '追加在内置条目之后；建议总共不超过 5 条，避免挤压',
+        ],
+    ],
 ]);
 
 ecod_block_define('notice', [
@@ -1229,6 +1294,43 @@ ecod_block_define('lottery', [
     ],
 ]);
 
+ecod_block_define('checkin', [
+    'name'   => '每日打卡',
+    'desc'   => 'Credit 签到挂件：今日到账横幅 + 全站打卡动态 + 推广返佣引导，可就地签到（参考 guaqi 组件）',
+    'icon'   => 'calendar',
+    'area'   => 'aside',
+    'order'  => 126,
+    'on'     => false,
+    'head'   => ['title' => '每日打卡', 'title_desc' => '签到发放走「设置 → 互动 → 积分与 AI」的每日签到奖励'],
+    'params' => [
+        'banner' => [
+            'label'   => '已签到横幅文案',
+            'type'    => 'text',
+            'default' => '今日份奖励自动到账中～',
+            'desc'    => '当日已签到时显示的绿色横幅文案',
+        ],
+        'feed' => [
+            'label'   => '显示打卡动态',
+            'type'    => 'switch',
+            'default' => 1,
+            'desc'    => '全站最新签到事件；同时受「动态播报」隐私开关（ECrTicker）控制',
+        ],
+        'limit' => [
+            'label'   => '动态条数',
+            'type'    => 'number',
+            'min'     => 3,
+            'max'     => 15,
+            'default' => 6,
+        ],
+        'ref' => [
+            'label'   => '显示推广引导',
+            'type'    => 'switch',
+            'default' => 1,
+            'desc'    => '底部推广返佣说明与「去推广」入口；返佣未开启时自动隐藏',
+        ],
+    ],
+]);
+
 ecod_block_define('adbuy', [
     'name'   => '自助广告',
     'desc'   => '可购买的广告位价目卡，点击进入「广告投放」页下单（参考 guaqi 组件）',
@@ -1295,6 +1397,92 @@ ecod_block_define('shop', [
             'min'     => 1,
             'max'     => 6,
             'default' => 4,
+        ],
+    ],
+]);
+
+ecod_block_define('tile-zone', [
+    'name'   => '磁贴快捷区',
+    'desc'   => '一排图标磁贴入口：图标 + 名称 + 可选角标（参考 guaqi tileZone）',
+    'icon'   => 'layers',
+    'area'   => 'home',
+    'areas'  => ['home', 'aside'],
+    'order'  => 135,
+    'on'     => false,
+    'head'   => ['dot' => true],
+    'params' => [
+        'title' => [
+            'label'   => '标题',
+            'type'    => 'text',
+            'default' => '快捷入口',
+        ],
+        'items' => [
+            'label'   => '磁贴条目',
+            'type'    => 'repeater',
+            'default' => '',
+            'max'     => 20,
+            'fields'  => [
+                ['key' => 'label', 'label' => '名称', 'placeholder' => '如：社区'],
+                ['key' => 'href',  'label' => '链接', 'placeholder' => 'https://… 或站内路径'],
+                ['key' => 'icon',  'label' => '图标名', 'placeholder' => 'zap / star / folder / download…（留空用 link）'],
+                ['key' => 'color', 'label' => '底色', 'placeholder' => 'blue / green / amber / red / violet / gray（留空 blue）'],
+                ['key' => 'badge', 'label' => '角标', 'placeholder' => '如：新（留空不显示）'],
+            ],
+        ],
+        'cols' => [
+            'label'   => '每行列数',
+            'type'    => 'select',
+            'default' => '5',
+            'options' => ['3' => '3 列', '4' => '4 列', '5' => '5 列', '6' => '6 列'],
+        ],
+        'style' => [
+            'label'   => '磁贴形态',
+            'type'    => 'select',
+            'default' => 'card',
+            'options' => ['card' => '卡片磁贴', 'plain' => '无框磁贴'],
+        ],
+    ],
+]);
+
+ecod_block_define('tab-posts', [
+    'name'   => '聚合 Tab 卡',
+    'desc'   => '一个模块内多个分类 Tab 聚合文章，双列图卡（参考 zibll 聚合卡）；Tab 一次性预渲染，切换无请求',
+    'icon'   => 'layers',
+    'area'   => 'home',
+    'areas'  => ['home', 'aside'],
+    'order'  => 140,
+    'on'     => false,
+    'head'   => ['dot' => true],
+    'params' => [
+        'title' => [
+            'label'   => '标题',
+            'type'    => 'text',
+            'default' => '',
+            'desc'    => '留空则不显示模块头',
+        ],
+        'mids'  => [
+            'label'   => '聚合分类',
+            'type'    => 'terms',
+            'default' => '',
+            'desc'    => '按选择顺序作为 Tab，最多取前 5 个；分类名为 Tab 名',
+        ],
+        'count' => [
+            'label'   => '每 Tab 条数',
+            'type'    => 'number',
+            'default' => 4,
+            'min'     => 2,
+            'max'     => 8,
+        ],
+        'cols'  => [
+            'label'   => '列数',
+            'type'    => 'select',
+            'default' => '2',
+            'options' => ['1' => '单列', '2' => '双列'],
+        ],
+        'meta'  => [
+            'label'   => '显示浏览/评论数',
+            'type'    => 'switch',
+            'default' => 1,
         ],
     ],
 ]);

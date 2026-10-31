@@ -59,11 +59,7 @@ $ecodListClass = ecod_list_class($ecodLayoutMode);
                 <?php ecod_card($this, $ecodLayoutMode); ?>
             <?php endwhile; ?>
         <?php else: ?>
-            <div class="ecod_empty">
-                <div class="ecod_empty__icon" aria-hidden="true"><?php echo ecod_icon('inbox', 30); ?></div>
-                <h3>还没有文章</h3>
-                <p>去后台写第一篇吧</p>
-            </div>
+            <?php ecod_empty('inbox', '还没有文章', '去后台写第一篇吧'); ?>
         <?php endif; ?>
     </div>
 

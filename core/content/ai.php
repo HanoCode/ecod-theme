@@ -99,7 +99,12 @@ function ecod_ai_summary(int $cid): array
         }
         $cache = is_string($cacheRaw) && $cacheRaw !== '' ? json_decode($cacheRaw, true) : null;
         if (is_array($cache) && ($cache['hash'] ?? '') === $hash && ($cache['summary'] ?? '') !== '') {
-            return ['ok' => true, 'summary' => (string) $cache['summary'], 'cached' => true];
+            return [
+                'ok'      => true,
+                'summary' => (string) $cache['summary'],
+                'model'   => (string) ($cache['model'] ?? ''),
+                'cached'  => true,
+            ];
         }
         return null;
     };
@@ -188,7 +193,7 @@ function ecod_ai_summary(int $cid): array
 
     /* 写缓存：正文不变就不重复请求（options.name 为主键，先 update 后 insert） */
     try {
-        $cacheValue = json_encode(['hash' => $hash, 'summary' => $summary, 'at' => time()], JSON_UNESCAPED_UNICODE);
+        $cacheValue = json_encode(['hash' => $hash, 'summary' => $summary, 'model' => $model, 'at' => time()], JSON_UNESCAPED_UNICODE);
         $updated = $db->query(
             $db->update('table.options')->rows(['value' => $cacheValue])->where('name = ?', $cacheKey)
         );
@@ -202,7 +207,7 @@ function ecod_ai_summary(int $cid): array
     }
 
     $unlock();
-    return ['ok' => true, 'summary' => $summary, 'cached' => false];
+    return ['ok' => true, 'summary' => $summary, 'model' => $model, 'cached' => false];
 }
 
 /**

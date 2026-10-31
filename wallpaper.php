@@ -57,11 +57,7 @@ $ecodWallMeta = '<span>' . ecod_icon('image', 13) . count($ecodWalls) . ' 张图
             <?php endforeach; ?>
         </div>
     <?php else: ?>
-        <div class="ecod_empty">
-            <div class="ecod_empty__icon" aria-hidden="true"><?php echo ecod_icon('image', 28); ?></div>
-            <h3>还没有图片</h3>
-            <p>在正文里插入图片即可自动排成瀑布流</p>
-        </div>
+        <?php ecod_empty('image', '还没有图片', '在正文里插入图片即可自动排成瀑布流'); ?>
     <?php endif; ?>
 
     <?php $ecodIntro = ecod_intro_text($ecodWallHtml, true); ?>

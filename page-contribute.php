@@ -190,7 +190,7 @@ $ecodUcUrl = ecod_user_center_url();
                   novalidate>
                 <label class="ecod_ctb__field">
                     <span>标题 <i>*</i></span>
-                    <input type="text" name="title" required maxlength="100" autocomplete="off"
+                    <input class="ecod_input" type="text" name="title" required maxlength="100" autocomplete="off"
                            placeholder="一句话说清这篇文章讲什么（3-100 字）"
                            value="<?php echo $ecodCtbEdit ? htmlspecialchars((string) $ecodCtbEdit['title'], ENT_QUOTES, 'UTF-8') : ''; ?>">
                 </label>
@@ -198,7 +198,7 @@ $ecodUcUrl = ecod_user_center_url();
                 <div class="ecod_ctb__row">
                     <label class="ecod_ctb__field">
                         <span>分类 <i>*</i></span>
-                        <select name="category" required>
+                        <select class="ecod_select" name="category" required>
                             <option value="">选择分类…</option>
                             <?php foreach ($ecodCtbCats as $ecodCtbCat): ?>
                                 <option value="<?php echo (int) $ecodCtbCat['mid']; ?>"<?php
@@ -209,7 +209,7 @@ $ecodUcUrl = ecod_user_center_url();
                     </label>
                     <label class="ecod_ctb__field">
                         <span>标签 <em>选填，逗号分隔</em></span>
-                        <input type="text" name="tags" maxlength="120" autocomplete="off"
+                        <input class="ecod_input" type="text" name="tags" maxlength="120" autocomplete="off"
                                placeholder="例如：PHP, Typecho, 教程（最多 5 个）"
                                value="<?php echo $ecodCtbEdit ? htmlspecialchars(implode(',', $ecodCtbEdit['tags']), ENT_QUOTES, 'UTF-8') : ''; ?>">
                     </label>
@@ -217,7 +217,7 @@ $ecodUcUrl = ecod_user_center_url();
 
                 <label class="ecod_ctb__field">
                     <span>封面图 <em>选填</em></span>
-                    <input type="url" name="cover" maxlength="300" autocomplete="off" placeholder="https://…（jpg / png / webp）"
+                    <input class="ecod_input" type="url" name="cover" maxlength="300" autocomplete="off" placeholder="https://…（jpg / png / webp）"
                            value="<?php echo $ecodCtbEdit ? htmlspecialchars((string) $ecodCtbEdit['cover'], ENT_QUOTES, 'UTF-8') : ''; ?>">
                     <span class="ecod_ctb__cover" data-ecod-ctb-cover hidden>
                         <img src="" alt="封面预览" loading="lazy" decoding="async">
@@ -226,7 +226,7 @@ $ecodUcUrl = ecod_user_center_url();
 
                 <label class="ecod_ctb__field">
                     <span>正文 <i>*</i> <em>支持 Markdown</em></span>
-                    <textarea name="text" rows="14" required minlength="10"
+                    <textarea class="ecod_textarea" name="text" rows="14" required minlength="10"
                               placeholder="正文至少 10 个字。支持 Markdown 与本主题短代码，如 [note type=&quot;tip&quot;]提示[/note]、[download]…[/download]"><?php
                         echo $ecodCtbEdit ? htmlspecialchars((string) $ecodCtbEdit['text'], ENT_QUOTES, 'UTF-8') : '';
                     ?></textarea>

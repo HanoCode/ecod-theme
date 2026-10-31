@@ -12,7 +12,7 @@
 
 | 任务 | 触发点 | 配置 |
 | --- | --- | --- |
-| 每日签到 | 个人中心 / 头部用户菜单 / AI 页 | `ECrCheckin`（连签天数仅展示） |
+| 每日签到 | 个人中心 / 头部用户菜单 / AI 页 / 侧栏「每日打卡」挂件 | `ECrCheckin`（连签天数仅展示，`ecod_credits_streak()` 服务端直出） |
 | 发表评论 | `Widget\Feedback::finishComment` 钩子 | `ECrComment` + `ECrCommentCap` |
 | 文章被赞 | api `like` 插入成功且非自赞 | `ECrLikeRecv` + `ECrLikeCap` |
 | 发布文章 | `Widget\Contents\Post\Edit::finishPublish`，同文章只发一次 | `ECrPost` + `ECrPostCap` |
@@ -90,11 +90,12 @@
 
 | 挂件（aside 区） | 说明 |
 | --- | --- |
+| 每日打卡 | 就地签到 + 连签天数 + 全站打卡动态 + 推广引导（动态同受 `ECrTicker` 控制） |
 | 站点抽奖 | 数据栏 + 保底 + 就地抽奖 + 我的记录 |
 | 积分兑换 | 商品价目卡就地兑换 |
 | 自助广告 | 价目卡（比例角标），点击进投放页 |
 | 投放广告 | 展示已上线广告（uads） |
-| 更新动态 | LIVE 滚动播报最新积分事件（`ECrTicker` 开关） |
+| 更新动态 | LIVE 滚动播报最新积分事件（`ECrTicker` 开关；`admin` 手工调账不播报） |
 
 所有新挂件在功能未开启时会显示**仅管理员可见的设置提示卡**（`ecod_block_setup_hint()`），
 访客端完全隐藏。

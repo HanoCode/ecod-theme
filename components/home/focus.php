@@ -37,7 +37,7 @@ $ecodLead = array_shift($ecodFocusItems);
     <div class="ecod_focus__grid">
         <a class="ecod_focus__lead" href="<?php echo htmlspecialchars($ecodLead['permalink']); ?>">
             <span class="ecod_focus__cover"<?php if ($ecodLead['cover']): ?> style="--ecod-cover:url('<?php echo htmlspecialchars($ecodLead['cover']); ?>')"<?php endif; ?>>
-                <?php if (!$ecodLead['cover']): ?><span class="ecod_focus__ph"><?php echo htmlspecialchars(mb_substr($ecodLead['title'], 0, 1, 'UTF-8')); ?></span><?php endif; ?>
+                <?php if (!$ecodLead['cover']): ?><span class="ecod_ph ecod_focus__ph"><?php echo htmlspecialchars(mb_substr($ecodLead['title'], 0, 1, 'UTF-8')); ?></span><?php endif; ?>
                 <span class="ecod_focus__shade" aria-hidden="true"></span>
                 <span class="ecod_focus__lead-body">
                     <b class="ecod_focus__lead-title"><?php echo htmlspecialchars($ecodLead['title']); ?></b>

@@ -280,7 +280,7 @@ ol.steps li{margin:6px 0}
     <span class="kicker">ECOD THEME · DESIGN PROPOSAL</span>
     <h1>瓜奇 / Zibll 参考功能 · 设计与集成方案</h1>
     <p>来源：guaqi.com（2026-10-30）+ demo.zibll.com（2026-10-31）｜范围：AI 摘要 / 评论解锁付费 / 热门榜 / 磁贴快捷区 / 动效令牌 / 付费资源卡 / 聚合Tab卡</p>
-    <div class="meta">文档版本 v2 · 2026-10-31 · 仅设计稿，非主题产物 · §05 全组件可交互渲染</div>
+    <div class="meta">文档版本 v2 · 2026-10-31 · 仅设计稿，非主题产物 · §05 全组件可交互渲染 · <b style="color:#ffe08a">已于 2026-10-31 全量实现（见 §06 落地差异）</b></div>
   </div>
 </div>
 
@@ -988,6 +988,46 @@ ol.steps li{margin:6px 0}
       </tr>
     </table>
     <div class="note ok"><b>通用验收流程</b>：每项完成后 → 本机站点实测（PHP 改动记得 <code>kill -USR2</code> 重载 php-fpm）→ 浅/深主题截图 → PJAX 往返验证 → 移动端 390px 量测。</div>
+
+    <h3 style="margin-top:28px">落地差异记录（实现 vs 设计稿）</h3>
+    <table>
+      <tr><th>项</th><th>实现方式</th><th>与设计稿差异及原因</th></tr>
+      <tr>
+        <td>F5 动效令牌</td>
+        <td>主题已有完整令牌体系（ecod.css §0/§12）与图片渐入（<code>data-ecod-img</code> blur-up），未重复造轮子；新增 <code>html[data-motion]</code> 属性 + <code>ECardMotion</code> 开关 + §14 组件样式节</td>
+        <td>不引入 <code>--ecod-card-*</code> 新令牌——主题设计语言是「卡面靠描边不靠阴影」（§4.3），hover 上浮只用于磁贴等新组件</td>
+      </tr>
+      <tr>
+        <td>F1 AI 摘要</td>
+        <td>增强既有 EAI 异步系统（api.php action=ai + 缓存 + 生成锁）：缓存加记模型名，前端补模型角标 / 字数统计 / <code>EAIMotion</code> 打字机；付费锁定时也显示（摘要可读）</td>
+        <td>不做自定义字段预生成——既有异步生成 + 内容 hash 缓存已等效且免维护</td>
+      </tr>
+      <tr>
+        <td>F2 评论解锁</td>
+        <td><code>ecod_pay_access()</code> 新增 reason=comment 分支；<b>读时验证 comments 表</b>（登录按 ownerId、游客按 Typecho 记住邮箱 cookie），不落 HMAC cookie</td>
+        <td>优于设计稿：删评 / 转待审自动上锁，无凭证伪造面；不内嵌表单（防垃圾令牌 / Turnstile 必须走原生评论路由），解锁卡按钮平滑滚动聚焦评论区</td>
+      </tr>
+      <tr>
+        <td>F3 热门榜</td>
+        <td>现有 rank（周期 tab）/hot 复用，EcodPostQuery 新增 <code>order=weighted</code>（views + comments×20，views 列缺失退化评论序），管理台选项补「加权热度」</td>
+        <td>周期 Tab 设计稿落地前已存在（rank 模块），零新增</td>
+      </tr>
+      <tr>
+        <td>F4 磁贴区</td>
+        <td>新模块 <code>tile-zone</code>（home/aside 通用，跨区回落）：repeater 条目 icon/label/href/color/badge + cols 3-6 + card/plain；icon 用 <code>ecod_icon_names()</code> 白名单文本输入</td>
+        <td>暂不接可视化图标网格（导航构建器的 iconSvg 选择器是 admin 专有交互，复用成本高），先用图标名文本 + 6 色预设</td>
+      </tr>
+      <tr>
+        <td>F6 资源卡</td>
+        <td>新函数 <code>ecod_pay_resource_card()</code>：<code>EPayResourceCard</code> 开 + 单篇可购 + 有预览图或任一 <code>pay_meta_*</code> 时替代默认付费卡；<code>pay_preview</code> 预览 + 元数据 dl 表 + 划线原价</td>
+        <td>已售次数无数据源，暂显示浏览量；门禁判定四层零改动</td>
+      </tr>
+      <tr>
+        <td>F7 聚合 Tab 卡</td>
+        <td>新模块 <code>tab-posts</code>：terms 多选分类作 Tab（最多 5 个），全部 Tab 一次性预渲染，前端切换（<code>Ecod.initTp()</code> 进 global.js，PJAX 安全）；空 Tab 自动隐藏</td>
+        <td>排序 pills v1 未上——只有「最新」一种实际排序，放假控件不如不放；数据已含计数，后续可加</td>
+      </tr>
+    </table>
   </section>
 
   </main>

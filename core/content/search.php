@@ -171,25 +171,43 @@ if (!function_exists('ecod_search_counts')) {
             return [];
         }
 
+        $count = static function (string $term): int {
+            /* LIKE '%kw%' 前导通配必然全表扫描，空结果页逐词 COUNT 可达 10 次；
+               建议词频只做提示用，缓存 10 分钟可接受 */
+            if (function_exists('ecod_cache_remember')) {
+                return (int) ecod_cache_remember('search_count_' . md5($term), 600, static function () use ($term) {
+                    return ecod_search_count_query($term);
+                });
+            }
+            return ecod_search_count_query($term);
+        };
+
+        try {
+            $out = [];
+            foreach ($terms as $term) {
+                $out[$term] = $count($term);
+            }
+            return $out;
+        } catch (\Throwable $e) {
+            return [];
+        }
+    }
+
+    function ecod_search_count_query(string $term): int
+    {
         try {
             $db = \Typecho\Db::get();
             $prefix = $db->getPrefix();
             $now = time();
-            $out = [];
-
-            foreach ($terms as $term) {
-                $like = $db->getAdapter()->quoteValue('%' . addcslashes($term, '\\%_') . '%');
-                $row = $db->fetchRow(
-                    "SELECT COUNT(*) AS num FROM {$prefix}contents
-                      WHERE type = 'post' AND status = 'publish' AND created < {$now}
-                        AND (title LIKE {$like} OR text LIKE {$like})"
-                );
-                $out[$term] = $row ? (int) $row['num'] : 0;
-            }
-
-            return $out;
+            $like = $db->getAdapter()->quoteValue('%' . addcslashes($term, '\\%_') . '%');
+            $row = $db->fetchRow(
+                "SELECT COUNT(*) AS num FROM {$prefix}contents
+                  WHERE type = 'post' AND status = 'publish' AND created < {$now}
+                    AND (title LIKE {$like} OR text LIKE {$like})"
+            );
+            return $row ? (int) $row['num'] : 0;
         } catch (\Throwable $e) {
-            return [];
+            return 0;
         }
     }
 }
@@ -225,11 +243,7 @@ if (!function_exists('ecod_search_empty')) {
         }
         ?>
         <div class="ecod_sugg">
-            <div class="ecod_empty">
-                <div class="ecod_empty__icon" aria-hidden="true"><?php echo ecod_icon('search', 30); ?></div>
-                <h3>没有找到「<?php echo htmlspecialchars($kw !== '' ? $kw : $archive->request->get('keywords', ''), ENT_QUOTES, 'UTF-8'); ?>」相关的文章</h3>
-                <p>试试更短的关键词，或者从下面挑一个方向</p>
-            </div>
+            <?php ecod_empty('search', '没有找到「' . htmlspecialchars($kw !== '' ? $kw : $archive->request->get('keywords', ''), ENT_QUOTES, 'UTF-8') . '」相关的文章', '试试更短的关键词，或者从下面挑一个方向'); ?>
 
             <?php
             $hits = [];
@@ -309,5 +323,90 @@ if (!function_exists('ecod_search_hotwords')) {
         }
 
         return $cache;
+    }
+}
+
+if (!function_exists('ecod_search_featured')) {
+    /**
+     * 搜索面板空态推荐文章
+     *
+     * 按设置项 ESearchPosts 的维度取前 N 篇，只查 cid / title / created，
+     * 链接由前端用 postUrl 模板按 cid 拼（不依赖路由里有没有 slug 段）。
+     * 聚合查询照例缓存 10 分钟：面板是高频入口，不值得每次点开都扫表。
+     *
+     * @param int    $limit 条数
+     * @param string $order hot / likes / comments / views
+     * @return array<int, array{cid:int,title:string,date:string}>
+     */
+    function ecod_search_featured(int $limit = 8, string $order = 'hot'): array
+    {
+        $limit = max(1, min(12, $limit));
+        if (!in_array($order, ['hot', 'likes', 'comments', 'views'], true)) {
+            return [];
+        }
+
+        $run = static function () use ($limit, $order): array {
+            try {
+                $db = \Typecho\Db::get();
+                $prefix = $db->getPrefix();
+                $now = time();
+                $where = "c.type = 'post' AND c.status = 'publish' AND c.created < {$now}";
+                $views = ecod_views_available() ? 'c.views' : '0';
+
+                if ($order === 'likes') {
+                    $sql = "SELECT c.cid, c.title, c.created, COUNT(l.cid) AS num
+                              FROM {$prefix}contents c
+                        INNER JOIN {$prefix}ecod_likes l ON l.cid = c.cid
+                             WHERE {$where}
+                          GROUP BY c.cid, c.title, c.created
+                          ORDER BY num DESC, c.created DESC
+                             LIMIT {$limit}";
+                } elseif ($order === 'comments') {
+                    $sql = "SELECT c.cid, c.title, c.created
+                              FROM {$prefix}contents c
+                             WHERE {$where}
+                          ORDER BY c.commentsNum DESC, c.created DESC
+                             LIMIT {$limit}";
+                } elseif ($order === 'views') {
+                    if (!ecod_views_available()) {
+                        return [];
+                    }
+                    $sql = "SELECT c.cid, c.title, c.created
+                              FROM {$prefix}contents c
+                             WHERE {$where}
+                          ORDER BY c.views DESC, c.created DESC
+                             LIMIT {$limit}";
+                } else {
+                    /* 热度：评论加权 8，与列表排序里「最多评论」的直观程度保持一致 */
+                    $sql = "SELECT c.cid, c.title, c.created
+                              FROM {$prefix}contents c
+                             WHERE {$where}
+                          ORDER BY (c.commentsNum * 8 + {$views}) DESC, c.created DESC
+                             LIMIT {$limit}";
+                }
+
+                $rows = $db->fetchAll($sql);
+                $out = [];
+                foreach ((array) $rows as $row) {
+                    $title = trim(strip_tags((string) ($row['title'] ?? '')));
+                    if ($title === '') {
+                        continue;
+                    }
+                    $out[] = [
+                        'cid'   => (int) ($row['cid'] ?? 0),
+                        'title' => mb_substr($title, 0, 60, 'UTF-8'),
+                        'date'  => date('m-d', (int) ($row['created'] ?? 0)),
+                    ];
+                }
+                return $out;
+            } catch (\Throwable $e) {
+                return [];
+            }
+        };
+
+        if (function_exists('ecod_cache_remember')) {
+            return (array) ecod_cache_remember('spanel_posts_' . $order . '_' . $limit, 600, $run);
+        }
+        return $run();
     }
 }

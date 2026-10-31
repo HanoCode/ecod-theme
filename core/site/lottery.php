@@ -107,7 +107,9 @@ function ecod_lottery_exchange_price(): int
 
 /**
  * 某奖品已消耗的库存（全部历史中奖行数，请求内缓存：
- * 挂件与页面同页渲染、overview 与 draw 多处调用时只查一次）
+ * 挂件与页面同页渲染、overview 与 draw 多处调用时只查一次）。
+ * 侧栏挂件全站渲染时每个奖品各一次 COUNT，游客页也会打到 DB——
+ * 再套 5 分钟文件缓存（抽奖 / 兑换落库时主动失效，见 ecod_lottery_draw）。
  */
 function ecod_lottery_used(string $key): int
 {
@@ -115,14 +117,24 @@ function ecod_lottery_used(string $key): int
     if (isset($cache[$key])) {
         return $cache[$key];
     }
+    if (function_exists('ecod_cache_remember')) {
+        return $cache[$key] = (int) ecod_cache_remember('lottery_used_' . $key, 300, function () use ($key) {
+            return ecod_lottery_used_query($key);
+        });
+    }
+    return $cache[$key] = ecod_lottery_used_query($key);
+}
+
+function ecod_lottery_used_query(string $key): int
+{
     try {
         $db = \Typecho\Db::get();
         $row = $db->fetchObject(
             $db->select('COUNT(*) AS n')->from('table.ecod_lottery_logs')->where('prize_key = ?', $key)
         );
-        return $cache[$key] = $row ? (int) $row->n : 0;
+        return $row ? (int) $row->n : 0;
     } catch (\Throwable $e) {
-        return $cache[$key] = 0;
+        return 0;
     }
 }
 
@@ -429,6 +441,9 @@ function ecod_lottery_draw(int $uid): array
             'day'        => (int) date('Ymd'),
             'created'    => time(),
         ]));
+        if (function_exists('ecod_cache_forget')) {
+            ecod_cache_forget('lottery_used_' . $prize['key']);
+        }
     } catch (\Throwable $e) {
         return ['ok' => false, 'error' => '记录失败，请重试'];
     }
@@ -491,6 +506,9 @@ function ecod_lottery_exchange(int $uid): array
             'day'        => (int) date('Ymd'),
             'created'    => time(),
         ]));
+        if (function_exists('ecod_cache_forget')) {
+            ecod_cache_forget('lottery_used_' . $top['key']);
+        }
     } catch (\Throwable $e) {
         return ['ok' => false, 'error' => '记录失败，请重试'];
     }

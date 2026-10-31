@@ -52,13 +52,13 @@ if (!function_exists('ecod_oembed_names')) {
     }
 
     /**
-     * 外链小图标（不依赖 components/icons.php，feed 等场景也能用）
+     * 外链小图标（不依赖 components/icons.php，feed 等场景也能用；css.gg external）
      */
     function ecod_oembed_arrow(): string
     {
-        return '<svg class="ecod_icon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor"'
-            . ' stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'
-            . '<path d="M7 17L17 7M8 7h9v9"/></svg>';
+        return '<svg class="ecod_icon" width="12" height="12" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">'
+            . '<path d="M15.6396 7.02527H12.0181V5.02527H19.0181V12.0253H17.0181V8.47528L12.1042 13.3892L10.6899 11.975L15.6396 7.02527Z"/>'
+            . '<path d="M10.9819 6.97473H4.98193V18.9747H16.9819V12.9747H14.9819V16.9747H6.98193V8.97473H10.9819V6.97473Z"/></svg>';
     }
 
     /**

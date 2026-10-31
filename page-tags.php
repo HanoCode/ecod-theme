@@ -12,7 +12,7 @@
  * 在后台「页面 → 新建页面 → 自定义模板」里选择「标签归档」即可（工具 → 特色页可一键创建）。
  * 全站标签墙：按文章数排序，字号随热度渐变，附文章数；点击进入标签文章流。
  */
-if (!defined('__TYPECHO_ROOT_DIR')) {
+if (!defined('__TYPECHO_ROOT_DIR__')) {
     exit;
 }
 $this->need('public/header.php');
@@ -57,11 +57,7 @@ $ecodTagSize = static function (int $count) use ($ecodTagMax): float {
     <?php ecod_page_hero('标签', (string) $this->title, '按话题找文章，字号越大聊得越多。', '<span>' . ecod_icon('tag', 13) . count($ecodTagItems) . ' 个标签</span>'); ?>
 
     <?php if (!$ecodTagItems): ?>
-        <div class="ecod_empty">
-            <div class="ecod_empty__icon" aria-hidden="true"><?php echo ecod_icon('tag', 28); ?></div>
-            <h3>还没有标签</h3>
-            <p>发文章时打上标签，这里就会长出来</p>
-        </div>
+        <?php ecod_empty('tag', '还没有标签', '发文章时打上标签，这里就会长出来'); ?>
     <?php else: ?>
         <div class="ecod_tagwall">
             <?php foreach ($ecodTagItems as $ecodTagItem): ?>

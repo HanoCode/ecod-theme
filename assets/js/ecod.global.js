@@ -21,38 +21,42 @@
         'color:#8a93a6;background:transparent;padding:3px 0;font-size:12px;'
     );
 
-    /* ---------- 内联图标 ---------- */
+    /* ---------- 内联图标（自动生成区，勿手改） ---------- */
+    /* 由 build/icons.mjs 依 build/icons.map.json 生成（css.gg 填充风格）；增删图标改映射表后重跑 node build/icons.mjs */
+    /* icons:generated:start */
     var ICON_PATHS = {
-        moon: '<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>',
-        sun: '<circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M4.93 4.93l1.41 1.41m11.32 11.32l1.41 1.41M2 12h2m16 0h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/>',
-        heart: '<path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>',
+        moon: '<path fill-rule="evenodd" clip-rule="evenodd" d="M12.2256 2.00253C9.59172 1.94346 6.93894 2.9189 4.92893 4.92891C1.02369 8.83415 1.02369 15.1658 4.92893 19.071C8.83418 22.9763 15.1658 22.9763 19.0711 19.071C21.0811 17.061 22.0565 14.4082 21.9975 11.7743C21.9796 10.9772 21.8669 10.1818 21.6595 9.40643C21.0933 9.9488 20.5078 10.4276 19.9163 10.8425C18.5649 11.7906 17.1826 12.4053 15.9301 12.6837C14.0241 13.1072 12.7156 12.7156 12 12C11.2844 11.2844 10.8928 9.97588 11.3163 8.0699C11.5947 6.81738 12.2094 5.43511 13.1575 4.08368C13.5724 3.49221 14.0512 2.90664 14.5935 2.34046C13.8182 2.13305 13.0228 2.02041 12.2256 2.00253ZM17.6569 17.6568C18.9081 16.4056 19.6582 14.8431 19.9072 13.2186C16.3611 15.2643 12.638 15.4664 10.5858 13.4142C8.53361 11.362 8.73568 7.63895 10.7814 4.09281C9.1569 4.34184 7.59434 5.09193 6.34315 6.34313C3.21895 9.46732 3.21895 14.5326 6.34315 17.6568C9.46734 20.781 14.5327 20.781 17.6569 17.6568Z" />',
+        sun: '<path fill-rule="evenodd" clip-rule="evenodd" d="M12 16C14.2091 16 16 14.2091 16 12C16 9.79086 14.2091 8 12 8C9.79086 8 8 9.79086 8 12C8 14.2091 9.79086 16 12 16ZM12 18C15.3137 18 18 15.3137 18 12C18 8.68629 15.3137 6 12 6C8.68629 6 6 8.68629 6 12C6 15.3137 8.68629 18 12 18Z" /><path fill-rule="evenodd" clip-rule="evenodd" d="M11 0H13V4.06189C12.6724 4.02104 12.3387 4 12 4C11.6613 4 11.3276 4.02104 11 4.06189V0ZM7.0943 5.68018L4.22173 2.80761L2.80752 4.22183L5.6801 7.09441C6.09071 6.56618 6.56608 6.0908 7.0943 5.68018ZM4.06189 11H0V13H4.06189C4.02104 12.6724 4 12.3387 4 12C4 11.6613 4.02104 11.3276 4.06189 11ZM5.6801 16.9056L2.80751 19.7782L4.22173 21.1924L7.0943 18.3198C6.56608 17.9092 6.09071 17.4338 5.6801 16.9056ZM11 19.9381V24H13V19.9381C12.6724 19.979 12.3387 20 12 20C11.6613 20 11.3276 19.979 11 19.9381ZM16.9056 18.3199L19.7781 21.1924L21.1923 19.7782L18.3198 16.9057C17.9092 17.4339 17.4338 17.9093 16.9056 18.3199ZM19.9381 13H24V11H19.9381C19.979 11.3276 20 11.6613 20 12C20 12.3387 19.979 12.6724 19.9381 13ZM18.3198 7.0943L21.1923 4.22183L19.7781 2.80762L16.9056 5.6801C17.4338 6.09071 17.9092 6.56608 18.3198 7.0943Z" />',
+        heart: '<path fill-rule="evenodd" clip-rule="evenodd" d="M12.0122 5.57169L10.9252 4.48469C8.77734 2.33681 5.29493 2.33681 3.14705 4.48469C0.999162 6.63258 0.999162 10.115 3.14705 12.2629L11.9859 21.1017L11.9877 21.0999L12.014 21.1262L20.8528 12.2874C23.0007 10.1395 23.0007 6.65711 20.8528 4.50923C18.705 2.36134 15.2226 2.36134 13.0747 4.50923L12.0122 5.57169ZM11.9877 18.2715L16.9239 13.3352L18.3747 11.9342L18.3762 11.9356L19.4386 10.8732C20.8055 9.50635 20.8055 7.29028 19.4386 5.92344C18.0718 4.55661 15.8557 4.55661 14.4889 5.92344L12.0133 8.39904L12.006 8.3918L12.005 8.39287L9.51101 5.89891C8.14417 4.53207 5.92809 4.53207 4.56126 5.89891C3.19442 7.26574 3.19442 9.48182 4.56126 10.8487L7.10068 13.3881L7.10248 13.3863L11.9877 18.2715Z" />',
         star: '<path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>',
-        check: '<path d="M20 6L9 17l-5-5"/>',
-        copy: '<rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>',
-        link: '<path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>',
-        trash: '<path d="M3 6h18M8 6V4h8v2m-9 0l1 14h8l1-14"/>',
-        play: '<circle cx="12" cy="12" r="9"/><path d="M10 8.5l6 3.5-6 3.5z"/>',
-        pause: '<circle cx="12" cy="12" r="9"/><path d="M10 9v6M14 9v6"/>',
-        volume: '<path d="M11 5L6 9H2v6h4l5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7M18.5 5.5a9 9 0 0 1 0 13"/>',
-        search: '<circle cx="11" cy="11" r="7"/><path d="M21 21l-4.35-4.35"/>',
-        file: '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/>',
-        list: '<path d="M8 6h13M8 12h13M8 18h13M3.5 6h.01M3.5 12h.01M3.5 18h.01"/>',
-        external: '<path d="M7 17L17 7M8 7h9v9"/>',
-        x: '<path d="M18 6L6 18M6 6l12 12"/>',
-        clock: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/>',
-        inbox: '<path d="M22 12h-6l-2 3h-4l-2-3H2"/><path d="M5.45 5.11L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/>',
-        user: '<path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>',
-        alert: '<circle cx="12" cy="12" r="9"/><path d="M12 8v4M12 16h.01"/>',
-        left: '<path d="M15 5l-7 7 7 7"/>',
-        right: '<path d="M9 5l7 7-7 7"/>',
-        download: '<path d="M12 3v12"/><path d="M7 10l5 5 5-5"/><path d="M4 21h16"/>'
+        check: '<path d="M10.5858 13.4142L7.75735 10.5858L6.34314 12L10.5858 16.2427L17.6568 9.1716L16.2426 7.75739L10.5858 13.4142Z" />',
+        copy: '<path d="M13 7H7V5H13V7Z" /><path d="M13 11H7V9H13V11Z" /><path d="M7 15H13V13H7V15Z" /><path fill-rule="evenodd" clip-rule="evenodd" d="M3 19V1H17V5H21V23H7V19H3ZM15 17V3H5V17H15ZM17 7V19H9V21H19V7H17Z" />',
+        link: '<path d="M14.8284 12L16.2426 13.4142L19.071 10.5858C20.6331 9.02365 20.6331 6.49099 19.071 4.9289C17.509 3.3668 14.9763 3.3668 13.4142 4.9289L10.5858 7.75732L12 9.17154L14.8284 6.34311C15.6095 5.56206 16.8758 5.56206 17.6568 6.34311C18.4379 7.12416 18.4379 8.39049 17.6568 9.17154L14.8284 12Z" /><path d="M12 14.8285L13.4142 16.2427L10.5858 19.0711C9.02372 20.6332 6.49106 20.6332 4.92896 19.0711C3.36686 17.509 3.36686 14.9764 4.92896 13.4143L7.75739 10.5858L9.1716 12L6.34317 14.8285C5.56212 15.6095 5.56212 16.8758 6.34317 17.6569C7.12422 18.4379 8.39055 18.4379 9.1716 17.6569L12 14.8285Z" /><path d="M14.8285 10.5857C15.219 10.1952 15.219 9.56199 14.8285 9.17147C14.4379 8.78094 13.8048 8.78094 13.4142 9.17147L9.1716 13.4141C8.78107 13.8046 8.78107 14.4378 9.1716 14.8283C9.56212 15.2188 10.1953 15.2188 10.5858 14.8283L14.8285 10.5857Z" />',
+        trash: '<path fill-rule="evenodd" clip-rule="evenodd" d="M17 5V4C17 2.89543 16.1046 2 15 2H9C7.89543 2 7 2.89543 7 4V5H4C3.44772 5 3 5.44772 3 6C3 6.55228 3.44772 7 4 7H5V18C5 19.6569 6.34315 21 8 21H16C17.6569 21 19 19.6569 19 18V7H20C20.5523 7 21 6.55228 21 6C21 5.44772 20.5523 5 20 5H17ZM15 4H9V5H15V4ZM17 7H7V18C7 18.5523 7.44772 19 8 19H16C16.5523 19 17 18.5523 17 18V7Z" /><path d="M9 9H11V17H9V9Z" /><path d="M13 9H15V17H13V9Z" />',
+        play: '<path d="M15 12.3301L9 16.6603L9 8L15 12.3301Z" />',
+        pause: '<path d="M8 5h3.2v14H8zM12.8 5H16v14h-3.2z"/>',
+        volume: '<path d="M24 12C24 16.4183 20.4183 20 16 20V18C19.3137 18 22 15.3137 22 12C22 8.68629 19.3137 6 16 6V4C20.4183 4 24 7.58172 24 12Z" /><path d="M20 12C20 14.2091 18.2091 16 16 16V14C17.1046 14 18 13.1046 18 12C18 10.8954 17.1046 10 16 10V8C18.2091 8 20 9.79086 20 12Z" /><path fill-rule="evenodd" clip-rule="evenodd" d="M9 16L15 20V4L9 8H5C2.79086 8 1 9.79086 1 12C1 14.2091 2.79086 16 5 16H9ZM5 10H9L13 7.5V16.5L9 14H5C3.89543 14 3 13.1046 3 12C3 10.8954 3.89543 10 5 10Z" />',
+        search: '<path fill-rule="evenodd" clip-rule="evenodd" d="M18.319 14.4326C20.7628 11.2941 20.542 6.75347 17.6569 3.86829C14.5327 0.744098 9.46734 0.744098 6.34315 3.86829C3.21895 6.99249 3.21895 12.0578 6.34315 15.182C9.22833 18.0672 13.769 18.2879 16.9075 15.8442C16.921 15.8595 16.9351 15.8745 16.9497 15.8891L21.1924 20.1317C21.5829 20.5223 22.2161 20.5223 22.6066 20.1317C22.9971 19.7412 22.9971 19.1081 22.6066 18.7175L18.364 14.4749C18.3493 14.4603 18.3343 14.4462 18.319 14.4326ZM16.2426 5.28251C18.5858 7.62565 18.5858 11.4246 16.2426 13.7678C13.8995 16.1109 10.1005 16.1109 7.75736 13.7678C5.41421 11.4246 5.41421 7.62565 7.75736 5.28251C10.1005 2.93936 13.8995 2.93936 16.2426 5.28251Z" />',
+        file: '<path fill-rule="evenodd" clip-rule="evenodd" d="M3 5C3 3.34315 4.34315 2 6 2H14C17.866 2 21 5.13401 21 9V19C21 20.6569 19.6569 22 18 22H6C4.34315 22 3 20.6569 3 19V5ZM13 4H6C5.44772 4 5 4.44772 5 5V19C5 19.5523 5.44772 20 6 20H18C18.5523 20 19 19.5523 19 19V9H13V4ZM18.584 7C17.9413 5.52906 16.6113 4.4271 15 4.10002V7H18.584Z" />',
+        list: '<path fill-rule="evenodd" clip-rule="evenodd" d="M20 4H4C3.44771 4 3 4.44772 3 5V19C3 19.5523 3.44772 20 4 20H20C20.5523 20 21 19.5523 21 19V5C21 4.44771 20.5523 4 20 4ZM4 2C2.34315 2 1 3.34315 1 5V19C1 20.6569 2.34315 22 4 22H20C21.6569 22 23 20.6569 23 19V5C23 3.34315 21.6569 2 20 2H4ZM6 7H8V9H6V7ZM11 7C10.4477 7 10 7.44772 10 8C10 8.55228 10.4477 9 11 9H17C17.5523 9 18 8.55228 18 8C18 7.44772 17.5523 7 17 7H11ZM8 11H6V13H8V11ZM10 12C10 11.4477 10.4477 11 11 11H17C17.5523 11 18 11.4477 18 12C18 12.5523 17.5523 13 17 13H11C10.4477 13 10 12.5523 10 12ZM8 15H6V17H8V15ZM10 16C10 15.4477 10.4477 15 11 15H17C17.5523 15 18 15.4477 18 16C18 16.5523 17.5523 17 17 17H11C10.4477 17 10 16.5523 10 16Z" />',
+        external: '<path d="M15.6396 7.02527H12.0181V5.02527H19.0181V12.0253H17.0181V8.47528L12.1042 13.3892L10.6899 11.975L15.6396 7.02527Z" /><path d="M10.9819 6.97473H4.98193V18.9747H16.9819V12.9747H14.9819V16.9747H6.98193V8.97473H10.9819V6.97473Z" />',
+        x: '<path d="M6.2253 4.81108C5.83477 4.42056 5.20161 4.42056 4.81108 4.81108C4.42056 5.20161 4.42056 5.83477 4.81108 6.2253L10.5858 12L4.81114 17.7747C4.42062 18.1652 4.42062 18.7984 4.81114 19.1889C5.20167 19.5794 5.83483 19.5794 6.22535 19.1889L12 13.4142L17.7747 19.1889C18.1652 19.5794 18.7984 19.5794 19.1889 19.1889C19.5794 18.7984 19.5794 18.1652 19.1889 17.7747L13.4142 12L19.189 6.2253C19.5795 5.83477 19.5795 5.20161 19.189 4.81108C18.7985 4.42056 18.1653 4.42056 17.7748 4.81108L12 10.5858L6.2253 4.81108Z" />',
+        clock: '<path d="M9 7H11V12H16V14H9V7Z" /><path fill-rule="evenodd" clip-rule="evenodd" d="M22 12C22 17.5228 17.5228 22 12 22C6.47715 22 2 17.5228 2 12C2 6.47715 6.47715 2 12 2C17.5228 2 22 6.47715 22 12ZM20 12C20 16.4183 16.4183 20 12 20C7.58172 20 4 16.4183 4 12C4 7.58172 7.58172 4 12 4C16.4183 4 20 7.58172 20 12Z" />',
+        inbox: '<path fill-rule="evenodd" clip-rule="evenodd" d="M2 5C2 3.34315 3.34315 2 5 2H19C20.6569 2 22 3.34315 22 5V20C22 21.1046 21.1046 22 20 22H8.1477C8.09893 22.0036 8.04968 22.0054 8 22.0054H4C2.89543 22.0054 2 21.1099 2 20.0054V5ZM5 4H19C19.5523 4 20 4.44771 20 5V14H16C14.8954 14 14 14.8954 14 16V17H10V16.0054C10 14.9008 9.10457 14.0054 8 14.0054H4V5C4 4.44772 4.44771 4 5 4Z" />',
+        user: '<path fill-rule="evenodd" clip-rule="evenodd" d="M16 7C16 9.20914 14.2091 11 12 11C9.79086 11 8 9.20914 8 7C8 4.79086 9.79086 3 12 3C14.2091 3 16 4.79086 16 7ZM14 7C14 8.10457 13.1046 9 12 9C10.8954 9 10 8.10457 10 7C10 5.89543 10.8954 5 12 5C13.1046 5 14 5.89543 14 7Z" /><path d="M16 15C16 14.4477 15.5523 14 15 14H9C8.44772 14 8 14.4477 8 15V21H6V15C6 13.3431 7.34315 12 9 12H15C16.6569 12 18 13.3431 18 15V21H16V15Z" />',
+        alert: '<path d="M12 6C12.5523 6 13 6.44772 13 7V13C13 13.5523 12.5523 14 12 14C11.4477 14 11 13.5523 11 13V7C11 6.44772 11.4477 6 12 6Z" /><path d="M12 16C11.4477 16 11 16.4477 11 17C11 17.5523 11.4477 18 12 18C12.5523 18 13 17.5523 13 17C13 16.4477 12.5523 16 12 16Z" /><path fill-rule="evenodd" clip-rule="evenodd" d="M12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2ZM4 12C4 16.4183 7.58172 20 12 20C16.4183 20 20 16.4183 20 12C20 7.58172 16.4183 4 12 4C7.58172 4 4 7.58172 4 12Z" />',
+        left: '<path d="M16.2426 6.34317L14.8284 4.92896L7.75739 12L14.8285 19.0711L16.2427 17.6569L10.5858 12L16.2426 6.34317Z" />',
+        right: '<path d="M10.5858 6.34317L12 4.92896L19.0711 12L12 19.0711L10.5858 17.6569L16.2427 12L10.5858 6.34317Z" />',
+        download: '<path d="M11 5C11 4.44772 11.4477 4 12 4C12.5523 4 13 4.44772 13 5V12.1578L16.2428 8.91501L17.657 10.3292L12.0001 15.9861L6.34326 10.3292L7.75748 8.91501L11 12.1575V5Z" /><path d="M4 14H6V18H18V14H20V18C20 19.1046 19.1046 20 18 20H6C4.89543 20 4 19.1046 4 18V14Z" />',
+        zap: '<path d="M9 21.5L17.5 13L13 10L15 2.5L6.5 11L11 14L9 21.5Z" />',
     };
+    /* icons:generated:end */
 
     Ecod.icon = function (name, size) {
         var p = ICON_PATHS[name];
         if (!p) return '';
         size = size || 16;
-        return '<svg class="ecod_icon" width="' + size + '" height="' + size + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + p + '</svg>';
+        return '<svg class="ecod_icon" width="' + size + '" height="' + size + '" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">' + p + '</svg>';
     };
 
     /* ---------- 小工具 ---------- */
@@ -123,8 +127,37 @@
     }
     Ecod.live = live;
 
-    /* ---------- 无障碍：模态弹层焦点管理 ---------- */
-    var dialogState = null;
+    /* ---------- 轻提示 toast：统一的非阻断反馈（替代 alert / 散落的成功提示） ----------
+       Ecod.toast(msg, type, dur)；type: 'ok'（默认，绿勾）| 'bad'（红叹号）| 'info'（无图标） */
+    var toastWrap = null;
+
+    Ecod.toast = function (msg, type, dur) {
+        if (!toastWrap) {
+            toastWrap = document.createElement('div');
+            toastWrap.className = 'ecod_toasts';
+            toastWrap.setAttribute('aria-live', 'polite');
+            document.body.appendChild(toastWrap);
+        }
+        var t = document.createElement('div');
+        t.className = 'ecod_toast' + (type && type !== 'ok' ? ' ecod_toast--' + type : '');
+        var icon = type === 'bad' ? Ecod.icon('alert', 15) : (type === 'info' ? '' : Ecod.icon('check', 15));
+        t.innerHTML = icon + '<span></span>';
+        t.querySelector('span').textContent = msg;
+        toastWrap.appendChild(t);
+        window.requestAnimationFrame(function () { t.classList.add('is-in'); });
+        window.setTimeout(function () {
+            t.classList.remove('is-in');
+            t.classList.add('is-out');
+            window.setTimeout(function () { t.remove(); }, 240);
+        }, dur || 2600);
+    };
+
+    /* ---------- 无障碍：模态弹层原语 ----------
+       焦点陷阱 / Esc 关闭 / 滚动锁 / 焦点还原。滚动锁用栈计数：
+       多个弹层叠开（如裁剪弹窗叠在登录弹窗上）时不会互踩，全部关闭才解锁。
+       约定：el 为弹层根节点（内部须有 role="dialog" 面板）；
+       Ecod.dialogClose(el) 关指定层，缺省关最上层。 */
+    var dialogStack = [];
 
     function dialogItems(el) {
         var sel = 'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]),'
@@ -135,13 +168,14 @@
     }
 
     function dialogTrap(e) {
-        if (!dialogState || e.key !== 'Tab') return;
-        var items = dialogItems(dialogState.el);
+        var top = dialogStack[dialogStack.length - 1];
+        if (!top || e.key !== 'Tab') return;
+        var items = dialogItems(top.el);
         if (!items.length) return;
         var first = items[0];
         var last = items[items.length - 1];
         var active = document.activeElement;
-        var inside = dialogState.el.contains(active);
+        var inside = top.el.contains(active);
         if (e.shiftKey && (active === first || !inside)) {
             e.preventDefault();
             last.focus();
@@ -151,10 +185,29 @@
         }
     }
 
-    Ecod.dialogOpen = function (el, target) {
-        Ecod.dialogClose();
-        dialogState = { el: el, back: document.activeElement };
+    function dialogKey(e) {
+        if (e.key !== 'Escape') return;
+        var top = dialogStack[dialogStack.length - 1];
+        if (top) {
+            e.preventDefault();
+            Ecod.dialogClose();
+        }
+    }
+
+    function dialogLock() {
+        document.documentElement.classList.toggle('ecod-modal-lock', dialogStack.length > 0);
+    }
+
+    Ecod.dialogOpen = function (el, target, onClose) {
+        if (dialogStack.some(function (d) { return d.el === el; })) return;
+        dialogStack.push({
+            el: el,
+            back: document.activeElement,
+            onClose: typeof onClose === 'function' ? onClose : null
+        });
         document.addEventListener('keydown', dialogTrap, true);
+        document.addEventListener('keydown', dialogKey, true);
+        dialogLock();
         var node = target || dialogItems(el)[0] || el;
         if (node === el && !el.hasAttribute('tabindex')) el.setAttribute('tabindex', '-1');
         /* 弹层刚从 visibility:hidden / display:none 切出来时同步 focus 会失败，
@@ -166,14 +219,42 @@
         window.setTimeout(doFocus, 0);
     };
 
-    Ecod.dialogClose = function () {
-        if (!dialogState) return;
-        document.removeEventListener('keydown', dialogTrap, true);
-        var back = dialogState.back;
-        dialogState = null;
-        if (back && document.contains(back)) {
+    Ecod.dialogClose = function (el) {
+        var idx = -1;
+        if (el) {
+            for (var i = dialogStack.length - 1; i >= 0; i--) {
+                if (dialogStack[i].el === el) { idx = i; break; }
+            }
+        } else {
+            idx = dialogStack.length - 1;
+        }
+        if (idx < 0) return;
+        var entry = dialogStack[idx];
+        var back = entry.back;
+        dialogStack.splice(idx, 1);
+        dialogLock();
+        /* 焦点还原：下面还有弹层就把焦点还给它的首个控件，否则还给打开前的触发点 */
+        var top = dialogStack[dialogStack.length - 1];
+        if (top) {
+            var node = dialogItems(top.el)[0];
+            if (node) {
+                try { node.focus({ preventScroll: true }); } catch (e) {}
+            }
+        } else if (back && document.contains(back)) {
             try { back.focus({ preventScroll: true }); } catch (e) {}
         }
+        /* 通知组件自身收尾（收 is-open/hidden、重置状态）。先弹栈后调用，
+           组件 close 内部再走 dialogClose 时已查不到自己，天然 no-op */
+        if (typeof entry.onClose === 'function') entry.onClose();
+    };
+
+    /* ESC 收口：供各处独立 ESC 监听查询。弹层栈非空时，下层组件
+       （导航下拉/排序/右键菜单/浮动目录/表情面板等）不得再响应 ESC，
+       灯箱只在自己位于栈顶时才处理，保证一次 ESC 只关一层 */
+    Ecod.dialogActive = function () { return dialogStack.length > 0; };
+    Ecod.dialogTop = function () {
+        var top = dialogStack[dialogStack.length - 1];
+        return top ? top.el : null;
     };
 
     /* ---------- 主题切换 ---------- */
@@ -192,7 +273,8 @@
             if (bg) meta.setAttribute('content', bg);
         }
         document.querySelectorAll('[data-ecod-theme-toggle]').forEach(function (btn) {
-            btn.setAttribute('aria-label', mode === 'dark' ? '切换到浅色模式' : '切换到深色模式');
+            /* 可访问名必须包含可见文字「深浅」（label-content-name-mismatch） */
+            btn.setAttribute('aria-label', mode === 'dark' ? '深浅：当前深色，切换到浅色模式' : '深浅：当前浅色，切换到深色模式');
             /* 只替换图标，保留按钮里的文字标签（如 dock 的「深浅」） */
             var old = btn.querySelector('svg');
             var size = old ? (parseInt(old.getAttribute('width'), 10) || 17) : 17;
@@ -241,8 +323,6 @@
     Ecod.initDrawer = function () {
         var drawer = document.querySelector('[data-ecod-drawer]');
         if (!drawer) return;
-        var panel = drawer.querySelector('.ecod_drawer__panel');
-        var lastFocus = null;
 
         /* 开合状态同步到汉堡按钮，读屏与键盘用户才知道菜单是否展开 */
         function syncExpanded(open) {
@@ -251,25 +331,20 @@
             });
         }
 
+        /* Esc / 焦点陷阱 / 滚动锁 / 焦点还原均由弹层原语承担 */
         Ecod.drawerClose = function () {
             drawer.classList.remove('is-open');
             drawer.setAttribute('aria-hidden', 'true');
-            document.body.classList.remove('is-locked');
             syncExpanded(false);
-            if (lastFocus) {
-                try { lastFocus.focus({ preventScroll: true }); } catch (e) {}
-            }
+            Ecod.dialogClose(drawer);
         };
 
         function open() {
-            lastFocus = document.activeElement;
             drawer.classList.add('is-open');
             drawer.removeAttribute('aria-hidden');
-            document.body.classList.add('is-locked');
             syncExpanded(true);
             Ecod.renderFavs();
-            var first = drawer.querySelector('a, button');
-            if (first) first.focus({ preventScroll: true });
+            Ecod.dialogOpen(drawer, drawer.querySelector('a, button'), Ecod.drawerClose);
         }
 
         document.querySelectorAll('[data-ecod-drawer-open]').forEach(function (b) {
@@ -277,15 +352,6 @@
         });
         document.querySelectorAll('[data-ecod-drawer-close]').forEach(function (b) {
             once(b, 'drawerClose', 'click', Ecod.drawerClose);
-        });
-        once(drawer, 'drawerKey', 'keydown', function (e) {
-            if (e.key === 'Escape') { Ecod.drawerClose(); return; }
-            if (e.key !== 'Tab' || !panel) return;
-            var items = panel.querySelectorAll('a, button');
-            if (!items.length) return;
-            var first = items[0], last = items[items.length - 1];
-            if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
-            else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
         });
     };
 
@@ -339,7 +405,7 @@
             });
         });
         document.addEventListener('keydown', function (e) {
-            if (e.key !== 'Escape') return;
+            if (e.key !== 'Escape' || Ecod.dialogActive()) return;
             document.querySelectorAll('.ecod_nav__links li.has-sub.is-open').forEach(function (x) {
                 x.classList.remove('is-open');
                 var xa = x.querySelector(':scope > a');
@@ -348,12 +414,36 @@
         });
     };
 
+    /* ---------- mega 宽面板：缺口三角对准一级项中心 ----------
+       面板挂在 .ecod_nav 上全宽定位，缺口位置 CSS 拿不到，
+       把一级项中心 x 写入 --ecod-mega-arrow-x 供 ::before 定位 */
+    Ecod.initNavMegaArrow = function () {
+        var nav = document.querySelector('.ecod_nav');
+        if (!nav) return;
+        if (!nav.querySelector('.ecod_nav__sub.is-mega-full')) return;
+        var update = function () {
+            var navLeft = nav.getBoundingClientRect().left;
+            nav.querySelectorAll('.ecod_nav__sub.is-mega-full').forEach(function (sub) {
+                var r = sub.parentNode.getBoundingClientRect();
+                if (!r.width) return;
+                sub.style.setProperty('--ecod-mega-arrow-x', (r.left + r.width / 2 - navLeft) + 'px');
+            });
+        };
+        update();
+        if (!nav.dataset.megaArrowBound) {
+            nav.dataset.megaArrowBound = '1';
+            window.addEventListener('resize', update);
+            window.addEventListener('load', update);
+            if ('ResizeObserver' in window) new ResizeObserver(update).observe(nav);
+        }
+    };
+
     /* ---------- 回到顶部 ---------- */
     Ecod.initToTop = function () {
         var btn = document.querySelector('[data-ecod-totop]');
         if (btn) {
             once(btn, 'totop', 'click', function () {
-                window.scrollTo({ top: 0, behavior: 'smooth' });
+                window.scrollTo({ top: 0, behavior: Ecod.scrollBehavior() });
             });
             Ecod.addScroll(function () {
                 btn.classList.toggle('is-show', window.scrollY > 480);
@@ -364,7 +454,7 @@
         var dockTop = document.querySelector('[data-ecod-dock-top]');
         if (dockTop) {
             once(dockTop, 'dockTop', 'click', function () {
-                window.scrollTo({ top: 0, behavior: 'smooth' });
+                window.scrollTo({ top: 0, behavior: Ecod.scrollBehavior() });
             });
         }
     };
@@ -383,6 +473,39 @@
                 }, 260);
             });
         }
+
+        /* glow 样式：滑动指示器测量定位，点击时跟随（其余样式指示器不显示） */
+        var ind = dock.querySelector('.ecod_dock__ind');
+        var glow = dock.getAttribute('data-style') === 'glow' && ind;
+        var moveInd = function (btn) {
+            if (!glow || !btn) return;
+            ind.hidden = false;
+            ind.style.width = btn.offsetWidth + 'px';
+            ind.style.transform = 'translateX(' + btn.offsetLeft + 'px)';
+        };
+        var active = dock.querySelector('.ecod_dock__btn.is-active');
+        if (glow && active) {
+            /* 首帧布局稳定后再定位，避免字体加载后错位 */
+            var place = function () { moveInd(active); };
+            if (window.requestAnimationFrame) {
+                window.requestAnimationFrame(place);
+            } else {
+                place();
+            }
+            window.addEventListener('resize', function () {
+                active = dock.querySelector('.ecod_dock__btn.is-active') || active;
+                moveInd(active);
+            });
+        }
+        /* 点击切换选中态（动效反馈；链接条目照常跳转） */
+        dock.addEventListener('click', function (e) {
+            var btn = e.target.closest ? e.target.closest('.ecod_dock__btn') : null;
+            if (!btn || !dock.contains(btn)) return;
+            var prev = dock.querySelector('.ecod_dock__btn.is-active');
+            if (prev && prev !== btn) prev.classList.remove('is-active');
+            btn.classList.add('is-active');
+            if (glow) moveInd(btn);
+        });
     };
 
     /* ---------- 站点公告 ---------- */
@@ -397,17 +520,23 @@
             var popSeen = '';
             try { popSeen = localStorage.getItem(NPKEY) || ''; } catch (e) {}
             if (popSeen !== popHash) {
+                var popClose = function () {
+                    pop.classList.remove('is-open');
+                    pop.setAttribute('aria-hidden', 'true');
+                    Ecod.dialogClose(pop);
+                    try { localStorage.setItem(NPKEY, popHash); } catch (err) {}
+                };
                 setTimeout(function () {
                     pop.classList.add('is-open');
                     pop.setAttribute('aria-hidden', 'false');
+                    /* Esc / 焦点陷阱 / 滚动锁由弹层原语承担，onClose 负责收面板 */
+                    Ecod.dialogOpen(pop, null, popClose);
                 }, 350);
             }
             once(pop, 'noticePopClose', 'click', function (e) {
                 var closer = e.target.closest ? e.target.closest('[data-ecod-noticepop-close]') : null;
                 if (!closer) return;
-                pop.classList.remove('is-open');
-                pop.setAttribute('aria-hidden', 'true');
-                try { localStorage.setItem(NPKEY, popHash); } catch (err) {}
+                popClose();
             });
         }
 
@@ -851,8 +980,17 @@
             });
         }
 
-        /* Tab 切换（支持 #favs 之类的 hash 深链） */
+        /* Tab 切换（支持 #favs 之类的 hash 深链）
+           互动类（favs/likes/follows/history）挂在侧边「互动」组下：激活任一子项时
+           点亮侧边组入口并展开子标签行，切到其他菜单时收起 */
+        var UC_SOCIAL = { favs: 1, likes: 1, follows: 1, history: 1 };
         function activateTab(key) {
+            var isSocial = !!UC_SOCIAL[key];
+            root.querySelectorAll('[data-ecod-uc-group-tab]').forEach(function (g) {
+                g.classList.toggle('is-active', isSocial);
+            });
+            var subbar = root.querySelector('[data-ecod-uc-subbar]');
+            if (subbar) subbar.hidden = !isSocial;
             root.querySelectorAll('[data-ecod-uc-tab]').forEach(function (t) {
                 t.classList.toggle('is-active', t.dataset.ecodUcTab === key);
             });
@@ -873,6 +1011,32 @@
                 tab.addEventListener('click', function () {
                     activateTab(tab.dataset.ecodUcTab);
                     try { history.replaceState(null, '', '#' + tab.dataset.ecodUcTab); } catch (e) {}
+                });
+            });
+            root.querySelectorAll('[data-ecod-uc-group-tab]').forEach(function (gt) {
+                gt.addEventListener('click', function () {
+                    activateTab('favs');
+                    try { history.replaceState(null, '', '#favs'); } catch (e) {}
+                });
+            });
+        }
+
+        /* 抽奖记录筛选片（全部 / 中奖 / 兑换）：纯客户端过滤，服务端已直出全部数据 */
+        var lrecBox = root.querySelector('[data-ecod-lrec]');
+        if (lrecBox && !lrecBox.dataset.ecodBound) {
+            lrecBox.dataset.ecodBound = '1';
+            lrecBox.querySelectorAll('[data-lf]').forEach(function (chip) {
+                chip.addEventListener('click', function () {
+                    lrecBox.querySelectorAll('[data-lf]').forEach(function (c) {
+                        c.classList.toggle('is-active', c === chip);
+                    });
+                    var f = chip.dataset.lf;
+                    lrecBox.querySelectorAll('.ecod_lrec__item').forEach(function (it) {
+                        it.hidden = f !== 'all' && it.dataset.type !== f;
+                    });
+                    var end = lrecBox.querySelector('.ecod_lrec__end');
+                    var any = lrecBox.querySelector('.ecod_lrec__item:not([hidden])');
+                    if (end) end.hidden = !any;
                 });
             });
         }
@@ -955,20 +1119,62 @@
 
         var SEL = 'details.ecod_nav__user[open], details.ecod_nav__bell[open], details.ecod_share[open],'
             + ' details.ecod_reward[open], .ecod_nav__more details[open]';
+        var BASE = 'details.ecod_nav__user, details.ecod_nav__bell, details.ecod_share,'
+            + ' details.ecod_reward, .ecod_nav__more details';
 
         function closeAll(except) {
+            var restore = null;
             document.querySelectorAll(SEL).forEach(function (d) {
                 if (d === except) return;
+                /* 焦点正停在这个面板里（↑↓ 导航过）时记下来，收起后还给 summary，
+                   否则焦点会掉到 body（排序菜单关闭会还原焦点，这里行为对齐） */
+                if (d.contains(document.activeElement)) restore = d;
                 d.removeAttribute('open');
             });
+            if (restore) {
+                var s = restore.querySelector('summary');
+                if (s) {
+                    try { s.focus({ preventScroll: true }); } catch (err) {}
+                }
+            }
         }
+
+        /* details 开合同步 summary 的 aria-expanded（details 原生语义不覆盖按钮态）；
+           toggle 事件不冒泡，用 capture 接。顺带补 aria-haspopup。 */
+        document.addEventListener('toggle', function (e) {
+            var d = e.target;
+            if (!d || !d.querySelector) return;
+            var s = d.querySelector('summary');
+            if (s) {
+                s.setAttribute('aria-expanded', d.hasAttribute('open') ? 'true' : 'false');
+                s.setAttribute('aria-haspopup', 'menu');
+            }
+        }, true);
+        document.querySelectorAll(BASE).forEach(function (d) {
+            var s = d.querySelector('summary');
+            if (s && !s.hasAttribute('aria-haspopup')) s.setAttribute('aria-haspopup', 'menu');
+        });
+
+        /* 打开的下拉里 ↑↓ 在菜单项间循环（焦点在 summary 上时 ↓ 进第一项） */
+        document.addEventListener('keydown', function (e) {
+            if (e.key !== 'ArrowDown' && e.key !== 'ArrowUp') return;
+            var active = document.activeElement;
+            var d = active && active.closest ? active.closest(SEL) : null;
+            if (!d) return;
+            var items = Array.prototype.slice.call(d.querySelectorAll('a[href], button:not([disabled])'));
+            if (!items.length) return;
+            e.preventDefault();
+            var cur = items.indexOf(active);
+            var next = e.key === 'ArrowDown' ? (cur + 1) % items.length : (cur - 1 + items.length) % items.length;
+            items[next].focus();
+        });
 
         document.addEventListener('click', function (e) {
             var t = e.target;
             closeAll(t && t.closest ? t.closest('details') : null);
         });
         document.addEventListener('keydown', function (e) {
-            if (e.key !== 'Escape') return;
+            if (e.key !== 'Escape' || Ecod.dialogActive()) return;
             closeAll(null);
         });
     };
@@ -1049,7 +1255,9 @@
             };
             var av = likers.map(function (liker) {
                 if (liker.avatar) {
-                    return '<img src="' + esc(liker.avatar) + '" alt="" width="24" height="24" loading="lazy" decoding="async">';
+                    /* data-initial：头像失效时兜底成首字渐变圆（与服务端渲染同构） */
+                    return '<img src="' + esc(liker.avatar) + '" alt="" width="24" height="24" loading="lazy" decoding="async" data-initial="'
+                        + esc(String(liker.name || '').slice(0, 1)) + '">';
                 }
                 return '<i>' + esc(String(liker.name || '').slice(0, 1)) + '</i>';
             }).join('');
@@ -1332,8 +1540,6 @@
             var sel = window.getSelection ? String(window.getSelection()) : '';
             sel = sel.replace(/\s+/g, ' ').trim();
 
-            if (!link && !host && sel === '') return null;
-
             var items = [];
             var isArticle = !!(host && host.classList.contains('ecod_article'));
 
@@ -1384,7 +1590,42 @@
                 items.push({
                     icon: 'list',
                     label: '回到顶部',
-                    fn: function () { window.scrollTo({ top: 0, behavior: 'smooth' }); }
+                    fn: function () { window.scrollTo({ top: 0, behavior: Ecod.scrollBehavior() }); }
+                });
+            }
+
+            /* 全局接管后的兜底：空白处、纯文本上右键也给出通用动作，菜单不会空着 */
+            if (!items.length) {
+                items.push({
+                    icon: 'link',
+                    label: '复制本页地址',
+                    fn: function () { copyText(location.href); }
+                });
+                var pageTitle = String(document.title || '').trim();
+                if (pageTitle !== '') {
+                    items.push({
+                        icon: 'file',
+                        label: '复制页面标题',
+                        fn: function () { copyText(pageTitle); }
+                    });
+                }
+            }
+
+            /* 后台「右键菜单 → 自定义菜单项」：追加在底部，{url} 换成当前页地址 */
+            var custom = Array.isArray(CFG.ctxitems) ? CFG.ctxitems : [];
+            if (custom.length) {
+                items.push({ sep: true });
+                custom.forEach(function (it) {
+                    items.push({
+                        icon: 'link',
+                        label: it.label,
+                        fn: function () {
+                            var url = String(it.url || '').replace(/\{url\}/g, location.href);
+                            if (!url) return;
+                            if (it.blank) window.open(url, '_blank', 'noopener');
+                            else window.location.href = url;
+                        }
+                    });
                 });
             }
 
@@ -1447,7 +1688,7 @@
             if (ctxEl && !ctxEl.hidden && !ctxEl.contains(e.target)) ctxClose();
         }, true);
         document.addEventListener('keydown', function (e) {
-            if (e.key === 'Escape') ctxClose();
+            if (e.key === 'Escape' && !Ecod.dialogActive()) ctxClose();
         });
         window.addEventListener('scroll', ctxClose, { passive: true });
         window.addEventListener('resize', ctxClose);
@@ -1533,6 +1774,34 @@
         });
     };
 
+    /* ---------- 聚合 Tab 卡（F7）：多分类 Tab 前端切换，预渲染无请求 ---------- */
+    Ecod.initTp = function () {
+        document.querySelectorAll('.ecod_tp').forEach(function (card) {
+            if (card._ecodTp) return;
+            card._ecodTp = 1;
+
+            var tabs = card.querySelectorAll('[data-ecod-tp-tab]');
+            var panels = card.querySelectorAll('[data-ecod-tp-pane]');
+            if (!tabs.length || !panels.length) return;
+
+            var activate = function (tab) {
+                var key = tab.getAttribute('data-ecod-tp-tab');
+                Array.prototype.forEach.call(tabs, function (one) {
+                    var on = one === tab;
+                    one.classList.toggle('is-active', on);
+                    one.setAttribute('aria-selected', on ? 'true' : 'false');
+                });
+                Array.prototype.forEach.call(panels, function (panel) {
+                    panel.classList.toggle('is-active', panel.getAttribute('data-ecod-tp-pane') === key);
+                });
+            };
+
+            Array.prototype.forEach.call(tabs, function (tab) {
+                tab.addEventListener('click', function () { activate(tab); });
+            });
+        });
+    };
+
     /* ---------- 关注作者：切换 + 粉丝数就地更新（登录态由服务端渲染的按钮形态区分） ---------- */
     Ecod.initFollow = function () {
         if (!CFG.api) return;
@@ -1556,7 +1825,7 @@
             }).then(function (r) { return r.json(); }).then(function (data) {
                 btn.dataset.busy = '';
                 if (!data || !data.ok) {
-                    if (data && data.error) window.alert(data.error);
+                    if (data && data.error) Ecod.toast(data.error, 'bad');
                     return;
                 }
                 var on = !!data.following;
@@ -1656,6 +1925,12 @@
         try { tags = JSON.parse(panel.getAttribute('data-tags') || '[]'); } catch (e) {}
         if (!Array.isArray(tags)) tags = [];
 
+        /* 推荐文章：后端按 ESearchPosts 维度算好，前端只负责渲染成文字行 */
+        var posts = [];
+        try { posts = JSON.parse(panel.getAttribute('data-posts') || '[]'); } catch (e) {}
+        if (!Array.isArray(posts)) posts = [];
+        var postsLabel = panel.getAttribute('data-posts-label') || '推荐文章';
+
         function isOpen() { return panel.classList.contains('is-open'); }
 
         function open(prefill) {
@@ -1671,13 +1946,15 @@
                 input.value = prefill;
                 onInput();
             }
+            /* Esc / 焦点陷阱 / 滚动锁由弹层原语承担；面板有入场过渡，60ms 后补一次焦点 */
+            Ecod.dialogOpen(panel, input, close);
             setTimeout(function () { input.focus(); }, 60);
         }
 
         function close() {
             panel.classList.remove('is-open');
             panel.setAttribute('aria-hidden', 'true');
-            input.blur();
+            Ecod.dialogClose(panel);
         }
 
         Ecod.searchPanelOpen = open;
@@ -1723,14 +2000,7 @@
             open();
         }, true);
 
-        /* 遮罩外的点击落在面板外也关闭（只拦一次点击，避免误伤） */
-        document.addEventListener('keydown', function (e) {
-            if (!isOpen()) return;
-            if (e.key === 'Escape') {
-                e.preventDefault();
-                close();
-            }
-        });
+        /* Esc 关闭由弹层原语承担（dialogKey 只响应最上层） */
 
         /* ---- 空态：最近搜索 + 热词 + 标签 ---- */
         function chipRow(label, cls, items, withIcon) {
@@ -1742,6 +2012,22 @@
                 html += '<a class="ecod_spanel__chip ecod_spanel__item" href="' + esc(href) + '" data-ecod-spanel-q="' + esc(typeof it === 'string' ? it : it.name) + '">'
                     + (withIcon ? Ecod.icon('zap', 12) : '')
                     + '<span>' + esc(text) + '</span></a>';
+            });
+            return html + '</div></div>';
+        }
+
+        /* 推荐文章行：标题 + 日期，点击直达（链接按 cid 现场拼，不吃路由差异） */
+        function postRows() {
+            if (!posts.length) return '';
+            var html = '<div class="ecod_spanel__row is-posts"><div class="ecod_spanel__rowlabel">'
+                + esc(postsLabel) + '</div><div class="ecod_spanel__posts">';
+            posts.forEach(function (it) {
+                var cid = parseInt(it.cid, 10);
+                if (!cid) return;
+                html += '<a class="ecod_spanel__post ecod_spanel__item" href="' + esc(postUrl(cid)) + '">'
+                    + '<b>' + esc(it.title) + '</b>'
+                    + (it.date ? '<time>' + esc(it.date) + '</time>' : '')
+                    + '</a>';
             });
             return html + '</div></div>';
         }
@@ -1759,6 +2045,7 @@
             }
             html += chipRow('热词', 'is-hot', hotwords, false);
             html += chipRow('标签', 'is-tags', tags, false);
+            html += postRows();
             if (!html) html = '<div class="ecod_spanel__hint">输入关键词，回车全站搜索</div>';
             body.innerHTML = html;
             body.classList.remove('is-results');
@@ -1927,7 +2214,17 @@
             var drop = document.createElement('div');
             drop.className = 'ecod_suggest';
             drop.hidden = true;
+            drop.id = 'ecod-suggest-' + Math.random().toString(36).slice(2, 8);
+            /* combobox 语义：输入框控制联想列表，展开态跟随显隐 */
+            input.setAttribute('role', 'combobox');
+            input.setAttribute('aria-controls', drop.id);
+            input.setAttribute('aria-expanded', 'false');
             form.appendChild(drop);
+
+            function setDropOpen(open) {
+                drop.hidden = !open;
+                input.setAttribute('aria-expanded', open ? 'true' : 'false');
+            }
 
             function renderList(items, q) {
                 var html = '';
@@ -1960,12 +2257,12 @@
                     if (q) {
                         html = '<div class="ecod_suggest__empty">没有匹配「' + esc(q) + '」的文章，回车全站搜索</div>';
                     } else {
-                        drop.hidden = true;
+                        setDropOpen(false);
                         return;
                     }
                 }
                 drop.innerHTML = html;
-                drop.hidden = false;
+                setDropOpen(true);
             }
 
             function fetchSuggest(q) {
@@ -1995,8 +2292,20 @@
             input.addEventListener('input', onInput);
             input.addEventListener('keydown', function (e) {
                 if (e.key === 'Escape') {
-                    drop.hidden = true;
+                    setDropOpen(false);
+                    return;
                 }
+                /* ↑↓ 在联想项间移动焦点，进结果后回车直达（combobox 键盘约定） */
+                if (e.key !== 'ArrowDown' && e.key !== 'ArrowUp') return;
+                if (drop.hidden) return;
+                var items = Array.prototype.slice.call(drop.querySelectorAll('a.ecod_suggest__item'));
+                if (!items.length) return;
+                e.preventDefault();
+                var cur = items.indexOf(document.activeElement);
+                var next = cur < 0
+                    ? (e.key === 'ArrowDown' ? 0 : items.length - 1)
+                    : (e.key === 'ArrowDown' ? (cur + 1) % items.length : (cur - 1 + items.length) % items.length);
+                items[next].focus();
             });
             form.addEventListener('submit', function () {
                 var q = input.value.trim();
@@ -2011,7 +2320,7 @@
                 onInput();
             });
             document.addEventListener('click', function (e) {
-                if (!form.contains(e.target)) drop.hidden = true;
+                if (!form.contains(e.target)) setDropOpen(false);
             });
         });
     };
@@ -2557,8 +2866,10 @@
         Array.prototype.forEach.call(imgs, function (img) {
             img.setAttribute('data-ecod-ready', '1');
 
-            if (img.complete && img.naturalWidth > 0) {
-                img.classList.add('is-loaded');
+            /* 已完成分两种：真加载完，或已经失败（缓存 404 / 坏地址在脚本执行前就报错）。
+               失败态必须这里补判——error 事件不会再发，只靠监听会永久停在裂图。 */
+            if (img.complete) {
+                img.classList.add(img.naturalWidth > 0 ? 'is-loaded' : 'is-error');
                 return;
             }
 
@@ -2572,6 +2883,38 @@
         });
     };
 
+    /* ---------- 图片失败兜底：失败图统一打 is-error；头像换渐变首字圆 ---------- */
+    /* 单张图的失败处理。头像堆叠无名字可用时退化成纯渐变圆（与无头像 <i> 同构）；
+       其余图统一标 is-error，由 CSS 决定隐藏裂图本体（卡片）或整块撤下（正文）。 */
+    Ecod._imgFailed = function (img) {
+        if (!img || img.tagName !== 'IMG') return;
+        if (img.closest('.ecod_likers__av')) {
+            var ph = document.createElement('i');
+            if (img.dataset.initial) ph.textContent = img.dataset.initial;
+            img.replaceWith(ph);
+            return;
+        }
+        img.classList.add('is-error');
+    };
+
+    Ecod.initImgError = function () {
+        if (!Ecod._imgErrorBound) {
+            Ecod._imgErrorBound = true;
+            /* error 不冒泡，必须 capture；document 级委托对 PJAX 换页后的新图同样生效 */
+            document.addEventListener('error', function (e) {
+                Ecod._imgFailed(e.target);
+            }, true);
+        }
+        /* 委托绑定前就已失败的图（解析阶段报错 / 缓存 404）补扫一次。
+           必须用静态 NodeList：_imgFailed 会把头像 img 换成 <i>，
+           document.images 是活集合，边遍历边删会漏掉后一张。 */
+        Array.prototype.forEach.call(document.querySelectorAll('img'), function (img) {
+            if (img.complete && img.naturalWidth === 0) {
+                Ecod._imgFailed(img);
+            }
+        });
+    };
+
     /* ---------- 列表入场动效 ---------- */
     /* 依赖整包样式表的动画规则（.ecod-reveal 的 opacity:0 等）——
        完整 CSS 异步加载时必须等 data-ecod-cssready 标记就位再初始化，
@@ -2580,6 +2923,12 @@
     /* 系统「减少动态效果」：所有 JS 驱动的动效统一走这里，勿各自 matchMedia */
     Ecod.reduceMotion = function () {
         return !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+    };
+
+    /* JS 侧程序化滚动统一走这里：reduce-motion 用户返回 auto，
+       避免 behavior:'smooth' 绕过 CSS 的滚动动效降级 */
+    Ecod.scrollBehavior = function () {
+        return Ecod.reduceMotion() ? 'auto' : 'smooth';
     };
 
     /* 首屏整页加载不加入场动效：内容已在关键 CSS 下画出第一帧，
@@ -2741,9 +3090,7 @@
         var search = nav.querySelector('.ecod_nav__search, .ecod_nav__searchbtn');
         if (!links || !search) return;
 
-        var CHEVRON = '<svg class="ecod_icon" width="12" height="12" viewBox="0 0 24 24" fill="none"'
-            + ' stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'
-            + '<path d="M9 18l6-6-6-6"/></svg>';
+        var CHEVRON = '<svg class="ecod_icon" width="12" height="12" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M10.5858 6.34317L12 4.92896L19.0711 12L12 19.0711L10.5858 17.6569L16.2427 12L10.5858 6.34317Z"/></svg>';
         var MIN_HEAD = 3; /* 至少保住：首页 + 2 个链接 */
 
         /* 摊平成有序池：平铺项在前、已收纳项在后，保证多次执行顺序稳定 */
@@ -2920,33 +3267,29 @@
             });
         });
 
-        /* 全站登录弹窗：事件委托，PJAX 换页后入口链接被替换也能继续用 */
+        /* 全站登录弹窗：事件委托，PJAX 换页后入口链接被替换也能继续用。
+           Esc / 焦点陷阱 / 滚动锁 / 焦点还原由弹层原语承担 */
         var authModal = document.querySelector('[data-ecod-authmodal]');
         if (authModal && !authModal.dataset.ecodBound) {
             authModal.dataset.ecodBound = '1';
             function authModalClose() {
                 authModal.hidden = true;
-                document.documentElement.classList.remove('ecod-modal-lock');
+                Ecod.dialogClose(authModal);
             }
             document.addEventListener('click', function (e) {
                 var opener = e.target.closest('[data-ecod-login-open]');
                 if (opener && authModal) {
                     e.preventDefault();
                     authModal.hidden = false;
-                    document.documentElement.classList.add('ecod-modal-lock');
                     /* 打开即换一张验证码，避免用的是上一次的过期图 */
                     var modalForm = authModal.querySelector('[data-ecod-login]');
                     if (modalForm) { capRefresh(modalForm); }
-                    var first = authModal.querySelector('[name="name"]');
-                    if (first) { try { first.focus({ preventScroll: true }); } catch (err) {} }
+                    Ecod.dialogOpen(authModal, authModal.querySelector('[name="name"]'), authModalClose);
                     return;
                 }
                 if (!authModal.hidden && e.target.closest('[data-ecod-authmodal-close]')) {
                     authModalClose();
                 }
-            });
-            document.addEventListener('keydown', function (e) {
-                if (e.key === 'Escape' && !authModal.hidden) { authModalClose(); }
             });
         }
 
@@ -3222,7 +3565,7 @@
 
                 function close() {
                     el.hidden = true;
-                    document.documentElement.classList.remove('ecod-modal-lock');
+                    Ecod.dialogClose(el);
                 }
 
                 function open(file, done) {
@@ -3240,7 +3583,7 @@
                     img.onerror = close;
                     img.src = url;
                     el.hidden = false;
-                    document.documentElement.classList.add('ecod-modal-lock');
+                    Ecod.dialogOpen(el, null, close);
                 }
 
                 /* 按当前取景把可见区域裁成正方形，短边最大 512px，PNG 保留透明通道 */
@@ -3280,9 +3623,7 @@
                     zoomSlider.addEventListener('input', function () {
                         setScale(parseFloat(zoomSlider.value) || 1);
                     });
-                    document.addEventListener('keydown', function (e) {
-                        if (e.key === 'Escape' && !el.hidden) close();
-                    });
+                    /* Esc 关闭由弹层原语承担 */
                     el.addEventListener('click', function (e) {
                         if (e.target.closest('[data-ecod-crop-close]')) { close(); return; }
                         if (e.target.closest('[data-ecod-crop-ok]')) {
@@ -3317,6 +3658,47 @@
                     var body = new FormData();
                     body.append('token', token);
                     accPost('avatar_remove', body).then(function (data) {
+                        if (data && data.ok) {
+                            location.reload();
+                        } else {
+                            accMsg('avatar', (data && data.error) || '操作失败', false);
+                        }
+                    });
+                });
+            }
+
+            /* 个人中心封面：上传 / 移除（hero 区在 data-ecod-account 外，document 级查找） */
+            var coverInput = document.querySelector('[data-ecod-cover-input]');
+            if (coverInput && !coverInput.dataset.ecodBound) {
+                coverInput.dataset.ecodBound = '1';
+                coverInput.addEventListener('change', function () {
+                    var file = coverInput.files && coverInput.files[0];
+                    coverInput.value = '';
+                    if (!file) return;
+                    if (file.size > 8 * 1024 * 1024) { accMsg('avatar', '封面不能超过 8MB', false); return; }
+                    var body = new FormData();
+                    body.append('cover', file, file.name || 'cover.jpg');
+                    body.append('token', token);
+                    accMsg('avatar', '封面上传中…', true);
+                    accPost('cover_upload', body).then(function (data) {
+                        if (data && data.ok) {
+                            accMsg('avatar', '封面已更新，刷新页面…', true);
+                            setTimeout(function () { location.reload(); }, 600);
+                        } else {
+                            accMsg('avatar', (data && data.error) || '上传失败', false);
+                        }
+                    }).catch(function () {
+                        accMsg('avatar', '网络异常，请重试', false);
+                    });
+                });
+            }
+            var coverRemove = document.querySelector('[data-ecod-cover-remove]');
+            if (coverRemove && !coverRemove.dataset.ecodBound) {
+                coverRemove.dataset.ecodBound = '1';
+                coverRemove.addEventListener('click', function () {
+                    var body = new FormData();
+                    body.append('token', token);
+                    accPost('cover_remove', body).then(function (data) {
                         if (data && data.ok) {
                             location.reload();
                         } else {
@@ -3669,7 +4051,7 @@
             closeAll(e.target.closest ? e.target.closest('[data-ecod-sort]') : null);
         });
         document.addEventListener('keydown', function (e) {
-            if (e.key !== 'Escape') return;
+            if (e.key !== 'Escape' || Ecod.dialogActive()) return;
             var open = document.querySelector('[data-ecod-sort].is-open');
             if (!open) return;
             closeAll(null);
@@ -3708,6 +4090,28 @@
             return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
         }
 
+        /* 推广返佣：一键复制专属链接（clipboard 不可用时走 execCommand 兜底） */
+        var refCopy = root.querySelector('[data-ecod-ref-copy]');
+        if (refCopy && !refCopy.dataset.ecodBound) {
+            refCopy.dataset.ecodBound = '1';
+            var refLink = root.querySelector('.ecod_ref__link');
+            var refLabel = refCopy.querySelector('span');
+            refCopy.addEventListener('click', function () {
+                var url = refLink ? refLink.value : '';
+                if (!url) return;
+                copyText(url, function () {
+                    if (refLabel) refLabel.textContent = '已复制';
+                    refCopy.classList.add('is-copied');
+                    live('推广链接已复制');
+                    if (refLink) refLink.select();
+                    setTimeout(function () {
+                        if (refLabel) refLabel.textContent = '复制链接';
+                        refCopy.classList.remove('is-copied');
+                    }, 1600);
+                });
+            });
+        }
+
         if (btn) {
             once(btn, 'creditsSignin', 'click', function () {
                 if (btn.disabled) return;
@@ -3722,7 +4126,9 @@
                 }).then(function (r) { return r.json(); }).then(function (res) {
                     if (res && res.ok) {
                         btn.textContent = '今日已签到';
+                        btn.disabled = true;
                         if (balEl) balEl.textContent = res.balance;
+                        Ecod.creditsSync(res);
                         say('签到成功' + (res.delta > 0 ? ' +' + res.delta : '')
                             + (res.streak > 1 ? '，已连续 ' + res.streak + ' 天' : ''));
                     } else {
@@ -3803,6 +4209,7 @@
                     btn.textContent = '已签到';
                     btn.dataset.signed = '1';
                     if (bal && typeof res.balance === 'number') bal.textContent = res.balance;
+                    Ecod.creditsSync(res);
                     live('签到成功' + (res.delta > 0 ? ' +' + res.delta : ''));
                 } else {
                     if (res && res.signed) {
@@ -3820,18 +4227,150 @@
         });
     };
 
+    /* ---------- 签到成功的全局同步 ----------
+       一页上可能同时挂着「我的积分」面板、头部用户菜单的签到行与侧栏打卡挂件，
+       任一入口签到后都要把余额与已签状态同步到整页，避免三处数字互相矛盾 */
+    Ecod.creditsSync = function (res) {
+        if (!res || !res.ok) return;
+
+        var bals = document.querySelectorAll(
+            '[data-ecod-checkin-balance], [data-ecod-credits-balance], [data-ecod-credits-quick-balance]'
+        );
+        for (var i = 0; i < bals.length; i++) {
+            if (typeof res.balance === 'number') {
+                bals[i].textContent = res.balance;
+                bals[i].hidden = false;
+            }
+        }
+
+        var signs = document.querySelectorAll('[data-ecod-credits-signin], [data-ecod-credits-quick-signin]');
+        for (var j = 0; j < signs.length; j++) {
+            signs[j].disabled = true;
+            signs[j].setAttribute('data-signed', '1');
+            /* 头部用户菜单那一行空间小，用短文案；个人中心按钮自己会改成「今日已签到」 */
+            if (signs[j].hasAttribute('data-ecod-credits-quick-signin')) {
+                signs[j].textContent = '已签到';
+            }
+        }
+    };
+
+    /* ---------- 每日打卡挂件（components/aside/checkin.php） ----------
+       签到状态与连签天数服务端直出；这里接管打卡点击，
+       成功后把横幅切成到账态、余额回填、动态列表补一条 */
+    Ecod.initCheckin = function () {
+        var root = document.querySelector('[data-ecod-checkin]');
+        if (!root || root.dataset.checkinReady === '1') return;
+        root.dataset.checkinReady = '1';
+
+        var btn = root.querySelector('[data-ecod-checkin-go]');
+        if (!btn) return;
+        var msg = root.querySelector('[data-ecod-checkin-msg]');
+        var streak = root.querySelector('[data-ecod-checkin-streak]');
+
+        /* 签完把横幅切到「已到账」态：文案换配置文案，余额露出来 */
+        function markSigned(res) {
+            var banner = root.querySelector('[data-ecod-checkin-banner]');
+            var hint = root.querySelector('[data-ecod-checkin-hint]');
+            var bal = root.querySelector('[data-ecod-checkin-balance]');
+            if (banner) banner.classList.add('is-signed');
+            if (hint) hint.textContent = root.dataset.banner || '今日份奖励已到账';
+            if (bal) {
+                bal.hidden = false;
+                if (typeof res.balance === 'number') bal.textContent = res.balance;
+            }
+            if (streak && res.streak) streak.textContent = res.streak;
+        }
+
+        /* 动态列表就地补一条，省一次刷新；没有列表（关了动态）就跳过 */
+        function prependFeed(res) {
+            var list = root.querySelector('[data-ecod-checkin-list]');
+            if (!list || !(res.delta > 0)) return;
+
+            var li = document.createElement('li');
+            li.className = 'ecod_checkin__item';
+
+            var name = document.createElement('a');
+            name.textContent = root.dataset.me || '我';
+            if (root.dataset.meUrl) name.href = root.dataset.meUrl;
+
+            var why = document.createElement('em');
+            why.textContent = '打卡成功';
+
+            var delta = document.createElement('b');
+            delta.textContent = '+' + res.delta;
+
+            li.appendChild(name);
+            li.appendChild(why);
+            li.appendChild(delta);
+            list.insertBefore(li, list.firstChild);
+
+            /* 与服务端一致：最多留 15 条 */
+            while (list.children.length > 15) {
+                list.removeChild(list.lastElementChild);
+            }
+
+            var empty = root.querySelector('[data-ecod-checkin-empty]');
+            if (empty) empty.hidden = true;
+        }
+
+        once(btn, 'checkin', 'click', function () {
+            if (btn.disabled) return;
+            btn.disabled = true;
+            if (msg) { msg.textContent = ''; msg.classList.remove('is-ok'); }
+            var fd = new FormData();
+            fd.append('token', root.dataset.token || '');
+            fetch((root.dataset.api || CFG.api || '') + '?action=signin', {
+                method: 'POST',
+                credentials: 'same-origin',
+                body: fd,
+                headers: { 'X-Requested-With': 'XMLHttpRequest' }
+            }).then(function (r) { return r.json(); }).then(function (res) {
+                if (res && res.ok) {
+                    btn.textContent = '已打卡';
+                    markSigned(res);
+                    prependFeed(res);
+                    Ecod.creditsSync(res);
+                    if (msg) {
+                        msg.textContent = '打卡成功' + (res.delta > 0 ? ' +' + res.delta : '');
+                        msg.classList.add('is-ok');
+                    }
+                    live('打卡成功' + (res.delta > 0 ? ' +' + res.delta : ''));
+                } else {
+                    if (res && res.signed) {
+                        btn.textContent = '已打卡';
+                        markSigned(res || {});
+                    } else {
+                        btn.disabled = false;
+                    }
+                    if (msg) msg.textContent = (res && res.error) || '打卡失败，请稍后重试';
+                    live((res && res.error) || '打卡失败，请稍后重试');
+                }
+            }).catch(function () {
+                btn.disabled = false;
+                if (msg) msg.textContent = '网络异常，请稍后重试';
+                live('网络异常，请稍后重试');
+            });
+        });
+    };
+
     Ecod.refresh = function () {
         /* 换页时先停掉上一页的朗读，避免声音延续到新页面 */
         Ecod.runPost('stopTts');
         Ecod.initNavOverflow();
         Ecod.initNavActive();
+        /* PJAX 换页后重绑主题切换：此前靠「切换按钮永远在 shell 外」的隐式约定，
+           把 initTheme 纳入 refresh 后，按钮放进 shell 内也不会静默失效
+           （applyTheme 幂等，toggle 绑定走 once 不会重复） */
+        Ecod.initTheme();
         Ecod.initHistory();
         Ecod.renderUserCenter();
         Ecod.initCredits();
         Ecod.initCreditsQuick();
+        Ecod.initCheckin();
         Ecod.resetScroll();
         Ecod.initHeader();
         Ecod.initNavPin();
+        Ecod.initNavMegaArrow();
         Ecod.initToTop();
         Ecod.initProgress();
         Ecod.runPost('initToc');
@@ -3858,6 +4397,7 @@
         Ecod.initCatTools();
         Ecod.initSort();
         Ecod.initRank();
+        Ecod.initTp();
         Ecod.initWtabs();
         Ecod.initFollow();
         Ecod.runPost('initContribute');
@@ -3878,6 +4418,7 @@
         Ecod.initStream();
         Ecod.initLoadMore();
         Ecod.runPost('initAi');
+        Ecod.runPost('bindPayComment');
         Ecod.runPost('initShowMore');
         Ecod.runPost('initPoll');
         Ecod.runPost('initAiChat');
@@ -3905,17 +4446,23 @@
 
     Ecod.ensurePostBundle = function (done) {
         var shell = document.getElementById('ecod-shell');
-        var need = shell && shell.getAttribute('data-ecod-bundle') === 'post';
-        if (!need || Ecod._postLoaded) {
+        /* 内容页整包；例外：任何页面出现抽奖组件（首页/侧栏挂件）都至少要 post.js，
+           否则 initLottery 不跑，抽奖按钮与「我的记录」在非内容页全部失灵 */
+        var needPost = shell && shell.getAttribute('data-ecod-bundle') === 'post';
+        var needLottery = !!document.querySelector('[data-ecod-lottery]');
+        if ((!needPost && !needLottery) || Ecod._postLoaded) {
             if (done) done();
             return;
         }
         /* 内容页脚本链：prism（代码高亮库，先于增强包，initPrism 依赖它）
            → 二维码（分享卡依赖）→ 增强包。按序注入保持 defer 的执行顺序；
            正文页直载时页脚已按同序输出这三个标签，这里只补 PJAX 场景。
+           抽奖挂件触发的加载只取 post.js（prism / qr 对它无用，别拖慢首屏）。
            配色 CSS 体积小，全站在 head 常驻（见 include.php），无需注入。 */
-        var chain = [CFG.prismUrl, CFG.qrUrl, CFG.post].filter(Boolean);
-        Ecod._postLoaded = true;
+        var chain = needPost
+            ? [CFG.prismUrl, CFG.qrUrl, CFG.post].filter(Boolean)
+            : [CFG.post].filter(Boolean);
+        if (needPost) Ecod._postLoaded = true;
         (function next() {
             var url = chain.shift();
             if (!url) {
@@ -3940,6 +4487,7 @@
 
     document.addEventListener('DOMContentLoaded', function () {
         Ecod.initTheme();
+        Ecod.initImgError();
         Ecod.initDrawer();
         Ecod.initHotkey();
         Ecod.initUserPop();
@@ -3948,7 +4496,10 @@
         Ecod.initCtxMenu();
         Ecod.runPost('initReply');
         Ecod.initPjax();
-        Ecod.refresh();
+        /* 首屏若有抽奖挂件等 post 包组件，先补脚本再初始化（见 ensurePostBundle） */
+        Ecod.ensurePostBundle(function () {
+            Ecod.refresh();
+        });
         /* 首屏初始化完毕：此后的 refresh（PJAX 换页）与加载更多才铺入场动效 */
         Ecod._animArmed = true;
         /* 完整样式到位后解除启动期过渡禁用 */

@@ -14,7 +14,7 @@
  * 可选：页面自定义字段 flash_cat 填分类 mid，只取该分类（配合「快讯」投稿分类）。
  * 文章自定义字段 source 填 http(s) 地址时，条目末尾出现「查看来源」外链。
  */
-if (!defined('__TYPECHO_ROOT_DIR')) {
+if (!defined('__TYPECHO_ROOT_DIR__')) {
     exit;
 }
 $this->need('public/header.php');
@@ -77,11 +77,7 @@ $ecodFlashWeek = ['日', '一', '二', '三', '四', '五', '六'];
     <?php ecod_page_hero('快讯', (string) $this->title, '短平快的最新动态，按天回看。', '<span>' . ecod_icon('zap', 13) . '第 ' . $ecodFlashPage . ' 页</span>'); ?>
 
     <?php if (!$ecodFlashGroups): ?>
-        <div class="ecod_empty">
-            <div class="ecod_empty__icon" aria-hidden="true"><?php echo ecod_icon('zap', 30); ?></div>
-            <h3>还没有快讯</h3>
-            <p>发布文章后这里会按天汇总</p>
-        </div>
+        <?php ecod_empty('zap', '还没有快讯', '发布文章后这里会按天汇总'); ?>
     <?php else: ?>
         <div class="ecod_flashpage">
             <?php foreach ($ecodFlashGroups as $ecodFlashDay => $ecodFlashItems): ?>

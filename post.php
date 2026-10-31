@@ -213,15 +213,19 @@ foreach (ecod_widget_area_order('bottom_content', 'single') as $ecodStackArea) {
             </aside>
         <?php endif; ?>
 
-        <?php if (!$ecodLocked && !$ecodPayLocked && ecod_option('EAI', 'off') === 'on'): ?>
-            <section class="ecod_ai" data-ecod-ai data-cid="<?php echo (int) $this->cid; ?>" hidden>
+        <?php if (!$ecodLocked && ecod_option('EAI', 'off') === 'on'): ?>
+            <section class="ecod_ai ecod_ai--sum" data-ecod-ai data-cid="<?php echo (int) $this->cid; ?>" hidden>
                 <header class="ecod_ai__head">
-                    <b><?php echo ecod_icon('star', 14); ?>AI 摘要</b>
-                    <small>由 AI 生成，仅供参考</small>
+                    <b><span class="ecod_ai__logo" aria-hidden="true">AI</span>AI 摘要</b>
+                    <small data-ecod-ai-tag hidden></small>
                 </header>
                 <div class="ecod_ai__body" data-ecod-ai-body aria-busy="true">
                     <i></i><i></i><i style="width:62%"></i>
                 </div>
+                <footer class="ecod_ai__foot">
+                    <span>由 AI 生成，仅供参考</span>
+                    <span data-ecod-ai-count hidden></span>
+                </footer>
             </section>
         <?php endif; ?>
 

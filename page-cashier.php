@@ -197,11 +197,7 @@ $ecodEpayType = (string) ecod_option('EPayEpayType', 'alipay') === 'wxpay' ? 'wx
          <?php if ($ecodOrderState === 'pending'): ?>data-resume-order="<?php echo htmlspecialchars($ecodOrderNo, ENT_QUOTES, 'UTF-8'); ?>"<?php endif; ?>>
 
         <?php if ($ecodError !== ''): ?>
-            <div class="ecod_empty">
-                <div class="ecod_empty__icon" aria-hidden="true"><?php echo ecod_icon('alert', 28); ?></div>
-                <h3><?php echo htmlspecialchars($ecodError, ENT_QUOTES, 'UTF-8'); ?></h3>
-                <p><a href="<?php $this->options->siteUrl(); ?>">返回首页</a></p>
-            </div>
+            <?php ecod_empty('alert', htmlspecialchars($ecodError, ENT_QUOTES, 'UTF-8'), '<a href="' . $this->options->siteUrl . '">返回首页</a>'); ?>
 
         <?php elseif ($ecodOwned): ?>
             <div class="ecod_cashier__box">

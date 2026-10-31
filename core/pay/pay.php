@@ -87,13 +87,14 @@ function ecod_pay_money(int $cents): string
 function ecod_pay_fields($archive): array
 {
     $out = [
-        'mode'  => '',
-        'price' => '',
-        'vip1'  => '',
-        'vip2'  => '',
-        'level' => '',
-        'days'  => '',
-        'doc'   => '',
+        'mode'    => '',
+        'price'   => '',
+        'vip1'    => '',
+        'vip2'    => '',
+        'level'   => '',
+        'days'    => '',
+        'doc'     => '',
+        'comment' => '',
     ];
     if (!$archive) {
         return $out;
@@ -109,13 +110,14 @@ function ecod_pay_fields($archive): array
     }
 
     $map = [
-        'mode'  => 'pay_mode',
-        'price' => 'pay_price',
-        'vip1'  => 'pay_vip1',
-        'vip2'  => 'pay_vip2',
-        'level' => 'pay_level',
-        'days'  => 'pay_days',
-        'doc'   => 'pay_doc',
+        'mode'    => 'pay_mode',
+        'price'   => 'pay_price',
+        'vip1'    => 'pay_vip1',
+        'vip2'    => 'pay_vip2',
+        'level'   => 'pay_level',
+        'days'    => 'pay_days',
+        'doc'     => 'pay_doc',
+        'comment' => 'pay_comment',
     ];
     foreach ($map as $key => $field) {
         try {
@@ -536,6 +538,15 @@ function ecod_pay_access($archive = null, ?int $uid = null): array
         $out['allow'] = true;
         $out['reason'] = 'vip';
         $out['expire_at'] = (int) $vip['expire_at'];
+        return $GLOBALS['__ecod_pay_access_cache'][$key] = $out;
+    }
+
+    /* 评论解锁（设计稿 guaqi-reference §F2）：本篇留过一条过审评论即放行。
+       读时验证 comments 表，不落自定义凭证——评论被删 / 转待审自动回收；
+       vip 模式是会员专属内容，不走评论解锁。 */
+    if ($mode !== 'vip' && ecod_pay_comment_unlocked($archive, $cid, $uid)) {
+        $out['allow'] = true;
+        $out['reason'] = 'comment';
         return $GLOBALS['__ecod_pay_access_cache'][$key] = $out;
     }
 
@@ -1059,21 +1070,36 @@ function ecod_pay_box($archive, array $state, bool $compact = false): string
 
     $cid = (int) $state['cid'];
     $mode = (string) $state['mode'];
-    $owned = in_array($state['reason'], ['purchased', 'vip', 'admin', 'author'], true);
+    $owned = in_array($state['reason'], ['purchased', 'vip', 'admin', 'author', 'comment'], true);
     $doc = ecod_pay_fields($archive)['doc'];
 
     /* 已解锁：只留一条极简状态，不占版面 */
     if ($owned) {
         $expire = (int) $state['expire_at'];
-        $text = $state['reason'] === 'vip'
-            ? '会员权益 · ' . ($expire > 0 ? '至 ' . date('Y-m-d', $expire) : '长期有效')
-            : ($state['reason'] === 'purchased'
-                ? '已购买 · ' . ($expire > 0 ? '至 ' . date('Y-m-d', $expire) : '永久可读')
-                : '管理视角 · 已解锁');
+        $text = $state['reason'] === 'comment'
+            ? '已解锁 · 凭本篇过审评论'
+            : ($state['reason'] === 'vip'
+                ? '会员权益 · ' . ($expire > 0 ? '至 ' . date('Y-m-d', $expire) : '长期有效')
+                : ($state['reason'] === 'purchased'
+                    ? '已购买 · ' . ($expire > 0 ? '至 ' . date('Y-m-d', $expire) : '永久可读')
+                    : '管理视角 · 已解锁'));
         $icon = $state['reason'] === 'admin' || $state['reason'] === 'author' ? 'eye' : 'check';
         return '<div class="ecod_pay ecod_pay--owned" data-ecod-pay data-state="owned">'
             . '<span class="ecod_pay__owned">' . ecod_icon($icon, 13) . htmlspecialchars($text, ENT_QUOTES, 'UTF-8') . '</span>'
             . '</div>';
+    }
+
+    /* 展示层分流（设计稿 guaqi-reference §F2 / §F6）：
+       评论解锁卡优先（有免费解锁途径时直给转化路径），其次付费资源卡；
+       compact（both 位置的第二张）不重复大卡 */
+    if (ecod_pay_comment_enabled($archive)) {
+        return $compact ? '' : ecod_pay_comment_card($archive, $state);
+    }
+    if (!$compact) {
+        $ecodResourceCard = ecod_pay_resource_card($archive, $state);
+        if ($ecodResourceCard !== '') {
+            return $ecodResourceCard;
+        }
     }
 
     $price = ecod_pay_price($archive);
@@ -1176,6 +1202,233 @@ function ecod_pay_box($archive, array $state, bool $compact = false): string
     }
 
     return $html . '</section>';
+}
+
+/* ------------------------------------------------------------------
+ * 评论解锁（F2）与付费资源卡（F6）
+ * ---------------------------------------------------------------- */
+
+/** 本篇是否启用「评论解锁」途径（全局开关 + 文章级 pay_comment=1 + 付费模式） */
+function ecod_pay_comment_enabled($archive): bool
+{
+    if (!ecod_pay_enabled() || (string) ecod_option('EPayCommentUnlock', 'off') !== 'on') {
+        return false;
+    }
+    if (!in_array(ecod_pay_mode($archive), ['paid', 'paid_vip'], true)) {
+        return false;
+    }
+    return trim((string) ecod_pay_fields($archive)['comment']) === '1';
+}
+
+/**
+ * 当前访客在本篇是否已有过审评论（读时验证，无凭证落地）
+ *
+ * 登录用户按 ownerId 匹配；游客用 Typecho 的「记住邮箱」cookie 匹配——
+ * 邮箱只在本人提交评论时写入，他人无法冒用。
+ */
+function ecod_pay_comment_unlocked($archive, ?int $cid = null, ?int $uid = null): bool
+{
+    if (!ecod_pay_comment_enabled($archive)) {
+        return false;
+    }
+    $cid = $cid ?? (int) ($archive->cid ?? 0);
+    if ($cid <= 0) {
+        return false;
+    }
+
+    try {
+        $db = \Typecho\Db::get();
+        if ($uid === null) {
+            $uid = ecod_pay_current_uid();
+        }
+        $select = $db->select('coid')->from('table.comments')
+            ->where('cid = ?', $cid)->where('status = ?', 'approved')->limit(1);
+
+        if ($uid > 0) {
+            $row = $db->fetchRow($select->where('ownerId = ?', $uid));
+        } else {
+            $mail = trim((string) ($_COOKIE['__typecho_remember_mail'] ?? ''));
+            if ($mail === '' || !str_contains($mail, '@')) {
+                return false;
+            }
+            $row = $db->fetchRow($select->where('mail = ?', $mail));
+        }
+        return !empty($row);
+    } catch (\Throwable $e) {
+        return false;
+    }
+}
+
+/**
+ * 评论解锁卡（F2）：未解锁且本篇启用评论解锁时替代默认付费卡
+ *
+ * 不内嵌表单——评论提交必须走原生路由（防垃圾令牌 / Turnstile / 时间戳
+ * 都在评论区表单里），这里只做引导：平滑滚动到评论区并聚焦输入框。
+ */
+function ecod_pay_comment_card($archive, array $state): string
+{
+    $cid = (int) $state['cid'];
+    $price = ecod_pay_price($archive);
+    $currency = ecod_pay_currency();
+    $cashier = ecod_pay_cashier_url(['post' => $cid]);
+    $loginHref = ecod_pay_login_url((string) ($archive->permalink ?? ''));
+    $isGuest = ecod_pay_current_uid() <= 0;
+
+    $html = '<section class="ecod_pay ecod_payc" data-ecod-pay data-cid="' . $cid . '" data-state="locked">'
+        . '<div class="ecod_payc__lock">' . ecod_icon('lock', 19) . '</div>'
+        . '<b class="ecod_payc__title">评论后解锁全文</b>'
+        . '<p class="ecod_payc__sub">本文为付费内容，发表一条评论并通过审核即可阅读全文</p>';
+
+    if ($price['purchasable']) {
+        $html .= '<div class="ecod_payc__price">'
+            . '<em>' . htmlspecialchars($currency, ENT_QUOTES, 'UTF-8') . '</em>'
+            . '<b>' . ecod_pay_money($price['amount']) . '</b>';
+        if ($price['origin'] > $price['amount']) {
+            $html .= '<s>' . htmlspecialchars($currency, ENT_QUOTES, 'UTF-8') . ecod_pay_money($price['origin']) . '</s>';
+        }
+        $html .= '<i>或评论解锁</i></div>';
+    }
+
+    $html .= '<div class="ecod_payc__acts">';
+    if ($isGuest) {
+        $html .= '<a class="ecod_pay__btn" href="' . htmlspecialchars($loginHref !== '' ? $loginHref : '#comments', ENT_QUOTES, 'UTF-8') . '">'
+            . ecod_icon('user', 14) . '登录后参与评论</a>';
+    } else {
+        $html .= '<button type="button" class="ecod_pay__btn ecod_payc__go" data-ecod-paycomment>'
+            . ecod_icon('comment', 14) . '去发表评论</button>';
+    }
+    if ($price['purchasable'] && $cashier !== '') {
+        $html .= '<a class="ecod_pay__vip" href="' . htmlspecialchars($cashier, ENT_QUOTES, 'UTF-8') . '">'
+            . ecod_icon('zap', 13) . '直接购买</a>';
+    }
+    $html .= '</div>'
+        . '<p class="ecod_pay__note">评论通过审核后本篇自动解锁，删除评论或评论转待审会重新上锁。</p>'
+        . '</section>';
+
+    return $html;
+}
+
+/**
+ * 付费资源卡元数据（F6）：pay_meta_* 自定义字段，全部可缺省
+ *
+ * @return array<string, string> label => 值（空值项已剔除）
+ */
+function ecod_pay_resource_meta($archive): array
+{
+    $map = [
+        'size'    => '资源大小',
+        'updated' => '更新时间',
+        'sys'     => '适用系统',
+        'lang'    => '语言',
+        'refund'  => '是否可退款',
+        'term'    => '有效期',
+    ];
+    $out = [];
+    try {
+        $fields = $archive->fields ?? null;
+        if ($fields) {
+            foreach ($map as $key => $label) {
+                $val = trim((string) ($fields->{'pay_meta_' . $key} ?? ''));
+                if ($val !== '') {
+                    $out[$label] = $val;
+                }
+            }
+        }
+    } catch (\Throwable $e) {
+        /* 取不到就当没填 */
+    }
+    return $out;
+}
+
+/**
+ * 付费资源卡（F6，参考 zibll 付费下载卡）：purchase 门禁的展示层升级
+ *
+ * 启用条件：EPayResourceCard 开 + 单篇可购买 + 有预览图或任一元数据；
+ * 否则回落默认付费卡（ecod_pay_box 主体），老文章零成本。
+ * 只改展示层，门禁判定（ecod_pay_access）零改动。
+ */
+function ecod_pay_resource_card($archive, array $state): string
+{
+    if ((string) ecod_option('EPayResourceCard', 'off') !== 'on') {
+        return '';
+    }
+    if (!in_array($state['mode'], ['paid', 'paid_vip'], true) || !$state['purchasable']) {
+        return '';
+    }
+    $meta = ecod_pay_resource_meta($archive);
+    $preview = '';
+    try {
+        $raw = trim((string) ($archive->fields->pay_preview ?? ''));
+        if (preg_match('#^https?://#i', $raw)) {
+            $preview = $raw;
+        }
+    } catch (\Throwable $e) {
+    }
+    if ($preview === '' && !$meta) {
+        return '';
+    }
+
+    $cid = (int) $state['cid'];
+    $price = ecod_pay_price($archive);
+    $currency = ecod_pay_currency();
+    $cashier = ecod_pay_cashier_url(['post' => $cid]);
+    $loginHref = ecod_pay_login_url((string) ($archive->permalink ?? ''));
+    $isGuest = ecod_pay_current_uid() <= 0;
+    $doc = trim((string) ecod_pay_fields($archive)['doc']);
+
+    $html = '<section class="ecod_pay ecod_payrc" data-ecod-pay data-cid="' . $cid . '" data-state="locked">';
+
+    if ($preview !== '') {
+        $html .= '<a class="ecod_payrc__thumb" href="' . htmlspecialchars($preview, ENT_QUOTES, 'UTF-8') . '" data-ecod-lightbox>'
+            . '<img src="' . htmlspecialchars($preview, ENT_QUOTES, 'UTF-8') . '" alt="" loading="lazy" decoding="async" data-ecod-img>'
+            . '<span class="ecod_payrc__zoom">' . ecod_icon('image', 12) . '预览</span></a>';
+    }
+
+    $html .= '<div class="ecod_payrc__body">';
+
+    $badges = '<span class="ecod_payrc__flag">付费资源</span>';
+    if (isset($meta['是否可退款']) && in_array($meta['是否可退款'], ['可', '支持', '是', '1'], true)) {
+        $badges .= '<span class="ecod_payrc__badge">支持退款</span>';
+        unset($meta['是否可退款']);
+    }
+    if ($price['vip_hint'] !== null && $price['vip_hint'] < $price['origin']) {
+        $badges .= '<span class="ecod_payrc__badge">' . ecod_pay_level_name(1) . '免费</span>';
+    }
+    $html .= '<div class="ecod_payrc__badges">' . $badges . '</div>';
+
+    $html .= '<div class="ecod_payrc__price">'
+        . '<em>' . htmlspecialchars($currency, ENT_QUOTES, 'UTF-8') . '</em>'
+        . '<b>' . ecod_pay_money($price['amount']) . '</b>';
+    if ($price['origin'] > $price['amount']) {
+        $html .= '<s>' . htmlspecialchars($currency, ENT_QUOTES, 'UTF-8') . ecod_pay_money($price['origin']) . '</s>';
+    }
+    $html .= '</div>';
+
+    if ($doc !== '') {
+        $html .= '<p class="ecod_payrc__doc">' . nl2br(htmlspecialchars($doc, ENT_QUOTES, 'UTF-8')) . '</p>';
+    }
+
+    $html .= '<div class="ecod_payrc__acts">';
+    if ($isGuest) {
+        $html .= '<a class="ecod_pay__btn" href="' . htmlspecialchars($loginHref !== '' ? $loginHref : '#', ENT_QUOTES, 'UTF-8') . '">'
+            . ecod_icon('user', 14) . '登录后购买</a>';
+    } elseif ($cashier !== '') {
+        $html .= '<a class="ecod_payrc__buy" href="' . htmlspecialchars($cashier, ENT_QUOTES, 'UTF-8') . '">'
+            . ecod_icon('zap', 14) . '立即购买</a>';
+    }
+    $html .= '<span class="ecod_payrc__sold">' . ecod_icon('eye', 12) . ecod_num_short(ecod_views($archive)) . ' 浏览</span></div>';
+
+    if ($meta) {
+        $html .= '<dl class="ecod_payrc__meta">';
+        foreach ($meta as $label => $val) {
+            $html .= '<div><dt>' . htmlspecialchars($label, ENT_QUOTES, 'UTF-8') . '</dt><dd>'
+                . htmlspecialchars($val, ENT_QUOTES, 'UTF-8') . '</dd></div>';
+        }
+        $html .= '</dl>';
+    }
+
+    $html .= '</div></section>';
+    return $html;
 }
 
 /* ------------------------------------------------------------------

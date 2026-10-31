@@ -20,7 +20,8 @@
  *   [card title="…" desc="…" icon=… href="…" tag="…"]      信息卡
  *   [cards column=2]…[/cards]                              卡片组
  *   [grid column=3 gap=12]…[/grid]                         网格容器
- *   [cloud]url | 提取码 | 说明[/cloud]                     网盘卡（多行）
+ *   [cloud]url | 提取码 | 说明[/cloud]                     网盘卡（多行，标准格式 URL 开头；
+ *                                                          也容错「名称 | 链接: url 提取码: xx | 说明」）
  *   [cloud url="…" pwd="…" type=baidu]标题[/cloud]          网盘卡（单条）
  *   [article id="15"]                                      引用文章卡
  *   [github repo="owner/name" desc="…"]                    GitHub 仓库卡
@@ -373,7 +374,7 @@ function ecod_sc_abtn(string $content): string
         $href = ecod_sc_url(trim((string) ($attrs['href'] ?? ($attrs['url'] ?? '#'))));
         $text = trim(strip_tags($inner)) ?: trim((string) ($attrs['content'] ?? '按钮'));
         $icon = trim((string) ($attrs['icon'] ?? ''));
-        $color = ecod_color_value((string) ($attrs['color'] ?? 'primary'));
+        $colorName = strtolower(trim((string) ($attrs['color'] ?? 'primary')));
         $style = strtolower(trim((string) ($attrs['style'] ?? 'fill')));
         $radius = trim((string) ($attrs['radius'] ?? ''));
 
@@ -381,8 +382,20 @@ function ecod_sc_abtn(string $content): string
         $blank = preg_match('#^(https?:)?//#i', $href) ? ' target="_blank" rel="noopener nofollow"' : '';
         $cls = 'ecod_btn' . ($style === 'ghost' ? ' is-ghost' : '');
 
+        if ($colorName === '' || $colorName === 'primary') {
+            /* 跟随主题主色但不输出裸色值：白字填充面用 --ecod-primary-btn（对比度
+               达标的派生色），ghost 文字用 --ecod-primary-text（软底安全文字色），
+               暗色主题自动切换（DESIGN.md · 主色可访问性派生）。浅暖主色（琥珀）
+               下裸 primary + 白字只有 2.08:1，是「亮暗两色」不一致的根源 */
+            $colorStyle = '--c:var(--ecod-' . ($style === 'ghost' ? 'primary-text' : 'primary-btn') . ')'
+                . ';--c-soft:color-mix(in srgb, var(--ecod-primary) 10%, transparent)';
+        } else {
+            $color = ecod_color_value($colorName);
+            $colorStyle = '--c:' . $color . ';--c-soft:' . ecod_hex_rgba($color, 0.1);
+        }
+
         return '<a class="' . $cls . '" href="' . $safeHref . '"' . $blank
-            . ' style="--c:' . $color . ';--c-soft:' . ecod_hex_rgba($color, 0.1)
+            . ' style="' . $colorStyle
             . ($radius !== '' ? ';--r:' . htmlspecialchars($radius, ENT_QUOTES, 'UTF-8') : '') . '">'
             . ($icon !== '' ? ecod_icon($icon, 14) : '')
             . '<span>' . htmlspecialchars($text, ENT_QUOTES, 'UTF-8') . '</span></a>';
@@ -535,10 +548,43 @@ function ecod_sc_cloud(string $content): string
                     continue;
                 }
                 $parts = array_map('trim', explode('|', $line));
+
+                /* 标准格式：URL 开头（url | 提取码 | 说明） */
+                if (preg_match('#^(https?:)?//|^magnet:|^thunder:#i', (string) $parts[0])) {
+                    $rows[] = [
+                        'url'   => ecod_sc_url($parts[0] ?? '', ''),
+                        'pwd'   => $parts[1] ?? '',
+                        'title' => $parts[2] ?? '',
+                        'type'  => '',
+                    ];
+                    continue;
+                }
+
+                /* 容错格式：名称在前 / 「链接: … 提取码: …」混写——行内抽 URL、提取码与说明 */
+                $url = '';
+                $pwd = '';
+                $leftovers = [];
+                foreach ($parts as $part) {
+                    if ($url === '' && preg_match('#(?:https?://|magnet:\?|thunder://)\S+#i', $part, $m)) {
+                        $url = $m[0];
+                        $part = trim(str_replace($m[0], '', $part));
+                    }
+                    if ($pwd === '' && preg_match('#(?:提取码|密码|访问码)[:：]?\s*(\S+)#u', $part, $m)) {
+                        $pwd = $m[1];
+                        $part = trim(preg_replace('#(?:提取码|密码|访问码)[:：]?\s*\S+#u', '', $part, 1));
+                    }
+                    $part = preg_replace('#^(?:链接|地址|下载)[:：]\s*$#u', '', $part);
+                    if ($part !== '') {
+                        $leftovers[] = $part;
+                    }
+                }
+                if ($url === '') {
+                    continue;
+                }
                 $rows[] = [
-                    'url'   => ecod_sc_url($parts[0] ?? '', ''),
-                    'pwd'   => $parts[1] ?? '',
-                    'title' => $parts[2] ?? '',
+                    'url'   => ecod_sc_url($url, ''),
+                    'pwd'   => $pwd,
+                    'title' => implode(' · ', $leftovers),
                     'type'  => '',
                 ];
             }

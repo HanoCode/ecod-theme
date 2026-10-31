@@ -142,16 +142,16 @@ $ecodLoginBg = trim((string) ecod_option('ELoginBg', ''));
                       data-ecod-auth-panel="login">
                     <label class="ecod_login__field">
                         <span>用户名或邮箱</span>
-                        <input type="text" name="name" required autocomplete="username" placeholder="用户名或邮箱">
+                        <input class="ecod_input" type="text" name="name" required autocomplete="username" placeholder="用户名或邮箱">
                     </label>
                     <label class="ecod_login__field">
                         <span>密码</span>
-                        <input type="password" name="password" required autocomplete="current-password" placeholder="密码">
+                        <input class="ecod_input" type="password" name="password" required autocomplete="current-password" placeholder="密码">
                     </label>
                     <label class="ecod_login__field">
                         <span>验证码</span>
                         <span class="ecod_login__cap">
-                            <input type="text" name="captcha" required autocomplete="off" spellcheck="false"
+                            <input class="ecod_input" type="text" name="captcha" required autocomplete="off" spellcheck="false"
                                    inputmode="latin" maxlength="4" placeholder="4 位字符">
                             <img class="ecod_login__capimg" data-ecod-captcha
                                  src="<?php echo htmlspecialchars(ecod_api_url(), ENT_QUOTES, 'UTF-8'); ?>?action=captcha&amp;t=<?php echo time(); ?>"
@@ -176,22 +176,22 @@ $ecodLoginBg = trim((string) ecod_option('ELoginBg', ''));
                       data-ecod-auth-panel="register" hidden>
                     <label class="ecod_login__field">
                         <span>用户名</span>
-                        <input type="text" name="name" required autocomplete="username"
+                        <input class="ecod_input" type="text" name="name" required autocomplete="username"
                                placeholder="2-32 位中文、字母、数字或下划线">
                     </label>
                     <label class="ecod_login__field">
                         <span>邮箱</span>
-                        <input type="email" name="mail" required autocomplete="email"
+                        <input class="ecod_input" type="email" name="mail" required autocomplete="email"
                                placeholder="用于找回密码，不会公开">
                     </label>
                     <label class="ecod_login__field">
                         <span>密码</span>
-                        <input type="password" name="password" required autocomplete="new-password"
+                        <input class="ecod_input" type="password" name="password" required autocomplete="new-password"
                                minlength="8" maxlength="64" placeholder="8-64 位">
                     </label>
                     <label class="ecod_login__field">
                         <span>确认密码</span>
-                        <input type="password" name="confirm" required autocomplete="new-password"
+                        <input class="ecod_input" type="password" name="confirm" required autocomplete="new-password"
                                minlength="8" maxlength="64" placeholder="再输入一次">
                     </label>
                     <p class="ecod_login__msg" data-ecod-auth-msg="register" hidden></p>
@@ -207,7 +207,7 @@ $ecodLoginBg = trim((string) ecod_option('ELoginBg', ''));
                     <form class="ecod_login__form" method="post" action="#" data-ecod-auth-form="forgot_send">
                         <label class="ecod_login__field">
                             <span>绑定邮箱</span>
-                            <input type="email" name="mail" required autocomplete="email"
+                            <input class="ecod_input" type="email" name="mail" required autocomplete="email"
                                    placeholder="注册时填写的邮箱">
                         </label>
                         <p class="ecod_login__msg" data-ecod-auth-msg="forgot_send" hidden></p>
@@ -218,17 +218,17 @@ $ecodLoginBg = trim((string) ecod_option('ELoginBg', ''));
                           data-ecod-forgot-step2 hidden>
                         <label class="ecod_login__field">
                             <span>邮箱验证码</span>
-                            <input type="text" name="code" required inputmode="numeric" pattern="\d{6}"
+                            <input class="ecod_input" type="text" name="code" required inputmode="numeric" pattern="\d{6}"
                                    maxlength="6" placeholder="6 位数字，15 分钟内有效">
                         </label>
                         <label class="ecod_login__field">
                             <span>新密码</span>
-                            <input type="password" name="password" required autocomplete="new-password"
+                            <input class="ecod_input" type="password" name="password" required autocomplete="new-password"
                                    minlength="8" maxlength="64" placeholder="8-64 位">
                         </label>
                         <label class="ecod_login__field">
                             <span>确认新密码</span>
-                            <input type="password" name="confirm" required autocomplete="new-password"
+                            <input class="ecod_input" type="password" name="confirm" required autocomplete="new-password"
                                    minlength="8" maxlength="64" placeholder="再输入一次">
                         </label>
                         <p class="ecod_login__msg" data-ecod-auth-msg="forgot_reset" hidden></p>

@@ -1293,6 +1293,16 @@
         return box;
     }
 
+    /* repeater 图标字段共用的单例弹层（同一时间只开一个） */
+    var iconPop = null;
+    function closeIconPop() {
+        if (iconPop) {
+            iconPop.remove();
+            iconPop = null;
+            document.removeEventListener('click', closeIconPop);
+        }
+    }
+
     /* repeater：结构化行编辑器（第 10 轮），子字段由声明注入，序列化成 JSON 数组字符串 */
     function repeaterEditor(area, row, key, value, param) {
         var fields = (param.fields || []).filter(function (one) {
@@ -1372,6 +1382,67 @@
                 card.appendChild(hd);
 
                 fields.forEach(function (field) {
+                    if (field.type === 'icon') {
+                        /* 可视化图标选择：单例弹层网格，数据来自 DATA.icons（键名 => svg） */
+                        var wrap = el('div', 'wgt-iconpick');
+                        var btn = el('button', 'wgt-iconpick__btn');
+                        btn.type = 'button';
+                        btn.setAttribute('data-act', 'iconpick');
+                        var paint = function () {
+                            var name = one[field.key] || '';
+                            var svg = (DATA.icons || {})[name] || '';
+                            btn.innerHTML = svg
+                                ? '<span class="wgt-iconpick__ic">' + svg + '</span><span>' + esc(name) + '</span>'
+                                : '<span class="wgt-iconpick__ic wgt-iconpick__ic--empty">◎</span><span>'
+                                    + esc(field.placeholder || field.label || '选择图标') + '</span>';
+                        };
+                        btn.addEventListener('click', function (ev) {
+                            ev.stopPropagation();
+                            if (iconPop && iconPop._wrap === wrap) {
+                                closeIconPop();
+                                return;
+                            }
+                            closeIconPop();
+                            var names = Object.keys(DATA.icons || {});
+                            if (!names.length) {
+                                return;
+                            }
+                            var pop = el('div', 'wgt-iconpick__pop');
+                            var clear = el('button', 'wgt-iconpick__cell' + (one[field.key] ? '' : ' is-on'), '×');
+                            clear.type = 'button';
+                            clear.title = '不使用图标';
+                            clear.addEventListener('click', function () {
+                                one[field.key] = '';
+                                paint();
+                                flush();
+                                closeIconPop();
+                            });
+                            pop.appendChild(clear);
+                            names.forEach(function (name) {
+                                var cell = el('button', 'wgt-iconpick__cell' + (one[field.key] === name ? ' is-on' : ''), DATA.icons[name]);
+                                cell.type = 'button';
+                                cell.title = name;
+                                cell.addEventListener('click', function () {
+                                    one[field.key] = name;
+                                    paint();
+                                    flush();
+                                    closeIconPop();
+                                });
+                                pop.appendChild(cell);
+                            });
+                            pop._wrap = wrap;
+                            wrap.appendChild(pop);
+                            iconPop = pop;
+                            /* 下一拍再挂外点关闭，避免当前这次点击立即把自己关掉 */
+                            setTimeout(function () {
+                                document.addEventListener('click', closeIconPop);
+                            }, 0);
+                        });
+                        wrap.appendChild(btn);
+                        paint();
+                        card.appendChild(wrap);
+                        return;
+                    }
                     var input = el('input', 'wgt-input');
                     input.type = 'text';
                     input.value = one[field.key] || '';

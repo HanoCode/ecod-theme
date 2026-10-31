@@ -11,7 +11,8 @@ if (!defined('__TYPECHO_ROOT_DIR__')) {
     exit;
 }
 
-$ecodHotSort = (string) ecod_p('sort', 'comments') === 'views' ? 'views' : 'hot';
+$ecodHotSortRaw = (string) ecod_p('sort', 'comments');
+$ecodHotSort = in_array($ecodHotSortRaw, ['views', 'weighted'], true) ? $ecodHotSortRaw : 'hot';
 $this->widget('EcodPostQuery@asidehot', 'pageSize=' . max(2, (int) ecod_p('count', 4)) . '&order=' . $ecodHotSort)->to($ecodHot);
 if (!$ecodHot->have()) {
     return;
@@ -30,7 +31,11 @@ if (!$ecodHot->have()) {
                     <b class="ecod_wlist__title"><?php if (ecod_has_password($ecodHot)): ?><?php echo ecod_lock_icon(11, 'ecod_wlist__lock'); ?><?php endif; ?><?php $ecodHot->title(); ?></b>
                     <span class="ecod_wlist__meta">
                         <span class="ecod_wlist__no<?php echo $ecodHotNo <= 3 ? ' is-top' : ''; ?>"><?php echo $ecodHotNo; ?></span>
-                        <span><?php echo $ecodHotSort === 'views' ? ecod_num_short((int) $ecodHot->views) . ' 阅读' : (int) $ecodHot->commentsNum . ' 评论'; ?></span>
+                        <?php if ($ecodHotSort === 'weighted'): ?>
+                            <span><?php echo ecod_num_short((int) $ecodHot->views); ?> 阅读 · <?php echo (int) $ecodHot->commentsNum; ?> 评论</span>
+                        <?php else: ?>
+                            <span><?php echo $ecodHotSort === 'views' ? ecod_num_short((int) $ecodHot->views) . ' 阅读' : (int) $ecodHot->commentsNum . ' 评论'; ?></span>
+                        <?php endif; ?>
                     </span>
                 </span>
             </a>

@@ -56,11 +56,7 @@ $ecodVideoMeta = '<span>' . ecod_icon('play', 13) . count($ecodVideos) . ' 个�
             <?php endforeach; ?>
         </div>
     <?php else: ?>
-        <div class="ecod_empty">
-            <div class="ecod_empty__icon" aria-hidden="true"><?php echo ecod_icon('play', 28); ?></div>
-            <h3>还没有视频</h3>
-            <p>在正文里粘贴 B 站 / YouTube 地址，或按「标题 | 视频地址」每行一个填写</p>
-        </div>
+        <?php ecod_empty('play', '还没有视频', '在正文里粘贴 B 站 / YouTube 地址，或按「标题 | 视频地址」每行一个填写'); ?>
     <?php endif; ?>
 
     <?php $ecodIntro = ecod_intro_text($ecodVideoHtml); ?>

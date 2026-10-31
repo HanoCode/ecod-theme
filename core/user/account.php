@@ -202,6 +202,39 @@ function ecod_account_del_avatar(int $uid): bool
     }
 }
 
+/**
+ * 某用户的自定义封面地址（站点相对路径，存 ecod_user_meta.cover），未设置返回空串
+ */
+function ecod_account_cover_url(int $uid): string
+{
+    if ($uid <= 0) {
+        return '';
+    }
+    if (!function_exists('ecod_user_meta_get')) {
+        require_once __DIR__ . '/meta.php';
+    }
+    return trim(ecod_user_meta_get($uid, 'cover'));
+}
+
+/**
+ * 删除自定义封面（文件 + meta 记录），回落主题默认封面
+ */
+function ecod_account_del_cover(int $uid): bool
+{
+    $url = ecod_account_cover_url($uid);
+    if ($url !== '') {
+        /* 封面与头像同目录（/usr/uploads/ecod-avatar/），复用同一路径反推 */
+        $file = ecod_account_avatar_file($url);
+        if ($file !== '' && is_file($file)) {
+            @unlink($file);
+        }
+    }
+    if (!function_exists('ecod_user_meta_set')) {
+        require_once __DIR__ . '/meta.php';
+    }
+    return ecod_user_meta_set($uid, 'cover', '');
+}
+
 /* ------------------------------------------------------------------
  * 通用工具：读主题配置（独立入口下 ecod_option 不存在，这里自取）
  * ---------------------------------------------------------------- */

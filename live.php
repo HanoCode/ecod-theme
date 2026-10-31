@@ -57,11 +57,7 @@ $ecodStage = $ecodLives ? array_shift($ecodLives) : null;
             </div>
         </section>
     <?php else: ?>
-        <div class="ecod_empty">
-            <div class="ecod_empty__icon" aria-hidden="true"><?php echo ecod_icon('radio', 28); ?></div>
-            <h3>当前没有直播</h3>
-            <p>在正文里粘贴直播地址（B 站直播间 / YouTube / iframe）即可自动嵌入</p>
-        </div>
+        <?php ecod_empty('radio', '当前没有直播', '在正文里粘贴直播地址（B 站直播间 / YouTube / iframe）即可自动嵌入'); ?>
     <?php endif; ?>
 
     <?php if ($ecodLives): ?>

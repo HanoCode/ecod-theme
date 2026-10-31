@@ -56,7 +56,7 @@ if ($ecodSearchUrl === '') {
 }
 ?>
 <meta charset="<?php $this->options->charset(); ?>">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="renderer" content="webkit">
 <meta name="theme-color" content="#f5f6f9">
 <link rel="manifest" href="<?php echo ecod_asset('manifest.php'); ?>">
@@ -113,7 +113,10 @@ window.ECOD = {
     lightbox: <?php echo $ecodLightbox ? 'true' : 'false'; ?>,
     prism: <?php echo $ecodCode ? 'true' : 'false'; ?>,
     ctxmenu: <?php echo ecod_option('ECtxMenu', 'on') === 'on' ? 'true' : 'false'; ?>,
+    ctxitems: <?php echo json_encode(ecod_ctx_items(), JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>,
     tocProgress: <?php echo ecod_option('ETocProgress', 'on') === 'on' ? 'true' : 'false'; ?>,
+    /* AI 摘要打字机回放（EAIMotion）；卡片 hover 动效总开关供 CSS 属性选择器使用 */
+    aiMotion: <?php echo ecod_option('EAIMotion', 'off') === 'on' ? 'true' : 'false'; ?>,
     tocEntry: <?php echo json_encode(ecod_option('ETocEntry', 'float')); ?>,
     searchPanel: <?php echo ecod_option('ESearchPanel', 'on') === 'on' ? 'true' : 'false'; ?>,
     hotwords: <?php echo json_encode(ecod_search_hotwords(), JSON_UNESCAPED_UNICODE); ?>,
@@ -181,6 +184,7 @@ setTimeout(function () { document.documentElement.classList.remove('ecod-booting
 :root {
     --ecod-primary: <?php echo $ecodPrimary; ?>;
     --ecod-primary-deep: <?php echo ecod_primary_deep(); ?>;
+    --ecod-primary-btn: <?php echo ecod_primary_btn(); ?>;
     --ecod-primary-soft: <?php echo ecod_primary_soft(); ?>;
     /* 可访问性派生：--ecod-primary-ink 主色填充上的文字色（白或深墨），
        --ecod-primary-text 软底/白面上的主色系文字（按对比度自动微调深浅），

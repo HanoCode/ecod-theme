@@ -22,6 +22,7 @@ $this->need('public/header.php');
 $ecodCrName = ecod_credits_name();
 $ecodLotteryOn = ecod_lottery_enabled();
 $ecodLotteryNote = trim((string) ecod_option('ELotteryNote', ''));
+$ecodLotteryBanner = trim((string) ecod_option('ELotteryBanner', ''));
 
 $ecodMe = null;
 $ecodLogged = false;
@@ -73,23 +74,30 @@ $ecodLotPoor = $ecodUid > 0 && $ecodLot && $ecodLot['cost'] > 0 && $ecodLot['bal
                  data-token="<?php echo htmlspecialchars(ecod_account_token(), ENT_QUOTES, 'UTF-8'); ?>"
                  data-grid="<?php echo $ecodIsGrid ? '1' : '0'; ?>">
 
+            <?php /* 活动横幅（后台「活动横幅图」配置，16:7 裁切） */ ?>
+            <?php if ($ecodLotteryBanner !== ''): ?>
+                <span class="ecod_lottery__banner">
+                    <img src="<?php echo htmlspecialchars($ecodLotteryBanner, ENT_QUOTES, 'UTF-8'); ?>" alt="" width="640" height="280" decoding="async">
+                </span>
+            <?php endif; ?>
+
             <?php /* guaqi 式四格数据栏：消耗 / 概率 / 兑换 / 库存（兑换格开放时可直接点） */ ?>
             <div class="ecod_lottery__facts">
                 <div class="ecod_lottery__fact">
-                    <small>积分抽奖</small>
+                    <small><?php echo ecod_icon('zap', 12); ?>积分抽奖</small>
                     <b><?php echo (int) $ecodLot['cost']; ?> <?php echo htmlspecialchars($ecodCrName, ENT_QUOTES, 'UTF-8'); ?>/次</b>
                 </div>
                 <div class="ecod_lottery__fact">
-                    <small>中奖概率</small>
+                    <small><?php echo ecod_icon('trending', 12); ?>中奖概率</small>
                     <b><?php echo (int) $ecodLot['win_rate']; ?>%</b>
                 </div>
                 <div class="ecod_lottery__fact<?php echo $ecodLot['exchange']['on'] ? ' is-btn' : ''; ?>"
                      <?php if ($ecodLot['exchange']['on']): ?>data-ecod-lottery-exchange<?php endif; ?>>
-                    <small>直接兑换</small>
+                    <small><?php echo ecod_icon('gift', 12); ?>直接兑换</small>
                     <b><?php echo $ecodLot['exchange']['on'] ? (int) $ecodLot['exchange']['price'] . ' ' . htmlspecialchars($ecodCrName, ENT_QUOTES, 'UTF-8') : '未开放'; ?></b>
                 </div>
                 <div class="ecod_lottery__fact">
-                    <small>库存</small>
+                    <small><?php echo ecod_icon('layers', 12); ?>库存</small>
                     <b><?php
                         if ($ecodLot['finished']) {
                             echo '已抽完';

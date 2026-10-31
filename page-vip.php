@@ -94,17 +94,9 @@ $ecodPick = isset($ecodTiers[2]) && !empty($ecodTiers[2]['plans'])
     <?php endif; ?>
 
     <?php if (!ecod_pay_enabled()): ?>
-        <div class="ecod_empty">
-            <div class="ecod_empty__icon" aria-hidden="true"><?php echo ecod_icon('alert', 28); ?></div>
-            <h3>本站暂未开启付费阅读</h3>
-            <p>会员功能随「付费阅读」总开关一起启用</p>
-        </div>
+        <?php ecod_empty('alert', '本站暂未开启付费阅读', '会员功能随「付费阅读」总开关一起启用'); ?>
     <?php elseif (!$ecodHasPrice): ?>
-        <div class="ecod_empty">
-            <div class="ecod_empty__icon" aria-hidden="true"><?php echo ecod_icon('star', 28); ?></div>
-            <h3>还没有配置会员价格</h3>
-            <p>到「设置 → 付费」里填写会员与超级会员的周期价即可开卖</p>
-        </div>
+        <?php ecod_empty('star', '还没有配置会员价格', '到「设置 → 付费」里填写会员与超级会员的周期价即可开卖'); ?>
     <?php else: ?>
         <div class="ecod_vip__grid">
             <?php foreach ($ecodTiers as $ecodLevel => $ecodTier): ?>

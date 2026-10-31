@@ -11,7 +11,7 @@
  * @copyright Copyright (c) 2026 Ecod. All Rights Reserved.
  * @link    https://ecod.cc
  */
-if (!defined('__TYPECHO_ROOT_DIR')) {
+if (!defined('__TYPECHO_ROOT_DIR__')) {
     exit;
 }
 

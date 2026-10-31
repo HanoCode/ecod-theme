@@ -19,6 +19,7 @@ $ecodManageVer  = function (string $rel) use ($ecodManageDir): string {
     return $time ? '?v=' . $time : '';
 };
 ?>
+<link rel="stylesheet" href="<?php echo htmlspecialchars($ecodManageUrl . '/assets/admin/tokens.css' . $ecodManageVer('assets/admin/tokens.css'), ENT_QUOTES, 'UTF-8'); ?>">
 <link rel="stylesheet" href="<?php echo htmlspecialchars($ecodManageUrl . '/assets/admin/media.css' . $ecodManageVer('assets/admin/media.css'), ENT_QUOTES, 'UTF-8'); ?>">
 <script>
 window.ECOD_MEDIA = {

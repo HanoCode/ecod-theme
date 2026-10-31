@@ -77,7 +77,7 @@ if (!$ecodCollItems) {
                     : $ecodTints[$ecodCollI % count($ecodTints)]; ?>">
                     <span class="ecod_coll__shade" aria-hidden="true"></span>
                     <?php if ($ecodColl['cover'] === ''): ?>
-                        <span class="ecod_coll__ph" aria-hidden="true"><?php echo htmlspecialchars(mb_substr($ecodColl['name'], 0, 1, 'UTF-8'), ENT_QUOTES, 'UTF-8'); ?></span>
+                        <span class="ecod_ph ecod_coll__ph" aria-hidden="true"><?php echo htmlspecialchars(mb_substr($ecodColl['name'], 0, 1, 'UTF-8'), ENT_QUOTES, 'UTF-8'); ?></span>
                     <?php endif; ?>
                     <span class="ecod_coll__badge"><?php echo $ecodColl['count']; ?> 篇</span>
                 </span>

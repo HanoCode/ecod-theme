@@ -583,7 +583,8 @@ $ecodWgtAsset = static function (string $path) use ($ecodBase): string {
     $dist = ecod_dist_resolve($path);
     return $ecodBase . '/' . ($dist ?? $path);
 };
-$ecodCss = $ecodWgtAsset('assets/admin/widget.css');
+$ecodCss = $ecodWgtAsset('assets/admin/tokens.css');
+$ecodCssMain = $ecodWgtAsset('assets/admin/widget.css');
 $ecodJs = $ecodWgtAsset('assets/admin/widget.js');
 ?>
 <!DOCTYPE html>
@@ -594,6 +595,7 @@ $ecodJs = $ecodWgtAsset('assets/admin/widget.js');
 <meta name="robots" content="noindex, nofollow">
 <title>模块管理台 · <?php echo htmlspecialchars((string) \Widget\Options::alloc()->title, ENT_QUOTES, 'UTF-8'); ?></title>
 <link rel="stylesheet" href="<?php echo htmlspecialchars($ecodCss, ENT_QUOTES, 'UTF-8'); ?>">
+<link rel="stylesheet" href="<?php echo htmlspecialchars($ecodCssMain, ENT_QUOTES, 'UTF-8'); ?>">
 </head>
 <body>
 

@@ -134,7 +134,7 @@ if (!function_exists('ecod_card')) {
                 echo '<img src="' . htmlspecialchars($images[0], ENT_QUOTES, 'UTF-8') . '" alt="' . $titleAttr . '"'
                     . ' width="160" height="112"' . $imgFirstAttrs . ' decoding="async" data-ecod-img>';
             } else {
-                echo '<span class="ecod_card__placeholder">' . mb_substr($rawTitle, 0, 1, 'UTF-8') . '</span>';
+                echo '<span class="ecod_ph ecod_card__placeholder">' . mb_substr($rawTitle, 0, 1, 'UTF-8') . '</span>';
             }
             echo '</a>';
             echo '<div class="ecod_card__body">';
@@ -194,7 +194,7 @@ if (!function_exists('ecod_card')) {
                 echo '<img src="' . htmlspecialchars($images[0], ENT_QUOTES, 'UTF-8') . '" alt="' . $titleAttr . '"'
                     . ' width="400" height="280"' . $imgFirstAttrs . ' decoding="async" data-ecod-img>';
             } else {
-                echo '<span class="ecod_card__placeholder">' . mb_substr($rawTitle, 0, 1, 'UTF-8') . '</span>';
+                echo '<span class="ecod_ph ecod_card__placeholder">' . mb_substr($rawTitle, 0, 1, 'UTF-8') . '</span>';
             }
             echo '</a>';
             echo '<div class="ecod_card__body">';
@@ -280,7 +280,7 @@ if (!function_exists('ecod_card')) {
                     . $imgFirstAttrs
                     . ' decoding="async" data-ecod-img>';
             } else {
-                echo '<span class="ecod_card__placeholder">' . mb_substr($title, 0, 1, 'UTF-8') . '</span>';
+                echo '<span class="ecod_ph ecod_card__placeholder">' . mb_substr($title, 0, 1, 'UTF-8') . '</span>';
             }
             echo '</a>';
         }
@@ -342,7 +342,7 @@ if (!function_exists('ecod_card')) {
         echo '<div class="ecod_card__act">'
             . '<button type="button" class="ecod_card__actbtn" data-ecod-act="fav" aria-label="收藏" aria-pressed="false">' . ecod_icon('star', 11) . '</button>'
             . ($likeOn
-                ? '<button type="button" class="ecod_card__actbtn' . ($likeNum > 0 ? ' has-num' : '') . '" data-ecod-act="like"'
+                ? '<button type="button" class="ecod_card__actbtn' . ($likeNum > 0 ? ' is-num' : '') . '" data-ecod-act="like"'
                     . ' data-cid="' . (int) $archive->cid . '" aria-label="点赞" aria-pressed="false">'
                     . ecod_icon('heart', 11)
                     . '<i data-ecod-like-num>' . ($likeNum > 0 ? ecod_num_short((int) $likeNum) : '') . '</i>'

@@ -117,6 +117,16 @@ class EcodPostQuery extends \Widget\Base\Contents
         if ($this->parameter->order === 'views' && ecod_views_available()) {
             $select->order('table.contents.views', \Typecho\Db::SORT_DESC)
                 ->order('table.contents.created', \Typecho\Db::SORT_DESC);
+        } elseif ($this->parameter->order === 'weighted') {
+            /* 加权热度（设计稿 guaqi-reference §F3）：views + 评论数×20；
+               阅读量列不可用时退化为评论数排序，保证有结果 */
+            if (ecod_views_available()) {
+                $select->order('(table.contents.views + table.contents.commentsNum * 20)', \Typecho\Db::SORT_DESC)
+                    ->order('table.contents.created', \Typecho\Db::SORT_DESC);
+            } else {
+                $select->order('table.contents.commentsNum', \Typecho\Db::SORT_DESC)
+                    ->order('table.contents.created', \Typecho\Db::SORT_DESC);
+            }
         } elseif ($this->parameter->order === 'hot') {
             $select->order('table.contents.commentsNum', \Typecho\Db::SORT_DESC)
                 ->order('table.contents.created', \Typecho\Db::SORT_DESC);

@@ -96,21 +96,21 @@ $GLOBALS['ecodCLikeCounts'] = $GLOBALS['ecodCLikeOn'] ? ecod_comment_like_counts
                     <div class="ecod_field">
                         <label class="ecod_field__item">
                             <span class="ecod_field__label">昵称 *</span>
-                            <input type="text" name="author" id="author" placeholder="怎么称呼你" value="<?php $this->remember('author'); ?>" required>
+                            <input class="ecod_input" type="text" name="author" id="author" placeholder="怎么称呼你" value="<?php $this->remember('author'); ?>" required>
                         </label>
                         <label class="ecod_field__item">
                             <span class="ecod_field__label">邮箱<?php if ($this->options->commentsRequireMail): ?> *<?php endif; ?></span>
-                            <input type="email" name="mail" id="mail" placeholder="不会公开" value="<?php $this->remember('mail'); ?>"<?php if ($this->options->commentsRequireMail): ?> required<?php endif; ?>>
+                            <input class="ecod_input" type="email" name="mail" id="mail" placeholder="不会公开" value="<?php $this->remember('mail'); ?>"<?php if ($this->options->commentsRequireMail): ?> required<?php endif; ?>>
                         </label>
                         <label class="ecod_field__item">
                             <span class="ecod_field__label">网站</span>
-                            <input type="url" name="url" id="url" placeholder="选填" value="<?php $this->remember('url'); ?>">
+                            <input class="ecod_input" type="url" name="url" id="url" placeholder="选填" value="<?php $this->remember('url'); ?>">
                         </label>
                     </div>
                 <?php endif; ?>
 
                 <div class="ecod_editor">
-                    <textarea name="text" id="textarea" placeholder="说点什么…支持 Markdown" required data-ecod-textarea><?php $this->remember('text'); ?></textarea>
+                    <textarea class="ecod_textarea" name="text" id="textarea" placeholder="说点什么…支持 Markdown" required data-ecod-textarea><?php $this->remember('text'); ?></textarea>
                     <div class="ecod_editor__foot">
                         <div class="ecod_editor__tools">
                             <button type="button" class="ecod_editor__emoji" data-ecod-emoji-toggle aria-expanded="false" aria-label="插入表情">

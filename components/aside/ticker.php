@@ -18,6 +18,8 @@ if (!defined('__TYPECHO_ROOT_DIR__')) {
 if (!function_exists('ecod_credits_ticker')) {
     require_once dirname(dirname(__DIR__)) . '/core/user/credits.php';
 }
+/* 播报条目要链到作者主页：meta.php 提供 ecod_user_archive_url() */
+require_once dirname(dirname(__DIR__)) . '/core/user/meta.php';
 
 /* 站长没开播报（或积分未开）时整块隐藏：事件涉及用户名，尊重隐私开关 */
 if (!ecod_credits_enabled()) {

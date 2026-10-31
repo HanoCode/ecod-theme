@@ -36,6 +36,12 @@ $ecodHasCustomAvatar = false;
 if ($ecodLogged) {
     $ecodHasCustomAvatar = ecod_account_avatar_url((int) $ecodUser->uid) !== '';
 }
+/* 顶部封面：用户自定义优先，回落主题默认（EUcCover）；都没有则显示主题色渐变 */
+$ecodCover = $ecodLogged ? ecod_account_cover_url((int) $ecodUser->uid) : '';
+$ecodHasCover = $ecodCover !== '';
+if ($ecodCover === '') {
+    $ecodCover = (string) ecod_option('EUcCover', '');
+}
 $ecodGroupName = '';
 if ($ecodLogged) {
     $ecodGroups = ['subscriber' => '订阅者', 'contributor' => '投稿者', 'editor' => '编辑', 'administrator' => '管理员'];
@@ -78,12 +84,24 @@ $ecodTabs = [
     'credits' => ['我的积分', 'zap'],
     'notifs'  => ['我的消息', 'bell'],
     'posts'   => ['我的文章', 'edit'],
-    'favs'    => ['我的收藏', 'star'],
-    'follows' => ['我的关注', 'plus'],
-    'likes'   => ['我的点赞', 'heart'],
-    'history' => ['浏览历史', 'clock'],
+    'social'  => ['互动', 'comment'],
     'orders'  => ['订单', 'inbox'],
+    'lottery' => ['抽奖记录', 'gift'],
 ];
+
+/* 互动类合并成顶部 tab 组：一级「互动」+ 子标签（收藏 / 点赞 / 关注 / 历史） */
+$ecodSocial = [
+    'favs'    => ['收藏', 'star'],
+    'likes'   => ['点赞', 'heart'],
+    'follows' => ['关注', 'plus'],
+    'history' => ['历史', 'clock'],
+];
+
+/* 积分总开关关闭（ECrOn=off）时不下发积分入口：
+   否则签到按钮照常显示，点击必然被后端拒（积分未开启 / 400） */
+if (!ecod_credits_enabled()) {
+    unset($ecodTabs['credits']);
+}
 
 /* 我的投稿：服务端直出（状态 / 编辑 / 撤回都在这一屏完成） */
 $ecodMyPosts = [];
@@ -113,6 +131,12 @@ $ecodContributeUrl = function_exists('ecod_contribute_url') ? ecod_contribute_ur
 
 /* 我的关注：服务端直出（头像 / 昵称 / 关注时间，可就地取关） */
 $ecodFollowRows = $ecodLogged ? ecod_follow_rows((int) $ecodUser->uid, 'following', 100) : [];
+
+/* 抽奖记录：服务端直出最近 50 条，面板内用筛选片做客户端过滤 */
+$ecodLotRows = ($ecodLogged && ecod_lottery_enabled())
+    ? ecod_lottery_mine((int) $ecodUser->uid, 50)
+    : [];
+$ecodLotteryPageUrl = ecod_template_page_url('page-lottery.php');
 ?>
 <main class="ecod_main" id="ecod-main">
     <?php /* 模块 · 内容区上方（模块管理台） */ ecod_widgets_render("top_content", $this); ?>
@@ -126,41 +150,67 @@ $ecodFollowRows = $ecodLogged ? ecod_follow_rows((int) $ecodUser->uid, 'followin
 
     <div class="ecod_uc" data-ecod-uc>
 
-        <!-- 左侧：身份卡 + 菜单 -->
-        <aside class="ecod_uc__side">
-            <div class="ecod_uc__idcard">
-                <?php if ($ecodLogged): ?>
-                    <span class="ecod_uc__avatar">
-                        <span class="ecod_nav__user-ic"><?php echo ecod_icon('user', 30); ?></span>
-                        <img src="<?php echo htmlspecialchars($ecodAvatar, ENT_QUOTES, 'UTF-8'); ?>"
-                             alt="" width="72" height="72" onerror="this.remove()" referrerpolicy="no-referrer">
-                    </span>
-                    <b class="ecod_uc__name"><?php echo htmlspecialchars((string) $ecodUser->screenName, ENT_QUOTES, 'UTF-8'); ?></b>
-                    <span class="ecod_uc__mail"><?php echo htmlspecialchars((string) $ecodUser->mail, ENT_QUOTES, 'UTF-8'); ?></span>
-                    <span class="ecod_uc__group"><?php echo htmlspecialchars($ecodGroupName, ENT_QUOTES, 'UTF-8'); ?></span>
-                    <?php if ($ecodVipInfo['active']): ?>
-                        <span class="ecod_uc__vip">
-                            <?php echo ecod_icon('medal', 12); ?><?php echo htmlspecialchars($ecodVipInfo['name'], ENT_QUOTES, 'UTF-8'); ?>
-                            <?php echo (int) $ecodVipInfo['expire_at'] > 0 ? '· 至 ' . date('Y-m-d', (int) $ecodVipInfo['expire_at']) : '· 长期'; ?>
-                        </span>
+        <!-- 顶部：封面（图片或 CSS 渐变占位）+ 身份条 -->
+        <section class="ecod_uc__hero has-cover">
+            <?php if ($ecodCover !== ''): ?>
+                <div class="ecod_uc__cover" aria-hidden="true">
+                    <img src="<?php echo htmlspecialchars($ecodCover, ENT_QUOTES, 'UTF-8'); ?>" alt="" referrerpolicy="no-referrer">
+                </div>
+            <?php else: ?>
+                <div class="ecod_uc__cover ecod_uc__cover--ph" aria-hidden="true"></div>
+            <?php endif; ?>
+            <?php if ($ecodLogged): ?>
+                <div class="ecod_uc__cover-ops">
+                    <label class="ecod_uc__cover-btn">
+                        <?php echo ecod_icon('image', 13); ?>更换封面
+                        <input type="file" accept="image/jpeg,image/png,image/gif,image/webp" data-ecod-cover-input hidden>
+                    </label>
+                    <?php if ($ecodHasCover): ?>
+                        <button type="button" class="ecod_uc__cover-btn" data-ecod-cover-remove>移除封面</button>
                     <?php endif; ?>
-                    <div class="ecod_uc__idops">
+                </div>
+            <?php endif; ?>
+            <div class="ecod_uc__hero-id">
+                <?php if ($ecodLogged): ?>
+                    <span class="ecod_uc__avatar ecod_uc__avatar--sm">
+                        <span class="ecod_nav__user-ic"><?php echo ecod_icon('user', 22); ?></span>
+                        <img src="<?php echo htmlspecialchars($ecodAvatar, ENT_QUOTES, 'UTF-8'); ?>"
+                             alt="" width="56" height="56" onerror="this.remove()" referrerpolicy="no-referrer">
+                    </span>
+                    <span class="ecod_uc__hero-main">
+                        <b class="ecod_uc__name"><?php echo htmlspecialchars((string) $ecodUser->screenName, ENT_QUOTES, 'UTF-8'); ?></b>
+                        <span class="ecod_uc__hero-meta">
+                            <span class="ecod_uc__group"><?php echo htmlspecialchars($ecodGroupName, ENT_QUOTES, 'UTF-8'); ?></span>
+                            <?php if ($ecodVipInfo['active']): ?>
+                                <span class="ecod_uc__vip">
+                                    <?php echo ecod_icon('medal', 12); ?><?php echo htmlspecialchars($ecodVipInfo['name'], ENT_QUOTES, 'UTF-8'); ?>
+                                    <?php echo (int) $ecodVipInfo['expire_at'] > 0 ? '· 至 ' . date('Y-m-d', (int) $ecodVipInfo['expire_at']) : '· 长期'; ?>
+                                </span>
+                            <?php endif; ?>
+                        </span>
+                    </span>
+                    <span class="ecod_uc__hero-ops">
                         <a class="ecod-btn ecod-btn--ghost" href="<?php $this->options->adminUrl(); ?>" target="_blank" rel="noopener">管理后台</a>
                         <a class="ecod-btn ecod-btn--ghost" href="<?php $this->options->logoutUrl(); ?>">退出登录</a>
-                    </div>
+                    </span>
                 <?php else: ?>
-                    <span class="ecod_uc__avatar ecod_uc__avatar--guest" aria-hidden="true"><?php echo ecod_icon('user', 30); ?></span>
-                    <b class="ecod_uc__name">游客</b>
-                    <span class="ecod_uc__mail">登录后可展示账户资料</span>
-                    <div class="ecod_uc__idops">
+                    <span class="ecod_uc__avatar ecod_uc__avatar--sm ecod_uc__avatar--guest" aria-hidden="true"><?php echo ecod_icon('user', 22); ?></span>
+                    <span class="ecod_uc__hero-main">
+                        <b class="ecod_uc__name">游客</b>
+                        <span class="ecod_uc__hero-meta"><span class="ecod_uc__mail">登录后可展示账户资料</span></span>
+                    </span>
+                    <span class="ecod_uc__hero-ops">
                         <a class="ecod-btn" data-ecod-login-open data-no-pjax href="<?php echo htmlspecialchars($ecodLoginUrl, ENT_QUOTES, 'UTF-8'); ?>?referer=<?php echo rawurlencode($this->permalink); ?>">登录</a>
                         <?php if ((int) $this->options->allowRegister === 1): ?>
                             <a class="ecod-btn ecod-btn--ghost" href="<?php echo htmlspecialchars($ecodRegisterUrl, ENT_QUOTES, 'UTF-8'); ?>">注册</a>
                         <?php endif; ?>
-                    </div>
+                    </span>
                 <?php endif; ?>
             </div>
+        </section>
 
+        <!-- 左侧：菜单 -->
+        <aside class="ecod_uc__side">
             <nav class="ecod_uc__menu" aria-label="个人中心菜单">
                 <?php foreach ($ecodTabs as $ecodKey => $ecodTab): ?>
                     <?php /* 我的文章的数量在服务端已知，直接带上；其余由 JS 回填 */ ?>
@@ -170,11 +220,11 @@ $ecodFollowRows = $ecodLogged ? ecod_follow_rows((int) $ecodUser->uid, 'followin
                             <span><?php echo $ecodTab[0]; ?></span>
                             <?php if ($ecodMyPosts): ?><em data-ecod-uc-count="posts"><?php echo count($ecodMyPosts) > 99 ? '99+' : count($ecodMyPosts); ?></em><?php endif; ?>
                         </button>
-                    <?php elseif ($ecodKey === 'follows'): ?>
-                        <button type="button" class="ecod_uc__tab" data-ecod-uc-tab="follows">
+                    <?php elseif ($ecodKey === 'social'): ?>
+                        <?php /* 互动组：点击后内容区顶部展开子标签（收藏/点赞/关注/历史） */ ?>
+                        <button type="button" class="ecod_uc__tab" data-ecod-uc-group-tab="social">
                             <?php echo ecod_icon($ecodTab[1], 15); ?>
                             <span><?php echo $ecodTab[0]; ?></span>
-                            <?php if ($ecodFollowRows): ?><em data-ecod-uc-count="follows"><?php echo count($ecodFollowRows) > 99 ? '99+' : count($ecodFollowRows); ?></em><?php endif; ?>
                         </button>
                     <?php else: ?>
                         <button type="button" class="ecod_uc__tab<?php echo $ecodKey === 'profile' ? ' is-active' : ''; ?>"
@@ -190,6 +240,21 @@ $ecodFollowRows = $ecodLogged ? ecod_follow_rows((int) $ecodUser->uid, 'followin
 
         <!-- 右侧：内容面板 -->
         <section class="ecod_uc__body">
+
+            <!-- 互动子标签：点侧边「互动」后展开（收藏 / 点赞 / 关注 / 历史） -->
+            <div class="ecod_uc__subtabs" data-ecod-uc-subbar hidden>
+                <?php foreach ($ecodSocial as $ecodSKey => $ecodS): ?>
+                    <button type="button" class="ecod_uc__subtab" data-ecod-uc-tab="<?php echo $ecodSKey; ?>">
+                        <?php echo ecod_icon($ecodS[1], 14); ?>
+                        <span><?php echo $ecodS[0]; ?></span>
+                        <?php if ($ecodSKey === 'follows' && $ecodFollowRows): ?>
+                            <em data-ecod-uc-count="follows"><?php echo count($ecodFollowRows) > 99 ? '99+' : count($ecodFollowRows); ?></em>
+                        <?php else: ?>
+                            <em data-ecod-uc-count="<?php echo $ecodSKey; ?>" hidden>0</em>
+                        <?php endif; ?>
+                    </button>
+                <?php endforeach; ?>
+            </div>
 
             <!-- 个人信息：支持直接修改资料 / 头像 / 密码 -->
             <div class="ecod_uc__panel is-active" data-ecod-uc-panel="profile">
@@ -245,6 +310,9 @@ $ecodFollowRows = $ecodLogged ? ecod_follow_rows((int) $ecodUser->uid, 'followin
                         <!-- 修改密码 -->
                         <form class="ecod_uc__form" data-ecod-account-form="password" novalidate>
                             <b class="ecod_uc__form-sub">修改密码</b>
+                            <?php /* 密码管理器的用户名锚点：表单需要有一个 username 字段，浏览器才认得出「这是谁的密码」 */ ?>
+                            <input type="text" name="username" hidden readonly autocomplete="username"
+                                   value="<?php echo htmlspecialchars((string) $ecodUser->screenName, ENT_QUOTES, 'UTF-8'); ?>">
                             <label class="ecod_uc__form-row">
                                 <span>当前密码</span>
                                 <input type="password" name="current" required autocomplete="current-password">
@@ -362,6 +430,7 @@ $ecodFollowRows = $ecodLogged ? ecod_follow_rows((int) $ecodUser->uid, 'followin
             </div>
 
             <!-- 我的积分：签到 + 任务 + 流水，JS 拉 credits_state 渲染 -->
+            <?php if (ecod_credits_enabled()): ?>
             <div class="ecod_uc__panel" data-ecod-uc-panel="credits" hidden>
                 <h3 class="ecod_uc__title">我的积分</h3>
                 <?php if (!$ecodLogged): ?>
@@ -394,9 +463,14 @@ $ecodFollowRows = $ecodLogged ? ecod_follow_rows((int) $ecodUser->uid, 'followin
                                 <b>推广返佣</b>
                                 <span>好友通过你的链接注册，TA 的每笔订单按 <?php echo (int) ecod_option('ECrRefPercent', 10); ?>% 返给你<?php echo htmlspecialchars(ecod_credits_name(), ENT_QUOTES, 'UTF-8'); ?>（1 元 = 100）</span>
                             </div>
-                            <input class="ecod_ref__link" type="text" readonly
-                                   value="<?php echo htmlspecialchars($ecodRefLink, ENT_QUOTES, 'UTF-8'); ?>"
-                                   onclick="this.select()" aria-label="我的推广链接">
+                            <div class="ecod_ref__row">
+                                <input class="ecod_ref__link" type="text" readonly
+                                       value="<?php echo htmlspecialchars($ecodRefLink, ENT_QUOTES, 'UTF-8'); ?>"
+                                       onclick="this.select()" aria-label="我的推广链接">
+                                <button type="button" class="ecod_ref__copy" data-ecod-ref-copy>
+                                    <?php echo ecod_icon('link', 13); ?><span>复制链接</span>
+                                </button>
+                            </div>
                             <div class="ecod_ref__earn">累计推广收益 <b><?php echo $ecodRefEarned; ?></b> <?php echo htmlspecialchars(ecod_credits_name(), ENT_QUOTES, 'UTF-8'); ?></div>
                         </div>
                         <?php endif; ?>
@@ -404,6 +478,7 @@ $ecodFollowRows = $ecodLogged ? ecod_follow_rows((int) $ecodUser->uid, 'followin
                     </div>
                 <?php endif; ?>
             </div>
+            <?php endif; ?>
 
             <!-- 我的会员：状态卡 + 权益对照 + 续费/升级 + 卡密兑换（服务端直出） -->
             <div class="ecod_uc__panel" data-ecod-uc-panel="vip" hidden>
@@ -651,6 +726,54 @@ $ecodFollowRows = $ecodLogged ? ecod_follow_rows((int) $ecodUser->uid, 'followin
                                 </div>
                             </div>
                         <?php endforeach; ?>
+                    </div>
+                <?php endif; ?>
+            </div>
+
+            <div class="ecod_uc__panel" data-ecod-uc-panel="lottery" hidden>
+                <h3 class="ecod_uc__title">抽奖记录</h3>
+                <p class="ecod_uc__desc">幸运抽奖的每一次开奖与兑换都会留档在这里。</p>
+                <?php if (!$ecodLogged): ?>
+                    <div class="ecod_uc__empty">
+                        <p>登录后可查看抽奖记录。</p>
+                        <?php if ($ecodLoginUrl !== ''): ?>
+                            <a class="ecod-btn ecod-btn--primary" href="<?php echo htmlspecialchars($ecodLoginUrl, ENT_QUOTES, 'UTF-8'); ?>">去登录</a>
+                        <?php endif; ?>
+                    </div>
+                <?php elseif (!$ecodLotRows): ?>
+                    <div class="ecod_uc__empty">
+                        <?php echo ecod_icon('gift', 34); ?>
+                        <p>还没有抽奖记录，先去试试手气。</p>
+                        <?php if ($ecodLotteryPageUrl !== ''): ?>
+                            <a class="ecod-btn ecod-btn--ghost" href="<?php echo htmlspecialchars($ecodLotteryPageUrl, ENT_QUOTES, 'UTF-8'); ?>">去抽奖</a>
+                        <?php endif; ?>
+                    </div>
+                <?php else: ?>
+                    <div class="ecod_lrec" data-ecod-lrec>
+                        <div class="ecod_lrec__tabs" role="tablist" aria-label="记录筛选">
+                            <button type="button" class="is-active" data-lf="all">全部</button>
+                            <button type="button" data-lf="win">中奖</button>
+                            <button type="button" data-lf="exchange">兑换</button>
+                        </div>
+                        <div class="ecod_lrec__list">
+                            <?php foreach ($ecodLotRows as $ecodLotRow):
+                                $ecodLotType = (string) $ecodLotRow['type'];
+                                $ecodLotKind = $ecodLotType === 'none' ? 'none' : ($ecodLotType === 'exchange' ? 'exchange' : 'win');
+                                $ecodLotDelta = (int) $ecodLotRow['credits'];
+                                $ecodLotIcon = $ecodLotKind === 'exchange' ? 'zap' : ($ecodLotKind === 'none' ? 'inbox' : 'medal');
+                                $ecodLotBadge = $ecodLotKind === 'exchange' ? '兑换' : ($ecodLotKind === 'none' ? '谢谢参与' : '中奖');
+                            ?>
+                            <div class="ecod_lrec__item is-<?php echo $ecodLotKind; ?>" data-type="<?php echo $ecodLotKind; ?>">
+                                <span class="ecod_lrec__ic"><?php echo ecod_icon($ecodLotIcon, 18); ?></span>
+                                <div class="ecod_lrec__main">
+                                    <b><?php echo htmlspecialchars($ecodLotRow['name'] !== '' ? $ecodLotRow['name'] : '谢谢参与', ENT_QUOTES, 'UTF-8'); ?></b>
+                                    <span><?php echo date('Y-m-d H:i', (int) $ecodLotRow['created']); ?><?php echo $ecodLotDelta !== 0 ? ' · ' . ($ecodLotDelta > 0 ? '+' : '') . $ecodLotDelta . ' ' . htmlspecialchars(ecod_credits_name(), ENT_QUOTES, 'UTF-8') : ''; ?></span>
+                                </div>
+                                <em><?php echo $ecodLotBadge; ?></em>
+                            </div>
+                            <?php endforeach; ?>
+                        </div>
+                        <p class="ecod_lrec__end">没有更多了</p>
                     </div>
                 <?php endif; ?>
             </div>

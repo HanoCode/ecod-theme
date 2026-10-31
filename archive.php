@@ -91,11 +91,7 @@ if ($this->is('search')) {
             <?php if ($this->is('search')): ?>
                 <?php ecod_search_empty($this); ?>
             <?php else: ?>
-                <div class="ecod_empty">
-                    <div class="ecod_empty__icon" aria-hidden="true"><?php echo ecod_icon('inbox', 30); ?></div>
-                    <h3>这里还没有内容</h3>
-                    <p>换个条件试试，或返回首页</p>
-                </div>
+                <?php ecod_empty('inbox', '这里还没有内容', '换个条件试试，或返回首页'); ?>
             <?php endif; ?>
         <?php endif; ?>
     </div>

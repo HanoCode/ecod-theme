@@ -45,7 +45,7 @@ $ecodLbCreditsUrl = $ecodLbUcUrl !== '' ? $ecodLbUcUrl . '#credits' : '';
 <section class="ecod_widget ecod_lottery ecod_lottery--widget" data-ecod-lottery
          data-api="<?php echo htmlspecialchars(ecod_api_url(), ENT_QUOTES, 'UTF-8'); ?>"
          data-token="<?php echo htmlspecialchars(ecod_account_token(), ENT_QUOTES, 'UTF-8'); ?>"
-         data-grid="0">
+         data-grid="0"<?php echo $ecodLbUcUrl !== '' ? ' data-uc="' . htmlspecialchars($ecodLbUcUrl . '#lottery', ENT_QUOTES, 'UTF-8') . '"' : ''; ?>>
     <?php ecod_block_head(['more_url' => $ecodLbPageUrl !== '' ? $ecodLbPageUrl : null]); ?>
 
     <?php if ($ecodLbBanner !== '' && $ecodLbPageUrl !== ''): ?>
@@ -61,20 +61,20 @@ $ecodLbCreditsUrl = $ecodLbUcUrl !== '' ? $ecodLbUcUrl . '#credits' : '';
     <?php if ($ecodLbFacts): ?>
         <div class="ecod_lottery__facts">
             <div class="ecod_lottery__fact">
-                <small>积分抽奖</small>
+                <small><?php echo ecod_icon('zap', 12); ?>积分抽奖</small>
                 <b><?php echo (int) $ecodLb['cost']; ?> <?php echo htmlspecialchars($ecodLb['credit'], ENT_QUOTES, 'UTF-8'); ?>/次</b>
             </div>
             <div class="ecod_lottery__fact">
-                <small>中奖概率</small>
+                <small><?php echo ecod_icon('trending', 12); ?>中奖概率</small>
                 <b><?php echo (int) $ecodLb['win_rate']; ?>%</b>
             </div>
             <div class="ecod_lottery__fact<?php echo $ecodLb['exchange']['on'] ? ' is-btn' : ''; ?>"
                  <?php if ($ecodLb['exchange']['on']): ?>data-ecod-lottery-exchange<?php endif; ?>>
-                <small>直接兑换</small>
+                <small><?php echo ecod_icon('gift', 12); ?>直接兑换</small>
                 <b><?php echo $ecodLb['exchange']['on'] ? (int) $ecodLb['exchange']['price'] . ' ' . htmlspecialchars($ecodLb['credit'], ENT_QUOTES, 'UTF-8') : '未开放'; ?></b>
             </div>
             <div class="ecod_lottery__fact">
-                <small>库存</small>
+                <small><?php echo ecod_icon('layers', 12); ?>库存</small>
                 <b><?php
                     if ($ecodLb['finished']) {
                         echo '已抽完';
@@ -145,11 +145,4 @@ $ecodLbCreditsUrl = $ecodLbUcUrl !== '' ? $ecodLbUcUrl . '#credits' : '';
     <?php endif; ?>
 
     <p class="ecod_lottery__result" data-ecod-lottery-result role="status"></p>
-
-    <?php if ($ecodLbUid): ?>
-        <details class="ecod_lottery__records">
-            <summary data-ecod-lottery-records>我的记录</summary>
-            <div class="ecod_lottery__recbox" data-ecod-lottery-recbox hidden></div>
-        </details>
-    <?php endif; ?>
 </section>

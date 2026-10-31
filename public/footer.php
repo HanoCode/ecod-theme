@@ -71,7 +71,11 @@ $ecodShowFooterBar = ecod_block_on('credits') || ecod_block_on('links') || ecod_
 <?php endif; ?>
 <?php $this->footer(); ?>
 <?php
-/* 后台「代码 → body 末尾代码」：统计、客服挂件等，原样输出 */
+/* 后台「代码 → body 末尾代码」：统计、客服挂件等，原样输出。
+   第三方悬浮挂件（客服球 / 悬浮广告）注意与主题自带的右下角浮动件共存：
+   桌面端右下自下而上已被 回到顶部 / 深浅色切换 占用（40px 一档、间距 24px），
+   移动端启用 dock 后整个底部 10~70px 区间被占用；
+   悬浮件请避开这些区间，z-index 不超过 var(--ecod-z-float)。 */
 $ecodBodyCode = trim((string) ecod_option('ECustomBody', ''));
 if ($ecodBodyCode !== '') {
     echo $ecodBodyCode;

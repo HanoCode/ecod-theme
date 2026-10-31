@@ -104,12 +104,13 @@ $this->need('public/header.php');
 
     <?php ecod_page_hero('随机', (string) $this->title, '每次点开都带你去一篇没读过的文章。'); ?>
 
-    <div class="ecod_empty">
-        <div class="ecod_empty__icon" aria-hidden="true"><?php echo ecod_icon('shuffle', 30); ?></div>
-        <h3><?php echo $ecodError !== '' ? $ecodError : '还没有可跳转的文章'; ?></h3>
-        <p><?php echo $ecodError !== '' ? '请稍后重试，或检查数据库连接' : '发布文章后，这个页面会随机带你去看一篇'; ?></p>
-        <p><a class="ecod_btn" href="<?php $this->options->siteUrl(); ?>">回到首页</a></p>
-    </div>
+    <?php
+    if ($ecodError !== '') {
+        ecod_empty('shuffle', $ecodError, '请稍后重试，或检查数据库连接', $this->options->siteUrl, '回到首页');
+    } else {
+        ecod_empty('shuffle', '还没有可跳转的文章', '发布文章后，这个页面会随机带你去看一篇', $this->options->siteUrl, '回到首页');
+    }
+    ?>
 
 
     <?php /* 模块 · 内容区下方（模块管理台） */ ecod_widgets_render("bottom_content", $this); ?>

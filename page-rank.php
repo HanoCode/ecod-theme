@@ -108,17 +108,9 @@ if ($ecodTotalComments > 0) {
     <?php ecod_page_hero('评论墙', (string) $this->title, '在这里留下过声音的人，按评论数排序。', $ecodMeta); ?>
 
     <?php if ($ecodError !== ''): ?>
-        <div class="ecod_empty">
-            <div class="ecod_empty__icon" aria-hidden="true"><?php echo ecod_icon('alert', 30); ?></div>
-            <h3><?php echo $ecodError; ?></h3>
-            <p>请稍后重试</p>
-        </div>
+        <?php ecod_empty('alert', $ecodError, '请稍后重试'); ?>
     <?php elseif (!$ecodList): ?>
-        <div class="ecod_empty">
-            <div class="ecod_empty__icon" aria-hidden="true"><?php echo ecod_icon('comment', 30); ?></div>
-            <h3>还没有人留言</h3>
-            <p>成为第一个在这里说话的人</p>
-        </div>
+        <?php ecod_empty('comment', '还没有人留言', '成为第一个在这里说话的人'); ?>
     <?php else: ?>
         <div class="ecod_readers">
             <?php foreach ($ecodList as $ecodIndex => $ecodPerson): ?>

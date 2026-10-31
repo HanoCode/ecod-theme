@@ -6,22 +6,9 @@
  */
 
 .ecod-admin {
-    /* 与前台对齐的设计令牌（后台独立作用域） */
-    --ecod-primary: #4f6ef2;
-    --ecod-primary-soft: rgba(79, 110, 242, .09);
-    --ecod-dur: .2s;
-    --ecod-dur-fast: .14s;
-    --ecod-admin-border: var(--ea-line);
-    --ea-ink: #1c2130;
-    --ea-sub: #7b8297;
-    --ea-line: #e6e9f2;
-    --ea-soft: #f7f8fc;
-    --ea-brand: #4f6ef2;
-    --ea-brand-soft: #eef1fe;
-    --ea-radius: 12px;
-    --ea-radius-xs: 4px;
-    --ea-radius-sm: 8px;
-    --ea-radius-full: 999px;
+    /* 颜色 / 圆角 / 阴影 / 动效全部由 assets/admin/tokens.css 的 :root 提供，
+       本作用域不再定义 --ecod-* 别名（曾与 tokens 双轨，值已漂移）。
+       实时预览：config.js → paint() 在本元素上覆盖 --ea-brand。 */
 
     display: grid;
     grid-template-columns: 232px minmax(0, 1fr);
@@ -30,10 +17,10 @@
     background: #fff;
     border: 1px solid var(--ea-line);
     border-radius: var(--ea-radius);
-    box-shadow: 0 10px 34px rgba(23, 32, 63, .07);
+    box-shadow: 0 10px 34px rgba(18, 22, 29, .07);
     /* 不用 overflow:hidden：会破坏 __head 的 position:sticky 吸顶 */
     color: var(--ea-ink);
-    font-size: 13px;
+    font-size: var(--ea-fs-sm);
     line-height: 1.6;
 }
 
@@ -77,8 +64,8 @@
     background: linear-gradient(135deg, #5b7bfa, #3f5ce0);
     color: #fff;
     font-weight: 700;
-    font-size: 15px;
-    box-shadow: 0 4px 10px rgba(79, 110, 242, .3);
+    font-size: var(--ea-fs-md);
+    box-shadow: 0 4px 10px color-mix(in srgb, var(--ea-brand) 30%, transparent);
 }
 
 .ecod-admin__brandtext {
@@ -88,13 +75,13 @@
 }
 
 .ecod-admin__brandtext b {
-    font-size: 14px;
+    font-size: var(--ea-fs-md);
     letter-spacing: .2px;
 }
 
 .ecod-admin__brandtext small {
     color: var(--ea-sub);
-    font-size: 11px;
+    font-size: var(--ea-fs-2xs);
 }
 
 .ecod-admin__nav {
@@ -122,7 +109,7 @@
     color: #4a5065;
     text-align: left;
     cursor: pointer;
-    transition: background .16s, color .16s;
+    transition: background var(--ea-dur-fast), color var(--ea-dur-fast);
 }
 
 .ecod-admin__grouphd:hover {
@@ -143,7 +130,7 @@
     border-radius: 7px;
     background: #e8ebf6;
     color: #6b7390;
-    transition: background .16s, color .16s;
+    transition: background var(--ea-dur-fast), color var(--ea-dur-fast);
 }
 
 .ecod-admin__grouphd.is-active .ecod-admin__gicon,
@@ -162,13 +149,13 @@
 }
 
 .ecod-admin__gname b {
-    font-size: 13px;
+    font-size: var(--ea-fs-sm);
     font-weight: 600;
 }
 
 .ecod-admin__gname small {
     color: var(--ea-sub);
-    font-size: 10.5px;
+    font-size: var(--ea-fs-2xs);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -179,7 +166,7 @@
     display: grid;
     place-items: center;
     color: #a6adc4;
-    transition: transform .2s ease;
+    transition: transform var(--ea-dur) ease;
 }
 
 .ecod-admin__group.is-open .ecod-admin__gchev {
@@ -190,7 +177,7 @@
 .ecod-admin__grouplst {
     display: grid;
     grid-template-rows: 0fr;
-    transition: grid-template-rows .22s ease;
+    transition: grid-template-rows var(--ea-dur) ease;
 }
 
 .ecod-admin__group.is-open .ecod-admin__grouplst {
@@ -200,7 +187,14 @@
 .ecod-admin__grouplst-in {
     min-height: 0;
     overflow: hidden;
-    padding: 2px 0 2px 10px;
+    /* 垂直 padding 只能在展开态出现：0fr 折叠靠内容高度归零，
+       常驻 padding 会把折叠后的子列表撑出 4px，露出首条子项的顶边 */
+    padding: 0 0 0 10px;
+}
+
+.ecod-admin__group.is-open .ecod-admin__grouplst-in {
+    padding-top: 2px;
+    padding-bottom: 2px;
 }
 
 .ecod-admin__navitem {
@@ -213,10 +207,10 @@
     border-radius: var(--ea-radius-sm);
     background: transparent;
     color: #565d75;
-    font-size: 12.5px;
+    font-size: var(--ea-fs-xs);
     text-align: left;
     cursor: pointer;
-    transition: background .16s, color .16s;
+    transition: background var(--ea-dur-fast), color var(--ea-dur-fast);
 }
 
 .ecod-admin__navitem::before {
@@ -226,7 +220,7 @@
     height: 4px;
     border-radius: 50%;
     background: #b9bfd3;
-    transition: background .16s;
+    transition: background var(--ea-dur-fast);
 }
 
 .ecod-admin__navitem:hover {
@@ -238,7 +232,7 @@
     background: #fff;
     color: var(--ea-brand);
     font-weight: 600;
-    box-shadow: 0 1px 2px rgba(23, 32, 63, .06), 0 0 0 1px rgba(79, 110, 242, .12);
+    box-shadow: 0 1px 2px rgba(18, 22, 29, .06), 0 0 0 1px color-mix(in srgb, var(--ea-brand) 12%, transparent);
 }
 
 .ecod-admin__navitem.is-active::before {
@@ -268,7 +262,7 @@
 
 .ecod-admin__title {
     margin: 0 0 2px;
-    font-size: 17px;
+    font-size: var(--ea-fs-lg);
     font-weight: 700;
     color: var(--ea-ink);
 }
@@ -276,7 +270,7 @@
 .ecod-admin__desc {
     margin: 0;
     color: var(--ea-sub);
-    font-size: 12px;
+    font-size: var(--ea-fs-xs);
 }
 
 .ecod-admin__actions {
@@ -294,7 +288,7 @@
     border-radius: var(--ea-radius-full);
     background: #fff5e6;
     color: #b06a00;
-    font-size: 12px;
+    font-size: var(--ea-fs-xs);
     white-space: nowrap;
 }
 
@@ -360,7 +354,7 @@ body {
     align-items: center;
     gap: 7px;
     color: var(--ea-ink);
-    font-size: 13.5px;
+    font-size: var(--ea-fs-sm);
     font-weight: 700;
 }
 
@@ -374,7 +368,7 @@ body {
 
 .ecod-sect__d {
     color: var(--ea-sub);
-    font-size: 11.5px;
+    font-size: var(--ea-fs-2xs);
 }
 
 /* 沉底小节（隐藏字段等，无标题）：只留间隔 */
@@ -403,13 +397,13 @@ body {
     display: block;
     margin-bottom: 6px;
     color: var(--ea-ink);
-    font-size: 16px;
+    font-size: var(--ea-fs-lg);
 }
 
 .ecod-start__hero p {
     margin: 0;
     color: #57607c;
-    font-size: 12.5px;
+    font-size: var(--ea-fs-xs);
     line-height: 1.75;
 }
 
@@ -421,7 +415,7 @@ body {
     background: #fff;
     color: #41508a;
     font-family: inherit;
-    font-size: 11px;
+    font-size: var(--ea-fs-2xs);
 }
 
 .ecod-start__steps {
@@ -442,12 +436,12 @@ body {
     background: #fff;
     text-align: left;
     cursor: pointer;
-    transition: border-color .16s, box-shadow .16s, transform .16s;
+    transition: border-color var(--ea-dur-fast), box-shadow var(--ea-dur-fast), transform var(--ea-dur-fast);
 }
 
 .ecod-start__step:hover {
     border-color: #b9c6ff;
-    box-shadow: 0 6px 18px rgba(23, 32, 63, .08);
+    box-shadow: var(--ea-shadow-hover);
     transform: translateY(-1px);
 }
 
@@ -460,19 +454,19 @@ body {
     border-radius: 50%;
     background: var(--ea-brand-soft);
     color: var(--ea-brand);
-    font-size: 11px;
+    font-size: var(--ea-fs-2xs);
     font-style: normal;
     font-weight: 700;
 }
 
 .ecod-start__step b {
     color: var(--ea-ink);
-    font-size: 13px;
+    font-size: var(--ea-fs-sm);
 }
 
 .ecod-start__step small {
     color: var(--ea-sub);
-    font-size: 11.5px;
+    font-size: var(--ea-fs-2xs);
     line-height: 1.5;
 }
 
@@ -495,12 +489,12 @@ body {
 
 .ecod-start__taskshd b {
     color: var(--ea-ink);
-    font-size: 13px;
+    font-size: var(--ea-fs-sm);
 }
 
 .ecod-start__taskshd span {
     color: var(--ea-brand);
-    font-size: 12px;
+    font-size: var(--ea-fs-xs);
     font-weight: 600;
 }
 
@@ -519,7 +513,7 @@ body {
     background: transparent;
     text-align: left;
     cursor: pointer;
-    transition: background .16s;
+    transition: background var(--ea-dur-fast);
 }
 
 .ecod-start__task:nth-child(odd) {
@@ -544,7 +538,7 @@ body {
     border-radius: 50%;
     background: #fff;
     color: transparent;
-    transition: background .16s, border-color .16s, color .16s;
+    transition: background var(--ea-dur-fast), border-color var(--ea-dur-fast), color var(--ea-dur-fast);
 }
 
 .ecod-start__task.is-done .ecod-start__tdot {
@@ -564,12 +558,12 @@ body {
 
 .ecod-start__tmain b {
     color: var(--ea-ink);
-    font-size: 12.5px;
+    font-size: var(--ea-fs-xs);
 }
 
 .ecod-start__tmain small {
     color: var(--ea-sub);
-    font-size: 11px;
+    font-size: var(--ea-fs-2xs);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -578,7 +572,7 @@ body {
 .ecod-start__task em {
     flex: none;
     color: var(--ea-brand);
-    font-size: 11.5px;
+    font-size: var(--ea-fs-2xs);
     font-style: normal;
     white-space: nowrap;
 }
@@ -606,12 +600,12 @@ body {
     text-align: left;
     text-decoration: none;
     cursor: pointer;
-    transition: border-color .16s, box-shadow .16s;
+    transition: border-color var(--ea-dur-fast), box-shadow var(--ea-dur-fast);
 }
 
 .ecod-start__qlink:hover {
     border-color: #b9c6ff;
-    box-shadow: 0 6px 18px rgba(23, 32, 63, .08);
+    box-shadow: var(--ea-shadow-hover);
 }
 
 .ecod-start__qlink > svg {
@@ -626,18 +620,18 @@ body {
 
 .ecod-start__qlink b {
     color: var(--ea-ink);
-    font-size: 12.5px;
+    font-size: var(--ea-fs-xs);
 }
 
 .ecod-start__qlink small {
     color: var(--ea-sub);
-    font-size: 11px;
+    font-size: var(--ea-fs-2xs);
     line-height: 1.5;
 }
 
 .ecod-start__qlink em {
     color: var(--ea-brand);
-    font-size: 11.5px;
+    font-size: var(--ea-fs-2xs);
     font-style: normal;
 }
 
@@ -669,7 +663,7 @@ body {
 
 .ecod-pane__hint {
     color: var(--ea-sub);
-    font-size: 12px;
+    font-size: var(--ea-fs-xs);
 }
 
 /* 分组内警示条（如「功能开发中」） */
@@ -684,12 +678,12 @@ body {
     display: block;
     margin-bottom: 4px;
     color: #8a6116;
-    font-size: 13px;
+    font-size: var(--ea-fs-sm);
 }
 .ecod-pane__notice p {
     margin: 0;
     color: #9a7736;
-    font-size: 12px;
+    font-size: var(--ea-fs-xs);
     line-height: 1.6;
 }
 
@@ -706,7 +700,7 @@ body {
     border-radius: var(--ea-radius);
     background: #f2f5fe;
     color: #41508a;
-    font-size: 12.5px;
+    font-size: var(--ea-fs-xs);
     line-height: 1.6;
 }
 
@@ -718,9 +712,9 @@ body {
     background: var(--ea-brand);
     color: #fff;
     font-family: inherit;
-    font-size: 12px;
+    font-size: var(--ea-fs-xs);
     cursor: pointer;
-    transition: background var(--ecod-dur-fast);
+    transition: background var(--ea-dur-fast);
 }
 
 .ecod-condbar__go:hover {
@@ -732,7 +726,7 @@ body {
     grid-column: 2;
     margin: 8px 0 0;
     color: var(--ea-sub);
-    font-size: 11.5px;
+    font-size: var(--ea-fs-2xs);
     line-height: 1.55;
 }
 
@@ -764,7 +758,7 @@ body {
     grid-column: 1;
     padding-top: 7px;
     color: var(--ea-ink);
-    font-size: 13px;
+    font-size: var(--ea-fs-sm);
     font-weight: 600;
 }
 
@@ -779,9 +773,9 @@ body {
     border-radius: var(--ea-radius-sm);
     background: #fcfcfe;
     color: var(--ea-ink);
-    font-size: 13px;
+    font-size: var(--ea-fs-sm);
     line-height: 1.5;
-    transition: border-color .16s, box-shadow .16s, background .16s;
+    transition: border-color var(--ea-dur-fast), box-shadow var(--ea-dur-fast), background var(--ea-dur-fast);
 }
 
 .ecod-fields select {
@@ -802,14 +796,14 @@ body {
     outline: 0;
     border-color: var(--ea-brand);
     background: #fff;
-    box-shadow: 0 0 0 3px rgba(79, 110, 242, .12);
+    box-shadow: var(--ea-ring-strong);
 }
 
 .ecod-fields .description {
     grid-column: 2;
     margin: 2px 0 0;
     color: var(--ea-sub);
-    font-size: 12px;
+    font-size: var(--ea-fs-xs);
     line-height: 1.65;
 }
 
@@ -836,7 +830,7 @@ body {
     border: 1px solid var(--ea-line);
     border-radius: var(--ea-radius);
     cursor: pointer;
-    transition: border-color .16s, background .16s, box-shadow .16s;
+    transition: border-color var(--ea-dur-fast), background var(--ea-dur-fast), box-shadow var(--ea-dur-fast);
 }
 
 .ecod-choice__item:hover {
@@ -847,19 +841,19 @@ body {
 .ecod-choice__item.is-on {
     background: var(--ea-brand-soft);
     border-color: #b6c3f3;
-    box-shadow: inset 0 0 0 1px rgba(79, 110, 242, .16);
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--ea-brand) 16%, transparent);
 }
 
 .ecod-choice__item b {
     color: var(--ea-ink);
-    font-size: 12.5px;
+    font-size: var(--ea-fs-xs);
     font-weight: 600;
     line-height: 1.4;
 }
 
 .ecod-choice__item small {
     color: var(--ea-sub);
-    font-size: 11px;
+    font-size: var(--ea-fs-2xs);
     line-height: 1.4;
 }
 
@@ -989,7 +983,7 @@ body {
 
 .ecod-choice--segment .ecod-choice__item.is-on {
     background: #fff;
-    box-shadow: 0 1px 3px rgba(23, 32, 63, .12);
+    box-shadow: var(--ea-shadow);
 }
 
 /* 开关 */
@@ -1019,7 +1013,7 @@ body {
     height: 22px;
     background: #d8dceb;
     border-radius: var(--ea-radius-full);
-    transition: background .18s;
+    transition: background var(--ea-dur);
 }
 
 .ecod-toggle i::after {
@@ -1031,8 +1025,8 @@ body {
     height: 18px;
     background: #fff;
     border-radius: 50%;
-    box-shadow: 0 1px 3px rgba(20, 28, 50, .22);
-    transition: transform .18s;
+    box-shadow: 0 1px 3px rgba(18, 22, 29, .22);
+    transition: transform var(--ea-dur);
 }
 
 .ecod-toggle input:checked + i {
@@ -1044,12 +1038,12 @@ body {
 }
 
 .ecod-toggle input:focus-visible + i {
-    box-shadow: 0 0 0 3px rgba(79, 110, 242, .18);
+    box-shadow: var(--ea-ring-strong);
 }
 
 .ecod-toggle span {
     color: var(--ea-ink);
-    font-size: 12.5px;
+    font-size: var(--ea-fs-xs);
 }
 
 /* 开关 */
@@ -1074,7 +1068,7 @@ body {
     inset: 0;
     border-radius: var(--ea-radius-full);
     background: #d8dceb;
-    transition: background .18s;
+    transition: background var(--ea-dur);
     pointer-events: none;
 }
 
@@ -1087,8 +1081,8 @@ body {
     height: 18px;
     border-radius: 50%;
     background: #fff;
-    box-shadow: 0 1px 3px rgba(20, 28, 50, .22);
-    transition: transform .18s;
+    box-shadow: 0 1px 3px rgba(18, 22, 29, .22);
+    transition: transform var(--ea-dur);
 }
 
 .ecod-switch input:checked+i {
@@ -1100,7 +1094,7 @@ body {
 }
 
 .ecod-switch input:focus-visible+i {
-    box-shadow: 0 0 0 3px rgba(79, 110, 242, .18);
+    box-shadow: var(--ea-ring-strong);
 }
 
 .ecod-switch input[disabled] {
@@ -1131,12 +1125,12 @@ body {
     border: 1px solid transparent;
     background: var(--ea-brand);
     color: #fff;
-    font-size: 12.5px;
+    font-size: var(--ea-fs-xs);
     font-weight: 500;
     line-height: 1.4;
     cursor: pointer;
     text-decoration: none;
-    transition: .16s;
+    transition: var(--ea-dur-fast);
 }
 
 .ecod-btn:hover,
@@ -1173,7 +1167,7 @@ body {
 .ecod-pane__bar .ecod-admin__ghost {
     width: auto;
     padding: 5px 12px;
-    font-size: 12px;
+    font-size: var(--ea-fs-xs);
 }
 
 /* ---------------- 工具页 ---------------- */
@@ -1193,7 +1187,7 @@ body {
 .ecod-tool__text b {
     display: block;
     margin-bottom: 3px;
-    font-size: 13.5px;
+    font-size: var(--ea-fs-sm);
     color: var(--ea-ink);
 }
 
@@ -1201,7 +1195,7 @@ body {
     margin: 0;
     max-width: 560px;
     color: var(--ea-sub);
-    font-size: 12px;
+    font-size: var(--ea-fs-xs);
     line-height: 1.7;
 }
 
@@ -1210,7 +1204,7 @@ body {
     border-radius: var(--ea-radius-xs);
     background: #f1f3fa;
     color: #4c5670;
-    font-size: 11.5px;
+    font-size: var(--ea-fs-2xs);
 }
 
 .ecod-tool__tag {
@@ -1219,7 +1213,7 @@ body {
     border-radius: var(--ea-radius-full);
     background: var(--ea-brand-soft);
     color: var(--ea-brand);
-    font-size: 12px;
+    font-size: var(--ea-fs-xs);
 }
 
 /* 站内公告：整宽排版，输入在说明文字下方 */
@@ -1242,7 +1236,7 @@ body {
     padding: 0 10px;
     border: 1px solid var(--ea-line);
     border-radius: var(--ea-radius);
-    font-size: 12.5px;
+    font-size: var(--ea-fs-xs);
     color: var(--ea-ink);
     background: #fff;
 }
@@ -1250,7 +1244,7 @@ body {
     padding: 8px 10px;
     border: 1px solid var(--ea-line);
     border-radius: var(--ea-radius);
-    font-size: 12.5px;
+    font-size: var(--ea-fs-xs);
     line-height: 1.7;
     color: var(--ea-ink);
     background: #fff;
@@ -1306,13 +1300,13 @@ body {
 .ecod-param__label span {
     font-weight: 400;
     color: #98a0b6;
-    font-size: 11.5px;
+    font-size: var(--ea-fs-2xs);
 }
 
 .ecod-param__desc {
     margin: 6px 0 0;
     color: #8a90a2;
-    font-size: 11.5px;
+    font-size: var(--ea-fs-2xs);
     line-height: 1.6;
 }
 
@@ -1324,17 +1318,17 @@ body {
     border-radius: var(--ea-radius-sm);
     background: #fcfcfe;
     color: #1c2130;
-    font-size: 13px;
+    font-size: var(--ea-fs-sm);
     font-family: inherit;
     line-height: 1.5;
-    transition: .16s;
+    transition: var(--ea-dur-fast);
 }
 
 .ecod-input:focus {
     outline: 0;
     border-color: #4f6ef2;
     background: #fff;
-    box-shadow: 0 0 0 3px rgba(79, 110, 242, .12);
+    box-shadow: var(--ea-ring-strong);
 }
 
 textarea.ecod-input {
@@ -1352,7 +1346,7 @@ textarea.ecod-input {
 .ecod-slides__empty {
     margin: 0;
     color: #8a90a2;
-    font-size: 11.5px;
+    font-size: var(--ea-fs-2xs);
     line-height: 1.6;
 }
 
@@ -1375,7 +1369,7 @@ textarea.ecod-input {
     border-radius: var(--ea-radius-sm);
     background: #eef1f8 center / cover no-repeat;
     color: #98a0b6;
-    font-size: 12px;
+    font-size: var(--ea-fs-xs);
     font-weight: 600;
 }
 
@@ -1389,7 +1383,7 @@ textarea.ecod-input {
 
 .ecod-slide__fields .ecod-input {
     padding: 6px 9px;
-    font-size: 12.5px;
+    font-size: var(--ea-fs-xs);
 }
 
 .ecod-slide__row {
@@ -1409,7 +1403,7 @@ textarea.ecod-input {
     border-radius: var(--ea-radius-sm);
     background: #fff;
     color: #1c2130;
-    font-size: 12px;
+    font-size: var(--ea-fs-xs);
     cursor: pointer;
 }
 
@@ -1433,7 +1427,7 @@ textarea.ecod-input {
     border-radius: var(--ea-radius-sm);
     background: #fff;
     color: #6b7390;
-    font-size: 12px;
+    font-size: var(--ea-fs-xs);
     line-height: 1;
     cursor: pointer;
 }
@@ -1456,7 +1450,7 @@ textarea.ecod-input {
     border-radius: var(--ea-radius-sm);
     background: #fff;
     color: var(--ea-brand);
-    font-size: 12.5px;
+    font-size: var(--ea-fs-xs);
     cursor: pointer;
 }
 
@@ -1529,7 +1523,7 @@ textarea.ecod-input {
     }
 
     .ecod-admin__grouphd.is-active {
-        border-color: rgba(79, 110, 242, .45);
+        border-color: color-mix(in srgb, var(--ea-brand) 45%, transparent);
     }
 
     .ecod-admin__gname small,
@@ -1565,7 +1559,7 @@ textarea.ecod-input {
     }
 
     .ecod-admin__navitem.is-active {
-        border-color: rgba(79, 110, 242, .45);
+        border-color: color-mix(in srgb, var(--ea-brand) 45%, transparent);
     }
 
     .ecod-admin__sidefoot {
@@ -1603,8 +1597,7 @@ textarea.ecod-input {
     .ecod-fields .ecod-media-field,
     .ecod-fields .ecod-choice,
     .ecod-fields .ecod-color,
-    .ecod-fields .ecod-pool,
-    .ecod-fields .ecod-preview {
+    .ecod-fields .ecod-pool {
         grid-column: 1 / -1;
     }
 
@@ -1639,7 +1632,7 @@ textarea.ecod-input {
     }
 
     .ecod-pane__hint {
-        font-size: 11.5px;
+        font-size: var(--ea-fs-2xs);
     }
 
     /* 控件触达达标；字号 16px 避免 iOS 聚焦时自动放大 */
@@ -1648,7 +1641,7 @@ textarea.ecod-input {
     .ecod-fields textarea {
         min-height: 42px;
         padding: 10px 12px;
-        font-size: 16px;
+        font-size: var(--ea-fs-lg);
     }
 
     .ecod-fields textarea {
@@ -1670,7 +1663,7 @@ textarea.ecod-input {
     }
 
     .ecod-tool__text p {
-        font-size: 12.5px;
+        font-size: var(--ea-fs-xs);
     }
 
 }
@@ -1685,7 +1678,7 @@ textarea.ecod-input {
     margin: 0;
     padding: 14px 0 16px;
     color: var(--ea-sub);
-    font-size: 12px;
+    font-size: var(--ea-fs-xs);
 }
 
 .ecod-snap {
@@ -1702,7 +1695,7 @@ textarea.ecod-input {
 
 .ecod-snap__main b {
     display: block;
-    font-size: 13px;
+    font-size: var(--ea-fs-sm);
     font-weight: 600;
     color: var(--ea-ink);
     font-variant-numeric: tabular-nums;
@@ -1712,7 +1705,7 @@ textarea.ecod-input {
     display: block;
     margin-top: 1px;
     color: var(--ea-sub);
-    font-size: 11.5px;
+    font-size: var(--ea-fs-2xs);
 }
 
 .ecod-snap__act {
@@ -1724,7 +1717,7 @@ textarea.ecod-input {
 .ecod-snap__act .ecod-admin__ghost {
     width: auto;
     padding: 4px 11px;
-    font-size: 12px;
+    font-size: var(--ea-fs-xs);
 }
 
 .ecod-snap__act .ecod-admin__ghost:hover {
@@ -1745,7 +1738,7 @@ textarea.ecod-input {
     border-radius: var(--ea-radius-sm);
     background: #eef7f0;
     color: #2c7a45;
-    font-size: 12.5px;
+    font-size: var(--ea-fs-xs);
 }
 
 .ecod-tool__status.is-error {
@@ -1763,7 +1756,7 @@ textarea.ecod-input {
 .ecod-btn--sm {
     width: auto;
     padding: 5px 14px;
-    font-size: 12.5px;
+    font-size: var(--ea-fs-xs);
 }
 
 .ecod-pagelist {
@@ -1805,7 +1798,7 @@ textarea.ecod-input {
 
 .ecod-page-row__main b {
     display: block;
-    font-size: 13px;
+    font-size: var(--ea-fs-sm);
     font-weight: 600;
     color: var(--ea-ink);
 }
@@ -1813,7 +1806,7 @@ textarea.ecod-input {
 .ecod-page-row__main small {
     display: block;
     margin-top: 1px;
-    font-size: 11.5px;
+    font-size: var(--ea-fs-2xs);
     color: var(--ea-sub);
     line-height: 1.5;
 }
@@ -1828,7 +1821,7 @@ textarea.ecod-input {
 .ecod-page-row__act .ecod-admin__ghost {
     width: auto;
     padding: 4px 11px;
-    font-size: 12px;
+    font-size: var(--ea-fs-xs);
 }
 
 .ecod-page-row__act .ecod-admin__ghost:hover {
@@ -1848,7 +1841,7 @@ textarea.ecod-input {
     border-radius: var(--ea-radius-full);
     background: #fff;
     color: var(--ea-sub);
-    font-size: 11.5px;
+    font-size: var(--ea-fs-2xs);
     cursor: pointer;
 }
 
@@ -1896,7 +1889,7 @@ textarea.ecod-input {
     width: 34px;
     height: 34px;
     padding: 2px;
-    border: 1px solid var(--ecod-admin-border, #e2e5ec);
+    border: 1px solid var(--ea-admin-border, #e2e5ec);
     border-radius: var(--ea-radius-sm);
     background: #fff;
     cursor: pointer;
@@ -1910,7 +1903,7 @@ textarea.ecod-input {
 }
 .ecod-color__hex {
     font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-    font-size: 12px;
+    font-size: var(--ea-fs-xs);
     color: #8a93a3;
 }
 .ecod-color__reset {
@@ -1919,9 +1912,9 @@ textarea.ecod-input {
     border-radius: var(--ea-radius-full);
     background: #fff;
     color: #6b7280;
-    font-size: 11.5px;
+    font-size: var(--ea-fs-2xs);
     cursor: pointer;
-    transition: border-color .16s, background-color .16s, color .16s, box-shadow .16s;
+    transition: border-color var(--ea-dur-fast), background-color var(--ea-dur-fast), color var(--ea-dur-fast), box-shadow var(--ea-dur-fast);
 }
 .ecod-color__reset:hover {
     border-color: #c7cffb;
@@ -1959,7 +1952,7 @@ textarea.ecod-input {
 }
 
 /* ---------------- 固定框架：侧栏 + 顶栏常驻，仅内容区滚动 ----------------
- * JS（config.js → fitFrame）量出面板距视口顶端的距离写入 --ecod-admin-h，
+ * JS（config.js → fitFrame）量出面板距视口顶端的距离写入 --ea-admin-h，
  * 并给 body 加 .ecod-frame 锁掉整页滚动，避免双滚动条与顶栏被后台导航遮挡。
  * 无 JS / 窄屏时退回「整页滚动 + 顶栏吸顶」的老行为。
  */
@@ -1969,7 +1962,7 @@ textarea.ecod-input {
     }
 
     body.ecod-frame .ecod-admin {
-        height: var(--ecod-admin-h, calc(100dvh - 152px));
+        height: var(--ea-admin-h, calc(100dvh - 152px));
         min-height: 0;
         overflow: hidden;
     }
@@ -2033,13 +2026,13 @@ textarea.ecod-input {
 
 .ecod-admin__title {
     margin: 0;
-    font-size: 16px;
+    font-size: var(--ea-fs-lg);
     line-height: 1.3;
     color: var(--ea-ink);
 }
 .ecod-admin__desc {
     margin: 2px 0 0;
-    font-size: 12px;
+    font-size: var(--ea-fs-xs);
     color: var(--ea-sub);
 }
 .ecod-admin__actions {
@@ -2054,7 +2047,7 @@ textarea.ecod-input {
     background: #fff7e6;
     border: 1px solid #f2d18b;
     color: #8a6116;
-    font-size: 11.5px;
+    font-size: var(--ea-fs-2xs);
 }
 
 /* ---------------- 预设色板 ---------------- */
@@ -2071,13 +2064,13 @@ textarea.ecod-input {
     padding: 0;
     border: 2px solid #fff;
     border-radius: 50%;
-    box-shadow: 0 0 0 1px rgba(23, 32, 63, .16);
+    box-shadow: 0 0 0 1px rgba(18, 22, 29, .16);
     cursor: pointer;
-    transition: transform var(--ecod-dur-fast, 140ms), box-shadow var(--ecod-dur-fast, 140ms);
+    transition: transform var(--ea-dur-fast, var(--ea-dur-fast)), box-shadow var(--ea-dur-fast, var(--ea-dur-fast));
 }
 .ecod-color__sw:hover {
     transform: scale(1.18);
-    box-shadow: 0 0 0 2px rgba(79, 110, 242, .45);
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--ea-brand) 45%, transparent);
 }
 
 /* ---------------- 卡片模式视觉示意补遗：紧凑 / 混合网格 / 清单 ---------------- */
@@ -2091,50 +2084,6 @@ textarea.ecod-input {
 .ecod-choice__view[data-v="item"] { flex-direction: column; }
 .ecod-choice__view[data-v="item"] i { flex: 1 1 0; height: 22%; }
 .ecod-choice__view[data-v="item"] i:nth-child(1) { flex-grow: 2.4; }
-
-/* ---------------- 主色迷你预览 ---------------- */
-.ecod-preview {
-    margin: 16px 0 4px;
-    padding: 12px;
-    border: 1px dashed var(--ea-line);
-    border-radius: var(--ea-radius);
-    background: var(--ea-soft);
-}
-.ecod-preview__card {
-    display: flex;
-    gap: 10px;
-    padding: 10px;
-    background: #fff;
-    border: 1px solid var(--ea-line);
-    border-radius: var(--ea-radius-sm);
-}
-.ecod-preview__thumb {
-    flex: none;
-    width: 56px;
-    height: 40px;
-    border-radius: var(--ea-radius-sm);
-    background: linear-gradient(135deg, var(--ecod-primary), color-mix(in srgb, var(--ecod-primary) 55%, #8b5cf6));
-}
-.ecod-preview__body { display: flex; flex-direction: column; gap: 5px; min-width: 0; flex: 1; }
-.ecod-preview__body b { font-size: 12.5px; color: #1c2130; }
-.ecod-preview__body i {
-    height: 6px;
-    border-radius: var(--ea-radius-xs);
-    background: #eef0f6;
-}
-.ecod-preview__body i:first-of-type { width: 92%; }
-.ecod-preview__body i:last-of-type { width: 68%; }
-.ecod-preview__body em {
-    font-style: normal;
-    font-size: 10.5px;
-    color: var(--ecod-primary);
-}
-.ecod-preview > small {
-    display: block;
-    margin-top: 8px;
-    font-size: 11px;
-    color: var(--ea-sub);
-}
 
 /* ---------------- 设置搜索 ---------------- */
 .ecod-admin__search {
@@ -2150,12 +2099,12 @@ textarea.ecod-input {
     border: 1px solid #dfe3ee;
     border-radius: var(--ea-radius-sm);
     background: #fff;
-    transition: border-color .16s, box-shadow .16s;
+    transition: border-color var(--ea-dur-fast), box-shadow var(--ea-dur-fast);
 }
 
 .ecod-search__box:focus-within {
     border-color: var(--ea-brand);
-    box-shadow: 0 0 0 3px rgba(79, 110, 242, .12);
+    box-shadow: var(--ea-ring-strong);
 }
 
 .ecod-search__box svg {
@@ -2171,7 +2120,7 @@ textarea.ecod-input {
     border: 0;
     background: transparent;
     color: var(--ea-ink);
-    font-size: 12.5px;
+    font-size: var(--ea-fs-xs);
     font-family: inherit;
 }
 
@@ -2185,7 +2134,7 @@ textarea.ecod-input {
     border: 1px solid #e3e7f1;
     border-radius: var(--ea-radius-xs);
     color: #9aa1b6;
-    font-size: 10.5px;
+    font-size: var(--ea-fs-2xs);
     font-family: inherit;
 }
 
@@ -2196,7 +2145,7 @@ textarea.ecod-input {
 /* 结果面板：贴住搜索框向下展开 */
 .ecod-searchres {
     position: absolute;
-    z-index: 60;
+    z-index: var(--ea-z-drop);
     top: calc(100% + 6px);
     left: 0;
     right: 0;
@@ -2206,7 +2155,7 @@ textarea.ecod-input {
     border: 1px solid var(--ea-line);
     border-radius: var(--ea-radius);
     background: #fff;
-    box-shadow: 0 16px 40px rgba(23, 32, 63, .16);
+    box-shadow: var(--ea-shadow-modal);
 }
 
 .ecod-searchres[hidden] {
@@ -2217,7 +2166,7 @@ textarea.ecod-input {
     margin: 0;
     padding: 10px;
     color: var(--ea-sub);
-    font-size: 12px;
+    font-size: var(--ea-fs-xs);
 }
 
 .ecod-searchres__item {
@@ -2243,7 +2192,7 @@ textarea.ecod-input {
     overflow: hidden;
     flex: 1;
     color: var(--ea-ink);
-    font-size: 12.5px;
+    font-size: var(--ea-fs-xs);
     font-weight: 500;
     white-space: nowrap;
     text-overflow: ellipsis;
@@ -2258,7 +2207,7 @@ textarea.ecod-input {
 .ecod-searchres__item small {
     flex: none;
     color: var(--ea-sub);
-    font-size: 10.5px;
+    font-size: var(--ea-fs-2xs);
 }
 
 .ecod-searchres__kind {
@@ -2267,7 +2216,7 @@ textarea.ecod-input {
     border-radius: var(--ea-radius-xs);
     background: #eef1f8;
     color: #6b7390;
-    font-size: 10px;
+    font-size: var(--ea-fs-2xs);
 }
 
 /* 命中定位后的闪烁提示 */
@@ -2276,8 +2225,8 @@ textarea.ecod-input {
 }
 
 @keyframes ecodHit {
-    0%, 60% { box-shadow: 0 0 0 3px rgba(79, 110, 242, .28); border-radius: var(--ea-radius); }
-    100% { box-shadow: 0 0 0 0 rgba(79, 110, 242, 0); }
+    0%, 60% { box-shadow: var(--ea-ring-strong); border-radius: var(--ea-radius); }
+    100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--ea-brand) 0%, transparent); }
 }
 
 /* ---------------- 窄面板自适应 ----------------
@@ -2357,7 +2306,7 @@ textarea.ecod-input {
 }
 
 .ecod-admin.is-narrow .ecod-admin__grouphd.is-active {
-    border-color: rgba(79, 110, 242, .45);
+    border-color: color-mix(in srgb, var(--ea-brand) 45%, transparent);
 }
 
 .ecod-admin.is-narrow .ecod-admin__gname small,
@@ -2391,7 +2340,7 @@ textarea.ecod-input {
 }
 
 .ecod-admin.is-narrow .ecod-admin__navitem.is-active {
-    border-color: rgba(79, 110, 242, .45);
+    border-color: color-mix(in srgb, var(--ea-brand) 45%, transparent);
 }
 
 .ecod-admin.is-narrow .ecod-admin__sidefoot {
@@ -2446,8 +2395,7 @@ textarea.ecod-input {
 .ecod-admin.is-narrow .ecod-media-field,
 .ecod-admin.is-narrow .ecod-choice,
 .ecod-admin.is-narrow .ecod-color,
-.ecod-admin.is-narrow .ecod-pool,
-.ecod-admin.is-narrow .ecod-preview {
+.ecod-admin.is-narrow .ecod-pool {
     grid-column: 1 / -1;
 }
 
@@ -2463,7 +2411,7 @@ textarea.ecod-input {
 .ecod-admin.is-narrow .ecod-media-field__row .ecod-input,
 .ecod-admin.is-narrow .ecod-media-field__row input.text {
     flex: 1 1 100%;
-    font-size: 16px;
+    font-size: var(--ea-fs-lg);
 }
 
 .ecod-admin.is-narrow .ecod-media-field__pick {
@@ -2496,7 +2444,7 @@ textarea.ecod-input {
 
 .ecod-admin.is-tiny .ecod-admin__navitem {
     padding: 8px 10px;
-    font-size: 12.5px;
+    font-size: var(--ea-fs-xs);
 }
 
 .ecod-admin.is-tiny .ecod-choice--visual {
@@ -2510,7 +2458,7 @@ textarea.ecod-input {
         --ea-sub: #9aa3b5;
         --ea-line: #2b3140;
         --ea-soft: #141824;
-        --ea-brand-soft: rgba(79, 110, 242, .2);
+        --ea-brand-soft: color-mix(in srgb, var(--ea-brand) 20%, transparent);
         color-scheme: dark;
         background: #171b26;
     }
@@ -2520,7 +2468,7 @@ textarea.ecod-input {
     .ecod-admin__navitem.is-active {
         background: #222839;
         color: var(--ea-brand);
-        box-shadow: 0 1px 2px rgba(0, 0, 0, .3), 0 0 0 1px rgba(79, 110, 242, .3);
+        box-shadow: 0 1px 2px rgba(0, 0, 0, .3), 0 0 0 1px color-mix(in srgb, var(--ea-brand) 30%, transparent);
     }
     .ecod-admin__brandtext small, .ecod-pane__hint, .ecod-admin__desc { color: var(--ea-sub); }
     .ecod-admin__head {
@@ -2535,7 +2483,7 @@ textarea.ecod-input {
         color: var(--ea-sub);
     }
     .ecod-admin__ghost:hover, .ecod-color__reset:hover {
-        border-color: rgba(79, 110, 242, .55);
+        border-color: color-mix(in srgb, var(--ea-brand) 55%, transparent);
         background: #232939;
         color: #8fa5ff;
     }
@@ -2567,17 +2515,12 @@ textarea.ecod-input {
     .ecod-color__hex { color: #9aa3b5; }
     .ecod-color__sw { border-color: #171b26; }
 
-    .ecod-preview { background: #1b202c; border-color: var(--ea-line); }
-    .ecod-preview__card { background: #222839; border-color: var(--ea-line); }
-    .ecod-preview__body b { color: var(--ea-ink); }
-    .ecod-preview__body i { background: #2b3140; }
-
     .ecod-switch i { background: #2b3140; }
     .ecod-choice__item { background: #1f2431; border-color: var(--ea-line); color: var(--ea-sub); }
-    .ecod-choice__item:hover { border-color: rgba(79, 110, 242, .55); color: var(--ea-ink); }
+    .ecod-choice__item:hover { border-color: color-mix(in srgb, var(--ea-brand) 55%, transparent); color: var(--ea-ink); }
     .ecod-choice__item.is-on {
         background: var(--ea-brand-soft);
-        border-color: rgba(79, 110, 242, .55);
+        border-color: color-mix(in srgb, var(--ea-brand) 55%, transparent);
         color: #8fa5ff;
     }
 
@@ -2608,10 +2551,10 @@ textarea.ecod-input {
     height: 16px;
     border: 2px solid #fff;
     border-radius: 50%;
-    background: var(--ecod-primary, #4f6ef2);
-    box-shadow: 0 1px 4px rgba(23, 32, 63, .28);
+    background: var(--ea-brand, #4f6ef2);
+    box-shadow: 0 1px 4px rgba(18, 22, 29, .28);
     cursor: grab;
-    transition: transform var(--ecod-dur-fast, 140ms);
+    transition: transform var(--ea-dur-fast, var(--ea-dur-fast));
 }
 .ecod-range__slider::-webkit-slider-thumb:hover { transform: scale(1.15); }
 .ecod-range__slider::-moz-range-thumb {
@@ -2619,8 +2562,8 @@ textarea.ecod-input {
     height: 16px;
     border: 2px solid #fff;
     border-radius: 50%;
-    background: var(--ecod-primary, #4f6ef2);
-    box-shadow: 0 1px 4px rgba(23, 32, 63, .28);
+    background: var(--ea-brand, #4f6ef2);
+    box-shadow: 0 1px 4px rgba(18, 22, 29, .28);
 }
 .ecod-range__num {
     flex: 0 0 84px;
@@ -2628,135 +2571,97 @@ textarea.ecod-input {
     text-align: center;
 }
 
-/* ---------------- 卡片模式预览 ---------------- */
-.ecod-cprev {
-    margin: 16px 0 18px;
-    padding: 12px;
-    border: 1px dashed var(--ea-line);
-    border-radius: var(--ea-radius);
-    background: var(--ea-soft);
-}
-.ecod-cprev__list {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-}
-.ecod-cprev__item {
-    display: flex;
-    gap: 8px;
-    padding: 7px;
-    border: 1px solid var(--ea-line);
-    border-radius: var(--ea-radius-sm);
-    background: #fff;
-}
-.ecod-cprev__thumb {
-    flex: none;
-    width: 52px;
-    height: 36px;
-    border-radius: var(--ea-radius-xs);
-    background: linear-gradient(135deg, var(--ecod-primary, #4f6ef2), color-mix(in srgb, var(--ecod-primary, #4f6ef2) 45%, #8b5cf6));
-}
-.ecod-cprev__item > span { display: flex; flex-direction: column; gap: 5px; flex: 1; min-width: 0; }
-.ecod-cprev__item b { height: 8px; border-radius: var(--ea-radius-xs); background: #d8deeb; }
-.ecod-cprev__item em { height: 6px; border-radius: var(--ea-radius-xs); background: #eef0f6; }
-.ecod-cprev > small { display: block; margin-top: 8px; font-size: 11px; color: var(--ea-sub); }
-
-/* 网格 / 混合：两列 */
-.ecod-cprev[data-mode="grid"] .ecod-cprev__list,
-.ecod-cprev[data-mode="mosaic"] .ecod-cprev__list {
-    flex-direction: row;
-    flex-wrap: wrap;
-}
-.ecod-cprev[data-mode="grid"] .ecod-cprev__item {
-    flex: 1 1 44%;
-    flex-direction: column;
-}
-.ecod-cprev[data-mode="grid"] .ecod-cprev__thumb { width: 100%; height: 40px; }
-/* 大图：首条通栏大图 */
-.ecod-cprev[data-mode="feature"] .ecod-cprev__item:first-child { flex-direction: column; }
-.ecod-cprev[data-mode="feature"] .ecod-cprev__item:first-child .ecod-cprev__thumb { width: 100%; height: 64px; }
-.ecod-cprev[data-mode="feature"] .ecod-cprev__item:first-child b { height: 10px; background: #c9d2e4; }
-/* 三图：缩略图分三块 */
-.ecod-cprev[data-mode="gallery"] .ecod-cprev__thumb {
-    width: 52px;
-    background: linear-gradient(90deg, var(--ecod-primary, #4f6ef2) 32%, #dfe4f0 32%, #dfe4f0 66%, var(--ecod-primary, #4f6ef2) 66%);
-}
-/* 无图：去掉缩略图 */
-.ecod-cprev[data-mode="bare"] .ecod-cprev__thumb { display: none; }
-/* 标题式：只留标题行 */
-.ecod-cprev[data-mode="title"] .ecod-cprev__thumb { display: none; }
-.ecod-cprev[data-mode="title"] .ecod-cprev__item em { display: none; }
-.ecod-cprev[data-mode="title"] .ecod-cprev__item { padding: 9px 10px; }
-/* 紧凑行：小图单行 */
-.ecod-cprev[data-mode="compact"] .ecod-cprev__thumb { width: 28px; height: 22px; }
-.ecod-cprev[data-mode="compact"] .ecod-cprev__item em { display: none; }
-/* 清单/装备：方形小图 + 三行 */
-.ecod-cprev[data-mode="item"] .ecod-cprev__thumb { width: 36px; height: 36px; border-radius: var(--ea-radius-sm); }
-
 @media (prefers-color-scheme: dark) {
     .ecod-range__slider { background: #2b3140; }
     .ecod-range__slider::-webkit-slider-thumb { border-color: #1f2431; }
-    .ecod-cprev__item { background: #1f2431; border-color: var(--ea-line); }
-    .ecod-cprev__item b { background: #39415a; }
-    .ecod-cprev__item em { background: #2b3140; }
 }
 
-/* ---------------- 站点背景预览 ---------------- */
-.ecod-bdprev {
-    margin: 16px 0 18px;
-    padding: 12px;
-    border: 1px dashed var(--ea-line);
-    border-radius: var(--ea-radius);
-    background: var(--ea-soft);
-}
-.ecod-bdprev__stage {
-    position: relative;
-    height: 96px;
-    border-radius: var(--ea-radius-sm);
-    border: 1px solid var(--ea-line);
-    background-color: #fff;
-    overflow: hidden;
-}
-.ecod-bdprev[data-bd="soft"] .ecod-bdprev__stage {
-    background-image:
-        radial-gradient(600px 260px at 8% -14%, var(--ecod-primary-soft, rgba(79, 110, 242, .09)), transparent 62%),
-        radial-gradient(420px 220px at 102% -8%, #fdf0dc, transparent 58%);
-}
-.ecod-bdprev[data-bd="mesh"] .ecod-bdprev__stage {
-    background-image:
-        linear-gradient(rgba(79, 110, 242, .055) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(79, 110, 242, .055) 1px, transparent 1px);
-    background-size: 18px 18px, 18px 18px;
-}
-.ecod-bdprev__card {
-    position: absolute;
-    left: 14px;
-    right: 14px;
-    bottom: 12px;
+/* ---------------- 行表格字段（奖品池 / 商品列表 / 右键自定义项） ----------------
+   底层是原生 textarea（.ecod-rows__raw 隐藏），保存格式不变 */
+.ecod-rows {
+    grid-column: 2;
     display: flex;
     flex-direction: column;
-    gap: 6px;
-    padding: 10px;
-    border-radius: var(--ea-radius-sm);
-    background: #fff;
-    border: 1px solid var(--ea-line);
-    box-shadow: 0 4px 12px rgba(23, 32, 63, .06);
+    gap: 8px;
+    min-width: 0;
 }
-.ecod-bdprev__card b { height: 9px; width: 62%; border-radius: var(--ea-radius-xs); background: #d8deeb; }
-.ecod-bdprev__card i { height: 6px; border-radius: var(--ea-radius-xs); background: #eef0f6; }
-.ecod-bdprev__card i:last-child { width: 78%; }
-.ecod-bdprev > small { display: block; margin-top: 8px; font-size: 11px; color: var(--ea-sub); }
+.ecod-rows__raw { display: none !important; }
+
+.ecod-rows__head {
+    display: flex;
+    gap: 8px;
+    padding: 0 30px 0 2px;
+    color: var(--ea-sub);
+    font-size: var(--ea-fs-2xs);
+    font-weight: 600;
+}
+.ecod-rows__head > span { flex: 1; min-width: 0; }
+.ecod-rows__hdgap { flex: 0 0 22px !important; }
+
+.ecod-rows__list { display: flex; flex-direction: column; gap: 6px; }
+
+.ecod-rows__row { display: flex; align-items: center; gap: 8px; }
+
+.ecod-rows__input {
+    flex: 1;
+    min-width: 0;
+    padding: 7px 10px;
+    border: 1px solid #dfe3ee;
+    border-radius: var(--ea-radius-sm);
+    background: #fcfcfe;
+    color: var(--ea-ink);
+    font-family: inherit;
+    font-size: var(--ea-fs-sm);
+    line-height: 1.5;
+}
+
+.ecod-rows__input:focus {
+    outline: 0;
+    border-color: var(--ea-brand);
+    background: #fff;
+    box-shadow: var(--ea-ring-strong);
+}
+
+.ecod-rows__del {
+    flex: 0 0 22px;
+    width: 22px;
+    height: 22px;
+    padding: 0;
+    border: 1px solid transparent;
+    border-radius: var(--ea-radius-xs);
+    background: transparent;
+    color: var(--ea-sub);
+    font-size: 15px;
+    line-height: 1;
+    cursor: pointer;
+}
+
+.ecod-rows__del:hover { border-color: #f3c9c9; background: #fdf2f2; color: var(--ea-bad); }
+
+.ecod-rows__add {
+    align-self: flex-start;
+    padding: 6px 12px;
+    border: 1px dashed var(--ea-line);
+    border-radius: var(--ea-radius-sm);
+    background: var(--ea-soft);
+    color: var(--ea-brand-deep);
+    font-size: var(--ea-fs-xs);
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.ecod-rows__add:hover { border-color: var(--ea-brand); background: var(--ea-brand-soft); }
+
+.ecod-rows__empty { margin: 0; color: var(--ea-sub); font-size: var(--ea-fs-xs); }
+
+.ecod-admin.is-narrow .ecod-rows__head { display: none; }
+.ecod-admin.is-narrow .ecod-rows__row { flex-wrap: wrap; }
+.ecod-admin.is-narrow .ecod-rows__input { flex: 1 1 40%; }
 
 @media (prefers-color-scheme: dark) {
-    .ecod-bdprev__stage { background-color: #171b26; }
-    .ecod-bdprev[data-bd="mesh"] .ecod-bdprev__stage {
-        background-image:
-            linear-gradient(rgba(255, 255, 255, .04) 1px, transparent 1px),
-            linear-gradient(90deg, rgba(255, 255, 255, .04) 1px, transparent 1px);
-    }
-    .ecod-bdprev__card { background: #1f2431; border-color: var(--ea-line); }
-    .ecod-bdprev__card b { background: #39415a; }
-    .ecod-bdprev__card i { background: #2b3140; }
+    .ecod-rows__input { background: #1f2431; border-color: var(--ea-line); }
+    .ecod-rows__input:focus { background: #232838; }
+    .ecod-rows__add { background: #1f2431; border-color: var(--ea-line); color: var(--ea-brand); }
 }
 
 /* ---------------- 保存反馈：Typecho 原生提示 → 右上角 Toast ---------------- */
@@ -2765,7 +2670,7 @@ textarea.ecod-input {
     top: 60px;
     right: 24px;
     left: auto;
-    z-index: 9999;
+    z-index: var(--ea-z-modal);
     margin: 0;
     padding: 10px 16px;
     border: 1px solid #c9e6cd;
@@ -2773,9 +2678,9 @@ textarea.ecod-input {
     border-radius: var(--ea-radius, 12px);
     background: #f0fbf2;
     color: #1f7a33;
-    font-size: 13px;
-    box-shadow: 0 10px 28px rgba(23, 32, 63, .14);
-    animation: ecod-toast-in .3s cubic-bezier(.4, 0, .2, 1),
+    font-size: var(--ea-fs-sm);
+    box-shadow: var(--ea-shadow-modal);
+    animation: ecod-toast-in var(--ea-dur-slow) cubic-bezier(.4, 0, .2, 1),
                ecod-toast-out .4s ease 3.4s forwards;
 }
 .message.popup.error {
@@ -2844,9 +2749,9 @@ textarea.ecod-input {
     border: 1px solid #dbe2ff;
     border-radius: var(--ea-radius);
     background: #eef1fe;
-    transition: .18s;
+    transition: var(--ea-dur);
 }
-.ecod-wgt-entry:hover { border-color: #4f6ef2; box-shadow: 0 4px 14px rgba(79, 110, 242, .12); }
+.ecod-wgt-entry:hover { border-color: #4f6ef2; box-shadow: 0 4px 14px color-mix(in srgb, var(--ea-brand) 12%, transparent); }
 .ecod-wgt-entry__ic {
     flex: none;
     width: 34px;
@@ -2858,6 +2763,6 @@ textarea.ecod-input {
     color: #fff;
 }
 .ecod-wgt-entry__text { flex: 1; min-width: 0; }
-.ecod-wgt-entry__text b { display: block; font-size: 13px; color: #1e2430; }
-.ecod-wgt-entry__text small { display: block; font-size: 11.5px; color: #5b6472; }
-.ecod-wgt-entry__go { flex: none; font-size: 12.5px; font-weight: 600; color: #4f6ef2; }
+.ecod-wgt-entry__text b { display: block; font-size: var(--ea-fs-sm); color: #1e2430; }
+.ecod-wgt-entry__text small { display: block; font-size: var(--ea-fs-2xs); color: #5b6472; }
+.ecod-wgt-entry__go { flex: none; font-size: var(--ea-fs-xs); font-weight: 600; color: #4f6ef2; }

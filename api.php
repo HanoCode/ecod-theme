@@ -1241,8 +1241,8 @@ if ($action === 'reset_password') {
     ecod_api_out(['ok' => true]);
 }
 
-/* 资料 / 密码 / 头像：必须登录 + 同源 + CSRF 令牌 */
-$ecodAccountActions = ['profile_save', 'password_save', 'avatar_upload', 'avatar_remove'];
+/* 资料 / 密码 / 头像 / 封面：必须登录 + 同源 + CSRF 令牌 */
+$ecodAccountActions = ['profile_save', 'password_save', 'avatar_upload', 'avatar_remove', 'cover_upload', 'cover_remove'];
 if (in_array($action, $ecodAccountActions, true)) {
     if ((string) ($_SERVER['REQUEST_METHOD'] ?? 'GET') !== 'POST') {
         ecod_api_out(['ok' => false, 'error' => 'Method not allowed'], 405);
@@ -1415,6 +1415,64 @@ if (in_array($action, $ecodAccountActions, true)) {
     /* 恢复默认头像（删除自定义，回落到本地随机头像池） */
     if ($action === 'avatar_remove') {
         ecod_api_out(['ok' => ecod_account_del_avatar($ecodUid)]);
+    }
+
+    /* 上传个人中心封面：jpg/png/webp/gif，最大 8MB，存 usr/uploads/ecod-avatar，meta 记 cover */
+    if ($action === 'cover_upload') {
+        $file = $_FILES['cover'] ?? null;
+        if (!$file || !is_array($file) || (int) ($file['error'] ?? 1) !== UPLOAD_ERR_OK) {
+            ecod_api_out(['ok' => false, 'error' => '文件上传失败'], 400);
+        }
+        if ((int) $file['size'] > 8 * 1024 * 1024) {
+            ecod_api_out(['ok' => false, 'error' => '图片不能超过 8MB'], 400);
+        }
+
+        $info = @getimagesize((string) $file['tmp_name']);
+        $map = [
+            IMAGETYPE_JPEG => 'jpg',
+            IMAGETYPE_PNG  => 'png',
+            IMAGETYPE_GIF  => 'gif',
+            IMAGETYPE_WEBP => 'webp',
+        ];
+        $ext = $info ? ($map[$info[2]] ?? '') : '';
+        if ($ext === '') {
+            ecod_api_out(['ok' => false, 'error' => '仅支持 jpg / png / gif / webp 图片'], 400);
+        }
+
+        $dir = ecod_account_avatar_dir();
+        if (!is_dir($dir) && !@mkdir($dir, 0755, true)) {
+            ecod_api_out(['ok' => false, 'error' => '存储目录创建失败，请检查权限'], 500);
+        }
+
+        $name = $ecodUid . '-cover-' . time() . '.' . $ext;
+        $target = $dir . '/' . $name;
+        if (!@move_uploaded_file((string) $file['tmp_name'], $target)) {
+            ecod_api_out(['ok' => false, 'error' => '保存文件失败，请检查目录权限'], 500);
+        }
+        @chmod($target, 0644);
+
+        /* 覆盖旧封面文件 */
+        $old = ecod_account_cover_url($ecodUid);
+        if ($old !== '') {
+            $oldFile = ecod_account_avatar_file($old);
+            if ($oldFile !== '' && is_file($oldFile)) {
+                @unlink($oldFile);
+            }
+        }
+
+        require_once __DIR__ . '/core/user/meta.php';
+        $rel = '/usr/uploads/ecod-avatar/' . $name;
+        if (!ecod_user_meta_set($ecodUid, 'cover', $rel)) {
+            @unlink($target);
+            ecod_api_out(['ok' => false, 'error' => '写入封面记录失败'], 500);
+        }
+
+        ecod_api_out(['ok' => true, 'url' => $rel]);
+    }
+
+    /* 移除自定义封面（回落主题默认封面） */
+    if ($action === 'cover_remove') {
+        ecod_api_out(['ok' => ecod_account_del_cover($ecodUid)]);
     }
 }
 

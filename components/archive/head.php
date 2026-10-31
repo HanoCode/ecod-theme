@@ -39,15 +39,18 @@ $ecodCatStat = ecod_cat_stats($ecodCat['mid']);
 $ecodCatCover = '';
 
 /* 分类增强（规格 §32）：管理员为该分类单独设置的封面最优先；
-   ECatHeadBg=soft 是明确的「不用图」选择，尊重它 */
+   其次用设置里固定的一张背景图；ECatHeadBg=soft 是明确的「不用图」选择，尊重它 */
 $ecodCatCoverCustom = '';
-if (function_exists('ecod_meta_meta_get') && ecod_option('ECatHeadBg', 'cover') !== 'soft') {
+$ecodCatHeadMode = (string) ecod_option('ECatHeadBg', 'cover');
+if (function_exists('ecod_meta_meta_get') && $ecodCatHeadMode !== 'soft') {
     $ecodCatCoverCustom = trim(ecod_meta_meta_get((int) $ecodCat['mid'], 'cover'));
 }
 
 if ($ecodCatCoverCustom !== '') {
     $ecodCatCover = $ecodCatCoverCustom;
-} elseif (ecod_option('ECatHeadBg', 'cover') !== 'soft' && $ecodCatStat['count'] > 0) {
+} elseif ($ecodCatHeadMode === 'custom') {
+    $ecodCatCover = trim((string) ecod_option('ECatHeadImage', ''));
+} elseif ($ecodCatHeadMode !== 'soft' && $ecodCatStat['count'] > 0) {
     try {
         $this->widget('EcodPostQuery@cathead', 'pageSize=1&category=' . $ecodCat['mid'])->to($ecodCatQ);
         if ($ecodCatQ->have()) {

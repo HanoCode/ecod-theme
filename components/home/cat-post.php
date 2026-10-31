@@ -51,7 +51,7 @@ if (!$ecodCatPosts->have()) {
             <?php $ecodCatImg = ecod_thumbnails($ecodCatPosts, 1, 'side')[0] ?? ''; ?>
             <a class="ecod_section__card" href="<?php $ecodCatPosts->permalink(); ?>">
                 <span class="ecod_section__cover"<?php if ($ecodCatImg): ?> style="--ecod-cover:url('<?php echo htmlspecialchars($ecodCatImg); ?>')"<?php endif; ?>>
-                    <?php if (!$ecodCatImg): ?><span class="ecod_section__ph"><?php echo mb_substr($ecodCatPosts->title, 0, 1, 'UTF-8'); ?></span><?php endif; ?>
+                    <?php if (!$ecodCatImg): ?><span class="ecod_ph ecod_section__ph"><?php echo mb_substr($ecodCatPosts->title, 0, 1, 'UTF-8'); ?></span><?php endif; ?>
                 </span>
                 <span class="ecod_section__body">
                     <b class="ecod_section__title"><?php $ecodCatPosts->title(); ?></b>

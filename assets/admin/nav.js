@@ -624,14 +624,36 @@ var nameInput = setFormEl.querySelector('[data-set-name]');
         pop.className = 'ecod-navb__ipop';
         pop._btn = btn;
         pop.innerHTML = '<div class="ecod-navb__ipop-h">选择图标</div>' +
+            '<input type="text" class="ecod-navb__isearch" placeholder="搜索图标名（拼音/英文）…" />' +
             '<div class="ecod-navb__ipop-grid">' +
             '<button type="button" class="ecod-navb__icell is-clear' + (item.icon ? '' : ' is-on') + '" data-ic="" title="不使用"><span>×</span></button>' +
             ICONS.filter(function (name) { return DATA.iconSvg && DATA.iconSvg[name]; }).map(function (name) {
                 return '<button type="button" class="ecod-navb__icell' + (item.icon === name ? ' is-on' : '') +
                     '" data-ic="' + esc(name) + '" title="' + esc(name) + '">' + DATA.iconSvg[name] + '</button>';
             }).join('') +
-            '</div>';
+            '</div>' +
+            '<p class="ecod-navb__ipop-empty" hidden>没有匹配的图标</p>';
         document.body.appendChild(pop);
+        /* 搜索过滤：按图标名前缀/包含匹配，空词显示全部 */
+        var searchInput = pop.querySelector('.ecod-navb__isearch');
+        var emptyHint = pop.querySelector('.ecod-navb__ipop-empty');
+        searchInput.addEventListener('input', function () {
+            var q = searchInput.value.trim().toLowerCase();
+            var shown = 0;
+            var cells = pop.querySelectorAll('.ecod-navb__icell');
+            Array.prototype.forEach.call(cells, function (cell) {
+                if (cell.className.indexOf('is-clear') >= 0) {
+                    return;
+                }
+                var name = cell.getAttribute('data-ic') || '';
+                var on = !q || name.indexOf(q) >= 0;
+                cell.style.display = on ? '' : 'none';
+                if (on) {
+                    shown++;
+                }
+            });
+            emptyHint.hidden = shown > 0;
+        });
         var r = btn.getBoundingClientRect();
         var top = r.bottom + 6;
         var left = Math.max(8, Math.min(r.left, window.innerWidth - pop.offsetWidth - 8));
