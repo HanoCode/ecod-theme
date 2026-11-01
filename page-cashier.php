@@ -43,13 +43,14 @@ $ecodFromOrder = false;
 if ($ecodOrderNo !== '' && $ecodUid > 0 && $ecodCid <= 0 && !isset($_GET['kind'])) {
     $ecodOrderRow = ecod_pay_order_get($ecodOrderNo);
     if ($ecodOrderRow && (int) $ecodOrderRow['uid'] === $ecodUid
-        && in_array((string) $ecodOrderRow['kind'], ['post', 'vip', 'ad'], true)) {
+        && in_array((string) $ecodOrderRow['kind'], ['post', 'vip', 'ad', 'theme'], true)) {
         if (!in_array((string) $ecodOrderRow['status'], ['pending', 'paid'], true)) {
             $ecodError = '订单已关闭或不可支付，请重新下单';
         } else {
             $ecodFromOrder = true;
             $ecodOrderKind = (string) $ecodOrderRow['kind'];
-            $ecodKind = $ecodOrderKind === 'vip' ? 'vip' : ($ecodOrderKind === 'ad' ? 'ad' : 'post');
+            /* theme 保留原值给 data-kind：支付成功态按订单类型出对应文案 */
+            $ecodKind = $ecodOrderKind === 'vip' ? 'vip' : ($ecodOrderKind === 'ad' ? 'ad' : ($ecodOrderKind === 'theme' ? 'theme' : 'post'));
             $ecodItem = [
                 'title'  => (string) $ecodOrderRow['title'],
                 'amount' => (int) $ecodOrderRow['amount'],
@@ -229,6 +230,8 @@ $ecodEpayType = (string) ecod_option('EPayEpayType', 'alipay') === 'wxpay' ? 'wx
          })(), ENT_QUOTES, 'UTF-8'); ?>"
          <?php if ($ecodEpayFlag !== '' && $ecodOrderState === 'pending'): ?>data-resume-order="<?php echo htmlspecialchars($ecodOrderNo, ENT_QUOTES, 'UTF-8'); ?>"<?php endif; ?>>
 
+        <span class="ecod_cashier__ball" data-ecod-cashier-ball aria-hidden="true"></span>
+
         <?php if ($ecodError !== ''): ?>
             <?php ecod_empty('alert', htmlspecialchars($ecodError, ENT_QUOTES, 'UTF-8'), '<a href="' . $this->options->siteUrl . '">返回首页</a>'); ?>
 
@@ -275,7 +278,9 @@ $ecodEpayType = (string) ecod_option('EPayEpayType', 'alipay') === 'wxpay' ? 'wx
                 <?php else: ?>
                     <?php if ($ecodOrderState === 'paid'): ?>
                         <p class="ecod_cashier__status is-ok">
-                            <?php echo ecod_icon('check', 13); ?><?php echo $ecodKind === 'ad' ? '订单已支付，广告上线进度可在「广告投放」页查看。' : '订单已支付，权益已到账。'; ?>
+                            <?php echo ecod_icon('check', 13); ?><?php
+                                echo $ecodKind === 'ad' ? '订单已支付，广告上线进度可在「广告投放」页查看。'
+                                    : (($ecodOrderKind ?? '') === 'theme' ? '订单已支付，主题授权已生成。' : '订单已支付，权益已到账。'); ?>
                         </p>
                     <?php elseif ($ecodOrderState === 'pending'): ?>
                         <p class="ecod_cashier__status <?php echo $ecodEpayFlag === 'fail' ? 'is-bad' : ''; ?>">

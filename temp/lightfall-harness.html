@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="light">
+<head>
+<meta charset="utf-8">
+<title>Lightfall harness</title>
+<style>
+    html { background: #f5f6f9; }
+    html[data-theme="dark"] { background: #14161d; }
+    body { margin: 0; background: transparent; font: 16px/1.7 system-ui, sans-serif; color: #14161d; }
+    html[data-theme="dark"] body { color: #e7e9f0; }
+    .ecod_lightfall { position: fixed; inset: 0; z-index: -1; overflow: hidden; pointer-events: none; }
+    .ecod_lightfall__canvas { position: absolute; inset: 0; display: block; width: 100%; height: 100%; }
+    .probe { position: relative; padding: 60px; }
+    .probe h1 { font-size: 40px; margin: 0 0 12px; }
+    .probe p { max-width: 520px; opacity: .75; }
+</style>
+</head>
+<body>
+<div class="probe">
+    <h1>内容层可读性检查</h1>
+    <p>这段文字压在流光背景之上，用来确认对比度与层级。深色模式用 ?dark=1 打开。</p>
+</div>
+<script src="../assets/js/vendor/lightfall.js"></script>
+<script>
+(function () {
+    var q = location.search;
+    var dark = q.indexOf('dark=1') > -1;
+    var layers = (q.match(/layers=(\d+)/) || [])[1];
+    if (dark) { document.documentElement.setAttribute('data-theme', 'dark'); }
+    var el = document.createElement('div');
+    el.className = 'ecod_lightfall';
+    document.body.insertBefore(el, document.body.firstChild);
+    var fx = window.EcodLightfall.create(el, {
+        colors: ['#4f6ef2', '#8b5cf6'],
+        speed: 0.3,
+        streakCount: layers ? Number(layers) : 3,
+        opacity: 0.7,
+        mouseInteraction: false,
+        intro: false,
+        lightMode: !dark,
+        backgroundColor: dark ? '#4f6ef2' : '#ffffff',
+        backgroundGlow: dark ? 0.12 : 0,
+        dpr: 1
+    });
+    window.__lf = fx;
+    document.title = 'fx=' + (fx ? 'ok' : 'null') + (fx ? ',canvas=' + fx.canvas.width + 'x' + fx.canvas.height : '');
+})();
+</script>
+</body>
+</html>

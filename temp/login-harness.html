@@ -1,0 +1,38 @@
+<!doctype html>
+<!-- 登录页陪伴球布局验证 harness（静态页，不受主题授权锁影响）：
+     复用构建产物的 §43 网格布局 + 引擎/封装，验证大球位置与鼠标跟随 -->
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>登录页陪伴球 harness</title>
+<link rel="stylesheet" href="../assets/dist/css/ecod.fam.core.aa07c34f.min.css">
+<style>
+  /* 最小化复刻登录页骨架（完整卡片样式在 core fam 里，这里只补上下文） */
+  body { margin: 0; min-height: 100vh; background: var(--ecod-bg, #f5f6f9); }
+  .fake-header { height: 64px; background: var(--ecod-surface, #fff); border-bottom: 1px solid var(--ecod-border, #eee); }
+  /* 注意：不要在这里写 .ecod_login 的 display——§43 的三列网格在 fam 里 */
+  .ecod_login--stage { flex: 1; min-height: 560px; padding: 32px 0; }
+  .ecod_login__card {
+      width: 100%; max-width: 400px; background: var(--ecod-surface, #fff);
+      border: 1px solid var(--ecod-border, #eee); border-radius: 16px;
+      box-shadow: 0 8px 30px rgba(0,0,0,.06); padding: 36px 32px 24px; text-align: center;
+  }
+</style>
+</head>
+<body>
+<div class="fake-header"></div>
+<div class="ecod_login ecod_login--stage">
+    <div class="ecod_login__pet" data-ecod-login-pet aria-hidden="true"></div>
+    <div class="ecod_login__card">
+        <h1>登录卡片占位</h1>
+        <p>验证：大球在右列居中、不贴卡片、眼睛跟随鼠标</p>
+    </div>
+</div>
+<script src="../assets/dist/js/vendor/grok-ball.81e5427e.min.js"></script>
+<script src="../assets/dist/js/ecod.ball.a452f9a9.min.js"></script>
+<script>
+window.EcodBall.create(document.querySelector('[data-ecod-login-pet]'), { emotion: '03', size: 150 });
+</script>
+</body>
+</html>

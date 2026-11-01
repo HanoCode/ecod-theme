@@ -16,6 +16,7 @@ if (!defined('__TYPECHO_ROOT_DIR__')) {
 
 $ecodTpMids = array_slice(array_filter(array_map('intval', explode(',', (string) ecod_p('mids', '')))), 0, 5);
 if (!$ecodTpMids) {
+    ecod_block_setup_hint('聚合 Tab 卡未选分类：在「页面构建器」编辑本模块，选好「聚合分类」（最多 5 个）后，这里会显示多 Tab 聚合文章卡（访客看不到本提示）。');
     return;
 }
 
@@ -62,6 +63,7 @@ foreach ($ecodTpMids as $ecodTpMid) {
     }
 }
 if (!$ecodTpPanes) {
+    ecod_block_setup_hint('聚合 Tab 卡所选分类暂无文章：分类下发布文章后这里会显示内容（访客看不到本提示）。');
     return;
 }
 

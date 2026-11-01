@@ -209,12 +209,10 @@ function ecod_media_http(string $method, string $url, array $headers, $body = nu
     $res = curl_exec($ch);
     if ($res === false) {
         $err = curl_error($ch);
-        curl_close($ch);
         return [0, $err];
     }
     $status = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
     $headerSize = (int) curl_getinfo($ch, CURLINFO_HEADER_SIZE);
-    curl_close($ch);
     return [$status, substr((string) $res, $headerSize)];
 }
 

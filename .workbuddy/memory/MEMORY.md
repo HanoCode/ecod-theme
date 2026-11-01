@@ -5,6 +5,7 @@
 - mysql 导出必须 `--raw --default-character-set=utf8mb4`；python subprocess 还要传 LANG，否则中文列变 `?`。
 - MySQL ROW binlog（/opt/homebrew/var/mysql/）：`mysqlbinlog -v -v --base64-output=DECODE-ROWS` 的 WHERE 段=旧值，可恢复误写。
 - 清理测试数据**绝不能 `DELETE ... WHERE name='EWidgets'`**（正式存储行）；测试数据一律「seed + 备份 + 恢复」。
+- **统计表 `typecho_ecod_stats_*` 上线后禁止整体 DELETE/TRUNCATE**（2026-11-01 曾把真实访问清空）；自测要走「记差值 → 事后按差值回滚」。
 
 ## 架构要点
 - 真源 `docs/dev/design-proposal.html`（2026-10-30 起全套设计文档在 docs/dev/，主题根没有），文档先行；§03.5 导航 / §31 widget 管理台 / §32 分类增强。
@@ -22,11 +23,17 @@
 - 登录 cookie = `md5(rootUrl)+__typecho_uid/__typecho_authCode`；authCode 存 `Common::hash` 非明文；zsh 拼 Cookie 必须写 `${P}__typecho_uid`。主题登录走 api.php（验证码可从 /var/tmp/sess_<PHPSESSID> 读明文）。
 - `Router::url` 必须传 prefix（options->index）；`Widget\Metas::permalink()` 是 echo 型返回 void，拿 URL 用 `Router::url('category',...)`。
 - 站点跑 PHP 8.5（本机 CLI 8.1 仅粗筛）；nginx 白名单只放 `api/media/pay-admin/manifest/widget.php`，**新增独立入口必须同步白名单**再 reload；诊断 harness 放站点根 `/__diag*.php`，用完 rm。
+- **独立入口出 JSON 必须关 display_errors**（api.php 2026-11-01 才补上，builder/widget/media/pay-admin 早有）：PHP 8.5 起 `curl_close()` 等弃用会以 `<br /><b>Deprecated</b>` 打进响应体，前端 `fetch().json()` 直接失败；`curl_close` 已全删（8.0 起即空操作）。
+- **options.name 只有 varchar(32)**（主键 name+user，严格模式超长 INSERT 报错且常被 catch 吞）：凡拼 md5 的缓存键都会静默失效 → 大对象/长键走 `ecod_file_cache_read/write()`（usr/uploads/.ecod-cache，键内部 md5）；`ecod_cache_set()` 已加 ≤32 守卫并 error_log。
+- **假模型自测**：`php -S` 必须 `while(ob_get_level()) ob_end_flush();` 否则攒包（酷似主题 SSE 被缓冲）；本机 curl 要 `env -u http_proxy no_proxy='*'`。假模型答案会写进真实缓存，测完逐个删。
 - headless Chrome（系统 Chrome + `--no-sandbox` + 截图绝对路径）：`--virtual-time-budget` 下 rAF/scrollTo/transition 不推进；播放器 iframe 会 OOM（host-resolver-rules 黑洞）；滚动/动画断言用截图模式；窄屏验收用 390px iframe 量测页。
 - 前端地址模板：`public/include.php` 注入 `window.ECOD`（`{cid}`/`{q}`），独立入口不在后端拼 permalink。
 - 临时探针 `__*.php` 用完 `rm` + `git rm --cached`，否则 `php -l` 遍历假失败。
 - `docs/dev/design-proposal.html` 的 section id 会重复/错号（§31 实际 `id="s8"`）：插入内容用 `<!-- 31 -->` 锚点 + section 配对扫描，按 `id` 定位会 find(-1) 把内容写到 `</html>` 之后。
 - 排序内核 `core/site/sort.php`：`rand` 按日种子 `MD5(CONCAT(cid,种子))`（表达式不带空格/引号）；分类内搜索 `?q=` 必须同时补 `getCountSql()` 的 WHERE，否则计数/分页按全量算。
+- **`typecho_contents` 没有 `description` 列**：`WHERE description LIKE ...` 报 ERROR 1054；若同时 `2>/dev/null` 会静默返回空集，误判「库里没有此文案」。页面 meta / JSON-LD 描述取自 `contents.text`。
+- 主题选项真源：`typecho_options` 的 `theme:ecod-theme` 行（JSON，287 键），不是独立 `EXxx` 行；仅 `EWidgets` 等少数是独立行。改前 mysqldump 整表，改后 json 比对 key 集与 diff 单键。
+- `usr/uploads/.ecod-cache/*.json` 是块级文件缓存：改写配置文案后旧条目不会自动失效（动态条「获得 Credit」等），需删对应文件（可先复制到 /tmp）。
 
 ## 功能开关与真源
 - 付费阅读：真源 `docs/paywall-design.md`；门禁四层（post.php 硬门禁 / ecod_excerpt 列表层 / ecod_pay_feed_guard / 搜索剥除）；试读 `ecod_pay_teaser_balance()` 留最后一块不解锁；pay-admin.php 管理台。

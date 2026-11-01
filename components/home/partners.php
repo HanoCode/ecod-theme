@@ -30,6 +30,7 @@ if (is_array($ecodPnRaw)) {
     }
 }
 if (!$ecodPnLinks) {
+    ecod_block_setup_hint('合作伙伴未配置：在「页面构建器」编辑本模块，逐条添加名称与 http(s) 链接后，这里会显示 Logo 墙（访客看不到本提示）。');
     return;
 }
 ?>

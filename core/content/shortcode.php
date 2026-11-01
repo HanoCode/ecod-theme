@@ -36,6 +36,13 @@ function ecod_shortcode_apply(string $content, $archive = null): string
         return $content;
     }
 
+    /* 卡片短代码渲染期间不再展开短代码：ecod_card() 取摘要要读 $archive->content，
+       而 content 又会跑一遍本过滤器 —— 正文里有 [posts] 时会无限递归直到内存耗尽。
+       表情仍然照换（纯字符串替换，不回调 archive），摘要里不会留下 :smile: 原文。 */
+    if (!empty($GLOBALS['ecodScRendering'])) {
+        return function_exists('ecod_sc_emoji') ? ecod_sc_emoji($content) : $content;
+    }
+
     /* 只含表情代码（无方括号）的正文同样需要解析，不能整篇早退 */
     $hasShortcode = strpos($content, '[') !== false;
     if (!$hasShortcode && strpos($content, ':') === false) {

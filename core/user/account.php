@@ -282,7 +282,7 @@ function ecod_throttle_session(): void
 /**
  * 动作前检查：超过间隔限制时返回需要等待的秒数，否则返回 0
  */
-function ecod_throttle_guard(string $bucket): int
+function ecod_throttle_guard(string $bucket, int $max = 5, int $gap1 = 30, int $gap2 = 180): int
 {
     ecod_throttle_session();
 
@@ -293,8 +293,8 @@ function ecod_throttle_guard(string $bucket): int
     $log = $_SESSION['ecod_throttle'][$bucket] ?? null;
     if (is_array($log)) {
         $n = max(0, (int) ($log['n'] ?? 0));
-        if ($n >= 5) {
-            $gap = $n >= 10 ? 180 : 30;
+        if ($n >= $max) {
+            $gap = $n >= $max * 2 ? $gap2 : $gap1;
             $w = $gap - ($now - (int) ($log['last'] ?? 0));
             $wait = max($wait, $w > 0 ? $w : 0);
         }
@@ -302,8 +302,8 @@ function ecod_throttle_guard(string $bucket): int
 
     /* 第二本账：数据库（键含 IP，跨 session 生效） */
     $state = ecod_throttle_persistent_state(ecod_throttle_pkey($bucket), $now);
-    if ($state !== null && (int) $state['n'] >= 5) {
-        $gap = (int) $state['n'] >= 10 ? 180 : 30;
+    if ($state !== null && (int) $state['n'] >= $max) {
+        $gap = (int) $state['n'] >= $max * 2 ? $gap2 : $gap1;
         $w = $gap - ($now - (int) $state['last']);
         $wait = max($wait, $w > 0 ? $w : 0);
     }

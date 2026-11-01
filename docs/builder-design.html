@@ -148,7 +148,8 @@ tr:last-child td{border-bottom:none}
 
 <h1>Ecod Builder 设计说明</h1>
 <p class="lead">自研页面构建器 —— 在现有 blocks 体系上演进「板块堆叠布局 + 页面级归属 + 所见即所得画布」。</p>
-<p class="meta">状态：草案 v1.1 · 2026-10-31 · 参考：guaqi.com/builder（板块堆叠模式）、WordPress 页面构建器（Gutenberg / Elementor / Beaver Builder / Divi / Breakdance 等，见 §9）、既有 <code>core/admin/blocks.php</code> v4 体系</p>
+<p class="meta">状态：<b>v1.0 已实现（P0+P1 核心，2026-10-31）</b> · 参考：guaqi.com/builder（板块堆叠模式）、WordPress 页面构建器（Gutenberg / Elementor / Beaver Builder / Divi / Breakdance 等，见 §9）、既有 <code>core/admin/blocks.php</code> v4 体系<br>
+实现记录：入口 <code>builder.php</code>，数据层 <code>core/admin/builder-doc.php</code>（ELayouts 行 + ecod_page_layout 表，schema v15），板块壳样式在 ecod.css <b>§42</b>（§41 已被正文渲染增强占用）。与设计的一处偏差：<b>未用 bridge.js / postMessage 桥</b>——画布 iframe 与编辑器同源，builder.js 直接在 iframe 文档上以捕获阶段接管交互（点击/拖放/键盘），比协议桥更少一层；若未来出现跨域部署场景再补桥。大纲树上移/下移已实现；「板块分组折叠在模块管理台」「模板导入导出」「批量修改」仍属 P2。</p>
 
 <h2 id="s1">1 目标与非目标</h2>
 <h3>1.1 一句话目标</h3>
@@ -686,8 +687,17 @@ tr:last-child td{border-bottom:none}
   <li><b>编辑器崩溃不伤数据</b>：WP 的 autosave + revisions 体系被所有成熟构建器继承。本地草稿（6.4）+ 快照（6.4）+ rev 乐观锁三层兜底，加上文档级整存整取（不存在「写了一半的板块」），编辑器任何一层故障都不会产生损坏文档。</li>
 </ul>
 
+<h2 id="s10">10 修正案：v6 自由行列布局（2026-11-01）</h2>
+<p>本文 §1.3 曾把「任意行列嵌套」列为非目标、§8.3 曾把「模块无 children」作为硬边界。落地后站长反馈
+「中间预览区域无法随意布局」，根因是 v5 的栏模型锁死在「板块 → 主体/侧栏二分 → 栏内线性堆叠」上
+（最多 2 栏、栏宽仅固定 px、模块永远独占一行）。修正案见
+<b>docs/builder-v6-design.md</b>：在板块与模块之间插入「行 / 列」两层结构节点
+（板块 → 行 → 列 → 模块，宽度 = 整数权重 fr + 可选固定 px，嵌套深度 ≤ 2）。
+修订范围：§1.3（撤回行列嵌套禁令 → 受控行列自由）、§8.3（细化：并排=多列、嵌套=列内嵌行，模块仍是叶子）；
+维持不变：§8.1（单数据源 + ov 白名单，白名单下沉到行/列级）、§8.2、§8.4、§8.5。</p>
+
 <hr>
-<p class="meta">相关文档：docs/ARCHITECTURE.md（主题总体架构）· docs/shortcodes.md（内容块）· guaqi 构建器调研记录与 WP 构建器对照（2026-10-31 会话）</p>
+<p class="meta">相关文档：docs/builder-v6-design.md（v6 自由行列布局修正案）· docs/ARCHITECTURE.md（主题总体架构）· docs/shortcodes.md（内容块）· guaqi 构建器调研记录与 WP 构建器对照（2026-10-31 会话）</p>
 
 </main>
 </div>

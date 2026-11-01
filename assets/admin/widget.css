@@ -401,7 +401,8 @@ code { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: var(--e
 }
 .wgt-input:focus, .wgt-select:focus, .wgt-textarea:focus { border-color: var(--c); box-shadow: var(--ea-ring-strong); }
 .wgt-textarea { min-height: 78px; resize: vertical; line-height: 1.6; }
-.wgt-select { appearance: none; background-image: linear-gradient(45deg, transparent 50%, var(--tx3) 50%), linear-gradient(135deg, var(--tx3) 50%, transparent 50%); background-position: calc(100% - 15px) 14px, calc(100% - 10px) 14px; background-size: 5px 5px, 5px 5px; background-repeat: no-repeat; padding-right: 28px; }
+/* 箭头垂直居中：原写死 top 14px，控件变高就偏位（与其他后台下拉统一） */
+.wgt-select { appearance: none; -webkit-appearance: none; background-image: linear-gradient(45deg, transparent 50%, var(--tx3) 50%), linear-gradient(135deg, var(--tx3) 50%, transparent 50%); background-position: calc(100% - 16px) center, calc(100% - 11px) center; background-size: 5px 5px, 5px 5px; background-repeat: no-repeat; padding-right: 30px; }
 
 .wgt-range { display: flex; align-items: center; gap: 10px; }
 .wgt-range input[type="range"] { flex: 1; accent-color: var(--c); }
@@ -587,6 +588,8 @@ code { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: var(--e
     body { background: #14161c; color: #e6e9f0; }
     .wgt-top { background: rgba(20, 22, 28, .92); border-color: #262a35; }
     .wgt-col, .wgt-libcard, .wgt-area, .wgt-item, .wgt-input, .wgt-select, .wgt-textarea, .wgt-asidecard, .wgt-btn, .wgt-aside__row { background: #1b1e26; border-color: #2b303c; color: #e6e9f0; }
+    /* 暗色 background 简写会抹掉下拉箭头图，补回 */
+    .wgt-select { background-image: linear-gradient(45deg, transparent 50%, var(--tx3) 50%), linear-gradient(135deg, var(--tx3) 50%, transparent 50%); background-position: calc(100% - 16px) center, calc(100% - 11px) center; background-size: 5px 5px, 5px 5px; background-repeat: no-repeat; }
     .wgt-col--lib { background: #171a21; }
     .wgt-col--areas { background: #14161c; }
     .wgt-area__hd, .wgt-item__body, .wgt-target { background: #171a21; border-color: #262a35; }

@@ -37,10 +37,12 @@ try {
 
 $ecodSp = ecod_shop_overview($ecodSpUid, max(1, min(6, (int) ecod_p('limit', 4))));
 $ecodSpPageUrl = ecod_template_page_url('page-shop.php');
+$ecodSpSignUrl = $ecodSpUid > 0 ? ecod_user_center_url() . '#credits' : '';
 ?>
 <section class="ecod_widget ecod_shop ecod_shop--widget" data-ecod-shop
          data-api="<?php echo htmlspecialchars(ecod_api_url(), ENT_QUOTES, 'UTF-8'); ?>"
-         data-token="<?php echo htmlspecialchars(ecod_account_token(), ENT_QUOTES, 'UTF-8'); ?>">
+         data-token="<?php echo htmlspecialchars(ecod_account_token(), ENT_QUOTES, 'UTF-8'); ?>"
+         data-sign-url="<?php echo htmlspecialchars($ecodSpSignUrl, ENT_QUOTES, 'UTF-8'); ?>">
     <?php ecod_block_head(['more_url' => $ecodSpPageUrl !== '' ? $ecodSpPageUrl : null]); ?>
 
     <div class="ecod_shop__balance">
@@ -71,8 +73,6 @@ $ecodSpPageUrl = ecod_template_page_url('page-shop.php');
             </div>
         <?php endforeach; ?>
     </div>
-
-    <p class="ecod_shop__msg" data-ecod-shop-msg role="status"></p>
 
     <?php if ($ecodSpUid): ?>
         <details class="ecod_lottery__records">

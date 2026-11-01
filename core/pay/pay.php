@@ -46,6 +46,10 @@ if (!function_exists('ecod_option')) {
 /** 总开关 */
 function ecod_pay_enabled(): bool
 {
+    /* 模块级授权（payload.modules.pay）：锁定状态的整站锁死由 license gate 负责 */
+    if (function_exists('ecod_license_allows') && !ecod_license_allows('pay')) {
+        return false;
+    }
     return (string) ecod_option('EPay', 'off') === 'on';
 }
 
@@ -132,6 +136,48 @@ function ecod_pay_fields($archive): array
     return $out;
 }
 
+/**
+ * 由 cid 构造轻量对象（没有 Archive 上下文时使用：AI 上下文、Feed、独立入口）
+ *
+ * 只带门禁判定需要的字段：cid / title / slug / authorId / created / fields。
+ * 不分配完整 Archive：构造函数会触发插件钩子，且这里只需要判定数据。
+ */
+function ecod_pay_post_stub(int $cid)
+{
+    if ($cid <= 0) {
+        return null;
+    }
+    try {
+        $db = \Typecho\Db::get();
+        $row = $db->fetchRow(
+            $db->select('cid', 'title', 'slug', 'status', 'authorId', 'created')
+                ->from('table.contents')->where('cid = ?', $cid)->limit(1)
+        );
+        if (!$row || (string) $row['status'] !== 'publish') {
+            return null;
+        }
+
+        $post = new \stdClass();
+        $post->cid = (int) $row['cid'];
+        $post->title = (string) $row['title'];
+        $post->slug = (string) $row['slug'];
+        $post->authorId = (int) $row['authorId'];
+        $post->created = (int) $row['created'];
+        $post->fields = new \stdClass();
+
+        $fields = $db->fetchAll(
+            $db->select('name', 'str_value')->from('table.fields')->where('cid = ?', $cid)
+        );
+        foreach ((array) $fields as $field) {
+            $post->fields->{(string) $field['name']} = (string) $field['str_value'];
+        }
+
+        return $post;
+    } catch (\Throwable $e) {
+        return null;
+    }
+}
+
 /** 文章门槛模式：free / vip / paid / paid_vip */
 function ecod_pay_mode($archive): string
 {
@@ -206,22 +252,21 @@ function ecod_pay_level_name(int $level): string
 }
 
 /**
- * 档位固定文案与权益清单（会员购买页 / 个人中心会员 tab 共用）
+ * 档位权益清单（会员购买页 / 个人中心会员 tab 共用）
  *
+ * 只保留清单，不再带一句与清单重复的副标题。
  * caps 键为二期预留：把权益变成真判定时按 level 查能力表。
  *
- * @return array<int, array{desc:string,perks:string[],caps:string[]}>
+ * @return array<int, array{perks:string[],caps:string[]}>
  */
 function ecod_pay_tier_copy(): array
 {
     return [
         1 => [
-            'desc'  => '畅读会员专属内容，升级之路的第一步。',
             'perks' => ['会员专属内容随时读', '评论等级与标识不受影响', '一次开通，全站生效'],
             'caps'  => [],
         ],
         2 => [
-            'desc'  => '包含会员全部权益，可读更高等级的内容。',
             'perks' => ['含会员档全部权益', '超级会员专属内容可见', '专属标识与优先支持'],
             'caps'  => [],
         ],
@@ -279,6 +324,11 @@ function ecod_pay_vip(?int $uid = null): array
         return ['level' => 0, 'expire_at' => 0, 'active' => false, 'name' => ''];
     }
 
+    /* 模块级授权：member 被关闭时保留登录态，但会员权益按未开通处理 */
+    if (function_exists('ecod_license_allows') && !ecod_license_allows('member')) {
+        return ['level' => 0, 'expire_at' => 0, 'active' => false, 'name' => ''];
+    }
+
     $cache = $GLOBALS['__ecod_pay_vip_cache'] ?? [];
     if (isset($cache[$uid])) {
         return $cache[$uid];
@@ -319,7 +369,7 @@ function ecod_pay_grant(array $spec): bool
     $source = (string) ($spec['source'] ?? 'admin');
     $sourceId = (string) ($spec['source_id'] ?? '');
 
-    if ($uid <= 0 || !in_array($kind, ['post', 'vip'], true)) {
+    if ($uid <= 0 || !in_array($kind, ['post', 'vip', 'theme'], true)) {
         return false;
     }
 
@@ -652,8 +702,9 @@ function ecod_pay_order_create(array $spec): array
     $days = (int) ($spec['days'] ?? 0);
     $level = (int) ($spec['level'] ?? 0);
     $title = mb_substr(trim((string) ($spec['title'] ?? '')), 0, 180, 'UTF-8');
+    $remark = mb_substr(trim((string) ($spec['remark'] ?? '')), 0, 255, 'UTF-8');
 
-    if ($uid <= 0 || !in_array($kind, ['post', 'vip', 'ad'], true)) {
+    if ($uid <= 0 || !in_array($kind, ['post', 'vip', 'ad', 'theme'], true)) {
         return ['ok' => false, 'error' => '参数不完整'];
     }
     if ($amount <= 0) {
@@ -664,12 +715,13 @@ function ecod_pay_order_create(array $spec): array
         $db = \Typecho\Db::get();
 
         $recent = $db->fetchRow(
-            $db->select('order_no', 'amount', 'created')->from('table.ecod_orders')
+            $db->select('order_no', 'amount', 'created', 'remark')->from('table.ecod_orders')
                 ->where('uid = ?', $uid)->where('kind = ?', $kind)->where('target = ?', $target)
                 ->where('status = ?', 'pending')->where('channel = ?', $channel)
                 ->order('id', \Typecho\Db::SORT_DESC)->limit(1)
         );
-        if ($recent && (int) $recent['amount'] === $amount && time() - (int) $recent['created'] < 900) {
+        if ($recent && (int) $recent['amount'] === $amount && time() - (int) $recent['created'] < 900
+            && (string) $recent['remark'] === $remark) {
             return ['ok' => true, 'order_no' => (string) $recent['order_no'], 'reused' => true];
         }
 
@@ -692,7 +744,7 @@ function ecod_pay_order_create(array $spec): array
             'created'  => time(),
             'ip'       => $ip,
             'ua'       => $ua,
-            'remark'   => '',
+            'remark'   => $remark,
         ]));
 
         return ['ok' => true, 'order_no' => $orderNo];
@@ -788,12 +840,29 @@ function ecod_pay_settle(string $orderNo, string $tradeNo = '', string $channel 
         return ['ok' => false, 'status' => 'error', 'message' => '结算失败'];
     }
 
-    /* 发权益：post / vip 走权益表；ad 走广告结算（支付完成 ≠ 上线，还差审核） */
+    /* 发权益：post / vip / theme 走权益表；ad 走广告结算（支付完成 ≠ 上线，还差审核） */
     if ((string) $order['kind'] === 'ad') {
         if (!function_exists('ecod_ads_on_paid')) {
             require_once __DIR__ . '/../site/ads.php';
         }
         $granted = ecod_ads_on_paid((int) $order['target']);
+    } elseif ((string) $order['kind'] === 'theme') {
+        $granted = ecod_pay_grant([
+            'uid'       => (int) $order['uid'],
+            'kind'      => 'theme',
+            'target'    => 0,
+            'level'     => (int) $order['level'],
+            'days'      => 0,
+            'source'    => $channel !== '' ? 'order' : 'order',
+            'source_id' => $orderNo,
+        ]);
+        /* 主题授权：结算后按订单幂等签发授权码 */
+        if ($granted && !function_exists('ecod_license_settle_order')) {
+            require_once __DIR__ . '/../license/selfserve.php';
+        }
+        if (function_exists('ecod_license_settle_order')) {
+            try { ecod_license_settle_order($order); } catch (\Throwable $e) {}
+        }
     } else {
         $granted = ecod_pay_grant([
             'uid'       => (int) $order['uid'],
@@ -992,7 +1061,9 @@ function ecod_pay_cashier_url(array $query = []): string
     /* 独立入口（api.php）没加载路由表，Router::url 不抛异常而是返回 '#'，
        必须当「解析失败」处理，否则回跳会落到 主题目录/#?order_no=… */
     if ($url === '' || str_contains($url, '#')) {
-        /* 兜底：按模板直查收银台页面，拼 index.php 形式地址（rewrite 开关下均有效） */
+        /* 兜底：按模板直查收银台页面。rewrite 开启时必须拼 pretty 地址——
+           本站 nginx 会把 index.php/xxx?query 301 成 /xxx 并丢掉整个
+           query string，收银台拿不到 order_no 会当新购单渲染 */
         try {
             $db = \Typecho\Db::get();
             $row = $db->fetchRow(
@@ -1000,7 +1071,15 @@ function ecod_pay_cashier_url(array $query = []): string
                     ->where('template = ?', 'page-cashier.php')->where('type = ?', 'page')
                     ->where('status = ?', 'publish')->limit(1)
             );
-            $url = $row ? ecod_pay_site_url('index.php/' . $row['slug'] . '.html') : '';
+            if ($row) {
+                $rewrite = false;
+                try {
+                    $rewrite = (string) \Utils\Helper::options()->rewrite === '1';
+                } catch (\Throwable $e) {
+                    $rewrite = false;
+                }
+                $url = ecod_pay_site_url(($rewrite ? '' : 'index.php/') . $row['slug'] . '.html');
+            }
         } catch (\Throwable $e) {
             $url = '';
         }

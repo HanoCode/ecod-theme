@@ -29,12 +29,24 @@ if (!is_file($ecodRoot . '/config.inc.php')) {
     exit;
 }
 require_once $ecodRoot . '/config.inc.php';
+
+/* JSON 出口不能被警告污染：PHP 8.5 起 curl_close() 之类的 Deprecated
+ * 会以 <br /><b>Deprecated</b> 形式直接打进响应体，前端 fetch().json()
+ * 立刻解析失败（2026-11-01 端到端自测抓到）。其它独立入口
+ * （builder/widget/media/pay-admin）早就这么写了，这里补齐。
+ * 需要用警告排查时临时把 display_errors 打开即可。 */
+error_reporting(E_ALL & ~E_DEPRECATED & ~E_NOTICE & ~E_WARNING);
+ini_set('display_errors', '0');
+
 require_once __DIR__ . '/core/lib/schema.php';
 require_once __DIR__ . '/core/lib/cache.php';
 require_once __DIR__ . '/core/site/seo.php';
 require_once __DIR__ . '/core/admin/snapshot.php';
 require_once __DIR__ . '/core/site/pages.php';
 require_once __DIR__ . '/core/user/account.php';
+/* 用户扩展表：AI 日额度计数、看广告领点数的令牌都落这里，
+   不能等 profile/avatar 分支再懒加载，否则 api 侧静默丢写入 */
+require_once __DIR__ . '/core/user/meta.php';
 require_once __DIR__ . '/core/user/oauth.php';
 require_once __DIR__ . '/core/content/thumbs.php';
 require_once __DIR__ . '/core/content/ai.php';
@@ -45,12 +57,16 @@ require_once __DIR__ . '/core/site/friends.php';
 require_once __DIR__ . '/core/site/notifs.php';
 require_once __DIR__ . '/core/pay/pay.php';
 require_once __DIR__ . '/core/pay/pay-channel.php';
+require_once __DIR__ . '/core/license/license.php';
+require_once __DIR__ . '/core/license/selfserve.php';
 require_once __DIR__ . '/core/user/credits.php';
 require_once __DIR__ . '/core/user/tasks.php';
+require_once __DIR__ . '/core/site/activity.php';
 require_once __DIR__ . '/core/support/tickets.php';
 require_once __DIR__ . '/core/user/referral.php';
 require_once __DIR__ . '/core/site/lottery.php';
 require_once __DIR__ . '/core/site/ads.php';
+require_once __DIR__ . '/core/site/mcp.php';
 require_once __DIR__ . '/core/site/shop.php';
 
 /* 独立入口不经过 Widget\Init 引导，补上 PasswordHash 的类别名
@@ -248,9 +264,21 @@ function ecod_api_with_table(\Typecho\Db $db, callable $fn)
 
 $action = isset($_GET['action']) ? (string) $_GET['action'] : '';
 
+/* 授权锁死：锁定状态下非白名单写操作直接 403 */
+if (function_exists('ecod_license_locked') && ecod_license_locked()
+    && function_exists('ecod_license_api_gate') && !ecod_license_api_gate($action)) {
+    ecod_api_out(['ok' => false, 'error' => 'license'], 403);
+}
+
 /* 缩略图输出：GET + 二进制流，不走 JSON，必须在最前处理 */
 if ($action === 'thumb') {
     ecod_api_thumb_serve();
+}
+
+/* MCP Server（F11）：JSON-RPC 协议入口，自带输出头与鉴权，
+   不经过下面的同源 / 登录校验（客户端是桌面 App 或 CLI） */
+if ($action === 'mcp') {
+    ecod_mcp_serve();
 }
 
 /* 第三方登录：GET + 302 跳转，不走下面的 JSON 输出，必须在最前处理 */
@@ -302,7 +330,7 @@ function ecod_api_admin_token(): string
     return ecod_tool_token();
 }
 
-$ecodToolActions = ['snapshot_list', 'snapshot_save', 'snapshot_restore', 'snapshot_delete', 'build_sitemap', 'build_robots', 'push_baidu', 'push_test', 'golink_list', 'golink_save', 'golink_delete', 'page_list', 'page_create', 'topic_posts'];
+$ecodToolActions = ['snapshot_list', 'snapshot_save', 'snapshot_restore', 'snapshot_delete', 'build_sitemap', 'build_robots', 'push_baidu', 'push_test', 'golink_list', 'golink_save', 'golink_delete', 'page_list', 'page_create', 'topic_posts', 'ai_related_build'];
 
 if (in_array($action, $ecodToolActions, true)) {
     if (!ecod_api_is_admin()) {
@@ -342,6 +370,14 @@ if (in_array($action, $ecodToolActions, true)) {
 
             case 'build_robots':
                 ecod_api_out(ecod_robots_write());
+
+            /* AI 相关文章：批量让模型润色关键词（F13），每次最多 10 篇防超时 */
+            case 'ai_related_build':
+                $ecodRelRes = ecod_ai_rel_build((int) ($_POST['limit'] ?? 8));
+                if (!empty($ecodRelRes['ok']) && (int) ($ecodRelRes['done'] ?? 0) > 0) {
+                    ecod_audit_log('ai_related_build', ['done' => (int) $ecodRelRes['done']]);
+                }
+                ecod_api_out($ecodRelRes);
 
             case 'push_baidu':
                 ecod_api_out(ecod_baidu_push());
@@ -414,6 +450,35 @@ if ($action === 'ping') {
     ecod_api_out(['ok' => true, 'time' => time()]);
 }
 
+/* 访问统计的停留上报（navigator.sendBeacon 打过来，body 是 JSON）：
+   只补停留时长与跳出，不参与 PV/UV 计数（那两个在页面请求时就记了） */
+if ($action === 'stats_ping') {
+    if ((string) ($_SERVER['REQUEST_METHOD'] ?? 'GET') !== 'POST') {
+        ecod_api_out(['ok' => false, 'error' => 'Method not allowed'], 405);
+    }
+    $ecodPing = json_decode((string) file_get_contents('php://input'), true);
+    if (!is_array($ecodPing)) {
+        $ecodPing = [];
+    }
+    require_once __DIR__ . '/core/site/stats.php';
+    ecod_stats_ping($ecodPing);
+    /* sendBeacon 不关心响应体，给个最小答复即可 */
+    ecod_api_out(['ok' => true]);
+}
+
+/* 访问统计台的数据接口（stats.php 的「刷新」与自动刷新走这里）：
+   只读、仅管理员；返回的是渲染好的 HTML 片段，与首屏 SSR 共用
+   core/site/stats-view.php，前端拿到直接替换对应容器。 */
+if ($action === 'stats_data') {
+    if (!ecod_api_is_admin()) {
+        ecod_api_out(['ok' => false, 'error' => '需要管理员登录'], 403);
+    }
+    require_once __DIR__ . '/core/site/stats.php';
+    require_once __DIR__ . '/core/site/stats-view.php';
+    header('Cache-Control: no-store');
+    ecod_api_out(['ok' => true, 'html' => ecod_stats_view_all((int) ($_GET['range'] ?? 14))]);
+}
+
 /* AI 智能摘要：文章页异步获取，生成失败时静默（前端隐藏区块） */
 if ($action === 'ai') {
     if ((string) ($_SERVER['REQUEST_METHOD'] ?? 'GET') !== 'GET') {
@@ -479,6 +544,22 @@ if ($action === 'search_suggest') {
     } catch (\Throwable $e) {
         ecod_api_out(['ok' => false, 'error' => 'Server error'], 500);
     }
+}
+
+/* 侧栏「实时动态」挂件轮询（公开只读；来源白名单与 60s 缓存在聚合层内） */
+if ($action === 'ticker') {
+    if ((string) ($_SERVER['REQUEST_METHOD'] ?? 'GET') !== 'GET') {
+        ecod_api_out(['ok' => false, 'error' => 'Method not allowed'], 405);
+    }
+    $ecodTkSources = preg_split('/[\s,，]+/', (string) ($_GET['sources'] ?? '')) ?: [];
+    $ecodTkLimit = (int) ($_GET['limit'] ?? 8);
+    if ($ecodTkLimit <= 0) {
+        $ecodTkLimit = 8;
+    }
+    ecod_api_out([
+        'ok'    => true,
+        'items' => ecod_activity_feed($ecodTkSources, $ecodTkLimit),
+    ]);
 }
 
 /* ------------------------------------------------------------------
@@ -1562,41 +1643,13 @@ if (in_array($action, $ecodAccountActions, true)) {
 
 /**
  * 由 cid 构造轻量对象（api.php 没有 Archive 上下文，只带判定需要的字段）
+ *
+ * 构造逻辑已下沉到 core/pay/pay.php 的 ecod_pay_post_stub()，供 AI 上下文等
+ * 其它独立入口复用；这里保留原函数名，避免改动既有调用点。
  */
 function ecod_api_pay_post(int $cid)
 {
-    if ($cid <= 0) {
-        return null;
-    }
-    try {
-        $db = \Typecho\Db::get();
-        $row = $db->fetchRow(
-            $db->select('cid', 'title', 'slug', 'status', 'authorId', 'created')
-                ->from('table.contents')->where('cid = ?', $cid)->limit(1)
-        );
-        if (!$row || (string) $row['status'] !== 'publish') {
-            return null;
-        }
-
-        $post = new \stdClass();
-        $post->cid = (int) $row['cid'];
-        $post->title = (string) $row['title'];
-        $post->slug = (string) $row['slug'];
-        $post->authorId = (int) $row['authorId'];
-        $post->created = (int) $row['created'];
-        $post->fields = new \stdClass();
-
-        $fields = $db->fetchAll(
-            $db->select('name', 'str_value')->from('table.fields')->where('cid = ?', $cid)
-        );
-        foreach ((array) $fields as $field) {
-            $post->fields->{(string) $field['name']} = (string) $field['str_value'];
-        }
-
-        return $post;
-    } catch (\Throwable $e) {
-        return null;
-    }
+    return function_exists('ecod_pay_post_stub') ? ecod_pay_post_stub($cid) : null;
 }
 
 if ($action === 'pay_create') {
@@ -3266,13 +3319,188 @@ if ($action === 'credits_state') {
     if (!$me) {
         ecod_api_out(['ok' => false, 'error' => '请先登录'], 401);
     }
+    $ecodCrPrice = ecod_ai_cost((int) $me->uid);
+    $ecodAdOn = ecod_ai_ad_enabled();
+    ecod_api_out([
+        'ok'          => true,
+        'name'        => ecod_credits_name(),
+        'balance'     => ecod_credits_balance((int) $me->uid),
+        'signed'      => ecod_credits_signed_today((int) $me->uid),
+        'checkin'     => max(0, (int) ecod_option('ECrCheckin', 0)),
+        'log'         => ecod_credits_log((int) $me->uid, 30),
+        'stats'       => ecod_credits_stats((int) $me->uid),
+        'meter'       => ecod_credits_meter((int) $me->uid),
+        'types'       => ecod_credits_log_types((int) $me->uid),
+        'ai_cost'     => (int) $ecodCrPrice['cost'],
+        'ai_base'     => (int) $ecodCrPrice['base'],
+        'ai_free'     => (bool) $ecodCrPrice['free'],
+        'ai_vip'      => (bool) $ecodCrPrice['vip'],
+        'ai_vip_name' => (string) $ecodCrPrice['vip_name'],
+        /* 看广告领点数（F12）：面板据此决定是否显示「赚点数」入口，不在此下发令牌 */
+        'ai_ad_on'     => $ecodAdOn,
+        'ai_ad_left'   => $ecodAdOn ? max(0, ecod_ai_ad_limit() - ecod_ai_ad_used((int) $me->uid)) : 0,
+        'ai_ad_reward' => $ecodAdOn ? ecod_ai_ad_reward() : 0,
+    ]);
+}
+
+/* 积分明细分页（个人中心 tab + 翻页拉取） */
+if ($action === 'credits_log') {
+    $me = ecod_api_user();
+    if (!$me) {
+        ecod_api_out(['ok' => false, 'error' => '请先登录'], 401);
+    }
+    $ecodCrType = mb_substr(trim((string) ($_GET['type'] ?? '')), 0, 20, 'UTF-8');
+    $ecodCrPage = ecod_credits_log_paged(
+        (int) $me->uid,
+        (int) ($_GET['page'] ?? 1),
+        10,
+        $ecodCrType
+    );
     ecod_api_out([
         'ok'       => true,
         'name'     => ecod_credits_name(),
-        'balance'  => ecod_credits_balance((int) $me->uid),
-        'signed'   => ecod_credits_signed_today((int) $me->uid),
-        'checkin'  => max(0, (int) ecod_option('ECrCheckin', 0)),
-        'log'      => ecod_credits_log((int) $me->uid, 30),
+        'rows'     => $ecodCrPage['rows'],
+        'total'    => $ecodCrPage['total'],
+        'page'     => $ecodCrPage['page'],
+        'pages'    => $ecodCrPage['pages'],
+    ]);
+}
+
+/* 看广告领点数（F12）：取广告 + 领取令牌；令牌用后即焚，配合最短观看时长防刷 */
+if ($action === 'ai_ad' || $action === 'ai_ad_claim') {
+    if ((string) ($_SERVER['REQUEST_METHOD'] ?? 'GET') !== 'POST') {
+        ecod_api_out(['ok' => false, 'error' => 'Method not allowed'], 405);
+    }
+    if (!ecod_api_same_origin()) {
+        ecod_api_out(['ok' => false, 'error' => '非法请求来源'], 403);
+    }
+    if (!ecod_ai_ad_enabled()) {
+        ecod_api_out(['ok' => false, 'error' => '看广告领点数未开启'], 404);
+    }
+    $ecodAdMe = ecod_api_user();
+    if (!$ecodAdMe) {
+        ecod_api_out(['ok' => false, 'error' => '请先登录'], 401);
+    }
+    if (!ecod_account_token_ok((string) ($_POST['token'] ?? ''))) {
+        ecod_api_out(['ok' => false, 'error' => '页面已过期，请刷新重试'], 403);
+    }
+
+    if ($action === 'ai_ad') {
+        ecod_api_out(ecod_ai_ad_state((int) $ecodAdMe->uid));
+    }
+
+    $ecodAdRes = ecod_ai_ad_claim((int) $ecodAdMe->uid, (string) ($_POST['ad_token'] ?? ''));
+    ecod_api_out($ecodAdRes, empty($ecodAdRes['ok']) ? 400 : 200);
+}
+
+/* 评论 AI 舆情摘要（F7）：读者免费可读，生成按评论集合 hash 缓存，不需要登录 */
+if ($action === 'ai_comments') {
+    if ((string) ($_SERVER['REQUEST_METHOD'] ?? 'GET') !== 'POST') {
+        ecod_api_out(['ok' => false, 'error' => 'Method not allowed'], 405);
+    }
+    if (!ecod_api_same_origin()) {
+        ecod_api_out(['ok' => false, 'error' => '非法请求来源'], 403);
+    }
+    $ecodCmtCid = (int) ($_POST['cid'] ?? 0);
+    if ($ecodCmtCid <= 0) {
+        ecod_api_out(['ok' => false, 'error' => '缺少文章参数'], 400);
+    }
+    $ecodCmtRes = ecod_ai_comment_summary($ecodCmtCid);
+    if (empty($ecodCmtRes['ok'])) {
+        ecod_api_out($ecodCmtRes, 200);
+    }
+    ecod_api_out($ecodCmtRes);
+}
+
+/* AI 搜索（F9）：问题 → 站内检索词 → 取 Top N → 带引用的结论；命中缓存免费 */
+if ($action === 'ai_search') {
+    if ((string) ($_SERVER['REQUEST_METHOD'] ?? 'GET') !== 'POST') {
+        ecod_api_out(['ok' => false, 'error' => 'Method not allowed'], 405);
+    }
+    if (!ecod_api_same_origin()) {
+        ecod_api_out(['ok' => false, 'error' => '非法请求来源'], 403);
+    }
+    if (!ecod_ai_enabled() || (string) ecod_option('EAISearch', 'on') !== 'on') {
+        ecod_api_out(['ok' => false, 'error' => 'AI 搜索未开启'], 404);
+    }
+
+    $me = ecod_api_user();
+    if (!$me) {
+        ecod_api_out(['ok' => false, 'error' => '请先登录'], 401);
+    }
+    if (!ecod_account_token_ok((string) ($_POST['token'] ?? ''))) {
+        ecod_api_out(['ok' => false, 'error' => '页面已过期，请刷新重试'], 403);
+    }
+
+    $ecodSrchUid = (int) $me->uid;
+    $ecodSrchQ = trim((string) ($_POST['q'] ?? ''));
+    if ($ecodSrchQ === '' || mb_strlen($ecodSrchQ, 'UTF-8') < 2 || mb_strlen($ecodSrchQ, 'UTF-8') > 120) {
+        ecod_api_out(['ok' => false, 'error' => '请输入 2–120 字的问题'], 400);
+    }
+
+    /* 命中缓存：不收钱、不再调模型（同一句话反复问不该反复计费）
+     *
+     * 用文件缓存（core/lib/cache.php）而不是 options 行：options.name 只有
+     * varchar(32)，而 'theme:ecod_ai_s_' + md5 是 49 字符 —— 严格模式下
+     * INSERT 直接被拒，异常又被 try/catch 吞掉，表现为「缓存永远不命中、
+     * 同一句话每次都扣 2 点」（2026-11-01 端到端自测抓到的静默失败）。
+     * 另外 options 的 user=0 行每个请求都会整体载入，搜索缓存条数不可控，
+     * 放文件缓存才不拖慢全站。 */
+    $ecodSrchKey = 'ai_search_' . md5(mb_strtolower($ecodSrchQ, 'UTF-8'));
+    [$ecodSrchHit, $ecodSrchCache] = ecod_file_cache_read($ecodSrchKey);
+    if ($ecodSrchHit && is_array($ecodSrchCache)
+        && (string) ($ecodSrchCache['q'] ?? '') === $ecodSrchQ) {
+        ecod_api_out([
+            'ok'       => true,
+            'answer'   => (string) ($ecodSrchCache['answer'] ?? ''),
+            'items'    => $ecodSrchCache['items'] ?? [],
+            'keywords' => $ecodSrchCache['keywords'] ?? [],
+            'balance'  => ecod_credits_balance($ecodSrchUid),
+            'cost'     => 0,
+            'cached'   => true,
+        ]);
+    }
+
+    /* 预检按最贵档（两次模型调用）；实际按 calls 结算，找不到就少收一半 */
+    $ecodSrchMax = ecod_ai_cost($ecodSrchUid, 2);
+    if ((int) $ecodSrchMax['cost'] > 0 && ecod_credits_balance($ecodSrchUid) < (int) $ecodSrchMax['cost']) {
+        ecod_api_out(['ok' => false, 'error' => ecod_credits_name() . ' 不足，先去签到赚积分吧'], 402);
+    }
+
+    $ecodSrchRes = ecod_ai_search($ecodSrchQ, $ecodSrchUid);
+    if (empty($ecodSrchRes['ok'])) {
+        ecod_api_out(['ok' => false, 'error' => (string) ($ecodSrchRes['error'] ?? '生成失败')], 502);
+    }
+
+    $ecodSrchPrice = ecod_ai_cost($ecodSrchUid, max(1, (int) ($ecodSrchRes['calls'] ?? 2)));
+    $ecodSrchCost = (int) $ecodSrchPrice['cost'];
+    $ecodSrchBal = ecod_credits_balance($ecodSrchUid);
+    if ($ecodSrchCost > 0) {
+        $ecodSrchPaid = ecod_credits_add($ecodSrchUid, -$ecodSrchCost, 'ai', 'search', 'AI 搜索');
+        if (!empty($ecodSrchPaid['ok'])) {
+            $ecodSrchBal = (int) $ecodSrchPaid['balance'];
+        }
+    }
+    ecod_ai_quota_hit($ecodSrchUid);
+
+    /* 只缓存有引用的答案：空结果缓存 10 分钟，避免同一句反复烧额度 */
+    $ecodSrchTtl = !empty($ecodSrchRes['items']) ? 86400 : 600;
+    ecod_file_cache_write($ecodSrchKey, [
+        'q'        => $ecodSrchQ,
+        'answer'   => (string) $ecodSrchRes['answer'],
+        'items'    => $ecodSrchRes['items'],
+        'keywords' => $ecodSrchRes['keywords'],
+        'at'       => time(),
+    ], $ecodSrchTtl);
+
+    ecod_api_out([
+        'ok'       => true,
+        'answer'   => (string) $ecodSrchRes['answer'],
+        'items'    => $ecodSrchRes['items'],
+        'keywords' => $ecodSrchRes['keywords'],
+        'balance'  => $ecodSrchBal,
+        'cost'     => $ecodSrchCost,
+        'cached'   => false,
     ]);
 }
 
@@ -3309,10 +3537,17 @@ if ($action === 'ai_chat') {
         ecod_api_out(['ok' => false, 'error' => '请输入 1–2000 字的问题'], 400);
     }
 
-    /* 余额预检：接口按次计费，欠账不放行 */
-    $ecodChatCost = max(0, (int) ecod_option('ECrAICost', 1));
+    /* 计价：基础价 × 倍数，会员是否免单由 ecod_ai_cost() 统一决定（F8） */
+    $ecodChatPrice = ecod_ai_cost($ecodChatUid);
+    $ecodChatCost = (int) $ecodChatPrice['cost'];
     if ($ecodChatCost > 0 && ecod_credits_balance($ecodChatUid) < $ecodChatCost) {
         ecod_api_out(['ok' => false, 'error' => ecod_credits_name() . ' 不足，先去签到赚积分吧'], 402);
+    }
+
+    /* 每日次数上限（0 = 不限）：会员免单没有流水可数，统一走 ecod_ai_quota_* */
+    $ecodChatDaily = max(0, (int) ecod_option('EAIChatDaily', 0));
+    if ($ecodChatDaily > 0 && ecod_ai_quota_used($ecodChatUid) >= $ecodChatDaily) {
+        ecod_api_out(['ok' => false, 'error' => '今天的 AI 额度已用完，明天再来'], 402);
     }
 
     /* 上下文：前端带回最近几轮对话（每轮 user + assistant 各一条） */
@@ -3324,6 +3559,32 @@ if ($action === 'ai_chat') {
     }
 
     $ecodChatMessages = [['role' => 'system', 'content' => $ecodChatSystem]];
+
+    /* 文章作用域：正文只从 ecod_ai_text_allowed() 取，付费未授权只有试读段。
+       前端不传正文（防篡改、防绕过），这里也不接受自定义 prompt 注入。 */
+    if ((string) ($_POST['scope'] ?? '') === 'post') {
+        $ecodChatCid = (int) ($_POST['cid'] ?? 0);
+        $ecodChatCtxText = $ecodChatCid > 0 ? ecod_ai_text_allowed($ecodChatCid, $ecodChatUid) : '';
+        if ($ecodChatCtxText === '') {
+            ecod_api_out(['ok' => false, 'error' => '这篇内容暂时无法追问'], 403);
+        }
+        $ecodChatTitle = ecod_ai_post_title($ecodChatCid);
+        $ecodChatMessages[0]['content'] .= "\n\n下面是与问题相关的文章"
+            . ($ecodChatTitle !== '' ? "《{$ecodChatTitle}》" : '')
+            . "内容。回答只依据这段内容，不要编造文章里没有的信息；"
+            . "若资料不足以回答，直接说明。\n\n---\n" . $ecodChatCtxText . "\n---";
+    }
+    /* 站点作用域：404「我该去哪？」与面板里的「这个站是干嘛的」。
+       只注入公开概览（站点名/简介/分类/最近文章），不碰任何正文与用户数据。 */
+    if ((string) ($_POST['scope'] ?? '') === 'site') {
+        $ecodChatBrief = ecod_ai_site_brief_text(8);
+        if ($ecodChatBrief !== '') {
+            $ecodChatMessages[0]['content'] .= "\n\n下面是本站概览（公开信息）。回答「这个站是干嘛的 / "
+                . "最近有什么新文章 / 我该去哪」这类问题时以此为准，不要编造站内不存在的页面。"
+                . "推荐去处时列 2~3 个具体条目，每条给标题与完整链接。\n\n---\n"
+                . $ecodChatBrief . "\n---";
+        }
+    }
     $ecodChatHistoryRaw = (string) ($_POST['history'] ?? '');
     if ($ecodChatHistoryRaw !== '' && $ecodChatCtx > 0) {
         $ecodChatHistory = json_decode($ecodChatHistoryRaw, true);
@@ -3343,6 +3604,85 @@ if ($action === 'ai_chat') {
     }
     $ecodChatMessages[] = ['role' => 'user', 'content' => $ecodChatMsg];
 
+    /* 流式：前端带 stream=1 且后台 EAIStream 开着时走 SSE（Eventsource 由 fetch 读） */
+    $ecodChatStream = (string) ($_POST['stream'] ?? '') === '1'
+        && (string) ecod_option('EAIStream', 'on') === 'on';
+
+    if ($ecodChatStream) {
+        /* 预扣：先扣后退（上游零输出才退），避免「首字到就 abort」白嫖 */
+        $ecodChatBal = ecod_credits_balance($ecodChatUid);
+        if ($ecodChatCost > 0) {
+            $ecodChatPaid = ecod_credits_add($ecodChatUid, -$ecodChatCost, 'ai', 'chat', 'AI 对话');
+            if (!empty($ecodChatPaid['ok'])) {
+                $ecodChatBal = (int) $ecodChatPaid['balance'];
+            }
+        }
+
+        /* 清缓冲 + 换事件流头（api.php 顶部设的是 application/json） */
+        while (ob_get_level() > 0) {
+            @ob_end_clean();
+        }
+        @ini_set('zlib.output_compression', '0');
+        header('Content-Type: text/event-stream; charset=utf-8');
+        header('Cache-Control: no-cache, no-store, must-revalidate');
+        header('X-Accel-Buffering: no');
+        @set_time_limit(60);
+
+        /* 关键：释放 session 文件锁，否则同一用户其它标签页会被串行化到超时 */
+        if (function_exists('session_status') && session_status() === PHP_SESSION_ACTIVE) {
+            session_write_close();
+        }
+        @ob_implicit_flush(true);
+
+        $ecodSseSend = static function (array $event): void {
+            echo 'data: ' . json_encode($event, JSON_UNESCAPED_UNICODE) . "\n\n";
+            @flush();
+        };
+        $ecodSseSend([
+            't'       => 'meta',
+            'balance' => $ecodChatBal,
+            'cost'    => $ecodChatCost,
+            'free'    => (bool) $ecodChatPrice['free'],
+            'vip'     => (bool) $ecodChatPrice['vip'],
+        ]);
+
+        $ecodChatStreamRes = ecod_ai_chat_stream(
+            $ecodChatMessages,
+            800,
+            static function (string $delta) use ($ecodSseSend): void {
+                $ecodSseSend(['t' => 'delta', 's' => $delta]);
+            }
+        );
+
+        if (empty($ecodChatStreamRes['ok'])) {
+            /* 一个字都没出：全额退回（中断不退，由用户自己承担已产生的成本） */
+            $ecodChatBal = ecod_credits_balance($ecodChatUid);
+            if ($ecodChatCost > 0) {
+                $ecodChatRefund = ecod_credits_add($ecodChatUid, $ecodChatCost, 'ai_refund', 'chat', 'AI 对话失败退回');
+                if (!empty($ecodChatRefund['ok'])) {
+                    $ecodChatBal = (int) $ecodChatRefund['balance'];
+                }
+            }
+            $ecodSseSend([
+                't'       => 'err',
+                'error'   => (string) ($ecodChatStreamRes['error'] ?? '生成失败，请稍后重试'),
+                'refund'  => true,
+                'balance' => $ecodChatBal,
+            ]);
+            exit;
+        }
+
+        /* 成功才计入日额度（失败已退回，不该占用户次数） */
+        ecod_ai_quota_hit($ecodChatUid);
+
+        $ecodSseSend([
+            't'       => 'done',
+            'reply'   => (string) $ecodChatStreamRes['reply'],
+            'balance' => $ecodChatBal,
+        ]);
+        exit;
+    }
+
     $ecodChatRes = ecod_ai_chat_call($ecodChatMessages);
     if (empty($ecodChatRes['ok'])) {
         ecod_throttle_fail($ecodChatBucket);
@@ -3357,11 +3697,15 @@ if ($action === 'ai_chat') {
             $ecodChatBal = (int) $ecodChatPaid['balance'];
         }
     }
+    ecod_ai_quota_hit($ecodChatUid);
 
     ecod_api_out([
         'ok'      => true,
         'reply'   => (string) $ecodChatRes['reply'],
         'balance' => $ecodChatBal,
+        'cost'    => $ecodChatCost,
+        'free'    => (bool) $ecodChatPrice['free'],
+        'vip'     => (bool) $ecodChatPrice['vip'],
     ]);
 }
 
@@ -3395,7 +3739,8 @@ if ($action === 'lottery_exchange') {
     }
 
     $ecodLotUid = (int) $ecodLotMe->uid;
-    $ecodLotWait = ecod_throttle_guard('lottery:' . $ecodLotUid);
+    /* 抽奖是娱乐操作，阈值比登录类宽：连抽 8 次起 15 秒冷却，16 次起 60 秒 */
+    $ecodLotWait = ecod_throttle_guard('lottery:' . $ecodLotUid, 8, 15, 60);
     if ($ecodLotWait > 0) {
         ecod_api_out(['ok' => false, 'error' => ecod_throttle_error($ecodLotWait)], 429);
     }
@@ -3510,6 +3855,363 @@ if ($action === 'ad_apply') {
         'ad_id'    => (int) $ecodAdRes['ad_id'],
         'order_no' => (string) $ecodAdRes['order_no'],
         'amount'   => (int) $ecodAdRes['amount'],
+    ]);
+}
+
+/* ============================================================
+ * 主题授权（license_*）
+ * ============================================================ */
+if ($action === 'license_state') {
+    if (!ecod_license_is_admin()) {
+        ecod_api_out(['ok' => false, 'error' => '无权限'], 403);
+    }
+    $state = ecod_license_state();
+    /* 后台面板「环境明细」用的只读字段 */
+    $state['host'] = ecod_license_host();
+    $state['endpoint'] = ecod_license_endpoint();
+    $state['crypto'] = ecod_license_crypto_ok();
+    ecod_api_out(['ok' => true, 'state' => $state]);
+}
+
+if ($action === 'license_activate') {
+    if ((string) ($_SERVER['REQUEST_METHOD'] ?? 'GET') !== 'POST') {
+        ecod_api_out(['ok' => false, 'error' => 'Method not allowed'], 405);
+    }
+    if (!ecod_api_same_origin()) {
+        ecod_api_out(['ok' => false, 'error' => '非法请求来源'], 403);
+    }
+    if (!ecod_license_is_admin()) {
+        ecod_api_out(['ok' => false, 'error' => '无权限'], 403);
+    }
+    if (!hash_equals(ecod_tool_token(), (string) ($_POST['token'] ?? ''))) {
+        ecod_api_out(['ok' => false, 'error' => '页面已过期，请刷新重试'], 403);
+    }
+    $res = ecod_license_activate((string) ($_POST['key'] ?? ''), (string) ($_POST['domain'] ?? ''));
+    ecod_api_out($res);
+}
+
+if ($action === 'license_import') {
+    if ((string) ($_SERVER['REQUEST_METHOD'] ?? 'GET') !== 'POST') {
+        ecod_api_out(['ok' => false, 'error' => 'Method not allowed'], 405);
+    }
+    if (!ecod_api_same_origin()) {
+        ecod_api_out(['ok' => false, 'error' => '非法请求来源'], 403);
+    }
+    if (!ecod_license_is_admin()) {
+        ecod_api_out(['ok' => false, 'error' => '无权限'], 403);
+    }
+    if (!hash_equals(ecod_tool_token(), (string) ($_POST['token'] ?? ''))) {
+        ecod_api_out(['ok' => false, 'error' => '页面已过期，请刷新重试'], 403);
+    }
+    $res = ecod_license_import((string) ($_POST['file'] ?? ''));
+    ecod_api_out($res);
+}
+
+if ($action === 'license_recheck') {
+    if ((string) ($_SERVER['REQUEST_METHOD'] ?? 'GET') !== 'POST') {
+        ecod_api_out(['ok' => false, 'error' => 'Method not allowed'], 405);
+    }
+    if (!ecod_api_same_origin()) {
+        ecod_api_out(['ok' => false, 'error' => '非法请求来源'], 403);
+    }
+    if (!ecod_license_is_admin()) {
+        ecod_api_out(['ok' => false, 'error' => '无权限'], 403);
+    }
+    if (!hash_equals(ecod_tool_token(), (string) ($_POST['token'] ?? ''))) {
+        ecod_api_out(['ok' => false, 'error' => '页面已过期，请刷新重试'], 403);
+    }
+    ecod_license_recheck(true);
+    $state = ecod_license_state();
+    $ok = empty($state['last_error']);
+    ecod_api_out([
+        'ok'      => true,
+        'message' => $ok ? '复验完成' : '复验失败：' . (string) $state['last_error'],
+        'state'   => $state,
+    ]);
+}
+
+if ($action === 'license_ping') {
+    ecod_license_ping();
+}
+
+if ($action === 'license_buy') {
+    if ((string) ($_SERVER['REQUEST_METHOD'] ?? 'GET') !== 'POST') {
+        ecod_api_out(['ok' => false, 'error' => 'Method not allowed'], 405);
+    }
+    if (!ecod_api_same_origin()) {
+        ecod_api_out(['ok' => false, 'error' => '非法请求来源'], 403);
+    }
+    $me = ecod_api_user();
+    if (!$me) {
+        ecod_api_out(['ok' => false, 'error' => '请先登录'], 401);
+    }
+    if (!ecod_account_token_ok((string) ($_POST['token'] ?? ''))) {
+        ecod_api_out(['ok' => false, 'error' => '页面已过期，请刷新重试'], 403);
+    }
+    if (!ecod_pay_enabled()) {
+        ecod_api_out(['ok' => false, 'error' => '本站暂未开启在线支付'], 400);
+    }
+    if (!ecod_license_ss_ready()) {
+        ecod_api_out(['ok' => false, 'error' => '作者端未开启自助发码'], 400);
+    }
+
+    $uid = (int) $me->uid;
+    $domain = trim((string) ($_POST['domain'] ?? ''));
+    $chk = ecod_license_ss_check_domain($domain, $uid);
+    if (empty($chk['ok'])) {
+        ecod_api_out(['ok' => false, 'error' => (string) ($chk['message'] ?? '域名不可用')], 400);
+    }
+    $domain = (string) $chk['domain'];
+
+    $level = max(1, min(2, (int) ($_POST['level'] ?? 1)));
+    $priceStr = $level === 2
+        ? ecod_license_price('team')
+        : ecod_license_price('pro');
+    if ($priceStr === '') {
+        ecod_api_out(['ok' => false, 'error' => '该版本暂未开放购买'], 400);
+    }
+    $amount = ecod_pay_cents($priceStr);
+    if ($amount === null || $amount <= 0) {
+        ecod_api_out(['ok' => false, 'error' => '价格配置无效'], 400);
+    }
+
+    $channelId = (string) ($_POST['channel'] ?? '');
+    if ($channelId === '') {
+        $channelId = ecod_pay_default_channel();
+    }
+
+    $editionName = $level === 2 ? '团队版' : '专业版';
+    $created = ecod_pay_order_create([
+        'uid'     => $uid,
+        'kind'    => 'theme',
+        'target'  => 0,
+        'title'   => '主题授权 · ' . $editionName,
+        'amount'  => $amount,
+        'days'    => 0,
+        'level'   => $level,
+        'channel' => $channelId,
+        'remark'  => 'domain:' . $domain,
+    ]);
+    if (empty($created['ok'])) {
+        ecod_api_out(['ok' => false, 'error' => $created['error'] ?? '创建订单失败'], 500);
+    }
+
+    $order = ecod_pay_order_get((string) $created['order_no']);
+    if (!$order) {
+        ecod_api_out(['ok' => false, 'error' => '订单读取失败'], 500);
+    }
+
+    /* 与文章 / 会员购买同一约定：只建单，支付统一交收银台选通道
+       （配了易支付就是在在线支付，支付回调 → settle → 自动签发授权码） */
+    $cashier = function_exists('ecod_pay_cashier_url')
+        ? ecod_pay_cashier_url(['order_no' => (string) $created['order_no']]) : '';
+    if ($cashier === '') {
+        ecod_api_out(['ok' => false, 'error' => '收银台页面不存在，请先在「特色页」创建收银台'], 500);
+    }
+    ecod_api_out([
+        'ok'       => true,
+        'order_no' => (string) $created['order_no'],
+        'mode'     => 'cashier',
+        'cashier'  => $cashier,
+        'amount'   => (int) $order['amount'],
+    ]);
+}
+
+if ($action === 'license_issue') {
+    if ((string) ($_SERVER['REQUEST_METHOD'] ?? 'GET') !== 'POST') {
+        ecod_api_out(['ok' => false, 'error' => 'Method not allowed'], 405);
+    }
+    if (!ecod_api_same_origin()) {
+        ecod_api_out(['ok' => false, 'error' => '非法请求来源'], 403);
+    }
+    $me = ecod_api_user();
+    if (!$me) {
+        ecod_api_out(['ok' => false, 'error' => '请先登录'], 401);
+    }
+    if (!ecod_account_token_ok((string) ($_POST['token'] ?? ''))) {
+        ecod_api_out(['ok' => false, 'error' => '页面已过期，请刷新重试'], 403);
+    }
+    $uid = (int) $me->uid;
+    $orderNo = trim((string) ($_POST['order_no'] ?? ''));
+    if ($orderNo === '') {
+        ecod_api_out(['ok' => false, 'error' => '缺少订单号'], 400);
+    }
+    $order = ecod_pay_order_get($orderNo);
+    if (!$order || (int) $order['uid'] !== $uid || (string) $order['kind'] !== 'theme') {
+        ecod_api_out(['ok' => false, 'error' => '订单不存在'], 404);
+    }
+    /* 未支付时尝试结算（前端轮询会重复调用，幂等） */
+    if ((string) $order['status'] === 'pending') {
+        ecod_pay_settle($orderNo);
+        $order = ecod_pay_order_get($orderNo);
+    }
+    if ((string) $order['status'] !== 'paid') {
+        ecod_api_out(['ok' => false, 'error' => '订单未支付', 'status' => (string) $order['status']]);
+    }
+    $res = ecod_license_ss_issue([
+        'uid'      => $uid,
+        'domain'   => ecod_license_order_domain($order),
+        'edition'  => ((int) $order['level'] >= 2) ? 'team' : 'pro',
+        'order_no' => $orderNo,
+        'product'  => 'theme',
+        'rebind_limit' => ecod_license_rebind_default(),
+    ]);
+    ecod_api_out($res);
+}
+
+if ($action === 'license_rebind') {
+    if ((string) ($_SERVER['REQUEST_METHOD'] ?? 'GET') !== 'POST') {
+        ecod_api_out(['ok' => false, 'error' => 'Method not allowed'], 405);
+    }
+    if (!ecod_api_same_origin()) {
+        ecod_api_out(['ok' => false, 'error' => '非法请求来源'], 403);
+    }
+    $me = ecod_api_user();
+    if (!$me) {
+        ecod_api_out(['ok' => false, 'error' => '请先登录'], 401);
+    }
+    if (!ecod_account_token_ok((string) ($_POST['token'] ?? ''))) {
+        ecod_api_out(['ok' => false, 'error' => '页面已过期，请刷新重试'], 403);
+    }
+    $uid = (int) $me->uid;
+    $keyId = (int) ($_POST['key_id'] ?? 0);
+    $domain = trim((string) ($_POST['domain'] ?? ''));
+    $res = ecod_license_ss_rebind($keyId, $uid, $domain);
+    ecod_api_out($res);
+}
+
+/* 授权：我的授权列表 */
+if ($action === 'license_keys') {
+    $me = ecod_api_user();
+    if (!$me) {
+        ecod_api_out(['ok' => false, 'error' => '请先登录'], 401);
+    }
+    $uid = (int) $me->uid;
+    $keys = function_exists('ecod_license_ss_keys') ? ecod_license_ss_keys($uid) : [];
+    ecod_api_out(['ok' => true, 'keys' => $keys]);
+}
+
+/* 授权：下载单条授权文件 */
+if ($action === 'license_key_file') {
+    if ((string) ($_SERVER['REQUEST_METHOD'] ?? 'GET') !== 'POST') {
+        ecod_api_out(['ok' => false, 'error' => 'Method not allowed'], 405);
+    }
+    if (!ecod_api_same_origin()) {
+        ecod_api_out(['ok' => false, 'error' => '非法请求来源'], 403);
+    }
+    $me = ecod_api_user();
+    if (!$me) {
+        ecod_api_out(['ok' => false, 'error' => '请先登录'], 401);
+    }
+    if (!ecod_account_token_ok((string) ($_POST['token'] ?? ''))) {
+        ecod_api_out(['ok' => false, 'error' => '页面已过期，请刷新重试'], 403);
+    }
+    $uid = (int) $me->uid;
+    $keyId = (int) ($_POST['key_id'] ?? 0);
+    $file = function_exists('ecod_license_ss_key_file') ? ecod_license_ss_key_file($keyId, $uid) : '';
+    if ($file === '') {
+        ecod_api_out(['ok' => false, 'error' => '无法获取授权文件']);
+    }
+    ecod_api_out(['ok' => true, 'file' => $file]);
+}
+
+if ($action === 'license_check') {
+    if (!ecod_api_same_origin()) {
+        ecod_api_out(['ok' => false, 'error' => '非法请求来源'], 403);
+    }
+    $me = ecod_api_user();
+    if (!$me) {
+        ecod_api_out(['ok' => false, 'error' => '请先登录'], 401);
+    }
+    $uid = (int) $me->uid;
+    $domain = trim((string) ($_GET['domain'] ?? $_POST['domain'] ?? ''));
+    $chk = ecod_license_ss_check_domain($domain, $uid);
+    ecod_api_out($chk);
+}
+
+/* 授权：原地升级（专业版 → 团队版，补差价，同码重签；结算后由
+   core/license/selfserve.php 的 upgrade 分支处理，域名与换绑计数不变） */
+if ($action === 'license_upgrade') {
+    if ((string) ($_SERVER['REQUEST_METHOD'] ?? 'GET') !== 'POST') {
+        ecod_api_out(['ok' => false, 'error' => 'Method not allowed'], 405);
+    }
+    if (!ecod_api_same_origin()) {
+        ecod_api_out(['ok' => false, 'error' => '非法请求来源'], 403);
+    }
+    $me = ecod_api_user();
+    if (!$me) {
+        ecod_api_out(['ok' => false, 'error' => '请先登录'], 401);
+    }
+    if (!ecod_account_token_ok((string) ($_POST['token'] ?? ''))) {
+        ecod_api_out(['ok' => false, 'error' => '页面已过期，请刷新重试'], 403);
+    }
+    if (!ecod_pay_enabled()) {
+        ecod_api_out(['ok' => false, 'error' => '本站暂未开启在线支付'], 400);
+    }
+    if (!ecod_license_ss_ready()) {
+        ecod_api_out(['ok' => false, 'error' => '作者端未开启自助发码'], 400);
+    }
+
+    $uid = (int) $me->uid;
+    $keyId = (int) ($_POST['key_id'] ?? 0);
+    $owned = '';
+    foreach (ecod_license_ss_keys($uid) as $k) {
+        if ((int) $k['id'] === $keyId) {
+            $owned = $k;
+            break;
+        }
+    }
+    if (!$owned) {
+        ecod_api_out(['ok' => false, 'error' => '授权不存在'], 404);
+    }
+    if ((string) $owned['edition'] !== 'pro' || (string) $owned['status'] !== 'active') {
+        ecod_api_out(['ok' => false, 'error' => '该授权不满足升级条件'], 400);
+    }
+
+    $proStr = ecod_license_price('pro');
+    $teamStr = ecod_license_price('team');
+    $pro = $proStr !== '' ? ecod_pay_cents($proStr) : null;
+    $team = $teamStr !== '' ? ecod_pay_cents($teamStr) : null;
+    if ($pro === null || $team === null || $team <= $pro) {
+        ecod_api_out(['ok' => false, 'error' => '升级档未开放，请联系作者'], 400);
+    }
+    $diff = $team - $pro;
+
+    $channelId = (string) ($_POST['channel'] ?? '');
+    if ($channelId === '') {
+        $channelId = ecod_pay_default_channel();
+    }
+    $created = ecod_pay_order_create([
+        'uid'     => $uid,
+        'kind'    => 'theme',
+        'target'  => 0,
+        'title'   => '主题授权 · 升级团队版（' . (string) $owned['code'] . '）',
+        'amount'  => $diff,
+        'days'    => 0,
+        'level'   => 2,
+        'channel' => $channelId,
+        'remark'  => 'upgrade:' . $keyId,
+    ]);
+    if (empty($created['ok'])) {
+        ecod_api_out(['ok' => false, 'error' => $created['error'] ?? '创建订单失败'], 500);
+    }
+
+    $order = ecod_pay_order_get((string) $created['order_no']);
+    if (!$order) {
+        ecod_api_out(['ok' => false, 'error' => '订单读取失败'], 500);
+    }
+    /* 同 license_buy：只建单，支付交收银台选通道 */
+    $cashier = function_exists('ecod_pay_cashier_url')
+        ? ecod_pay_cashier_url(['order_no' => (string) $created['order_no']]) : '';
+    if ($cashier === '') {
+        ecod_api_out(['ok' => false, 'error' => '收银台页面不存在，请先在「特色页」创建收银台'], 500);
+    }
+    ecod_api_out([
+        'ok'       => true,
+        'order_no' => (string) $created['order_no'],
+        'mode'     => 'cashier',
+        'cashier'  => $cashier,
+        'amount'   => (int) $order['amount'],
     ]);
 }
 

@@ -929,7 +929,8 @@
             row.appendChild(el('span', 'wgt-aside__label', esc(PAGES[page])));
 
             var sel = el('select', 'wgt-select wgt-aside__sel');
-            [['right', '右侧栏'], ['left', '左侧栏'], ['none', '无侧栏']].forEach(function (pair) {
+            /* 空值 = 跟随全站默认：不写进覆盖表，否则 EAside 被全量快照遮蔽 */
+            [['', '跟随全局'], ['right', '右侧栏'], ['left', '左侧栏'], ['none', '无侧栏']].forEach(function (pair) {
                 var opt = document.createElement('option');
                 opt.value = pair[0];
                 opt.textContent = pair[1];
@@ -949,7 +950,7 @@
 
         host.appendChild(wrap);
         host.appendChild(el('p', 'wgt-aside__hint',
-            '「独立页面」指 page.php 渲染的普通页面；归档 / 排行 / 专题这类个性页归入「个性页」。单篇文章 / 页面还能用自定义字段 aside 再覆盖。'));
+            '「跟随全局」= 使用主题设置里的「侧栏位置（全站默认）」；只有在这里显式选择过的页面才会覆盖全局。「独立页面」指 page.php 渲染的普通页面；归档 / 排行 / 专题这类个性页归入「个性页」。单篇文章 / 页面还能用自定义字段 aside 再覆盖。'));
     }
 
     function saveAside() {
@@ -1138,6 +1139,38 @@
                 tbox.appendChild(lab);
             });
             wrap.appendChild(tbox);
+        } else if (type === 'checks') {
+            /* 多选开关组：选项来自声明 options，存储保持逗号分隔 key 串（如 sources） */
+            var cbox = el('div', 'wgt-terms');
+            var cpicked = {};
+            String(value || '').split(',').forEach(function (one) {
+                if (one.trim() !== '') {
+                    cpicked[one.trim()] = true;
+                }
+            });
+            Object.keys(param.options || {}).forEach(function (opt) {
+                var lab = el('label', 'wgt-terms__item');
+                var cb = el('input');
+                cb.type = 'checkbox';
+                cb.value = opt;
+                cb.checked = !!cpicked[opt];
+                cb.addEventListener('change', function () {
+                    if (cb.checked) {
+                        cpicked[opt] = true;
+                    } else {
+                        delete cpicked[opt];
+                    }
+                    /* 按 options 声明顺序输出，保证存储稳定 */
+                    var order = Object.keys(param.options).filter(function (k) {
+                        return cpicked[k];
+                    });
+                    setParam(area, row, key, order.join(','), { noWhen: true });
+                });
+                lab.appendChild(cb);
+                lab.appendChild(el('span', '', esc(param.options[opt])));
+                cbox.appendChild(lab);
+            });
+            wrap.appendChild(cbox);
         } else if (type === 'image') {
             var box = el('div', 'wgt-img');
             var url = el('input', 'wgt-input');

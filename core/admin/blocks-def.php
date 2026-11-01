@@ -22,6 +22,41 @@ if (!defined('__TYPECHO_ROOT_DIR__')) {
  * 首页
  * ========================================================== */
 
+/* 顶部大图：原 index.php 硬编码改为模块（可删/可拖/可进 v5 板块），
+   bg / slogan 走 legacy 回落读旧的 EBanner / ESlogan 选项，老站零配置过渡 */
+ecod_block_define('banner', [
+    'name'   => '顶部大图',
+    'desc'   => '首页 Banner：背景图 + 站点标题与副标题（可删，可拖到任意板块）',
+    'icon'   => 'image',
+    'area'   => 'home',
+    'pages'  => ['home'],
+    'order'  => 5,
+    'params' => [
+        'bg' => [
+            'label'   => '背景图',
+            'type'    => 'image',
+            'default' => '',
+            'legacy'  => 'EBanner',
+            'desc'    => '留空则整个 Banner 不显示',
+        ],
+        'slogan' => [
+            'label'   => '副标题',
+            'type'    => 'text',
+            'default' => '',
+            'legacy'  => 'ESlogan',
+        ],
+        'height' => [
+            'label'   => '最小高度',
+            'type'    => 'number',
+            'min'     => 160,
+            'max'     => 800,
+            'default' => 320,
+            'unit'    => 'px',
+            'desc'    => '0 或留空用主题默认（320px）',
+        ],
+    ],
+]);
+
 ecod_block_define('search', [
     'name'   => '搜索盒',
     'desc'   => '首页顶部标题、站点数据与搜索框',
@@ -331,6 +366,32 @@ ecod_block_define('overview', [
     ],
 ]);
 
+/* 更新热力图：pages 留空 = 可自由拖放到任意页面/侧栏（widget v2 自由投放） */
+ecod_block_define('heatgrid', [
+    'name'   => '更新热力图',
+    'desc'   => 'GitHub 式发文日历：按日统计更新频率，拖动可读某天',
+    'icon'   => 'trending',
+    'area'   => 'home',
+    'pages'  => [],
+    'order'  => 105,
+    'on'     => false,
+    'params' => [
+        'title' => [
+            'label'   => '标题',
+            'type'    => 'text',
+            'default' => '更新日志',
+        ],
+        'weeks' => [
+            'label'   => '显示周数',
+            'type'    => 'number',
+            'default' => 18,
+            'min'     => 12,
+            'max'     => 52,
+            'desc'    => '12-52 周，列数随之增减',
+        ],
+    ],
+]);
+
 ecod_block_define('ad', [
     'name'   => '广告位',
     'desc'   => '单张图片横幅，未填图片则不显示',
@@ -386,6 +447,7 @@ ecod_block_define('list', [
                 'compact' => '紧凑行（无摘要）',
                 'mosaic'  => '混合网格（1 大 + N 小）',
                 'item'    => '清单 / 装备卡',
+                'note'    => '笔记卡（竖版网格）',
             ],
         ],
     ],
@@ -804,6 +866,37 @@ ecod_block_define('wstats', [
     ],
 ]);
 
+ecod_block_define('traffic', [
+    'name'   => '访问统计',
+    'desc'   => '今日 PV / UV / 在线 + 近 N 天 PV 迷你柱（数据来自访问统计，总开关关闭时不显示）',
+    'icon'   => 'chart',
+    'area'   => 'aside',
+    'order'  => 102,
+    'on'     => false,
+    'params' => [
+        'title' => [
+            'label'   => '标题',
+            'type'    => 'text',
+            'default' => '访问统计',
+        ],
+        'days' => [
+            'label'   => '迷你柱天数',
+            'type'    => 'select',
+            'default' => 7,
+            'options' => [
+                7  => '近 7 天',
+                14 => '近 14 天',
+                30 => '近 30 天',
+            ],
+        ],
+        'online' => [
+            'label'   => '显示在线人数',
+            'type'    => 'switch',
+            'default' => 1,
+        ],
+    ],
+]);
+
 ecod_block_define('rank', [
     'name'   => '排行榜',
     'desc'   => '缩略图 + 名次徽章，可按总榜/周榜/月榜切换',
@@ -1056,6 +1149,32 @@ ecod_block_define('related', [
     ],
 ]);
 
+/* AI 相关（F13）：关键词打分挑「AI 觉得相关」，与上面的「相关推荐」并存，
+   后台按需替换——两个都留着也不冲突（一个按标签、一个按关键词） */
+ecod_block_define('airelated', [
+    'name'   => 'AI 相关文章',
+    'desc'   => '按关键词命中挑文章（离线可跑，后台可批量让模型润色关键词）',
+    'icon'   => 'bulb',
+    'area'   => 'post',
+    'pages'  => ['single'],
+    'order'  => 32,
+    'head'   => ['dot' => true],
+    'params' => [
+        'title' => [
+            'label'   => '标题',
+            'type'    => 'text',
+            'default' => 'AI 觉得相关',
+        ],
+        'count' => [
+            'label'   => '显示数量',
+            'type'    => 'number',
+            'default' => 3,
+            'min'     => 1,
+            'max'     => 6,
+        ],
+    ],
+]);
+
 /* ============================================================
  * 页脚
  * ========================================================== */
@@ -1183,6 +1302,12 @@ ecod_block_define('dock', [
             'label'   => '显示「搜索」',
             'type'    => 'switch',
             'default' => 1,
+        ],
+        'show_ai' => [
+            'label'   => '显示「AI」',
+            'type'    => 'switch',
+            'default' => 1,
+            'desc'    => '点开全站 AI 快问浮层；AI 接口未开启或「点球打开 AI 快问」关闭时此项自动隐藏',
         ],
         'show_theme' => [
             'label'   => '显示「深浅」',
@@ -1358,14 +1483,36 @@ ecod_block_define('adbuy', [
 ]);
 
 ecod_block_define('ticker', [
-    'name'   => '更新动态',
-    'desc'   => '最新积分事件滚动播报（签到 / 中奖 / 被赞…），guaqi 式 LIVE 挂件；需开启积分并在「设置 → 互动 → 积分与 AI」打开播报开关',
+    'name'   => '实时动态',
+    'desc'   => '悬浮在视口左/右边缘的实时动态流：评论 / 积分 / 任务 / 新文章多源可选，头像卡片滚动播报（guaqi 式侧边悬浮件）；积分与任务两源需开启积分并在「设置 → 互动 → 积分与 AI」打开播报开关',
     'icon'   => 'radio',
-    'area'   => 'aside',
-    'order'  => 128,
+    'area'   => 'footer',
+    'order'  => 45,
     'on'     => false,
-    'head'   => ['title' => '更新动态', 'title_desc' => '展示站点最新的积分奖励事件'],
     'params' => [
+        'position' => [
+            'label'   => '悬浮位置',
+            'type'    => 'select',
+            'options' => [
+                'right' => '右侧',
+                'left'  => '左侧',
+            ],
+            'default' => 'right',
+            'desc'    => '选一边悬浮；若与悬浮目录（floattoc）同侧会遮挡，换另一边即可',
+        ],
+        'sources' => [
+            'label'   => '内容来源',
+            'type'    => 'checks',
+            'options' => [
+                'comment' => '最新评论',
+                'credit'  => '积分事件',
+                'task'    => '任务奖励',
+                'post'    => '新文章',
+                'user'    => '新成员',
+            ],
+            'default' => 'comment,credit,task,post',
+            'desc'    => '积分与任务两源涉及用户名收益，需在「设置 → 互动」打开动态播报',
+        ],
         'limit' => [
             'label'   => '滚动条数',
             'type'    => 'number',
@@ -1373,12 +1520,30 @@ ecod_block_define('ticker', [
             'max'     => 15,
             'default' => 8,
         ],
+        'visible' => [
+            'label'   => '可见条数',
+            'type'    => 'number',
+            'min'     => 2,
+            'max'     => 6,
+            'default' => 4,
+        ],
         'seconds' => [
             'label'   => '一轮秒数',
             'type'    => 'number',
             'min'     => 10,
             'max'     => 120,
             'default' => 30,
+        ],
+        'refresh' => [
+            'label'   => '自动刷新',
+            'type'    => 'select',
+            'options' => [
+                'off' => '不刷新（纯服务端渲染）',
+                '60'  => '每 60 秒',
+                '180' => '每 3 分钟',
+                '300' => '每 5 分钟',
+            ],
+            'default' => 'off',
         ],
     ],
 ]);
@@ -1410,7 +1575,7 @@ ecod_block_define('tile-zone', [
     'areas'  => ['home', 'aside'],
     'order'  => 135,
     'on'     => false,
-    'head'   => ['dot' => true],
+    'head'   => ['scope' => 'widget'],
     'params' => [
         'title' => [
             'label'   => '标题',
@@ -1453,7 +1618,7 @@ ecod_block_define('tab-posts', [
     'areas'  => ['home', 'aside'],
     'order'  => 140,
     'on'     => false,
-    'head'   => ['dot' => true],
+    'head'   => ['scope' => 'widget'],
     'params' => [
         'title' => [
             'label'   => '标题',
@@ -1518,6 +1683,60 @@ ecod_block_define('uads', [
             'label'   => '角标文字',
             'type'    => 'text',
             'default' => '广告',
+        ],
+    ],
+]);
+
+ecod_block_define('note-pick', [
+    'name'   => '笔记精选',
+    'desc'   => '图文笔记的竖版封面网格（3:4 卡片），可按标签筛；数据来自把「阅读形态」设为笔记的文章',
+    'icon'   => 'image',
+    'area'   => 'home',
+    'areas'  => ['home', 'aside'],
+    'order'  => 145,
+    'on'     => false,
+    'head'   => ['scope' => 'widget'],
+    'params' => [
+        'title' => [
+            'label'   => '标题',
+            'type'    => 'text',
+            'default' => '笔记精选',
+            'desc'    => '留空则不显示模块头',
+        ],
+        'source' => [
+            'label'   => '取数方式',
+            'type'    => 'select',
+            'default' => 'latest',
+            'options' => [
+                'latest' => '最新笔记',
+                'hot'    => '最热（阅读 + 评论加权）',
+                'rand'   => '随机（每次刷新换一批）',
+            ],
+        ],
+        'tags' => [
+            'label'   => '按标签筛',
+            'type'    => 'text',
+            'default' => '',
+            'desc'    => '标签别名（slug）或 ID，多个用逗号分隔；留空 = 全部笔记。填了但标签不存在时不输出模块',
+        ],
+        'count' => [
+            'label'   => '条数',
+            'type'    => 'number',
+            'default' => 6,
+            'min'     => 2,
+            'max'     => 12,
+        ],
+        'cols' => [
+            'label'   => '列数',
+            'type'    => 'select',
+            'default' => '3',
+            'options' => ['2' => '两列', '3' => '三列', '4' => '四列'],
+            'desc'    => '侧栏固定单列，此项只对首页等宽区域生效',
+        ],
+        'meta' => [
+            'label'   => '显示点赞数',
+            'type'    => 'switch',
+            'default' => 1,
         ],
     ],
 ]);

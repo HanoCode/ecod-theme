@@ -45,7 +45,8 @@ $ecodLbCreditsUrl = $ecodLbUcUrl !== '' ? $ecodLbUcUrl . '#credits' : '';
 <section class="ecod_widget ecod_lottery ecod_lottery--widget" data-ecod-lottery
          data-api="<?php echo htmlspecialchars(ecod_api_url(), ENT_QUOTES, 'UTF-8'); ?>"
          data-token="<?php echo htmlspecialchars(ecod_account_token(), ENT_QUOTES, 'UTF-8'); ?>"
-         data-grid="0"<?php echo $ecodLbUcUrl !== '' ? ' data-uc="' . htmlspecialchars($ecodLbUcUrl . '#lottery', ENT_QUOTES, 'UTF-8') . '"' : ''; ?>>
+         data-grid="0"<?php echo $ecodLbUcUrl !== '' ? ' data-uc="' . htmlspecialchars($ecodLbUcUrl . '#lottery', ENT_QUOTES, 'UTF-8') . '"' : ''; ?>
+         data-sign-url="<?php echo htmlspecialchars($ecodLbUcUrl !== '' ? $ecodLbUcUrl . '#credits' : '', ENT_QUOTES, 'UTF-8'); ?>">
     <?php ecod_block_head(['more_url' => $ecodLbPageUrl !== '' ? $ecodLbPageUrl : null]); ?>
 
     <?php if ($ecodLbBanner !== '' && $ecodLbPageUrl !== ''): ?>

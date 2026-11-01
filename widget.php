@@ -438,13 +438,15 @@ if ($ecodAction !== '') {
             $clean = [];
             foreach (ecod_widget_pages() as $page => $label) {
                 $pos = (string) ($map[$page] ?? '');
+                /* 空值 = 跟随全站默认（EAside），不落库——
+                   覆盖表只收显式设置，否则全量写死后 EAside 永远被遮蔽 */
                 if (in_array($pos, ['right', 'left', 'none'], true)) {
                     $clean[$page] = $pos;
                 }
             }
             $ecodDoc['aside'] = $clean;
             ecod_widgets_write($ecodDoc);
-            ecod_wgt_json(['ok' => true, 'rev' => ecod_widgets_rev(ecod_widgets_raw()), 'aside' => ecod_aside_map()]);
+            ecod_wgt_json(['ok' => true, 'rev' => ecod_widgets_rev(ecod_widgets_raw()), 'aside' => ecod_aside_raw_map()]);
             break;
 
         case 'export':
@@ -617,6 +619,7 @@ $ecodJs = $ecodWgtAsset('assets/admin/widget.js');
         <button type="button" class="wgt-btn wgt-btn--ghost" data-export-btn>导出</button>
         <button type="button" class="wgt-btn wgt-btn--ghost" data-import-btn>导入</button>
         <input type="file" accept="application/json,.json" data-import-file hidden>
+        <a class="wgt-btn wgt-btn--ghost" href="builder.php" style="color:var(--ea-brand);font-weight:500">页面构建器</a>
         <a class="wgt-btn wgt-btn--ghost" href="<?php echo htmlspecialchars($ecodAdminUrl . '/options-theme.php', ENT_QUOTES, 'UTF-8'); ?>">外观设置</a>
         <a class="wgt-btn wgt-btn--ghost" href="<?php echo htmlspecialchars($ecodSite, ENT_QUOTES, 'UTF-8'); ?>" target="_blank" rel="noopener">查看站点</a>
     </div>

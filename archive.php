@@ -26,6 +26,9 @@ if ($this->is('search')) {
 }
 ?>
 <main class="ecod_main" id="ecod-main">
+    <?php if (ecod_layout_render_page($this)): ?>
+        <?php /* 页面构建器布局文档接管：整个 main 由板块文档输出 */ ?>
+    <?php else: ?>
     <?php /* 模块 · 内容区上方（模块管理台） */ ecod_widgets_render("top_content", $this); ?>
 
 <?php if ($this->is('category')): ?>
@@ -107,6 +110,7 @@ if ($this->is('search')) {
 
 
     <?php /* 模块 · 内容区下方（模块管理台） */ ecod_widgets_render("bottom_content", $this); ?>
+    <?php endif; /* 页面构建器接管分支结束 */ ?>
 </main>
 
 <?php $this->need('public/aside.php'); ?>

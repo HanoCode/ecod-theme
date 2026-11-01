@@ -99,6 +99,49 @@ $ecodSvg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">'
 </script>
 <script>
 /* 主题运行参数 */
+<?php
+/* AI 实付单价：必须在这里现算（会员免单时是 0）。
+   注意 ecod_viewer_uid() 属于 user/meta 模块，header 阶段不一定已加载，
+   所以自己取一次登录态，取不到按游客算。 */
+$ecodAiUid = 0;
+try {
+    $ecodAiUser = \Widget\User::alloc();
+    if ($ecodAiUser->hasLogin()) {
+        $ecodAiUid = (int) $ecodAiUser->uid;
+    }
+} catch (\Throwable $e) {
+}
+$ecodAiPrice = function_exists('ecod_ai_cost')
+    ? ecod_ai_cost($ecodAiUid)
+    : ['cost' => max(0, (int) ecod_option('ECrAICost', 1)), 'free' => false];
+
+/* 站点背景 = 流光（Lightfall）：前端参数。未选中该项时 enabled = false，
+   页脚据此不下发引擎与封装（省两个请求）；颜色只收 #rgb / #rrggbb，
+   非法值直接丢弃，前端再用主题主色系兜底 */
+$ecodBackdropMode = (string) ecod_option('EBackdrop', 'none');
+$ecodLightColors = [];
+$ecodLightOn = $ecodBackdropMode === 'lightfall';
+if ($ecodLightOn) {
+    $ecodLightRaw = (string) ecod_option('EBgLightColors', '#4f6ef2,#8b5cf6');
+    foreach (preg_split('/[,\s]+/', $ecodLightRaw) as $ecodLightOne) {
+        $ecodLightOne = trim($ecodLightOne);
+        if ($ecodLightOne !== '' && preg_match('/^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i', $ecodLightOne)) {
+            $ecodLightColors[] = $ecodLightOne;
+        }
+        if (count($ecodLightColors) >= 3) {
+            break;
+        }
+    }
+}
+$ecodLightfall = [
+    'enabled' => $ecodLightOn,
+    'colors'  => $ecodLightColors,
+    'speed'   => max(0.05, min(2, (float) ecod_option('EBgLightSpeed', 0.3))),
+    'layers'  => max(1, min(8, (int) ecod_option('EBgLightLayers', 2))),
+    'mouse'   => ecod_option('EBgLightMouse', 'on') === 'on',
+    'opacity' => max(0.1, min(1, (int) ecod_option('EBgLightOpacity', 70) / 100)),
+];
+?>
 window.ECOD = {
     version: <?php echo json_encode(ECOD_VERSION); ?>,
     api: <?php echo json_encode(ecod_api_url(), JSON_UNESCAPED_SLASHES); ?>,
@@ -120,9 +163,31 @@ window.ECOD = {
     ?>,
     prismUrl: <?php echo $ecodCode ? json_encode(ecod_asset('assets/vendor/prism/prism.js'), JSON_UNESCAPED_SLASHES) : "''"; ?>,
     qrUrl: <?php echo json_encode(ecod_asset('assets/vendor/ecod-qr.js'), JSON_UNESCAPED_SLASHES); ?>,
+    /* 表情球（Grok Ball，MIT）：引擎 + 封装一律按需加载（AI 对话页 / 404 /
+       抽奖页 / 搜索面板 / 站宠），reduced-motion 与移动端不发引擎。
+       mascot = 站宠总开关（后台「互动 → 积分与 AI → 表情球站宠」） */
+    ball: <?php echo json_encode(ecod_asset('assets/js/ecod.ball.js'), JSON_UNESCAPED_SLASHES); ?>,
+    ballEngine: <?php echo json_encode(ecod_asset('assets/js/vendor/grok-ball.js'), JSON_UNESCAPED_SLASHES); ?>,
+    mascot: <?php echo ecod_option('EBall', 'off') === 'on' ? 'true' : 'false'; ?>,
+    /* AI 快问面板（全站浮层，见 docs/ai-design.html §4.1）
+       aiAsk = 面板可用；aiToken 与 ai_chat 的 CSRF 校验同源；aiChips 服务端渲染，
+       避免首帧空白；aiStream 关掉时前端退回一次性 JSON 渲染 */
+    aiAsk: <?php echo ecod_ai_ask_enabled() ? 'true' : 'false'; ?>,
+    aiToken: <?php echo json_encode(ecod_account_token()); ?>,
+    /* 实付单价：会员免单时是 0（与 api 的 ecod_ai_cost() 同源，别在这里另算） */
+    aiCost: <?php echo json_encode((int) $ecodAiPrice['cost']); ?>,
+    aiFree: <?php echo $ecodAiPrice['free'] ? 'true' : 'false'; ?>,
+    aiStream: <?php echo ecod_option('EAIStream', 'on') === 'on' ? 'true' : 'false'; ?>,
+    aiChips: <?php echo json_encode(ecod_ai_chips(), JSON_UNESCAPED_UNICODE); ?>,
+    aiPage: <?php echo json_encode(ecod_template_page_url('page-ai.php'), JSON_UNESCAPED_SLASHES); ?>,
+    /* AI 搜索（F9）：搜索面板尾部「问问 AI」条目是否出现 */
+    aiSearch: <?php echo ecod_ai_enabled() && ecod_option('EAISearch', 'on') === 'on' ? 'true' : 'false'; ?>,
+    credits: <?php echo json_encode(ecod_credits_name(), JSON_UNESCAPED_UNICODE); ?>,
     pjax: <?php echo ecod_option('EPjax', 'on') === 'on' ? 'true' : 'false'; ?>,
     /* 列表加载模式：auto = 触底自动加载；click = 点击「加载更多」；pager = 数字分页 */
     listLoad: <?php echo json_encode(ecod_option('EListLoad', 'auto')); ?>,
+    /* auto 模式连续自动加载页数上限，超过后转手动「加载更多」；0 = 不限制 */
+    listAutoMax: <?php echo json_encode((int) ecod_option('EListAutoMax', 4)); ?>,
     lightbox: <?php echo $ecodLightbox ? 'true' : 'false'; ?>,
     prism: <?php echo $ecodCode ? 'true' : 'false'; ?>,
     codeFold: <?php echo ecod_option('ECodeFold', 'on') === 'on' ? 'true' : 'false'; ?>,
@@ -135,9 +200,13 @@ window.ECOD = {
     /* AI 摘要打字机回放（EAIMotion）；卡片 hover 动效总开关供 CSS 属性选择器使用 */
     aiMotion: <?php echo ecod_option('EAIMotion', 'off') === 'on' ? 'true' : 'false'; ?>,
     tocEntry: <?php echo json_encode(ecod_option('ETocEntry', 'float')); ?>,
+    /* 流光背景：站点背景选「流光」时 enabled = true，页脚随即下发引擎与封装 */
+    lightfall: <?php echo json_encode($ecodLightfall, JSON_UNESCAPED_SLASHES); ?>,
     searchPanel: <?php echo ecod_option('ESearchPanel', 'on') === 'on' ? 'true' : 'false'; ?>,
     hotwords: <?php echo json_encode(ecod_search_hotwords(), JSON_UNESCAPED_UNICODE); ?>,
     searchUrl: <?php echo json_encode($ecodSearchUrl, JSON_UNESCAPED_SLASHES); ?>,
+    /* 最近阅读角标有效天数（后台「外观 → 列表与卡片」）；0 = 关闭，前端不跑打标 */
+    recent: <?php echo ecod_option('ERecent', 'on') === 'on' ? max(0, (int) ecod_option('ERecentDays', 7)) : 0; ?>,
     comments: <?php echo json_encode(ecod_comments_config(), JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>
 };
 </script>

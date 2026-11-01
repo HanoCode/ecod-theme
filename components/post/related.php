@@ -40,7 +40,7 @@ if (!empty($this->tags)) {
 }
 ?>
 <section class="ecod_rel" aria-labelledby="ecod-rel-title">
-    <?php ecod_block_head(['title_id' => 'ecod-rel-title', 'note_raw' => '<span class="ecod_rel__hint">' . ecod_icon('bulb', 12) . '按标签与分类匹配</span>']); ?>
+    <?php ecod_block_head(['title_id' => 'ecod-rel-title']); ?>
 
     <div class="ecod_rel__grid">
         <?php while ($ecodRel->next()): ?>

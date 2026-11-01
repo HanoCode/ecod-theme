@@ -15,6 +15,9 @@ if (!defined('__TYPECHO_ROOT_DIR__')) {
 $this->need('public/header.php');
 ?>
 <main class="ecod_main" id="ecod-main">
+    <?php if (ecod_layout_render_page($this)): ?>
+        <?php /* 页面构建器布局文档接管：整个 main 由板块文档输出 */ ?>
+    <?php else: ?>
     <?php /* 模块 · 内容区上方（模块管理台） */ ecod_widgets_render("top_content", $this); ?>
     <nav class="ecod_crumb" aria-label="面包屑">
         <a class="ecod_crumb__back" href="javascript:history.back()" aria-label="返回"><?php echo ecod_icon('chevron', 13); ?></a>
@@ -39,6 +42,7 @@ $this->need('public/header.php');
     <?php endif; ?>
 
     <?php /* 模块 · 内容区下方（模块管理台） */ ecod_widgets_render("bottom_content", $this); ?>
+    <?php endif; /* 页面构建器接管分支结束 */ ?>
 </main>
 
 <?php $this->need('public/aside.php'); ?>

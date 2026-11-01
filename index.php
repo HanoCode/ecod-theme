@@ -2,12 +2,13 @@
 /**
  * 首页
  *
- * 模块顺序、开关与参数在「模块管理台」里按位置摆放（见 docs/dev/design-proposal.html §31）。
+ * 全部内容由模块系统输出（含顶部大图 banner 模块）；
+ * 顺序、开关与参数在「页面构建器 / 模块管理台」里摆放。
  *
  * @package Ecod Theme
  * @author  Ecod
  * @since   2026-10-29
- * @version 2.0.0
+ * @version 2.1.0
  * @link    https://ecod.cc
  * @copyright Copyright (c) 2026 Ecod. All Rights Reserved.
  */
@@ -15,25 +16,12 @@ if (!defined('__TYPECHO_ROOT_DIR__')) {
     exit;
 }
 $this->need('public/header.php');
-
-$ecodBanner = trim((string) ecod_option('EBanner', ''));
-$ecodSlogan = ecod_option('ESlogan', $this->options->description);
 ?>
 <main class="ecod_main ecod_home" id="ecod-main">
 
-    <?php if ($ecodBanner !== ''): ?>
-        <section class="ecod_banner" style="--ecod-banner:url('<?php echo htmlspecialchars($ecodBanner, ENT_QUOTES, 'UTF-8'); ?>')">
-            <div class="ecod_banner__inner">
-                <h1><?php $this->options->title(); ?></h1>
-                <?php if ($ecodSlogan): ?>
-                    <p><?php echo htmlspecialchars($ecodSlogan); ?></p>
-                <?php endif; ?>
-            </div>
-            <span class="ecod_banner__wave" aria-hidden="true"></span>
-        </section>
+    <?php if (!ecod_layout_render_page($this)): ?>
+        <?php /* 页面构建器未接管：走模块管理台的 v4 区域 */ ecod_widgets_render('top_content', $this); ?>
     <?php endif; ?>
-
-    <?php ecod_widgets_render('top_content', $this); ?>
 
 </main>
 

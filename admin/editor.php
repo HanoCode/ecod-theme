@@ -85,6 +85,17 @@ if ($ecodType === 'post' && is_file($ecodTopicsFile)) {
 }
 unset($ecodTopicsFile);
 
+/* 图文笔记：写作页字段面板要显示总开关状态、图集上限与封面比例。
+   admin 上下文不加载主题 functions.php，这里直接读选项（上面已有最小 ecod_option）。 */
+$ecodNoteOn = ecod_option('ENote', 'off') === 'on';
+$ecodNoteMax = (int) ecod_option('ENoteGallery', 9);
+$ecodNoteMax = $ecodNoteMax < 1 ? 1 : ($ecodNoteMax > 9 ? 9 : $ecodNoteMax);
+$ecodNoteRatio = (string) ecod_option('ENoteRatio', '3:4');
+if (!in_array($ecodNoteRatio, ['3:4', '4:5', '1:1'], true)) {
+    $ecodNoteRatio = '3:4';
+}
+$ecodNoteRatioCss = ['3:4' => '3 / 4', '4:5' => '4 / 5', '1:1' => '1 / 1'][$ecodNoteRatio];
+
 $ecodConfig = [
     'mode'    => $ecodIsMarkdown ? 'markdown' : 'html',
     'type'    => $ecodType,
@@ -97,6 +108,13 @@ $ecodConfig = [
     'thumb'   => '',
     'emojis'  => $ecodEmojis,
     'topics'  => $ecodTopicList,
+    'note'    => [
+        'on'       => $ecodNoteOn,
+        'max'      => $ecodNoteMax,
+        'ratio'    => $ecodNoteRatio,
+        'ratioCss' => $ecodNoteRatioCss,
+        'coverText' => ecod_option('ENoteCoverText', 'off') === 'on',
+    ],
 ];
 ?>
 <link rel="stylesheet" href="<?php echo htmlspecialchars($ecodAssetUrl('assets/admin/tokens.css') . $ecodVer('assets/admin/tokens.css')); ?>">

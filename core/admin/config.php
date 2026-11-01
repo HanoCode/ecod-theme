@@ -49,7 +49,7 @@ $ecodGroupPanes = [
     'social'   => ['comments', 'interact', 'credits'],
     'connect'  => ['mail', 'oauth'],
     'pay'      => ['pay', 'lottery', 'shop', 'ads'],
-    'webmaster'=> ['seo', 'tools'],
+    'webmaster'=> ['seo', 'tools', 'license'],
 ];
 
 /* 面板元信息：标题 + 一句话引导（顶栏与搜索索引用） */
@@ -74,6 +74,7 @@ $ecodPanes = [
     'ads'        => ['自助广告', '广告位定价、审核与投放页'],
     'seo'        => ['收录与性能', '懒加载、CDN、自定义代码与百度推送'],
     'tools'      => ['工具与备份', '配置快照、导入导出、sitemap 与特色页'],
+    'license'    => ['主题授权', '授权模式、价格与作者端对接'],
 ];
 
 /* 面板内小节：[标题, 说明, [字段名…]]，由 config.js 把字段行分发进对应小节 */
@@ -85,14 +86,15 @@ $ecodSections = [
         ['备案与信息', '页脚备案标识、站点年龄与网址导航数据', ['EICP', 'EPolice', 'EBirth', 'ESites']],
     ],
     'appearance' => [
-        ['明暗与背景', '深色模式、整页背景渐变或自定义背景图', ['EDark', 'EBackdrop', 'EBgImage', 'EBgMask']],
+        ['明暗与背景', '深色模式、整页背景渐变或自定义背景图', ['EDark', 'EBackdrop', 'EBgImage', 'EBgMask', 'EBgLightColors', 'EBgLightSpeed', 'EBgLightLayers', 'EBgLightMouse', 'EBgLightOpacity']],
         ['动效与光标', '列表入场动画与鼠标跟随，触屏自动不加载', ['EAnimate', 'ECursor']],
-        ['浏览体验', '无刷新跳转、外链中转与右键菜单', ['EPjax', 'ELinkGo', 'ECtxMenu', 'ECtxItems']],
+        ['浏览体验', '无刷新跳转、加载效果、外链中转与右键菜单', ['EPjax', 'ELoadFx', 'ELinkGo', 'ECtxMenu', 'ECtxItems']],
+        ['内置浏览器引导', '微信 / QQ / 企业微信 / 钉钉里打开时，提示读者改用浏览器', ['EInApp', 'EInAppWechat', 'EInAppQQ', 'EInAppWork', 'EInAppDing', 'EInAppTitle', 'EInAppDesc', 'EInAppRate']],
         ['字体与自定义样式', '自定义字体、自定义 CSS 与登录页背景', ['EFont', 'ECustomCss', 'ELoginBg']],
     ],
     'layout' => [
         ['侧栏位置', '全站默认值，可按页面类型在模块管理台覆盖', ['EAside']],
-        ['列表与卡片', '文章列表的卡片形态、每页篇数与新文章角标', ['EListPerPage', 'ECardMode', 'EThumbSide', 'ENewDays']],
+        ['列表与卡片', '文章列表的卡片形态、每页篇数、新文章与最近阅读角标', ['EListPerPage', 'ECardMode', 'EThumbSide', 'ENewDays', 'ERecent', 'ERecentDays']],
         ['缩略图与摘要', '封面池、服务端裁剪与摘要长度', ['EThumbnail', 'EThumbServer', 'EExcerpt']],
     ],
     'media' => [
@@ -112,6 +114,7 @@ $ecodSections = [
     ],
     'post' => [
         ['阅读体验', '过期提醒、浮动目录与图片灯箱', ['EStale', 'EFloatToc', 'ETocProgress', 'ELightbox']],
+        ['图文笔记', '单篇可选的小红书式排版：竖版封面、图集、话题标签与底部互动条', ['ENote', 'ENoteRatio', 'ENoteWidth', 'ENoteGallery', 'ENoteTags', 'ENoteBar', 'ENoteCoverText', 'ENoteGrid']],
         ['正文排版', '正文字号、行距与字体档位，落到文章 / 页面正文容器', ['EProseSize', 'EProseLh', 'EProseFont']],
         ['显示更多', '长文按高度折叠 + 展开按钮；正文仍在 HTML 里，不影响 SEO', ['EShowMore', 'EShowMoreH', 'EShowMoreText']],
         ['代码与嵌入', '代码高亮、长代码折叠、图表公式渲染与站内外卡片自动嵌入', ['ECode', 'ECodeTheme', 'ECodeFold', 'EMermaid', 'EMath', 'EOembed', 'ELinkCard', 'EOembedSocial']],
@@ -132,6 +135,7 @@ $ecodSections = [
     ],
     'interact' => [
         ['点赞与数据', '卡片与评论的点赞、在线点与阅读量统计', ['ELike', 'ECLike', 'EAuthorOnline', 'EViews']],
+        ['访问统计', '站点级 PV / UV / 来源 / 设备按天聚合，数据台在主题目录 stats.php', ['EStats', 'EStatsMine', 'EStatsKeep']],
         ['友链与投稿', '友链一键申请与登录用户前端投稿', ['EFriendApply', 'EContribute', 'EContributeGroup', 'EContributeCats', 'EContributeNote']],
         ['个人中心', '顶部默认封面，用户可在个人中心上传自己的封面覆盖', ['EUcCover']],
     ],
@@ -139,6 +143,7 @@ $ecodSections = [
         ['积分基础', '总开关与积分名称，关闭后签到 / AI 计费全部停用', ['ECrOn', 'ECrName', 'ECrTicker']],
         ['任务奖励', '签到、评论、被赞与投稿的单次奖励与每日上限', ['ECrCheckin', 'ECrComment', 'ECrCommentCap', 'ECrLikeRecv', 'ECrLikeCap', 'ECrPost', 'ECrPostCap', 'ECrVipGift']],
         ['AI 助手', '对话页开关、每条消息的积分消耗与系统提示词', ['EAIChat', 'ECrAICost', 'EAIChatCtx', 'EAIChatPrompt', 'EAIChatWelcome']],
+        ['表情球站宠', '右下角常驻一只会看人的表情球：无操作打瞌睡、签到成功撒花（Grok Ball，MIT）', ['EBall']],
         ['推广返佣', '推荐注册归因与订单返积分', ['ECrRefOn', 'ECrRefPercent']],
     ],
     'mail' => [
@@ -166,17 +171,19 @@ $ecodSections = [
     ],
     'shop' => [
         ['兑换商城', '总开关与说明，依赖 Credit 积分', ['EShop', 'EShopNote']],
-        ['商品列表', '一行一个商品：名称|价格|类型|值|库存|限购', ['EShopItems']],
+        ['商品列表', '一行一个商品：名称|价格|类型|值|库存|限购|封面图', ['EShopItems']],
     ],
     'ads' => [
         ['自助广告', '总开关、定价单位、审核开关与投放须知', ['EAdSelf', 'EAdSelfUnit', 'EAdSelfReview', 'EAdSelfNote']],
-        ['广告位定价', '每个位置的单价（元/定价单位），留空即不开放该位', ['EAdSelfPriceHomeTop', 'EAdSelfPriceSidebar', 'EAdSelfPricePostBottom']],
+        ['广告位定价', '每个位置的单价（元/定价单位），留空即不开放该位', ['EAdSelfPriceHomeTop', 'EAdSelfPriceSidebar', 'EAdSelfPricePostBottom', 'EAdSelfPriceAiPanel']],
         ['时长限制', '单次投放的时长范围（按定价单位的数量）', ['EAdSelfMinDays', 'EAdSelfMaxDays']],
     ],
     'seo' => [
         ['性能与资源', '图片懒加载与静态资源 CDN', ['ELazy', 'ECdn', 'EAssetMode']],
         ['自定义代码与推送', 'head / body 注入与百度推送 Token', ['ECustomHead', 'ECustomBody', 'EBaidu', 'EBaiduAuto']],
         ['关键词内链', '正文关键词自动挂链接：内部词库 + 分类标签名，DOM 级替换不碰代码块', ['EKeywords', 'EKeywordsList', 'EKeywordsLimit', 'EKeywordsAuto']],
+    ],
+    'license' => [
     ],
 ];
 
@@ -252,6 +259,7 @@ if (!function_exists('ecod_admin_media')) {
 <link rel="stylesheet" href="<?php echo ecod_asset('assets/admin/media.css'); ?>">
 <link rel="stylesheet" href="<?php echo ecod_asset('assets/admin/nav.css'); ?>">
 <link rel="stylesheet" href="<?php echo ecod_asset('assets/admin/topics.css'); ?>">
+<link rel="stylesheet" href="<?php echo ecod_asset('assets/admin/license.css'); ?>">
 
 <?php /* JS 被禁用或加载失败时，自绘面板无法搬运字段，隐藏外壳让 Typecho 原生表单直接可用 */ ?>
 <noscript>
@@ -328,7 +336,7 @@ if (!function_exists('ecod_admin_media')) {
 
         <div class="ecod-admin__body" data-admin-body>
             <?php foreach ($ecodPanes as $key => $pane): ?>
-                <?php if ($key === 'tools') {
+                <?php if ($key === 'tools' || $key === 'license') {
                     continue;
                 } ?>
                 <section class="ecod-pane<?php echo $key === $ecodFirstPane ? ' is-active' : ''; ?>" data-pane-panel="<?php echo $key; ?>">
@@ -665,6 +673,63 @@ if (!function_exists('ecod_admin_media')) {
 
                 <p class="ecod-tool__status" data-ecod-tool-status hidden></p>
             </section>
+
+            <section class="ecod-pane" data-pane-panel="license">
+                <div class="ecod-license" data-lic>
+                    <div class="ecod-license__banner" data-lic-banner hidden></div>
+
+                    <div class="ecod-license__card3d" data-lic3d>
+                        <div class="ecod_lic3d__tilt">
+                            <div class="ecod_lic3d__inner is-licensed" data-lic-card>
+                                <span class="ecod_lic3d__glaze"></span>
+                                <div class="ecod_lic3d__face is-front">
+                                    <div class="ecod_lic3d__top">
+                                        <b>ECOD <i data-lic-card-edition></i></b>
+                                        <span class="ecod_lic3d__pill" data-lic-pill>—</span>
+                                    </div>
+                                    <div class="ecod_lic3d__code" data-lic-card-code>—</div>
+                                    <div class="ecod_lic3d__mid">绑定域名</div>
+                                    <div class="ecod_lic3d__domain" data-lic-card-domain>—</div>
+                                    <div class="ecod_lic3d__foot" data-lic-card-foot></div>
+                                </div>
+                                <div class="ecod_lic3d__face is-back">
+                                    <b>版本权益</b>
+                                    <div class="ecod_lic3d__perks" data-lic-perks></div>
+                                    <p class="ecod_lic3d__backfoot" data-lic-backfoot></p>
+                                </div>
+                                <button type="button" class="ecod_lic3d__flipbtn" data-lic-flip>
+                                    <span class="t-front">我的权益 ›</span><span class="t-back">‹ 返回</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="ecod-license__ops">
+                        <button type="button" class="ecod-btn ecod-btn--sm" data-lic-recheck>立即复验</button>
+                        <button type="button" class="ecod-btn ecod-btn--sm ecod-btn--ghost" data-lic-refresh>刷新状态</button>
+                    </div>
+
+                    <div class="ecod-license__result" data-lic-result hidden></div>
+
+                    <div class="ecod-license__block" data-lic-activate>
+                        <b>激活授权</b>
+                        <p>输入授权码即可，绑定域名自动识别为当前站点 <code class="ecod-license__host" data-lic-host>—</code>。授权码在 ecod.cc 会员中心「我的授权」获取，或向作者索取。</p>
+                        <div class="ecod-license__row">
+                            <input type="text" data-lic-key placeholder="ECD-XXXX-XXXX-XXXX" spellcheck="false" autocomplete="off" style="font-family:ui-monospace,Menlo,Consolas,monospace;letter-spacing:.04em" />
+                            <button type="button" class="ecod-btn ecod-btn--primary" data-lic-activate-btn>立即激活</button>
+                        </div>
+                    </div>
+
+                    <details class="ecod-license__fold" data-lic-import>
+                        <summary>离线导入授权文件（内网 / 作者端不可达时）</summary>
+                        <div class="ecod-license__foldbody">
+                            <p>粘贴作者端下发的授权文件（ECODLIC1.…），走同一套本地验签，无需联网。</p>
+                            <textarea data-lic-file rows="4" placeholder="ECODLIC1.…"></textarea>
+                            <button type="button" class="ecod-btn ecod-btn--ghost" data-lic-import-btn>导入</button>
+                        </div>
+                    </details>
+                </div>
+            </section>
         </div>
     </div>
 </div>
@@ -702,27 +767,70 @@ ecod_admin_field($form, 'select', 'EAside', 'right', '侧栏位置（全站默�
 ecod_admin_field($form, 'select', 'ECardMode', 'default', '默认卡片模式', '文章可在编辑页通过自定义字段 mode 单独覆盖', [
     'default' => '列表（文左图右）',
     'feature' => '大图（重点文章）',
-    'gallery' => '三图',
+    'gallery' => '三图（封面轮播）',
     'bare'    => '无图',
     'grid'    => '网格',
     'title'   => '标题式',
     'compact' => '紧凑行（无摘要）',
     'mosaic'  => '混合网格（1 大 + N 小）',
     'item'    => '清单 / 装备（价格·规格·评分）',
+    'note'    => '笔记卡（竖版封面网格）',
 ], 'layout');
 ecod_admin_field($form, 'select', 'EThumbSide', 'right', '缩略图位置', '列表与大图模式下缩略图放左还是放右；文章可用自定义字段 side = left / right 单独覆盖', [
     'right' => '右图（默认）',
     'left'  => '左图',
 ], 'layout', ['data-ecod-show-when' => 'ECardMode:default|feature']);
 ecod_admin_field($form, 'number', 'ENewDays', '7', '「新」角标天数', '文章发布后多少天内显示「新」角标，填 0 关闭该角标', [], 'layout', ['min' => 0, 'max' => 90, 'step' => 1]);
+ecod_admin_field($form, 'select', 'ERecent', 'on', '最近阅读标志', '访客在本机读过的文章，在列表卡片封面显示「最近阅读」角标。记录只存在浏览器本地（沿用「浏览历史」，上限 50 条），不上传服务器，换设备 / 清缓存即消失；同一篇同时挂着「新」角标时，「新」让位给「最近阅读」，角标总数不变', [
+    'on'  => '开启（默认）',
+    'off' => '关闭',
+], 'layout');
+ecod_admin_field($form, 'number', 'ERecentDays', '7', '「最近阅读」有效天数', '多少天内读过的文章才标记，过期自动取消标记，无需清理任务；填 0 等同关闭', [], 'layout', ['min' => 0, 'max' => 90, 'step' => 1, 'data-ecod-show-when' => 'ERecent:on']);
 ecod_admin_field($form, 'number', 'EListPerPage', '0', '每页文章数', '首页 / 分类 / 标签 / 作者 / 搜索列表一次加载几篇，分页与「加载更多」按此计算；填 0 跟随 Typecho 后台「阅读 → 每页文章数」', [], 'layout', ['min' => 0, 'max' => 60, 'step' => 1, 'placeholder' => '0 = 跟随后台设置']);
 ecod_admin_field($form, 'select', 'EListLoad', 'auto', '列表加载方式', '首页 / 分类 / 标签 / 作者列表翻到下一页的方式；搜索页固定为数字分页', [
     'auto'  => '触底自动加载（默认）',
     'click' => '点击「加载更多」',
     'pager' => '数字分页',
 ], 'layout');
+ecod_admin_field($form, 'number', 'EListAutoMax', '4', '自动加载页数上限', '「触底自动加载」连续自动翻几页后改为手动「加载更多」按钮（Google Images 式，避免页脚被无限流挡住）；填 0 不限制', [], 'layout', ['min' => 0, 'max' => 20, 'step' => 1, 'data-ecod-show-when' => 'EListLoad:auto']);
 ecod_admin_field($form, 'number', 'EExcerpt', '110', '摘要长度', '单位：字符，默认 110；文章里填了「自定义摘要」时以手填内容为准', [], 'layout', ['min' => 40, 'max' => 200, 'step' => 5, 'data-ecod-show-when' => 'ECardMode:!=bare|title|compact']);
 ecod_admin_field($form, 'text', 'EStale', '180', '文章过期提醒', '文章超过这么多天未更新时，正文上方提示内容可能已过时；填 0 关闭', [], 'post');
+
+/* ---- 图文笔记（docs/dev/NOTE-ARTICLE-DESIGN.html）----
+   单篇开关在文章编辑页（自定义字段 note），这里只管全局能力与外观。
+   关闭总开关时字段仍保留，文章回落普通排版，不丢数据。 */
+ecod_admin_field($form, 'select', 'ENote', 'off', '图文笔记', '给文章增加一种竖版图文的阅读形态：编辑页把某篇选为「图文笔记」后，详情页改用竖版封面、图集、话题标签与底部互动条。关闭时所有文章保持原样，已启用的文章自动回落普通排版', [
+    'on'  => '开启',
+    'off' => '关闭（默认）',
+], 'post');
+ecod_admin_field($form, 'select', 'ENoteRatio', '3:4', '封面比例', '图集单张的宽高比；竖版 3:4 信息量最大，方形适合图少字多的内容', [
+    '3:4' => '竖版 3:4（默认）',
+    '4:5' => '竖版 4:5',
+    '1:1' => '方形 1:1',
+], 'post', ['data-ecod-show-when' => 'ENote:on']);
+ecod_admin_field($form, 'select', 'ENoteWidth', '640', '正文栏宽', '桌面端正文列的宽度上限，移动端始终占满；窄栏更接近手机阅读节奏', [
+    '600' => '600px（更窄）',
+    '640' => '640px（默认）',
+    '720' => '720px（较宽）',
+], 'post', ['data-ecod-show-when' => 'ENote:on']);
+ecod_admin_field($form, 'number', 'ENoteGallery', '9', '图集张数上限', '一篇最多显示几张图；图片取「自定义缩略图」字段，没填则按正文图片、全站图池依次补齐', [], 'post', ['min' => 1, 'max' => 9, 'step' => 1, 'data-ecod-show-when' => 'ENote:on']);
+ecod_admin_field($form, 'select', 'ENoteTags', 'on', '话题标签', '正文下方的话题胶囊；标签取编辑页「话题标签」字段，留空则用文章自身标签。手填标签没有归档地址，只作展示', [
+    'on'  => '显示（默认）',
+    'off' => '隐藏',
+], 'post', ['data-ecod-show-when' => 'ENote:on']);
+ecod_admin_field($form, 'select', 'ENoteBar', 'float', '互动条', '点赞 / 收藏 / 分享 / 评论入口的摆放方式；桌面「竖排悬浮」贴在正文左侧，不遮挡阅读', [
+    'float'  => '移动底部 + 桌面左侧竖排（默认）',
+    'bottom' => '始终底部条',
+    'hide'   => '不显示',
+], 'post', ['data-ecod-show-when' => 'ENote:on']);
+ecod_admin_field($form, 'select', 'ENoteCoverText', 'off', '封面叠字', '把文章标题压在首图底部（小红书式封面标题）。开启后首图会加一层暗色渐变保证文字可读，适合封面图本身没有文字的场合', [
+    'off' => '不叠字（默认）',
+    'on'  => '叠在首图底部',
+], 'post', ['data-ecod-show-when' => 'ENote:on']);
+ecod_admin_field($form, 'select', 'ENoteGrid', 'off', '图集九宫格', '多图时的首屏排布。关闭是横滑大图（一次看全一张），开启是方格拼贴（一次看到全部缩略图，点任意格看大图）；2 张并排、4 张 2×2、5 张起 3 列。单图不受影响', [
+    'off' => '横滑大图（默认）',
+    'on'  => '九宫格拼贴',
+], 'post', ['data-ecod-show-when' => 'ENote:on']);
 ecod_admin_field($form, 'select', 'EProseSize', '16', '正文字号', '文章与页面正文的基准字号，标题随比例微调；默认 16px', [
     '15' => '15px（紧凑）',
     '16' => '16px（默认）',
@@ -928,6 +1036,16 @@ ecod_admin_field($form, 'select', 'EViews', 'on', '阅读量统计', '关闭后�
     'on'  => '统计',
     'off' => '停止统计',
 ], 'interact');
+/* 访问统计（站点级 PV/UV，数据台 stats.php；采集与口径见 core/site/stats.php） */
+ecod_admin_field($form, 'select', 'EStats', 'on', '访问统计', '按天聚合站点 PV / UV / 来源 / 设备；关闭后不再计数，已记录数据保留，侧栏「访问统计」模块随之隐藏', [
+    'on'  => '开启（默认）',
+    'off' => '关闭',
+], 'interact');
+ecod_admin_field($form, 'select', 'EStatsMine', 'on', '排除管理员访问', '管理员自己浏览页面不计入统计，避免后台维护把数字抬高', [
+    'on'  => '不计入（默认）',
+    'off' => '照常统计',
+], 'interact', ['data-ecod-show-when' => 'EStats:on']);
+ecod_admin_field($form, 'text', 'EStatsKeep', '90', '统计保留天数', '超过该天数的按天聚合与 UV 去重数据会被自动清理（每天随机触发），最小 7 天', [], 'interact', ['data-ecod-show-when' => 'EStats:on']);
 /* EBirth / ESites 已并入上方「品牌与首页」组 */
 
 /* 互动（点赞 / 投稿 / 友链）；评论开关与审核规则见下方「评论」组 */
@@ -1173,6 +1291,49 @@ ecod_admin_field($form, 'number', 'ECrAICost', '1', 'AI 每条消息消耗', '�
 ecod_admin_field($form, 'number', 'EAIChatCtx', '4', '对话上下文轮数', '带几轮历史给模型（1 轮 = 一问一答）；越大越连贯也越耗 token', [], 'credits', ['min' => 0, 'max' => 10, 'step' => 1, 'data-ecod-show-when' => 'ECrOn:on,EAIChat:on']);
 ecod_admin_field($form, 'textarea', 'EAIChatPrompt', '', 'AI 系统提示词', '定义助手的人设与边界；留空使用主题内置提示词', [], 'credits', ['rows' => 4, 'data-ecod-show-when' => 'ECrOn:on,EAIChat:on']);
 ecod_admin_field($form, 'textarea', 'EAIChatWelcome', '', '开场白', '对话页的第一条消息；留空使用主题内置文案', [], 'credits', ['rows' => 2, 'data-ecod-show-when' => 'ECrOn:on,EAIChat:on']);
+ecod_admin_field($form, 'select', 'EAIStream', 'on', '流式输出', '开启后回答逐字出现（SSE），等待感更低；接口不支持流式时前端会自动退回一次性输出', [
+    'on'  => '开启（推荐）',
+    'off' => '关闭（等完整回复后一次性显示）',
+], 'credits', ['data-ecod-show-when' => 'ECrOn:on,EAIChat:on']);
+ecod_admin_field($form, 'number', 'EAIChatDaily', '0', '每日提问上限', '单个用户每天最多提问几条；填 0 不限。会员免单也计数，失败退回的不计入', [], 'credits', ['min' => 0, 'max' => 200, 'step' => 1, 'data-ecod-show-when' => 'ECrOn:on,EAIChat:on']);
+ecod_admin_field($form, 'select', 'EVipAIFree', 'off', '会员免 AI 计费', '开启后有效会员提问不扣积分（日上限照常计次）；未开通会员时按「AI 每条消息消耗」计费。会员等级来自付费模块', [
+    'on'  => '开启（会员免费）',
+    'off' => '关闭（会员也按次扣）',
+], 'credits', ['data-ecod-show-when' => 'ECrOn:on,EAIChat:on']);
+ecod_admin_field($form, 'textarea', 'EAIQuickChips', '', '快问面板推荐问题', '一行一条，最多 6 条；留空用默认三条。这些按钮出现在站宠弹出的快问面板里', [], 'credits', ['rows' => 4, 'data-ecod-show-when' => 'ECrOn:on,EAIChat:on']);
+ecod_admin_field($form, 'select', 'EComAISum', 'on', '评论区「AI 看评论」', '文章评论数 ≥ 3 时评论区出现按钮，把评论压成一段倾向摘要。读者免费看，同一批评论只生成一次（缓存 7 天），新评论进来才会重算', [
+    'on'  => '开启',
+    'off' => '关闭',
+], 'credits', ['data-ecod-show-when' => 'ECrOn:on,EAIChat:on']);
+ecod_admin_field($form, 'select', 'EAISearch', 'on', 'AI 搜索', '搜索面板结果列表尾部出现「问问 AI」：把自然语言问题转成站内检索词，取相关文章后给出带引用的结论。每次 2 倍单价计费，同一问题命中缓存免费', [
+    'on'  => '开启',
+    'off' => '关闭',
+], 'credits', ['data-ecod-show-when' => 'ECrOn:on,EAIChat:on']);
+ecod_admin_field($form, 'select', 'EBall', 'off', '表情球站宠', '全站右下角常驻一只跟随鼠标的表情球（Grok Ball，MIT 协议）：无操作会打瞌睡，签到成功会撒花，点它会转圈。移动端与「减少动态效果」用户自动关闭；AI 对话页 / 404 页 / 抽奖页 / 搜索面板的表情不受此开关影响', [
+    'on'  => '开启',
+    'off' => '关闭（默认）',
+], 'credits');
+ecod_admin_field($form, 'select', 'EBallAsk', 'off', '点球打开 AI 快问', '开启后点击站宠弹出「AI 快问」浮层（全站可用，文章页可带着本文上下文追问）；关闭时球仍是转圈彩蛋。需要先配好 AI 接口并开启上面的「AI 助手」', [
+    'on'  => '开启',
+    'off' => '关闭（默认，球还是装饰）',
+], 'credits');
+
+/* S4 · 生态延展（F11–F13）：看广告领点数 / AI 相关文章 / MCP 服务 */
+ecod_admin_field($form, 'select', 'EAIAd', 'off', '看广告领点数', '快问面板底部出现「积分不够？看一段广告 +N 点」：看完广告（最少 10 秒）领一次点数。复用自助广告的「AI 面板赞助位」库存，没有商业广告时退化为「本站精选」', [
+    'off' => '关闭（默认）',
+    'on'  => '开启',
+], 'credits', ['data-ecod-show-when' => 'ECrOn:on,EAIChat:on']);
+ecod_admin_field($form, 'number', 'EAIAdReward', '1', '每次广告奖励', '看完一条广告发多少积分；建议 1–3，发太多会被当刷分渠道', [], 'credits', ['min' => 1, 'max' => 20, 'step' => 1, 'data-ecod-show-when' => 'ECrOn:on,EAIChat:on,EAIAd:on']);
+ecod_admin_field($form, 'number', 'EAIAdDaily', '2', '每日可领次数', '单个用户每天最多领几次；按「观看 + 领取」计次，跨天归零', [], 'credits', ['min' => 1, 'max' => 20, 'step' => 1, 'data-ecod-show-when' => 'ECrOn:on,EAIChat:on,EAIAd:on']);
+ecod_admin_field($form, 'select', 'EAIRelated', 'off', 'AI 相关文章模块', '开启后「模块管理台 → 文章页」可放置「AI 相关文章」模块：按关键词命中挑文章并标出命中词。关键词默认由标签与标题自动提取（零成本），也可在「工具与备份」里让模型批量润色', [
+    'off' => '关闭（默认）',
+    'on'  => '开启',
+], 'credits', ['data-ecod-show-when' => 'EAI:on']);
+ecod_admin_field($form, 'select', 'EAIMcp', 'off', 'MCP 服务', '把「搜文章 / 读文章 / 站点信息」暴露成 MCP 工具，读者可在 Claude、Cursor 等客户端里直接查本站。入口：<code>api.php?action=mcp</code>（POST JSON-RPC），只读、只返回已发布文章，付费文只给试读段', [
+    'off' => '关闭（默认）',
+    'on'  => '开启',
+], 'credits', ['data-ecod-show-when' => 'EAI:on']);
+ecod_admin_field($form, 'text', 'EAIMcpToken', '', 'MCP 访问令牌', '留空 = 公开只读（推荐先留空试通，再考虑加令牌）；填了之后客户端需带 <code>Authorization: Bearer 令牌</code> 或 <code>?key=令牌</code>', [], 'credits', ['data-ecod-show-when' => 'EAI:on,EAIMcp:on']);
 
 /* 注入与性能 */
 ecod_admin_field($form, 'textarea', 'ECustomCss', '', '自定义 CSS', '不用写 style 标签；圆角、间距、字号都能在这里覆盖', [], 'appearance');
@@ -1210,6 +1371,13 @@ ecod_admin_field($form, 'select', 'EPjax', 'on', '无刷新跳转（PJAX）', '�
     'on'  => '开启（推荐）',
     'off' => '关闭',
 ], 'appearance');
+ecod_admin_field($form, 'select', 'ELoadFx', 'bar', '页面加载效果', '站内换页时的过渡动效：进度条每次换页快闪一次，其余效果短暂亮相、加载越久停留越久。首次打开页面由浏览器原生加载，不受此项影响', [
+    'bar'  => '顶部进度条（推荐）',
+    'ring' => '悬浮加载圆环',
+    'logo' => 'Logo 呼吸脉冲',
+    'veil' => '内容轻遮罩',
+    'none' => '关闭',
+], 'appearance', ['data-ecod-show-when' => 'EPjax:on']);
 ecod_admin_field($form, 'select', 'ELinkGo', 'on', '外链中转页', '文章 / 页面里的站外链接先经过 /go/ 加载页（显示目标地址并倒计时 5 秒自动跳转），站内链接不受影响', [
     'on'  => '开启（推荐）',
     'off' => '关闭',
@@ -1218,6 +1386,38 @@ ecod_admin_field($form, 'select', 'ELinkGoAuthor', 'on', '评论者链接中转'
     'on'  => '开启（推荐）',
     'off' => '关闭',
 ], 'appearance', ['data-ecod-show-when' => 'ELinkGo:on']);
+
+/* 内置浏览器引导（D：微信 / QQ / 企业微信 / 钉钉内置 WebView）：UA 判定在
+   core/site/inapp.php，浮层在 components/header/inapp.php，样式 §51。
+   非内置环境不输出任何标记，所以开关开着也不影响桌面与普通浏览器 */
+$ecodInAppWhen = ['data-ecod-show-when' => 'EInApp:on'];
+ecod_admin_field($form, 'select', 'EInApp', 'on', '内置浏览器引导', '在微信 / QQ 等 App 的内置浏览器打开站点时弹出提示：迷你浏览器示意图 + 一键复制链接，引导读者改用系统浏览器。只在命中内置环境的 UA 上输出，桌面与普通浏览器看不到', [
+    'on'  => '开启（默认）',
+    'off' => '关闭',
+], 'appearance');
+ecod_admin_field($form, 'select', 'EInAppWechat', 'on', '微信里弹', '微信公众号 / 聊天窗口内打开时提示；站内分享出去的长文最常踩这个坑', [
+    'on'  => '弹',
+    'off' => '不弹',
+], 'appearance', $ecodInAppWhen);
+ecod_admin_field($form, 'select', 'EInAppQQ', 'on', 'QQ 里弹', 'QQ 聊天窗口内打开时提示；QQ 浏览器（独立 App）不算内置环境，不会弹', [
+    'on'  => '弹',
+    'off' => '不弹',
+], 'appearance', $ecodInAppWhen);
+ecod_admin_field($form, 'select', 'EInAppWork', 'on', '企业微信里弹', '企业微信聊天 / 工作台内打开时提示', [
+    'on'  => '弹',
+    'off' => '不弹',
+], 'appearance', $ecodInAppWhen);
+ecod_admin_field($form, 'select', 'EInAppDing', 'on', '钉钉里弹', '钉钉聊天窗口内打开时提示', [
+    'on'  => '弹',
+    'off' => '不弹',
+], 'appearance', $ecodInAppWhen);
+ecod_admin_field($form, 'text', 'EInAppTitle', '', '弹窗标题', '留空用「使用默认浏览器访问」，建议不超过 12 个字', [], 'appearance', ['data-ecod-show-when' => 'EInApp:on', 'placeholder' => '使用默认浏览器访问']);
+ecod_admin_field($form, 'text', 'EInAppDesc', '', '弹窗说明', '标题下的一行小字，留空用默认文案；说明「为什么要换浏览器」比喊口号更有效', [], 'appearance', ['data-ecod-show-when' => 'EInApp:on', 'placeholder' => '在内置浏览器里功能受限，换到浏览器体验更完整']);
+ecod_admin_field($form, 'select', 'EInAppRate', 'session', '弹出频率', '读者关掉后多久再弹一次；记在浏览器本地，换设备或清缓存后重新计算', [
+    'session' => '每次会话一次（推荐）',
+    'day'     => '每天一次',
+    'always'  => '每次打开都弹',
+], 'appearance', $ecodInAppWhen);
 /* 导航：菜单为空时才使用的旧版自定义链接（保留用于快速补一两条） */
 ecod_admin_field($form, 'textarea', 'ENavLinks', '', '兜底自定义链接', '仅在「菜单结构」为空时生效：一行一个，格式「名称 || 地址 || 新窗口」，第三段可省略。例如：GitHub || https://github.com/you || 1。菜单配好后这里会被忽略', [], 'nav', ['rows' => 4]);
 ecod_admin_field($form, 'number', 'ENavMax', '', '导航最多显示', '超过这个数量的条目收进「更多」下拉；填 0 或留空则全部平铺。一级与二级都按这个规则处理', [], 'nav', ['min' => 0, 'max' => 12, 'step' => 1]);
@@ -1239,14 +1439,27 @@ ecod_admin_field($form, 'select', 'ECursor', 'off', '鼠标跟随光点', '轻�
     'off' => '关闭',
     'dot' => '光点',
 ], 'appearance');
-ecod_admin_field($form, 'select', 'EBackdrop', 'none', '站点背景', '纯 CSS 渐变不增加请求；选「自定义图片」后由下方图片与蒙层控制', [
-    'none'  => '纯色',
-    'soft'  => '双色柔光',
-    'mesh'  => '网格渐变',
-    'image' => '自定义图片',
+ecod_admin_field($form, 'select', 'EBackdrop', 'none', '站点背景', '纯 CSS 渐变不增加请求；「流光」是 WebGL 逐帧渲染的光线隧道（按住鼠标会加速），选中后由下方参数控制；「自定义图片」由图片与蒙层控制', [
+    'none'      => '纯色',
+    'soft'      => '双色柔光',
+    'mesh'      => '网格渐变',
+    'image'     => '自定义图片',
+    'lightfall' => '流光（动效）',
 ], 'appearance');
 ecod_admin_media($form, 'text', 'EBgImage', '', '背景图', '铺满视口并固定，深浅色共用同一张图；建议 1920px 以上的横图，从媒体库选图或直接粘贴 URL', 'appearance', 'single', ['data-ecod-show-when' => 'EBackdrop:image']);
 ecod_admin_field($form, 'number', 'EBgMask', '55', '背景蒙层（%）', '图片上盖一层浅色（深色模式下为深色）半透明遮罩，数值越大文字越清楚、图片越淡', [], 'appearance', ['min' => 0, 'max' => 90, 'step' => 5, 'data-ecod-show-when' => 'EBackdrop:image']);
+
+/* 流光背景（Lightfall）：后台只暴露最影响观感的五项，其余参数走
+   assets/js/vendor/lightfall.js 的默认值；脚本仅在选中该项时下发 */
+$ecodLightWhen = ['data-ecod-show-when' => 'EBackdrop:lightfall'];
+ecod_admin_field($form, 'text', 'EBgLightColors', '#4f6ef2,#8b5cf6', '流光颜色', '最多 3 个色值，英文逗号分隔，例如 #4f6ef2,#8b5cf6。浅色模式下是白底上的彩色光线，深色模式下是发光色；留空用主题主色系', [], 'appearance', $ecodLightWhen);
+ecod_admin_field($form, 'number', 'EBgLightSpeed', '0.3', '流光速度', '光线落下的快慢；0.1 接近静止的星轨，1 以上是明显的下坠', [], 'appearance', ['min' => 0.05, 'max' => 2, 'step' => 0.05, 'data-ecod-show-when' => 'EBackdrop:lightfall']);
+ecod_admin_field($form, 'number', 'EBgLightLayers', '2', '流光层数', '同时下落的光线层数，层数越多隧道越满；移动端自动封顶 2 层、像素密度降为 1', [], 'appearance', ['min' => 1, 'max' => 8, 'step' => 1, 'data-ecod-show-when' => 'EBackdrop:lightfall']);
+ecod_admin_field($form, 'select', 'EBgLightMouse', 'on', '跟随鼠标', '指针附近的光线会变亮并像镜片一样弯曲；触屏设备自动不启用', [
+    'on'  => '开启',
+    'off' => '关闭',
+], 'appearance', $ecodLightWhen);
+ecod_admin_field($form, 'number', 'EBgLightOpacity', '70', '流光浓度（%）', '整体透明度。太高会在浅色模式下压过正文，太低则看不出效果；建议 50~80', [], 'appearance', ['min' => 10, 'max' => 100, 'step' => 5, 'data-ecod-show-when' => 'EBackdrop:lightfall']);
 
 /* ============================================================
  * 付费与会员（门槛 / 权益 / 交易三层，见 core/pay/pay.php）
@@ -1340,7 +1553,7 @@ ecod_admin_field($form, 'select', 'EShop', 'off', '兑换商城', '总开关。�
     'off' => '关闭（默认）',
 ], 'shop');
 $ecodShopWhen = ['data-ecod-show-when' => 'EShop:on'];
-ecod_admin_field($form, 'textarea', 'EShopItems', "会员 7 天|500|vip|1:7|100|0\n全站文章畅读月卡|2000|vip|2:30|0|0\n定制周边|3000|text|兑换后联系站长发货|5|1", '商品列表', '逐行添加商品：库存 0 = 不限，每人限购 0 = 不限；值随类型变化（会员填「等级:天数」/ 单篇解锁填文章 ID / 待发货填发货说明）', [], 'shop', ['rows' => 6, 'data-ecod-rows' => 'shop'] + $ecodShopWhen);
+ecod_admin_field($form, 'textarea', 'EShopItems', "会员 7 天|500|vip|1:7|100|0\n全站文章畅读月卡|2000|vip|2:30|0|0|https://example.com/cover.jpg\n定制周边|3000|text|兑换后联系站长发货|5|1", '商品列表', '逐行添加商品：库存 0 = 不限，每人限购 0 = 不限；值随类型变化（会员填「等级:天数」/ 单篇解锁填文章 ID / 待发货填发货说明）；末段可选填封面图地址，商城页卡片展示，留空按类型出图标占位', [], 'shop', ['rows' => 6, 'data-ecod-rows' => 'shop'] + $ecodShopWhen);
 ecod_admin_field($form, 'textarea', 'EShopNote', '', '商城说明', '显示在商城页底部：发货时效、联系方式、兑换规则等', [], 'shop', ['rows' => 3] + $ecodShopWhen);
 
 ecod_admin_field($form, 'select', 'EAdSelf', 'off', '自助广告', '总开关（依赖付费阅读）。用户在「广告投放」页（page-ads.php）选位、按定价单位下单，走支付通道付款', [
@@ -1359,6 +1572,7 @@ ecod_admin_field($form, 'select', 'EAdSelfReview', 'on', '上线前审核', '开
 ecod_admin_field($form, 'text', 'EAdSelfPriceHomeTop', '', '首页顶部通栏单价（元）', '按上方「定价单位」计价；留空 = 不开放该广告位', [], 'ads', ['data-ecod-show-when' => 'EAdSelf:on']);
 ecod_admin_field($form, 'text', 'EAdSelfPriceSidebar', '', '侧边栏卡片单价（元）', '按上方「定价单位」计价；侧栏「投放广告」模块展示的图片卡位', [], 'ads', ['data-ecod-show-when' => 'EAdSelf:on']);
 ecod_admin_field($form, 'text', 'EAdSelfPricePostBottom', '', '文章底部通栏单价（元）', '按上方「定价单位」计价；留空 = 不开放该广告位', [], 'ads', ['data-ecod-show-when' => 'EAdSelf:on']);
+ecod_admin_field($form, 'text', 'EAdSelfPriceAiPanel', '', 'AI 面板赞助位单价（元）', '按上方「定价单位」计价；展示在「AI 快问」浮层底部（读者看广告领点数也走这个位）；留空 = 不开放', [], 'ads', ['data-ecod-show-when' => 'EAdSelf:on']);
 ecod_admin_field($form, 'number', 'EAdSelfMinDays', '3', '最短投放时长', '单位跟随「定价单位」（天=1、周=7、月=30）', [], 'ads', ['min' => 1, 'max' => 30, 'step' => 1, 'data-ecod-show-when' => 'EAdSelf:on']);
 ecod_admin_field($form, 'number', 'EAdSelfMaxDays', '90', '最长投放时长', '单位跟随「定价单位」（天=1、周=7、月=30）', [], 'ads', ['min' => 1, 'max' => 365, 'step' => 1, 'data-ecod-show-when' => 'EAdSelf:on']);
 ecod_admin_field($form, 'textarea', 'EAdSelfNote', '', '投放须知', '展示在投放页底部：尺寸建议、内容规范、联系方式等', [], 'ads', ['rows' => 4, 'data-ecod-show-when' => 'EAdSelf:on']);
@@ -1451,6 +1665,12 @@ ecod_admin_field($form, 'select', 'ESearchPostsCount', '8', '文章条数', '面
     '10' => '10 条',
 ], 'search', ['data-ecod-show-when' => 'ESearchPanel:on,ESearchPosts:!off']);
 
+/* 主题授权：开关与作者端对接 */
+
+
+
+
+
 /* 隐藏：不进导航的页面 slug（由「站长 → 工具与备份」的特色页开关写入，逗号分隔） */
 ecod_admin_field($form, 'hidden', 'ENavHide', '', '', '', [], 'tools');
 
@@ -1517,3 +1737,4 @@ window.ECOD_TOOL = {
 <script src="<?php echo ecod_asset('assets/admin/topics.js'); ?>" defer></script>
 <script src="<?php echo ecod_asset('assets/admin/config.js'); ?>" defer></script>
 <script src="<?php echo ecod_asset('assets/admin/tools.js'); ?>" defer></script>
+<script src="<?php echo ecod_asset('assets/admin/license.js'); ?>" defer></script>

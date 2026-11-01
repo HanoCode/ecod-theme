@@ -19,7 +19,7 @@
 
 import { build } from 'esbuild';
 import { createHash } from 'node:crypto';
-import { mkdir, readFile, readdir, rm, writeFile } from 'node:fs/promises';
+import { mkdir, readFile, readdir, rm, stat, writeFile } from 'node:fs/promises';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { brotliCompressSync, constants as zlibConstants, gzipSync } from 'node:zlib';
@@ -43,10 +43,20 @@ const ENTRIES = [
     'assets/css/ecod.css',
     'assets/js/ecod.global.js',
     'assets/js/ecod.post.js',
+    // 表情球（Grok Ball，MIT，见 vendor/grok-ball.LICENSE）：
+    // 引擎 + 封装都由 ecod.global.js 的 ensureBall() 按需注入，不走页脚标签
+    'assets/js/vendor/grok-ball.js',
+    'assets/js/ecod.ball.js',
+    // 流光背景（Lightfall，MIT，见 vendor/lightfall.js 文件头）：
+    // 后台站点背景选「流光」时由页脚下发，引擎 + 封装按此顺序加载
+    'assets/js/vendor/lightfall.js',
+    'assets/js/ecod.lightfall.js',
     // 后台设置页 / 模块管理台 / 选图器
     'assets/admin/tokens.css',
     'assets/admin/config.css',
     'assets/admin/config.js',
+    'assets/admin/license.css',
+    'assets/admin/license.js',
     'assets/admin/media.css',
     'assets/admin/media.js',
     'assets/admin/nav.css',
@@ -56,6 +66,9 @@ const ENTRIES = [
     'assets/admin/tools.js',
     'assets/admin/widget.css',
     'assets/admin/widget.js',
+    // 页面构建器（builder.php 画布编辑器，见 docs/builder-design.html）
+    'assets/admin/builder.css',
+    'assets/admin/builder.js',
     // 后台编辑器（admin/ 目录，随 admin/editor.php 注入）
     'admin/editor.css',
     'admin/editor.js',
@@ -86,17 +99,20 @@ const ENTRIES = [
 const PAGE_SETS = {
     core: [
         '0', '1', '2', '3', '3.5',                   // 令牌/基础/布局/导航 + 通用组件层
-        '4', '5', '6', '7', '10', '11',              // 文章流/卡片/分页/侧栏/页脚/工具
+        '4', '4.5', '5', '6', '7', '10', '11',       // 文章流/首页模块(可拖拽块皮肤)/卡片/分页/侧栏/页脚/工具
         '11.4b', '11.4c', '12', '13', '16', '18',    // dock/公告/暗色/响应式/互动/加固
         '21', '22', '23@0', '26', '27',              // 搜索/懒加载/站点设置/页脚年龄/专题
         '28', '32', '33', '35', '36', '37',          // JustNews 杂项/抽奖页/广告/公告弹窗/挂件/播报
         '38', '39', '40',                            // 商城/toast/打卡
+        '42', '43', '44', '45', '46', '47',          // 页面构建器板块壳 / 表情球（站宠·404·搜索·AI·抽奖·评论）/ AI 快问面板 / 评论 AI 摘要 / AI 搜索 / 404 向导与看广告领点数
+        '51',                                        // 内置浏览器引导（微信 / QQ 等 WebView 提示改用浏览器，全站浮层）
+        '52',                                        // 笔记精选模块（可摆在首页与任意页面侧栏，故进共享族）
     ],
-    home: ['4.5', '24@1', '25@1'],
-    list: ['24@1'],
-    post: ['8', '9', '9.5', '11.5', '11.6', '14@1', '17', '19.5', '20', '23.5', '25@0', '34', '41'],
+    home: ['24@1', '25@1'],
+    list: ['24@1', '50'],
+    post: ['8', '9', '9.5', '11.5', '11.6', '14@1', '17', '19.5', '20', '23.5', '25@0', '34', '41', '48', '49', '49.5'],
     postext: ['23@1', '31'],
-    user: ['14@1', '23.5', '24@0', '29', '30'],
+    user: ['8.5', '14@0', '15', '23.5', '24@0', '29', '30', '41.5'],
     page: ['8.5', '9', '14@0', '15', '19'],
 };
 
@@ -123,8 +139,11 @@ const CRITICAL_BASE = [
 const CRITICAL_FAMS = {
     home: [...CRITICAL_BASE, '4', '4.5', '5', '6', '25@1'],
     list: [...CRITICAL_BASE, '4', '5', '6', '24@1', '27'],
-    post: [...CRITICAL_BASE, '8', '25@0', '9'],
-    user: [...CRITICAL_BASE, '24@0'],
+    post: [...CRITICAL_BASE, '8', '25@0', '9', '49'],
+    /* §49 是图文笔记（note）文章的首屏骨架：头卡/竖版图集/作者行/互动条，
+       缺了首帧图集按原图尺寸铺满、作者行竖排堆叠，属于「防塌」范畴；
+       §49.5 是全屏查看器浮层（默认不存在于 DOM，JS 点开才注入），让出去。 */
+    user: [...CRITICAL_BASE, '8.5', '14@0', '15', '24@0'],
     page: [...CRITICAL_BASE, '8.5', '15'],
 };
 
@@ -452,15 +471,22 @@ async function main() {
     ].join('\n');
     await writeFile(MANIFEST, php);
 
-    /* 清理不在本次 manifest 里的旧产物（含预压缩副产物与哈希变更的孤儿文件） */
+    /* 清理不在本次 manifest 里的旧产物（含预压缩副产物与哈希变更的孤儿文件）。
+       宽限期保留：hash 一换旧 URL 即死——rebuild 前已打开/缓存的 HTML 仍引用旧
+       hash，当场删除会让那些页面 fam CSS/JS 404（CSS 版=整页裸奔、面板叠罗汉；
+       JS 版=PJAX 瘫痪）。孤儿按 mtime 保留 48h，盖过缓存 HTML 的存活窗口，
+       期间 dist 会暂存中间代产物，属预期膨胀。 */
     const keep = new Set([
         MANIFEST,
         ...Object.values(manifest).flatMap((f) => [f, f + '.gz', f + '.br', f + '.php'].map((p) => join(THEME_DIR, p))),
     ]);
+    const ORPHAN_GRACE_MS = 48 * 3600 * 1000;
+    const nowMs = Date.now();
     for (const f of await walk(OUT_ROOT)) {
-        if (!keep.has(f)) {
-            await rm(f);
-        }
+        if (keep.has(f)) continue;
+        const mtimeMs = (await stat(f)).mtimeMs;
+        if (nowMs - mtimeMs < ORPHAN_GRACE_MS) continue;
+        await rm(f);
     }
 
     /* 体积报告 */

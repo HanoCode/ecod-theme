@@ -778,9 +778,17 @@ body {
     transition: border-color var(--ea-dur-fast), box-shadow var(--ea-dur-fast), background var(--ea-dur-fast);
 }
 
+/* 下拉统一样式：去原生箭头，画右向居中 V 形箭头（与前台 .ecod_select 同构） */
 .ecod-fields select {
     height: auto;
-    padding-right: 28px;
+    -webkit-appearance: none;
+    appearance: none;
+    background: #fcfcfe;
+    background-image: linear-gradient(45deg, transparent 50%, var(--ea-sub) 50%), linear-gradient(135deg, var(--ea-sub) 50%, transparent 50%);
+    background-position: calc(100% - 16px) center, calc(100% - 11px) center;
+    background-size: 5px 5px;
+    background-repeat: no-repeat;
+    padding-right: 30px;
 }
 
 .ecod-fields textarea {
@@ -1642,6 +1650,10 @@ textarea.ecod-input {
         min-height: 42px;
         padding: 10px 12px;
         font-size: var(--ea-fs-lg);
+    }
+    /* select 让出箭头位（统一箭头规则的覆盖） */
+    .ecod-fields select {
+        padding-right: 34px;
     }
 
     .ecod-fields textarea {
@@ -2510,6 +2522,13 @@ textarea.ecod-input {
         background: #1f2431;
         border-color: var(--ea-line);
         color: var(--ea-ink);
+    }
+    /* 暗色下的 background 简写会抹掉下拉箭头图，补回（色随 --ea-sub 自适应） */
+    .ecod-fields select {
+        background-image: linear-gradient(45deg, transparent 50%, var(--ea-sub) 50%), linear-gradient(135deg, var(--ea-sub) 50%, transparent 50%);
+        background-position: calc(100% - 16px) center, calc(100% - 11px) center;
+        background-size: 5px 5px;
+        background-repeat: no-repeat;
     }
     .ecod-color__pick { background: #1f2431; border-color: var(--ea-line); }
     .ecod-color__hex { color: #9aa3b5; }

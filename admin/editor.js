@@ -436,6 +436,8 @@
         tooltip: '<path d="M4 6.2A2.2 2.2 0 0 1 6.2 4h11.6A2.2 2.2 0 0 1 20 6.2v7.6a2.2 2.2 0 0 1-2.2 2.2h-4.4l-3.2 3v-3H6.2A2.2 2.2 0 0 1 4 13.8z"/><path d="M12 7.6v.2M12 10.4v2"/>',
         badge: '<path d="M8.6 3.6h6.8l4.2 4.2v6.8l-4.2 4.2H8.6L4.4 14.6V7.8z"/><path d="M9.6 12h4.8"/>',
         spoiler: '<path d="M2.6 12S6.4 6.2 12 6.2 21.4 12 21.4 12 17.6 17.8 12 17.8 2.6 12 2.6 12z"/><circle cx="12" cy="12" r="2.6"/><path d="m4.2 19.8 15.6-15.6"/>',
+        posts: '<rect x="3.4" y="4.6" width="17.2" height="6.2" rx="1.8"/><rect x="3.4" y="13.2" width="17.2" height="6.2" rx="1.8"/>',
+        hide: '<path d="M12 3.4 18.8 5.9v6.1c0 4.3-2.9 7.1-6.8 8.2-3.9-1.1-6.8-3.9-6.8-8.2V5.9z"/><path d="M12 9.6v.2M12 12.6v2.4"/>',
         emoji: '<circle cx="12" cy="12" r="8.6"/><path d="M8.6 14.4a4.4 4.4 0 0 0 6.8 0"/><path d="M9.2 9.6v.2M14.8 9.6v.2"/>'
     };
 
@@ -501,58 +503,402 @@
     /* ------------------------------------------------------------------ *
      * 短代码菜单（与 core/content/shortcode.php + shortcode-extra.php 语法一致）
      * 模板中的 | 为插入后的光标/选区占位
+     * 带 form 的条目点击后弹表单弹窗，由 build(values) 生成短代码；
+     * 无 form 的简单条目沿用 tpl 直接插入。
      * ------------------------------------------------------------------ */
+
+    /* 表单弹窗用的颜色候选（与 PHP 端 ecod_color_value 的具名色一致） */
+    var ED_COLORS = [
+        ['', '主题色'], ['blue', '蓝色'], ['green', '绿色'], ['teal', '青色'],
+        ['cyan', '天蓝'], ['yellow', '黄色'], ['orange', '橙色'], ['red', '红色'],
+        ['pink', '粉色'], ['purple', '紫色'], ['gray', '灰色'], ['dark', '深灰']
+    ];
+
+    var ED_SWATCH = {
+        '': null, blue: '#3b82f6', green: '#10b981', teal: '#14b8a6', cyan: '#06b6d4',
+        yellow: '#f59e0b', orange: '#f97316', red: '#ef4444', pink: '#ec4899',
+        purple: '#8b5cf6', gray: '#94a3b8', dark: '#64748b'
+    };
+
+    /* 属性拼装：空值跳过，双引号转义（PHP 端 ecod_sc_attrs 会解回 &quot;） */
+    function attrPart(name, value) {
+        var v = String(value == null ? '' : value).trim();
+        if (v === '') {
+            return '';
+        }
+        return ' ' + name + '="' + v.replace(/"/g, '&quot;') + '"';
+    }
+
+    /* 卡片显示类型（与后台「默认卡片模式」ECardMode 同一套取值，留空跟随该设置） */
+    var ECOD_CARD_MODE_OPTS = [
+        ['', '跟随后台默认'],
+        ['default', '列表（文左图右）'],
+        ['feature', '大图（重点文章）'],
+        ['gallery', '三图（封面轮播）'],
+        ['bare', '无图'],
+        ['grid', '网格'],
+        ['title', '标题式'],
+        ['compact', '紧凑行（无摘要）'],
+        ['mosaic', '混合网格（1 大 + N 小）'],
+        ['item', '清单 / 装备'],
+        ['note', '笔记卡（竖版封面网格）']
+    ];
 
     var SHORTCODES = [
         { name: '提示与强调', items: [
-            { tag: 'note', name: '提示块', hint: 'info / tip / warn / danger', tpl: '[note type="info" title="提示"]|内容[/note]' },
-            { tag: 'alert', name: '彩色提示框', hint: 'success / warning / error / dark', tpl: '[alert type="success" title="标题"]|内容[/alert]' },
-            { tag: 'message', name: '消息条', hint: 'info / success / warning / error', tpl: '[message type="info"]|内容[/message]' },
-            { tag: 'callout', name: '强调框', hint: 'color="#7c4dff" title=', tpl: '[callout color="#7c4dff" title="标题"]|内容[/callout]' },
-            { tag: 'anote', name: '作者注', hint: 'author= href= icon=', tpl: '[anote author="Ecod"]|内容[/anote]' }
+            { tag: 'note', name: '提示块', hint: 'info / tip / warn / danger',
+                form: [
+                    { key: 'type', label: '类型', type: 'select', def: 'info', half: true,
+                        opts: [['info', '说明 info'], ['success', '成功 success'], ['tip', '提示 tip'], ['warn', '注意 warn'], ['danger', '警告 danger'], ['dark', '备注 dark']] },
+                    { key: 'title', label: '标题', type: 'text', ph: '留空则用类型默认标题', half: true },
+                    { key: 'body', label: '内容', type: 'textarea', sel: true, ph: '提示正文…' }
+                ],
+                build: function (v) {
+                    return { text: '[note' + attrPart('type', v.type) + attrPart('title', v.title) + ']' + (v.body || '') + '[/note]' };
+                } },
+            { tag: 'alert', name: '彩色提示框', hint: 'success / warning / error / dark',
+                form: [
+                    { key: 'type', label: '类型', type: 'select', def: 'success', half: true,
+                        opts: [['success', '成功 success'], ['tip', '提示 tip'], ['warning', '注意 warning'], ['error', '错误 error'], ['dark', '备注 dark'], ['info', '说明 info']] },
+                    { key: 'title', label: '标题', type: 'text', ph: '留空则用类型默认标题', half: true },
+                    { key: 'body', label: '内容', type: 'textarea', sel: true, ph: '提示正文…' }
+                ],
+                build: function (v) {
+                    return { text: '[alert' + attrPart('type', v.type) + attrPart('title', v.title) + ']' + (v.body || '') + '[/alert]' };
+                } },
+            { tag: 'message', name: '消息条', hint: 'info / success / warning / error',
+                form: [
+                    { key: 'type', label: '类型', type: 'select', def: 'info', half: true,
+                        opts: [['info', '信息 info'], ['success', '成功 success'], ['warning', '警告 warning'], ['error', '错误 error']] },
+                    { key: 'body', label: '内容', type: 'textarea', sel: true, ph: '一句话消息…', half: true }
+                ],
+                build: function (v) {
+                    return { text: '[message' + attrPart('type', v.type) + ']' + (v.body || '') + '[/message]' };
+                } },
+            { tag: 'callout', name: '强调框', hint: 'color="#7c4dff" title=',
+                form: [
+                    { key: 'color', label: '颜色', type: 'color', half: true },
+                    { key: 'title', label: '标题', type: 'text', ph: '可选', half: true },
+                    { key: 'body', label: '内容', type: 'textarea', sel: true, ph: '强调正文…' }
+                ],
+                build: function (v) {
+                    return { text: '[callout' + attrPart('color', v.color) + attrPart('title', v.title) + ']' + (v.body || '') + '[/callout]' };
+                } },
+            { tag: 'anote', name: '作者注', hint: 'author= href= icon=',
+                form: [
+                    { key: 'author', label: '作者名', type: 'text', ph: 'Ecod', half: true },
+                    { key: 'href', label: '作者链接', type: 'url', ph: '可选', half: true },
+                    { key: 'body', label: '内容', type: 'textarea', sel: true, ph: '补充说明…' }
+                ],
+                build: function (v) {
+                    return { text: '[anote' + attrPart('author', v.author) + attrPart('href', v.href) + ']' + (v.body || '') + '[/anote]' };
+                } }
         ]},
         { name: '排版元素', items: [
-            { tag: 'mtitle', name: '小节标题', hint: 'title=', tpl: '[mtitle title="|小节标题"]' },
-            { tag: 'copy', name: '一键复制块', hint: 'label=', tpl: '[copy label="安装命令"]|内容[/copy]' },
-            { tag: 'progress', name: '进度条', hint: 'percentage= color= label=', tpl: '[progress percentage="60" label="|进度"]' },
-            { tag: 'abtn', name: '按钮', hint: 'href= icon= style=ghost', tpl: '[abtn href="https://" icon="link" color="primary"]|按钮文字[/abtn]' },
+            { tag: 'mtitle', name: '小节标题', hint: 'title=',
+                form: [{ key: 'title', label: '标题文字', type: 'text', sel: true, ph: '小节标题' }],
+                build: function (v) {
+                    return { text: '[mtitle' + attrPart('title', v.title) + ']' };
+                } },
+            { tag: 'copy', name: '一键复制块', hint: 'label=',
+                form: [
+                    { key: 'label', label: '复制按钮文字', type: 'text', ph: '安装命令', half: true },
+                    { key: 'body', label: '被复制的内容', type: 'textarea', sel: true, ph: 'npm install …' }
+                ],
+                build: function (v) {
+                    return { text: '[copy' + attrPart('label', v.label) + ']' + (v.body || '') + '[/copy]' };
+                } },
+            { tag: 'progress', name: '进度条', hint: 'percentage= color= label=',
+                form: [
+                    { key: 'percentage', label: '百分比（0-100）', type: 'num', def: '60', min: 0, max: 100, half: true },
+                    { key: 'label', label: '说明文字', type: 'text', ph: '可选：构建进度', half: true },
+                    { key: 'color', label: '颜色', type: 'color' }
+                ],
+                build: function (v) {
+                    return { text: '[progress' + attrPart('percentage', v.percentage || 60) + attrPart('color', v.color) + attrPart('label', v.label) + ']' };
+                } },
+            { tag: 'abtn', name: '按钮', hint: 'href= icon= style=ghost',
+                form: [
+                    { key: 'body', label: '按钮文字', type: 'text', sel: true, ph: '按钮文字', half: true },
+                    { key: 'href', label: '跳转链接', type: 'url', ph: 'https://', half: true },
+                    { key: 'color', label: '颜色', type: 'color', half: true },
+                    { key: 'style', label: '样式', type: 'select', def: '', half: true, opts: [['', '实心（主题色）'], ['ghost', '幽灵描边 ghost']] },
+                    { key: 'icon', label: '图标名', type: 'text', ph: '可选：link / download / file…', half: true }
+                ],
+                build: function (v) {
+                    return { text: '[abtn' + attrPart('href', v.href || 'https://') + attrPart('icon', v.icon) + attrPart('color', v.color) + attrPart('style', v.style) + ']' + (v.body || '按钮文字') + '[/abtn]' };
+                } },
             { tag: 'dotted', name: '虚线分隔', hint: '[dotted]', tpl: '[dotted]' },
-            { tag: 'lamp', name: '状态灯', hint: 'green / red / yellow / …', tpl: '[lamp green]', inline: true },
-            { tag: 'task', name: '任务勾选框', hint: '[task done] 已完成', tpl: '[task done]', inline: true },
+            { tag: 'lamp', name: '状态灯', hint: 'green / red / yellow / …',
+                form: [
+                    { key: 'color', label: '颜色', type: 'select', def: 'green', half: true, opts: ED_COLORS },
+                    { key: 'text', label: '跟在灯后的文字', type: 'text', ph: '可选：进行中', half: true }
+                ],
+                build: function (v) {
+                    var c = v.color || 'green';
+                    if ((v.text || '').trim() !== '') {
+                        return { text: '[lamp color="' + c + '"' + attrPart('text', v.text) + ']', inline: true };
+                    }
+                    return { text: '[lamp ' + c + ']', inline: true };
+                } },
+            { tag: 'task', name: '任务勾选框', hint: '[task done] 已完成',
+                form: [{ key: 'state', label: '状态', type: 'select', def: 'done', opts: [['done', '已完成'], ['todo', '未完成']] }],
+                build: function (v) {
+                    return { text: v.state === 'done' ? '[task done]' : '[task]', inline: true };
+                } },
             { tag: 'mark', name: '高亮标记', hint: '[mark]…[/mark]', tpl: '[mark]|高亮[/mark]', inline: true },
             { tag: 'kbd', name: '键盘按键', hint: '[kbd]…[/kbd]', tpl: '[kbd]|Ctrl[/kbd]', inline: true },
-            { tag: 'tooltip', name: '悬停提示', hint: 'text= place=bottom', tpl: '[tooltip text="|解释文字"]正文[/tooltip]', inline: true },
-            { tag: 'badge', name: '行内标签', hint: '颜色 / solid / outline', tpl: '[badge green]|NEW[/badge]', inline: true },
+            { tag: 'tooltip', name: '悬停提示', hint: 'text= place=bottom',
+                form: [
+                    { key: 'text', label: '悬停提示文字', type: 'text', ph: '解释文字' },
+                    { key: 'place', label: '弹出位置', type: 'select', def: 'top', half: true, opts: [['top', '上方'], ['bottom', '下方']] },
+                    { key: 'body', label: '正文（虚线词）', type: 'text', sel: true, ph: '正文…', half: true }
+                ],
+                build: function (v) {
+                    return { text: '[tooltip' + attrPart('text', v.text) + attrPart('place', v.place === 'bottom' ? 'bottom' : '') + ']' + (v.body || v.text || '') + '[/tooltip]', inline: true };
+                } },
+            { tag: 'badge', name: '行内标签', hint: '颜色 / solid / outline',
+                form: [
+                    { key: 'color', label: '颜色', type: 'color', half: true },
+                    { key: 'style', label: '样式', type: 'select', def: '', half: true, opts: [['', '默认'], ['solid', '实心 solid'], ['outline', '描边 outline']] },
+                    { key: 'body', label: '标签文字', type: 'text', sel: true, ph: 'NEW', half: true }
+                ],
+                build: function (v) {
+                    var c = (v.color || '').trim();
+                    if (c && !v.style) {
+                        return { text: '[badge ' + c + ']' + (v.body || 'NEW') + '[/badge]', inline: true };
+                    }
+                    return { text: '[badge' + attrPart('color', c) + attrPart('style', v.style) + ']' + (v.body || 'NEW') + '[/badge]', inline: true };
+                } },
             { tag: 'spoiler', name: '剧透遮罩', hint: '点击展开', tpl: '[spoiler]|剧透内容[/spoiler]', inline: true }
         ]},
         { name: '折叠 / 选项卡 / 时间线', items: [
-            { tag: 'fold', name: '折叠块', hint: 'title=', tpl: '[fold title="|点击展开"]内容[/fold]' },
-            { tag: 'tabs', name: '选项卡', hint: '[tab title=]', tpl: '[tabs]\n[tab title="|标签一"]内容[/tab]\n[tab title="标签二"]内容[/tab]\n[/tabs]' },
-            { tag: 'timeline', name: '时间线', hint: '每行「时间 | 内容」', tpl: '[timeline]|2026-01 | 发布 v1.0\n2026-06 | 发布 v2.0[/timeline]' }
+            { tag: 'fold', name: '折叠块', hint: 'title=',
+                form: [
+                    { key: 'title', label: '折叠标题', type: 'text', ph: '点击展开' },
+                    { key: 'body', label: '折叠内容', type: 'textarea', sel: true, ph: '折叠后可见的内容…' }
+                ],
+                build: function (v) {
+                    return { text: '[fold' + attrPart('title', v.title) + ']' + (v.body || '') + '[/fold]' };
+                } },
+            { tag: 'tabs', name: '选项卡', hint: '[tab title=]',
+                form: [{ key: 'tabs', label: '选项卡', type: 'rows', min: 1, add: '添加一个选项卡',
+                    fields: [
+                        { key: 'title', label: '标签名', ph: '标签一' },
+                        { key: 'body', label: '内容', type: 'textarea', ph: '该选项卡下的内容…' }
+                    ] }],
+                build: function (v) {
+                    var rows = (v.tabs || []).filter(function (r) { return (r.title || r.body || '').trim() !== ''; });
+                    return { text: '[tabs]\n' + rows.map(function (r) {
+                        return '[tab' + attrPart('title', r.title) + ']' + (r.body || '') + '[/tab]';
+                    }).join('\n') + '\n[/tabs]' };
+                } },
+            { tag: 'timeline', name: '时间线', hint: '每行「时间 | 内容」',
+                form: [{ key: 'rows', label: '时间线条目', type: 'rows', min: 1, add: '添加一条记录',
+                    fields: [
+                        { key: 'time', label: '时间', ph: '2026-01' },
+                        { key: 'text', label: '事件', ph: '发布 v1.0' }
+                    ] }],
+                build: function (v) {
+                    var rows = (v.rows || []).filter(function (r) { return ((r.time || '') + (r.text || '')).trim() !== ''; });
+                    return { text: '[timeline]\n' + rows.map(function (r) {
+                        return (r.time || '') + ' | ' + (r.text || '');
+                    }).join('\n') + '\n[/timeline]' };
+                } }
         ]},
         { name: '卡片与网格', items: [
-            { tag: 'cards', name: '卡片组', hint: 'column=2~4 title=', tpl: '[cards column="2" title="|相关资源"]\n[card title="使用文档" desc="说明" icon="file" href="https://"]\n[card title="更新日志" desc="变更" icon="list" href="https://"]\n[/cards]' },
-            { tag: 'grid', name: '卡片网格', hint: 'column= gap=', tpl: '[grid column="3"]\n[card title="|列一"]\n[card title="列二"]\n[card title="列三"]\n[/grid]' },
-            { tag: 'card', name: '单张信息卡', hint: 'title= desc= icon= href= tag=', tpl: '[card title="|卡片标题" desc="描述" icon="file" href="https://" tag="标签"]' }
+            { tag: 'cards', name: '卡片组', hint: 'column=2~4 title=',
+                form: [
+                    { key: 'title', label: '分组标题', type: 'text', ph: '可选：相关资源', half: true },
+                    { key: 'column', label: '每行卡片数', type: 'num', def: '2', min: 1, max: 4, half: true },
+                    { key: 'cards', label: '卡片', type: 'rows', min: 1, add: '添加一张卡片',
+                        fields: [
+                            { key: 'title', label: '标题', ph: '使用文档', wide: true },
+                            { key: 'desc', label: '描述', ph: '一句话说明' },
+                            { key: 'icon', label: '图标名', ph: 'file' },
+                            { key: 'href', label: '链接', type: 'url', ph: 'https://', wide: true }
+                        ] }
+                ],
+                build: function (v) {
+                    var rows = (v.cards || []).filter(function (r) { return (r.title || '').trim() !== ''; });
+                    return { text: '[cards' + attrPart('column', v.column || 2) + attrPart('title', v.title) + ']\n'
+                        + rows.map(function (r) {
+                            return '[card' + attrPart('title', r.title) + attrPart('desc', r.desc) + attrPart('icon', r.icon) + attrPart('href', r.href) + ']';
+                        }).join('\n') + '\n[/cards]' };
+                } },
+            { tag: 'grid', name: '卡片网格', hint: 'column= gap=',
+                form: [
+                    { key: 'column', label: '每行卡片数', type: 'num', def: '3', min: 1, max: 4, half: true },
+                    { key: 'gap', label: '间距（px）', type: 'num', def: '12', min: 0, max: 40, half: true },
+                    { key: 'cards', label: '卡片', type: 'rows', min: 1, add: '添加一张卡片',
+                        fields: [
+                            { key: 'title', label: '标题', ph: '列一', wide: true },
+                            { key: 'desc', label: '描述', ph: '可选' },
+                            { key: 'href', label: '链接', type: 'url', ph: 'https://', wide: true }
+                        ] }
+                ],
+                build: function (v) {
+                    var rows = (v.cards || []).filter(function (r) { return (r.title || '').trim() !== ''; });
+                    return { text: '[grid' + attrPart('column', v.column || 3) + attrPart('gap', v.gap || 12) + ']\n'
+                        + rows.map(function (r) {
+                            return '[card' + attrPart('title', r.title) + attrPart('desc', r.desc) + attrPart('href', r.href) + ']';
+                        }).join('\n') + '\n[/grid]' };
+                } },
+            { tag: 'card', name: '单张信息卡', hint: 'title= desc= icon= href= tag=',
+                form: [
+                    { key: 'title', label: '标题', type: 'text', sel: true, ph: '卡片标题', half: true },
+                    { key: 'tag', label: '角标', type: 'text', ph: '可选：NEW', half: true },
+                    { key: 'desc', label: '描述', type: 'text', ph: '一句话说明', half: true },
+                    { key: 'icon', label: '图标名', type: 'text', ph: 'file / list / link…', half: true },
+                    { key: 'href', label: '链接', type: 'url', ph: 'https://' },
+                    { key: 'body', label: '补充文字', type: 'textarea', ph: '可选：卡片内补充说明…' }
+                ],
+                build: function (v) {
+                    var head = '[card' + attrPart('title', v.title) + attrPart('desc', v.desc) + attrPart('icon', v.icon) + attrPart('href', v.href) + attrPart('tag', v.tag) + ']';
+                    return { text: (v.body || '').trim() ? head + v.body + '[/card]' : head };
+                } }
         ]},
         { name: '下载与网盘', items: [
-            { tag: 'download', name: '下载卡片', hint: '自动识别 15 种网盘', tpl: '[download url="https://" name="|文件名" size=""]说明[/download]' },
-            { tag: 'cloud', name: '网盘卡（多行）', hint: '每行「链接 | 提取码 | 说明」', tpl: '[cloud]|https://pan.baidu.com/s/xxx | 提取码 | 说明文字\nhttps://pan.quark.cn/s/xxx | | 夸克网盘[/cloud]' }
+            { tag: 'download', name: '下载卡片', hint: '自动识别 15 种网盘',
+                form: [
+                    { key: 'url', label: '下载链接', type: 'url', req: true, ph: 'https://pan.baidu.com/s/…' },
+                    { key: 'name', label: '文件名', type: 'text', sel: true, ph: '资料包.zip', half: true },
+                    { key: 'size', label: '文件大小', type: 'text', ph: '可选：12.4 MB', half: true },
+                    { key: 'body', label: '说明文字', type: 'textarea', ph: '可选：解压密码、注意事项…' }
+                ],
+                build: function (v) {
+                    return { text: '[download' + attrPart('url', v.url) + attrPart('name', v.name) + attrPart('size', v.size) + ']' + (v.body || '') + '[/download]' };
+                } },
+            { tag: 'cloud', name: '网盘卡（多行）', hint: '每行「链接 | 提取码 | 说明」',
+                form: [{ key: 'rows', label: '网盘链接', type: 'rows', min: 1, add: '添加一个网盘',
+                    fields: [
+                        { key: 'url', label: '链接', type: 'url', ph: 'https://pan.baidu.com/s/…', wide: true },
+                        { key: 'pwd', label: '提取码', ph: '可选' },
+                        { key: 'desc', label: '说明', ph: '可选' }
+                    ] }],
+                build: function (v) {
+                    var rows = (v.rows || []).filter(function (r) { return (r.url || '').trim() !== ''; });
+                    return { text: '[cloud]\n' + rows.map(function (r) {
+                        var line = r.url;
+                        if ((r.pwd || '').trim() !== '' || (r.desc || '').trim() !== '') {
+                            line += (r.pwd || '').trim() !== '' ? ' | ' + r.pwd.trim() : ' |';
+                        }
+                        if ((r.desc || '').trim() !== '') {
+                            line += ' | ' + r.desc.trim();
+                        }
+                        return line;
+                    }).join('\n') + '\n[/cloud]' };
+                } }
         ]},
         { name: '内容引用', items: [
-            { tag: 'posts', name: '文章列表', hint: 'category= tag= limit= order=', tpl: '[posts title="|相关阅读" limit="5"]' },
-            { tag: 'article', name: '引用文章卡', hint: 'id= 文章 cid', tpl: '[article id="|1"]' },
-            { tag: 'github', name: 'GitHub 仓库卡', hint: 'repo= desc=', tpl: '[github repo="|owner/repo" desc="仓库描述"]' },
+            { tag: 'posts', name: '文章列表', hint: 'category= tag= limit= order= mode=',
+                form: [
+                    { key: 'title', label: '列表标题', type: 'text', ph: '可选：相关阅读', half: true },
+                    { key: 'limit', label: '数量上限', type: 'num', def: '5', min: 1, max: 20, half: true },
+                    { key: 'category', label: '分类 slug', type: 'text', ph: '可选', half: true },
+                    { key: 'tag', label: '标签 slug', type: 'text', ph: '可选', half: true },
+                    { key: 'order', label: '排序', type: 'select', def: 'date', half: true,
+                        opts: [['date', '最新 date'], ['hot', '热门 hot'], ['comment', '评论最多 comment'], ['random', '随机 random']] },
+                    { key: 'mode', label: '显示类型', type: 'select', def: '', half: true, opts: ECOD_CARD_MODE_OPTS },
+                    { key: 'related', label: '关联当前文章', type: 'select', def: '', half: true,
+                        opts: [['', '否，按分类 / 标签筛选'], ['1', '是，沿用本文第一个分类']] }
+                ],
+                build: function (v) {
+                    var t = '[posts';
+                    t += attrPart('title', v.title);
+                    if ((v.limit || '5') !== '5') { t += attrPart('limit', v.limit); }
+                    t += attrPart('category', v.category);
+                    t += attrPart('tag', v.tag);
+                    if (v.order && v.order !== 'date') { t += attrPart('order', v.order); }
+                    if (v.mode) { t += attrPart('mode', v.mode); }
+                    if (v.related) { t += attrPart('related', v.related); }
+                    return { text: t + ']' };
+                } },
+            { tag: 'article', name: '引用文章卡', hint: 'id= 文章 cid，mode= 显示类型',
+                form: [
+                    { key: 'id', label: '文章 ID（cid）', type: 'num', req: true, ph: '在文章列表查看 cid', min: 1 },
+                    { key: 'mode', label: '显示类型', type: 'select', def: '', opts: ECOD_CARD_MODE_OPTS }
+                ],
+                build: function (v) {
+                    return { text: '[article' + attrPart('id', v.id) + (v.mode ? attrPart('mode', v.mode) : '') + ']' };
+                } },
+            { tag: 'github', name: 'GitHub 仓库卡', hint: 'repo= desc=',
+                form: [
+                    { key: 'repo', label: '仓库', type: 'text', req: true, ph: 'owner/repo', half: true },
+                    { key: 'desc', label: '一句话描述', type: 'text', ph: '可选', half: true }
+                ],
+                build: function (v) {
+                    return { text: '[github' + attrPart('repo', v.repo) + attrPart('desc', v.desc) + ']' };
+                } },
             { tag: 'reply', name: '评论可见', hint: '[reply]…[/reply]', tpl: '[reply]|评论后可见的内容[/reply]' },
-            { tag: 'hide', name: '登录 / 等级可见', hint: 'login / comment / level=', tpl: '[hide type="login"]|需要隐藏的内容[/hide]' },
-            { tag: 'hide', name: '密码可见', hint: 'type=password pw=', tpl: '[hide type="password" pw="|1234"]加密内容[/hide]' }
+            { tag: 'hide', name: '可见范围', hint: 'login / comment / level / password',
+                form: [
+                    { key: 'type', label: '可见条件', type: 'select', def: 'login',
+                        opts: [['login', '仅登录用户'], ['comment', '评论后可见'], ['level', '评论等级达到 Lv.N'], ['password', '输入密码可见']] },
+                    { key: 'level', label: '等级上限 Lv.', type: 'num', def: '3', min: 1, max: 7, half: true, when: { type: 'level' } },
+                    { key: 'pw', label: '访问密码', type: 'text', req: true, ph: '设置一个密码', half: true, when: { type: 'password' } },
+                    { key: 'tip', label: '自定义提示文字', type: 'text', ph: '可选', half: true },
+                    { key: 'body', label: '隐藏内容', type: 'textarea', sel: true, ph: '满足条件后展示的内容…' }
+                ],
+                build: function (v) {
+                    var t = '[hide' + attrPart('type', v.type || 'login');
+                    if (v.type === 'level') { t += attrPart('level', v.level || 3); }
+                    if (v.type === 'password') { t += attrPart('pw', v.pw); }
+                    t += attrPart('tip', v.tip);
+                    return { text: t + ']' + (v.body || '') + '[/hide]' };
+                } }
         ]},
         { name: '媒体嵌入', items: [
             { tag: 'gallery', name: '相册图集', hint: '多选图片，自动接灯箱', tpl: '[gallery column="3"]\nhttps:// | 说明\n[/gallery]', pick: 'gallery' },
-            { tag: 'bilibili', name: 'B 站视频', hint: 'bvid= page=', tpl: '[bilibili bvid="|BV1xx411c7mD" page="1"]' },
-            { tag: 'video', name: '视频', hint: 'url= poster=', tpl: '[video url="|https://" poster=""]' },
-            { tag: 'mp3', name: '音频（单曲）', hint: 'url= name= cover=', tpl: '[mp3 url="|https://" name="歌名"]' },
-            { tag: 'music', name: '播放列表', hint: '每行「链接 | 歌名 | 封面」', tpl: '[music title="|本期歌单"]\nhttps://a.mp3 | 歌名一\nhttps://b.mp3 | 歌名二\n[/music]' }
+            { tag: 'bilibili', name: 'B 站视频', hint: 'bvid= page=',
+                form: [
+                    { key: 'bvid', label: 'BV 号', type: 'text', req: true, ph: 'BV1xx411c7mD', half: true },
+                    { key: 'page', label: '分 P', type: 'num', def: '1', min: 1, half: true }
+                ],
+                build: function (v) {
+                    return { text: '[bilibili' + attrPart('bvid', v.bvid) + attrPart('page', v.page || 1) + ']' };
+                } },
+            { tag: 'video', name: '视频', hint: 'url= poster=',
+                form: [
+                    { key: 'url', label: '视频地址', type: 'url', req: true, ph: 'mp4 直链或腾讯 / 优酷 / YouTube 链接' },
+                    { key: 'poster', label: '封面图', type: 'url', pick: true, ph: '可选' },
+                    { key: 'name', label: '标题', type: 'text', ph: '可选', half: true }
+                ],
+                build: function (v) {
+                    return { text: '[video' + attrPart('url', v.url) + attrPart('poster', v.poster) + attrPart('name', v.name) + ']' };
+                } },
+            { tag: 'mp3', name: '音频（单曲）', hint: 'url= name= cover=',
+                form: [
+                    { key: 'url', label: '音频地址', type: 'url', req: true, ph: 'https://…/a.mp3' },
+                    { key: 'name', label: '歌名', type: 'text', ph: '歌名', half: true },
+                    { key: 'cover', label: '封面图', type: 'url', pick: true, ph: '可选', half: true }
+                ],
+                build: function (v) {
+                    return { text: '[mp3' + attrPart('url', v.url) + attrPart('name', v.name) + attrPart('cover', v.cover) + ']' };
+                } },
+            { tag: 'music', name: '播放列表', hint: '每行「链接 | 歌名 | 封面」',
+                form: [
+                    { key: 'title', label: '列表标题', type: 'text', def: '本期歌单', half: true },
+                    { key: 'tracks', label: '曲目', type: 'rows', min: 1, add: '添加一首',
+                        fields: [
+                            { key: 'url', label: '音频链接', type: 'url', ph: 'https://…/a.mp3', wide: true },
+                            { key: 'name', label: '歌名', ph: '歌名一' },
+                            { key: 'cover', label: '封面', type: 'url', pick: true, ph: '可选' }
+                        ] }
+                ],
+                build: function (v) {
+                    var rows = (v.tracks || []).filter(function (r) { return (r.url || '').trim() !== ''; });
+                    return { text: '[music' + attrPart('title', v.title || '播放列表') + ']\n' + rows.map(function (r) {
+                        var line = r.url;
+                        if ((r.name || '').trim() !== '' || (r.cover || '').trim() !== '') {
+                            line += (r.name || '').trim() !== '' ? ' | ' + r.name.trim() : ' |';
+                        }
+                        if ((r.cover || '').trim() !== '') {
+                            line += ' | ' + r.cover.trim();
+                        }
+                        return line;
+                    }).join('\n') + '\n[/music]' };
+                } }
         ]}
     ];
 
@@ -604,6 +950,358 @@
         sync();
     }
 
+    /* ---------------- 短代码表单弹窗 ---------------- */
+
+    var scModal = null;
+    var scModalKey = null;
+
+    /* 插入由表单生成的最终短代码（无 | 占位），块级前后补空行 */
+    function insertGenerated(text, inline) {
+        var start = ta.selectionStart;
+        var end = ta.selectionEnd;
+        var val = ta.value;
+        var needBefore = '';
+        var needAfter = '';
+
+        if (!inline) {
+            if (start > 0 && val.charAt(start - 1) !== '\n') {
+                needBefore = '\n\n';
+            }
+            needAfter = '\n';
+        }
+
+        var payload = needBefore + text + needAfter;
+        var at = start + needBefore.length + text.length;
+        replaceRange(start, end, payload, at, at);
+    }
+
+    /* 「媒体库」小按钮：选一张图填回输入框 */
+    function scPickBtn(input, title) {
+        var btn = make('button', 'ec-ed__fbtn', '媒体库');
+        btn.type = 'button';
+        btn.addEventListener('click', function () {
+            if (!window.EcodMedia) {
+                toast('媒体库不可用，请直接粘贴地址', 'warn');
+                return;
+            }
+            window.EcodMedia.pick({
+                multiple: false,
+                title: title || '选择图片',
+                onPick: function (urls) {
+                    if (urls && urls[0]) {
+                        input.value = String(urls[0]);
+                    }
+                }
+            });
+        });
+        return btn;
+    }
+
+    /* 行编辑器里的一行 */
+    function scMakeRow(f) {
+        var row = make('div', 'ec-ed__row');
+
+        (f.fields || []).forEach(function (rf) {
+            var cell = make('div', 'ec-ed__rcell'
+                + (rf.wide ? ' is-wide' : '')
+                + (rf.type === 'textarea' ? ' is-full' : ''));
+
+            var input;
+            if (rf.type === 'textarea') {
+                input = make('textarea', 'ec-ed__fin');
+                input.rows = 2;
+            } else {
+                input = make('input', 'ec-ed__fin');
+                input.type = rf.type === 'num' ? 'number' : 'text';
+            }
+            input.setAttribute('data-key', rf.key);
+            if (rf.ph) {
+                input.placeholder = rf.ph;
+            }
+
+            /* 行内选图按钮挂到标签行右端，避免把输入框顶得比邻列高 */
+            if (rf.pick) {
+                var lab = make('div', 'ec-ed__rlab ec-ed__rlab--pick');
+                lab.appendChild(make('span', null, esc(rf.label)));
+                lab.appendChild(scPickBtn(input, '选择' + (rf.label || '图片')));
+                cell.appendChild(lab);
+            } else {
+                cell.appendChild(make('span', 'ec-ed__rlab', esc(rf.label)));
+            }
+
+            cell.appendChild(input);
+            row.appendChild(cell);
+        });
+
+        var del = make('button', 'ec-ed__rdel', '×');
+        del.type = 'button';
+        del.setAttribute('aria-label', '删除此行');
+        del.title = '删除此行';
+        del.addEventListener('click', function () {
+            var box = row.parentNode;
+            if (box && $$('.ec-ed__row', box).length <= (f.min || 1)) {
+                toast('至少保留 ' + (f.min || 1) + ' 行', 'warn');
+                return;
+            }
+            if (row.parentNode) {
+                row.parentNode.removeChild(row);
+            }
+        });
+        row.appendChild(del);
+
+        return row;
+    }
+
+    /* 单个字段：type = text / url / num / textarea / select / color / rows */
+    function scMakeField(f, selText) {
+        var wrap = make('div', 'ec-ed__f'
+            + (f.half ? '' : ' is-wide')
+            + (f.type === 'rows' ? ' ec-ed__f--rows' : ''));
+        wrap.setAttribute('data-fkey', f.key);
+        if (f.when) {
+            wrap.setAttribute('data-when', JSON.stringify(f.when));
+        }
+
+        wrap.appendChild(make('label', null, esc(f.label) + (f.req ? ' <i>*</i>' : '')));
+
+        if (f.type === 'rows') {
+            var rowsBox = make('div', 'ec-ed__rows');
+            rowsBox.setAttribute('data-rows', f.key);
+            rowsBox.appendChild(scMakeRow(f));
+            wrap.appendChild(rowsBox);
+
+            var add = make('button', 'ec-ed__radd', '＋ ' + esc(f.add || '添加一行'));
+            add.type = 'button';
+            add.addEventListener('click', function () {
+                rowsBox.appendChild(scMakeRow(f));
+            });
+            wrap.appendChild(add);
+            return wrap;
+        }
+
+        var ctl;
+        if (f.type === 'textarea') {
+            ctl = make('textarea', 'ec-ed__fin');
+            ctl.rows = 4;
+        } else if (f.type === 'select') {
+            ctl = make('select', 'ec-ed__fin');
+            (f.opts || []).forEach(function (o) {
+                var op = make('option', null, esc(o[1]));
+                op.value = o[0];
+                ctl.appendChild(op);
+            });
+        } else {
+            ctl = make('input', 'ec-ed__fin');
+            if (f.type === 'num') {
+                ctl.type = 'number';
+                if (f.min != null) { ctl.min = f.min; }
+                if (f.max != null) { ctl.max = f.max; }
+            } else {
+                ctl.type = 'text';
+                if (f.type === 'url') {
+                    ctl.setAttribute('inputmode', 'url');
+                }
+            }
+        }
+
+        ctl.setAttribute('data-key', f.key);
+        if (f.ph) {
+            ctl.placeholder = f.ph;
+        }
+        ctl.value = f.sel && selText ? selText : (f.def != null ? String(f.def) : '');
+
+        /* 颜色候选 / 媒体库按钮需要和输入框排在一行 */
+        if (f.type === 'color' || f.pick) {
+            var box = make('div', 'ec-ed__fctl');
+            box.appendChild(ctl);
+
+            if (f.type === 'color') {
+                var sw = make('span', 'ec-ed__swatches');
+                ED_COLORS.forEach(function (o) {
+                    var b = make('button', 'ec-ed__swatch');
+                    b.type = 'button';
+                    b.title = o[1];
+                    b.setAttribute('aria-label', o[1]);
+                    b.style.background = ED_SWATCH[o[0]] || 'var(--ed-brand)';
+                    if (o[0] === '') {
+                        b.classList.add('is-primary');
+                    }
+                    b.addEventListener('click', function () {
+                        ctl.value = o[0];
+                    });
+                    sw.appendChild(b);
+                });
+                box.appendChild(sw);
+            } else {
+                box.appendChild(scPickBtn(ctl, '选择' + (f.label || '图片')));
+            }
+
+            wrap.appendChild(box);
+            return wrap;
+        }
+
+        wrap.appendChild(ctl);
+        return wrap;
+    }
+
+    function closeForm() {
+        if (!scModal) {
+            return;
+        }
+        document.removeEventListener('keydown', scModalKey, true);
+        if (scModal.parentNode) {
+            scModal.parentNode.removeChild(scModal);
+        }
+        scModal = null;
+        ta.focus();
+    }
+
+    function openForm(entry) {
+        closeForm();
+
+        var selText = ta.value.slice(ta.selectionStart, ta.selectionEnd);
+
+        var overlay = make('div', 'ec-ed__modal');
+        var dialog = make('div', 'ec-ed__dialog');
+        dialog.setAttribute('role', 'dialog');
+        dialog.setAttribute('aria-modal', 'true');
+        dialog.setAttribute('aria-label', '插入' + entry.name);
+
+        var head = make('div', 'ec-ed__dhead');
+        head.innerHTML = '<div class="ec-ed__dtitle"><b>插入 · ' + esc(entry.name) + '</b>'
+            + (entry.hint ? '<span>' + esc(entry.hint) + '</span>' : '') + '</div>';
+        var closeBtn = make('button', 'ec-ed__dclose', '×');
+        closeBtn.type = 'button';
+        closeBtn.setAttribute('aria-label', '关闭');
+        closeBtn.title = '关闭 Esc';
+        head.appendChild(closeBtn);
+        dialog.appendChild(head);
+
+        var body = make('div', 'ec-ed__dbody');
+        (entry.form || []).forEach(function (f) {
+            body.appendChild(scMakeField(f, selText));
+        });
+        dialog.appendChild(body);
+
+        var foot = make('div', 'ec-ed__dfoot');
+        foot.appendChild(make('span', 'ec-ed__dnote', 'Esc 取消 · 插入后仍可在正文修改'));
+        foot.appendChild(make('span', 'ec-ed__grow'));
+        var btnCancel = make('button', 'ec-ed__dbtn', '取消');
+        btnCancel.type = 'button';
+        var btnOk = make('button', 'ec-ed__dbtn is-primary', '插入短代码');
+        btnOk.type = 'button';
+        foot.appendChild(btnCancel);
+        foot.appendChild(btnOk);
+        dialog.appendChild(foot);
+
+        overlay.appendChild(dialog);
+        document.body.appendChild(overlay);
+        scModal = overlay;
+
+        /* 条件字段显隐（hide 的等级 / 密码随类型切换） */
+        function refreshWhen() {
+            $$('.ec-ed__f[data-when]', body).forEach(function (wrap) {
+                var cond = {};
+                try {
+                    cond = JSON.parse(wrap.getAttribute('data-when')) || {};
+                } catch (err) {
+                    cond = {};
+                }
+                var k = Object.keys(cond)[0];
+                var src = k ? $('.ec-ed__f > .ec-ed__fin[data-key="' + k + '"]', body) : null;
+                wrap.classList.toggle('is-hide', !(src && String(src.value) === String(cond[k])));
+            });
+        }
+
+        function collect() {
+            var vals = {};
+            var missing = null;
+
+            (entry.form || []).forEach(function (f) {
+                var wrap = $('.ec-ed__f[data-fkey="' + f.key + '"]', body);
+                if (!wrap || wrap.classList.contains('is-hide')) {
+                    return;
+                }
+                if (f.type === 'rows') {
+                    var list = [];
+                    $$('.ec-ed__row', wrap).forEach(function (row) {
+                        var item = {};
+                        (f.fields || []).forEach(function (rf) {
+                            var input = $('.ec-ed__fin[data-key="' + rf.key + '"]', row);
+                            item[rf.key] = input ? input.value : '';
+                        });
+                        list.push(item);
+                    });
+                    vals[f.key] = list;
+                    return;
+                }
+                var ctl = $('.ec-ed__f > .ec-ed__fin[data-key="' + f.key + '"]', body);
+                var v = ctl ? ctl.value : '';
+                if (f.req && !missing && String(v).trim() === '') {
+                    missing = { label: f.label, ctl: ctl };
+                }
+                vals[f.key] = v;
+            });
+
+            return { vals: vals, missing: missing };
+        }
+
+        function doInsert() {
+            var got = collect();
+            if (got.missing) {
+                toast('请填写「' + got.missing.label + '」', 'warn');
+                if (got.missing.ctl) {
+                    got.missing.ctl.focus();
+                }
+                return;
+            }
+            var res = entry.build(got.vals);
+            closeForm();
+            if (res && res.text) {
+                insertGenerated(res.text, !!res.inline);
+            }
+        }
+
+        btnOk.addEventListener('click', doInsert);
+        btnCancel.addEventListener('click', function () {
+            closeForm();
+        });
+        closeBtn.addEventListener('click', function () {
+            closeForm();
+        });
+        overlay.addEventListener('mousedown', function (e) {
+            if (e.target === overlay) {
+                closeForm();
+            }
+        });
+
+        /* 输入框里回车直接插入；条件字段随值刷新 */
+        dialog.addEventListener('keydown', function (e) {
+            if (e.key === 'Enter' && e.target.tagName === 'INPUT') {
+                e.preventDefault();
+                doInsert();
+            }
+        });
+        body.addEventListener('change', refreshWhen);
+        body.addEventListener('input', refreshWhen);
+
+        scModalKey = function (e) {
+            if (e.key === 'Escape') {
+                e.preventDefault();
+                e.stopPropagation();
+                closeForm();
+            }
+        };
+        document.addEventListener('keydown', scModalKey, true);
+
+        refreshWhen();
+
+        var first = $('.ec-ed__fin', body);
+        if (first) {
+            first.focus();
+        }
+    }
+
     /* ---------------- 短代码图标行 ---------------- */
 
     function buildScBar(row) {
@@ -623,6 +1321,10 @@
                 btn.addEventListener('click', function () {
                     if (it.pick === 'gallery') {
                         insertGallery();
+                        return;
+                    }
+                    if (it.form) {
+                        openForm(it);
                         return;
                     }
                     insertSnippet(it.tpl, it.inline);

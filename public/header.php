@@ -27,6 +27,11 @@ if (!headers_sent()) {
 /* 外链中转拦截：命中 /go/<token> 直接输出加载页并终止（须在输出前） */
 ecod_go_intercept();
 
+/* 访问统计打点：整页与 PJAX 都算一次 PV（PJAX 换页用户确实看到了新页面）。
+   这里只把这次访问攒进内存，落库在 shutdown 且 fastcgi_finish_request 之后，
+   不占前台响应时间；开关见后台「互动 → 点赞与数据 → 访问统计」。 */
+ecod_stats_hit($this);
+
 /* PJAX 局部渲染：主题自身的无刷新跳转只回传 shell 段，跳过整页 chrome
    （head 资源 / 导航 / 抽屉 / 页脚块）；高亮地址随 shell 的
    data-ecod-nav-active 输出，JS 换页后据此同步导航高亮 */
@@ -41,6 +46,12 @@ $ecodFamAttr = ' data-ecod-fams="' . htmlspecialchars(implode(',', ecod_css_fami
 if (ecod_is_pjax()) {
     $this->widget('\Widget\Contents\Page\Rows')->to($ecodPjaxPages);
     $ecodNavActive = ecod_nav_active($this, ecod_nav_items($ecodPjaxPages));
+    /* 顶部全宽区与全量渲染对齐（shell 开标签内、.ecod_layout 之前）：
+       footer.php 的 PJAX 分支配对补渲染 bottom_fluid，这里同样不能漏，
+       否则「所有页面 · 顶部全宽」挂件只在整页刷新时出现 */
+    ob_start();
+    ecod_widgets_zone('top_fluid', $this);
+    $ecodTopZone = ob_get_clean();
     echo '<!DOCTYPE html><html><head><meta charset="'
         . htmlspecialchars((string) $this->options->charset, ENT_QUOTES, 'UTF-8') . '">'
         . '<title>' . htmlspecialchars(ecod_seo_title($this), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') . '</title></head><body>'
@@ -49,7 +60,8 @@ if (ecod_is_pjax()) {
         . ($ecodNavActive !== '' ? ' data-ecod-nav-active="' . htmlspecialchars($ecodNavActive, ENT_QUOTES, 'UTF-8') . '"' : '')
         . $ecodBundleAttr
         . $ecodFamAttr
-        . '><div class="ecod_layout" data-aside="'
+        . '>' . $ecodTopZone
+        . '<div class="ecod_layout" data-aside="'
         . htmlspecialchars(ecod_aside_pos($this), ENT_QUOTES, 'UTF-8') . '">';
     return;
 }
@@ -65,6 +77,11 @@ if ($ecodLogoDims === '') {
 $ecodLogoBoth = ecod_option('ELogoBoth', 'off') === 'on';
 $ecodDark = ecod_option('EDark', 'auto');
 $ecodAnim = (string) ecod_option('EAnimate', 'blur');
+/* 页面加载效果（PJAX 换页等待时的过渡），值须与 ecod.css §16 的 data-loadfx 变体一致 */
+$ecodLoadFx = (string) ecod_option('ELoadFx', 'bar');
+if (!in_array($ecodLoadFx, ['bar', 'ring', 'logo', 'veil', 'none'], true)) {
+    $ecodLoadFx = 'bar';
+}
 /* 卡片动效总开关（设计稿 guaqi-reference §F5）：off 时磁贴/聚合卡等不加 hover 动效与渐入 */
 $ecodMotion = (string) ecod_option('ECardMotion', 'on') === 'on' ? 'on' : 'off';
 $ecodBackdrop = (string) ecod_option('EBackdrop', 'none');
@@ -131,6 +148,7 @@ if (ecod_block_on('dock')) {
 <!DOCTYPE html>
 <html lang="zh-CN" class="ecod-booting" data-theme="light" data-dark="<?php echo $ecodDark; ?>"
       data-anim="<?php echo htmlspecialchars($ecodAnim, ENT_QUOTES, 'UTF-8'); ?>"
+      data-loadfx="<?php echo $ecodLoadFx; ?>"
       data-backdrop="<?php echo htmlspecialchars($ecodBackdrop, ENT_QUOTES, 'UTF-8'); ?>"
       data-cursor="<?php echo htmlspecialchars($ecodCursor, ENT_QUOTES, 'UTF-8'); ?>"
       data-motion="<?php echo $ecodMotion; ?>"
@@ -139,6 +157,7 @@ if (ecod_block_on('dock')) {
     <?php $this->need('public/include.php'); ?>
 </head>
 <body class="<?php echo implode(' ', $ecodBodyClass); ?>">
+<?php ecod_license_admin_bar(); ?>
 <a class="ecod_skip" href="#ecod-main">跳到正文</a>
 
 <header class="ecod_header" data-ecod-header>
@@ -510,11 +529,11 @@ if (ecod_block_on('dock')) {
             <input type="hidden" name="referer" value="<?php echo htmlspecialchars($ecodHere, ENT_QUOTES, 'UTF-8'); ?>">
             <label class="ecod_login__field">
                 <span>用户名或邮箱</span>
-                <input class="ecod_input" type="text" name="name" required autocomplete="username" placeholder="用户名或邮箱">
+                <input class="ecod_input" type="text" name="name" required autocomplete="username">
             </label>
             <label class="ecod_login__field">
                 <span>密码</span>
-                <input class="ecod_input" type="password" name="password" required autocomplete="current-password" placeholder="密码">
+                <input class="ecod_input" type="password" name="password" required autocomplete="current-password">
             </label>
             <label class="ecod_login__field">
                 <span>验证码</span>
@@ -584,6 +603,7 @@ if (isset($ecodSpanelPostLabels[$ecodSpanelPostOrder])) {
             <?php echo ecod_icon('search', 17); ?>
             <input type="search" class="ecod_spanel__input" data-ecod-spanel-input
                    placeholder="搜索文章…" aria-label="搜索文章" autocomplete="off">
+            <span class="ecod_spanel__ball" data-ecod-spanel-ball aria-hidden="true"></span>
             <kbd class="ecod_spanel__esc" aria-hidden="true">Esc</kbd>
         </div>
         <div class="ecod_spanel__body" data-ecod-spanel-body></div>
@@ -593,6 +613,72 @@ if (isset($ecodSpanelPostLabels[$ecodSpanelPostOrder])) {
     </div>
 </div>
 <?php endif; ?>
+<?php /* AI 快问面板：放在 #ecod-shell 之外，PJAX 换页不会被替换（与搜索面板同一约定） */ ?>
+<?php if (ecod_ai_ask_enabled()): ?>
+<div class="ecod_aiask" data-ecod-aiask hidden>
+    <div class="ecod_aiask__panel" role="dialog" aria-modal="false" aria-label="AI 快问" data-ecod-aiask-panel>
+        <header class="ecod_aiask__head">
+            <span class="ecod_aiask__ava" data-ecod-aiask-ball aria-hidden="true"></span>
+            <b class="ecod_aiask__title" data-ecod-aiask-title>AI 快问</b>
+            <span class="ecod_aiask__scope" data-ecod-aiask-scope hidden></span>
+            <button type="button" class="ecod_aiask__bal" data-ecod-aiask-bal hidden></button>
+            <button type="button" class="ecod_aiask__x" data-ecod-aiask-close aria-label="关闭">
+                <?php echo ecod_icon('x', 14); ?>
+            </button>
+        </header>
+        <div class="ecod_aiask__ctx" data-ecod-aiask-ctx hidden>
+            <span data-ecod-aiask-ctxt></span>
+            <button type="button" data-ecod-aiask-unpin aria-label="不再针对这篇文章"><?php echo ecod_icon('x', 12); ?></button>
+        </div>
+        <div class="ecod_aiask__list" data-ecod-aiask-list aria-live="polite">
+            <div class="ecod_aiask__welcome" data-ecod-aiask-welcome>
+                <p>你好，我是本站的 AI 助手，关于文章内容或建站问题都可以问我。</p>
+                <div class="ecod_aiask__chips" data-ecod-aiask-chips>
+                    <?php foreach (ecod_ai_chips() as $ecodChip): ?>
+                        <button type="button" data-ecod-aiask-chip="<?php echo htmlspecialchars($ecodChip, ENT_QUOTES, 'UTF-8'); ?>"><?php echo htmlspecialchars($ecodChip, ENT_QUOTES, 'UTF-8'); ?></button>
+                    <?php endforeach; ?>
+                </div>
+            </div>
+        </div>
+        <?php /* 看广告领点数（F12）：登录 + 后台开启时由前端点亮，默认整块隐藏 */ ?>
+        <div class="ecod_aiask__earn" data-ecod-aiask-earn hidden>
+            <div class="ecod_aiask__earnrow">
+                <span><?php echo ecod_icon('play', 11); ?> 积分不够？看一段广告 +<b data-ecod-aiask-adamt>1</b> 点</span>
+                <button type="button" data-ecod-aiask-adopen>去看看</button>
+            </div>
+            <div class="ecod_aiask__ad" data-ecod-aiask-ad hidden>
+                <a class="ecod_aiask__adcard" data-ecod-aiask-adlink href="<?php $this->options->siteUrl(); ?>"
+                   target="_blank" rel="noopener nofollow sponsored">
+                    <span class="ecod_aiask__adcover" data-ecod-aiask-adcover hidden></span>
+                    <span class="ecod_aiask__adbody">
+                        <b data-ecod-aiask-adtitle>本站推荐</b>
+                        <small data-ecod-aiask-adnote>赞助内容</small>
+                    </span>
+                </a>
+                <div class="ecod_aiask__adfoot">
+                    <button type="button" class="ecod_aiask__adbtn" data-ecod-aiask-adclaim disabled>广告播放中</button>
+                    <button type="button" class="ecod_aiask__adx" data-ecod-aiask-adclose aria-label="收起广告">收起</button>
+                </div>
+            </div>
+        </div>
+        <form class="ecod_aiask__form" data-ecod-aiask-form>
+            <textarea class="ecod_aiask__ta" data-ecod-aiask-ta rows="1" maxlength="2000"
+                      placeholder="问点什么…" aria-label="输入问题"></textarea>
+            <button type="submit" class="ecod_aiask__send" data-ecod-aiask-send aria-label="发送">
+                <span data-ecod-aiask-sendicon><?php echo ecod_icon('arrow-up', 15); ?></span>
+            </button>
+        </form>
+        <footer class="ecod_aiask__foot">
+            <span data-ecod-aiask-tip>回答由 AI 生成，仅供参考</span>
+            <a href="<?php echo htmlspecialchars(ecod_template_page_url('page-ai.php'), ENT_QUOTES, 'UTF-8'); ?>"
+               data-ecod-aiask-more>完整对话<?php echo ecod_icon('arrow-up-right', 11); ?></a>
+        </footer>
+    </div>
+</div>
+<?php endif; ?>
+<?php /* 内置浏览器引导：微信 / QQ 等 WebView 中提示改用浏览器。
+   同样放在 #ecod-shell 之外，PJAX 换页不重建（非内置 UA 时组件不产出标记） */ ?>
+<?php $this->need('components/header/inapp.php'); ?>
 <div class="ecod_container" id="ecod-shell"<?php echo $ecodNavActive !== '' ? ' data-ecod-nav-active="' . htmlspecialchars($ecodNavActive, ENT_QUOTES, 'UTF-8') . '"' : ''; ?><?php echo $ecodBundleAttr . $ecodFamAttr; ?>>
     <?php ecod_widgets_zone('top_fluid', $this); ?>
     <div class="ecod_layout" data-aside="<?php echo $ecodAside; ?>">

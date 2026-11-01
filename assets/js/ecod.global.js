@@ -25,30 +25,33 @@
     /* 由 build/icons.mjs 依 build/icons.map.json 生成（css.gg 填充风格）；增删图标改映射表后重跑 node build/icons.mjs */
     /* icons:generated:start */
     var ICON_PATHS = {
-        moon: '<path fill-rule="evenodd" clip-rule="evenodd" d="M12.2256 2.00253C9.59172 1.94346 6.93894 2.9189 4.92893 4.92891C1.02369 8.83415 1.02369 15.1658 4.92893 19.071C8.83418 22.9763 15.1658 22.9763 19.0711 19.071C21.0811 17.061 22.0565 14.4082 21.9975 11.7743C21.9796 10.9772 21.8669 10.1818 21.6595 9.40643C21.0933 9.9488 20.5078 10.4276 19.9163 10.8425C18.5649 11.7906 17.1826 12.4053 15.9301 12.6837C14.0241 13.1072 12.7156 12.7156 12 12C11.2844 11.2844 10.8928 9.97588 11.3163 8.0699C11.5947 6.81738 12.2094 5.43511 13.1575 4.08368C13.5724 3.49221 14.0512 2.90664 14.5935 2.34046C13.8182 2.13305 13.0228 2.02041 12.2256 2.00253ZM17.6569 17.6568C18.9081 16.4056 19.6582 14.8431 19.9072 13.2186C16.3611 15.2643 12.638 15.4664 10.5858 13.4142C8.53361 11.362 8.73568 7.63895 10.7814 4.09281C9.1569 4.34184 7.59434 5.09193 6.34315 6.34313C3.21895 9.46732 3.21895 14.5326 6.34315 17.6568C9.46734 20.781 14.5327 20.781 17.6569 17.6568Z" />',
-        sun: '<path fill-rule="evenodd" clip-rule="evenodd" d="M12 16C14.2091 16 16 14.2091 16 12C16 9.79086 14.2091 8 12 8C9.79086 8 8 9.79086 8 12C8 14.2091 9.79086 16 12 16ZM12 18C15.3137 18 18 15.3137 18 12C18 8.68629 15.3137 6 12 6C8.68629 6 6 8.68629 6 12C6 15.3137 8.68629 18 12 18Z" /><path fill-rule="evenodd" clip-rule="evenodd" d="M11 0H13V4.06189C12.6724 4.02104 12.3387 4 12 4C11.6613 4 11.3276 4.02104 11 4.06189V0ZM7.0943 5.68018L4.22173 2.80761L2.80752 4.22183L5.6801 7.09441C6.09071 6.56618 6.56608 6.0908 7.0943 5.68018ZM4.06189 11H0V13H4.06189C4.02104 12.6724 4 12.3387 4 12C4 11.6613 4.02104 11.3276 4.06189 11ZM5.6801 16.9056L2.80751 19.7782L4.22173 21.1924L7.0943 18.3198C6.56608 17.9092 6.09071 17.4338 5.6801 16.9056ZM11 19.9381V24H13V19.9381C12.6724 19.979 12.3387 20 12 20C11.6613 20 11.3276 19.979 11 19.9381ZM16.9056 18.3199L19.7781 21.1924L21.1923 19.7782L18.3198 16.9057C17.9092 17.4339 17.4338 17.9093 16.9056 18.3199ZM19.9381 13H24V11H19.9381C19.979 11.3276 20 11.6613 20 12C20 12.3387 19.979 12.6724 19.9381 13ZM18.3198 7.0943L21.1923 4.22183L19.7781 2.80762L16.9056 5.6801C17.4338 6.09071 17.9092 6.56608 18.3198 7.0943Z" />',
-        heart: '<path fill-rule="evenodd" clip-rule="evenodd" d="M12.0122 5.57169L10.9252 4.48469C8.77734 2.33681 5.29493 2.33681 3.14705 4.48469C0.999162 6.63258 0.999162 10.115 3.14705 12.2629L11.9859 21.1017L11.9877 21.0999L12.014 21.1262L20.8528 12.2874C23.0007 10.1395 23.0007 6.65711 20.8528 4.50923C18.705 2.36134 15.2226 2.36134 13.0747 4.50923L12.0122 5.57169ZM11.9877 18.2715L16.9239 13.3352L18.3747 11.9342L18.3762 11.9356L19.4386 10.8732C20.8055 9.50635 20.8055 7.29028 19.4386 5.92344C18.0718 4.55661 15.8557 4.55661 14.4889 5.92344L12.0133 8.39904L12.006 8.3918L12.005 8.39287L9.51101 5.89891C8.14417 4.53207 5.92809 4.53207 4.56126 5.89891C3.19442 7.26574 3.19442 9.48182 4.56126 10.8487L7.10068 13.3881L7.10248 13.3863L11.9877 18.2715Z" />',
-        star: '<path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>',
-        check: '<path d="M10.5858 13.4142L7.75735 10.5858L6.34314 12L10.5858 16.2427L17.6568 9.1716L16.2426 7.75739L10.5858 13.4142Z" />',
-        copy: '<path d="M13 7H7V5H13V7Z" /><path d="M13 11H7V9H13V11Z" /><path d="M7 15H13V13H7V15Z" /><path fill-rule="evenodd" clip-rule="evenodd" d="M3 19V1H17V5H21V23H7V19H3ZM15 17V3H5V17H15ZM17 7V19H9V21H19V7H17Z" />',
-        link: '<path d="M14.8284 12L16.2426 13.4142L19.071 10.5858C20.6331 9.02365 20.6331 6.49099 19.071 4.9289C17.509 3.3668 14.9763 3.3668 13.4142 4.9289L10.5858 7.75732L12 9.17154L14.8284 6.34311C15.6095 5.56206 16.8758 5.56206 17.6568 6.34311C18.4379 7.12416 18.4379 8.39049 17.6568 9.17154L14.8284 12Z" /><path d="M12 14.8285L13.4142 16.2427L10.5858 19.0711C9.02372 20.6332 6.49106 20.6332 4.92896 19.0711C3.36686 17.509 3.36686 14.9764 4.92896 13.4143L7.75739 10.5858L9.1716 12L6.34317 14.8285C5.56212 15.6095 5.56212 16.8758 6.34317 17.6569C7.12422 18.4379 8.39055 18.4379 9.1716 17.6569L12 14.8285Z" /><path d="M14.8285 10.5857C15.219 10.1952 15.219 9.56199 14.8285 9.17147C14.4379 8.78094 13.8048 8.78094 13.4142 9.17147L9.1716 13.4141C8.78107 13.8046 8.78107 14.4378 9.1716 14.8283C9.56212 15.2188 10.1953 15.2188 10.5858 14.8283L14.8285 10.5857Z" />',
-        trash: '<path fill-rule="evenodd" clip-rule="evenodd" d="M17 5V4C17 2.89543 16.1046 2 15 2H9C7.89543 2 7 2.89543 7 4V5H4C3.44772 5 3 5.44772 3 6C3 6.55228 3.44772 7 4 7H5V18C5 19.6569 6.34315 21 8 21H16C17.6569 21 19 19.6569 19 18V7H20C20.5523 7 21 6.55228 21 6C21 5.44772 20.5523 5 20 5H17ZM15 4H9V5H15V4ZM17 7H7V18C7 18.5523 7.44772 19 8 19H16C16.5523 19 17 18.5523 17 18V7Z" /><path d="M9 9H11V17H9V9Z" /><path d="M13 9H15V17H13V9Z" />',
-        play: '<path d="M15 12.3301L9 16.6603L9 8L15 12.3301Z" />',
-        pause: '<path d="M8 5h3.2v14H8zM12.8 5H16v14h-3.2z"/>',
-        volume: '<path d="M24 12C24 16.4183 20.4183 20 16 20V18C19.3137 18 22 15.3137 22 12C22 8.68629 19.3137 6 16 6V4C20.4183 4 24 7.58172 24 12Z" /><path d="M20 12C20 14.2091 18.2091 16 16 16V14C17.1046 14 18 13.1046 18 12C18 10.8954 17.1046 10 16 10V8C18.2091 8 20 9.79086 20 12Z" /><path fill-rule="evenodd" clip-rule="evenodd" d="M9 16L15 20V4L9 8H5C2.79086 8 1 9.79086 1 12C1 14.2091 2.79086 16 5 16H9ZM5 10H9L13 7.5V16.5L9 14H5C3.89543 14 3 13.1046 3 12C3 10.8954 3.89543 10 5 10Z" />',
-        search: '<path fill-rule="evenodd" clip-rule="evenodd" d="M18.319 14.4326C20.7628 11.2941 20.542 6.75347 17.6569 3.86829C14.5327 0.744098 9.46734 0.744098 6.34315 3.86829C3.21895 6.99249 3.21895 12.0578 6.34315 15.182C9.22833 18.0672 13.769 18.2879 16.9075 15.8442C16.921 15.8595 16.9351 15.8745 16.9497 15.8891L21.1924 20.1317C21.5829 20.5223 22.2161 20.5223 22.6066 20.1317C22.9971 19.7412 22.9971 19.1081 22.6066 18.7175L18.364 14.4749C18.3493 14.4603 18.3343 14.4462 18.319 14.4326ZM16.2426 5.28251C18.5858 7.62565 18.5858 11.4246 16.2426 13.7678C13.8995 16.1109 10.1005 16.1109 7.75736 13.7678C5.41421 11.4246 5.41421 7.62565 7.75736 5.28251C10.1005 2.93936 13.8995 2.93936 16.2426 5.28251Z" />',
-        file: '<path fill-rule="evenodd" clip-rule="evenodd" d="M3 5C3 3.34315 4.34315 2 6 2H14C17.866 2 21 5.13401 21 9V19C21 20.6569 19.6569 22 18 22H6C4.34315 22 3 20.6569 3 19V5ZM13 4H6C5.44772 4 5 4.44772 5 5V19C5 19.5523 5.44772 20 6 20H18C18.5523 20 19 19.5523 19 19V9H13V4ZM18.584 7C17.9413 5.52906 16.6113 4.4271 15 4.10002V7H18.584Z" />',
-        list: '<path fill-rule="evenodd" clip-rule="evenodd" d="M20 4H4C3.44771 4 3 4.44772 3 5V19C3 19.5523 3.44772 20 4 20H20C20.5523 20 21 19.5523 21 19V5C21 4.44771 20.5523 4 20 4ZM4 2C2.34315 2 1 3.34315 1 5V19C1 20.6569 2.34315 22 4 22H20C21.6569 22 23 20.6569 23 19V5C23 3.34315 21.6569 2 20 2H4ZM6 7H8V9H6V7ZM11 7C10.4477 7 10 7.44772 10 8C10 8.55228 10.4477 9 11 9H17C17.5523 9 18 8.55228 18 8C18 7.44772 17.5523 7 17 7H11ZM8 11H6V13H8V11ZM10 12C10 11.4477 10.4477 11 11 11H17C17.5523 11 18 11.4477 18 12C18 12.5523 17.5523 13 17 13H11C10.4477 13 10 12.5523 10 12ZM8 15H6V17H8V15ZM10 16C10 15.4477 10.4477 15 11 15H17C17.5523 15 18 15.4477 18 16C18 16.5523 17.5523 17 17 17H11C10.4477 17 10 16.5523 10 16Z" />',
-        external: '<path d="M15.6396 7.02527H12.0181V5.02527H19.0181V12.0253H17.0181V8.47528L12.1042 13.3892L10.6899 11.975L15.6396 7.02527Z" /><path d="M10.9819 6.97473H4.98193V18.9747H16.9819V12.9747H14.9819V16.9747H6.98193V8.97473H10.9819V6.97473Z" />',
-        x: '<path d="M6.2253 4.81108C5.83477 4.42056 5.20161 4.42056 4.81108 4.81108C4.42056 5.20161 4.42056 5.83477 4.81108 6.2253L10.5858 12L4.81114 17.7747C4.42062 18.1652 4.42062 18.7984 4.81114 19.1889C5.20167 19.5794 5.83483 19.5794 6.22535 19.1889L12 13.4142L17.7747 19.1889C18.1652 19.5794 18.7984 19.5794 19.1889 19.1889C19.5794 18.7984 19.5794 18.1652 19.1889 17.7747L13.4142 12L19.189 6.2253C19.5795 5.83477 19.5795 5.20161 19.189 4.81108C18.7985 4.42056 18.1653 4.42056 17.7748 4.81108L12 10.5858L6.2253 4.81108Z" />',
-        clock: '<path d="M9 7H11V12H16V14H9V7Z" /><path fill-rule="evenodd" clip-rule="evenodd" d="M22 12C22 17.5228 17.5228 22 12 22C6.47715 22 2 17.5228 2 12C2 6.47715 6.47715 2 12 2C17.5228 2 22 6.47715 22 12ZM20 12C20 16.4183 16.4183 20 12 20C7.58172 20 4 16.4183 4 12C4 7.58172 7.58172 4 12 4C16.4183 4 20 7.58172 20 12Z" />',
-        inbox: '<path fill-rule="evenodd" clip-rule="evenodd" d="M2 5C2 3.34315 3.34315 2 5 2H19C20.6569 2 22 3.34315 22 5V20C22 21.1046 21.1046 22 20 22H8.1477C8.09893 22.0036 8.04968 22.0054 8 22.0054H4C2.89543 22.0054 2 21.1099 2 20.0054V5ZM5 4H19C19.5523 4 20 4.44771 20 5V14H16C14.8954 14 14 14.8954 14 16V17H10V16.0054C10 14.9008 9.10457 14.0054 8 14.0054H4V5C4 4.44772 4.44771 4 5 4Z" />',
-        user: '<path fill-rule="evenodd" clip-rule="evenodd" d="M16 7C16 9.20914 14.2091 11 12 11C9.79086 11 8 9.20914 8 7C8 4.79086 9.79086 3 12 3C14.2091 3 16 4.79086 16 7ZM14 7C14 8.10457 13.1046 9 12 9C10.8954 9 10 8.10457 10 7C10 5.89543 10.8954 5 12 5C13.1046 5 14 5.89543 14 7Z" /><path d="M16 15C16 14.4477 15.5523 14 15 14H9C8.44772 14 8 14.4477 8 15V21H6V15C6 13.3431 7.34315 12 9 12H15C16.6569 12 18 13.3431 18 15V21H16V15Z" />',
-        alert: '<path d="M12 6C12.5523 6 13 6.44772 13 7V13C13 13.5523 12.5523 14 12 14C11.4477 14 11 13.5523 11 13V7C11 6.44772 11.4477 6 12 6Z" /><path d="M12 16C11.4477 16 11 16.4477 11 17C11 17.5523 11.4477 18 12 18C12.5523 18 13 17.5523 13 17C13 16.4477 12.5523 16 12 16Z" /><path fill-rule="evenodd" clip-rule="evenodd" d="M12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2ZM4 12C4 16.4183 7.58172 20 12 20C16.4183 20 20 16.4183 20 12C20 7.58172 16.4183 4 12 4C7.58172 4 4 7.58172 4 12Z" />',
-        left: '<path d="M16.2426 6.34317L14.8284 4.92896L7.75739 12L14.8285 19.0711L16.2427 17.6569L10.5858 12L16.2426 6.34317Z" />',
-        right: '<path d="M10.5858 6.34317L12 4.92896L19.0711 12L12 19.0711L10.5858 17.6569L16.2427 12L10.5858 6.34317Z" />',
-        download: '<path d="M11 5C11 4.44772 11.4477 4 12 4C12.5523 4 13 4.44772 13 5V12.1578L16.2428 8.91501L17.657 10.3292L12.0001 15.9861L6.34326 10.3292L7.75748 8.91501L11 12.1575V5Z" /><path d="M4 14H6V18H18V14H20V18C20 19.1046 19.1046 20 18 20H6C4.89543 20 4 19.1046 4 18V14Z" />',
-        zap: '<path d="M9 21.5L17.5 13L13 10L15 2.5L6.5 11L11 14L9 21.5Z" />',
+        'moon': '<path fill-rule="evenodd" clip-rule="evenodd" d="M12.2256 2.00253C9.59172 1.94346 6.93894 2.9189 4.92893 4.92891C1.02369 8.83415 1.02369 15.1658 4.92893 19.071C8.83418 22.9763 15.1658 22.9763 19.0711 19.071C21.0811 17.061 22.0565 14.4082 21.9975 11.7743C21.9796 10.9772 21.8669 10.1818 21.6595 9.40643C21.0933 9.9488 20.5078 10.4276 19.9163 10.8425C18.5649 11.7906 17.1826 12.4053 15.9301 12.6837C14.0241 13.1072 12.7156 12.7156 12 12C11.2844 11.2844 10.8928 9.97588 11.3163 8.0699C11.5947 6.81738 12.2094 5.43511 13.1575 4.08368C13.5724 3.49221 14.0512 2.90664 14.5935 2.34046C13.8182 2.13305 13.0228 2.02041 12.2256 2.00253ZM17.6569 17.6568C18.9081 16.4056 19.6582 14.8431 19.9072 13.2186C16.3611 15.2643 12.638 15.4664 10.5858 13.4142C8.53361 11.362 8.73568 7.63895 10.7814 4.09281C9.1569 4.34184 7.59434 5.09193 6.34315 6.34313C3.21895 9.46732 3.21895 14.5326 6.34315 17.6568C9.46734 20.781 14.5327 20.781 17.6569 17.6568Z" />',
+        'sun': '<path fill-rule="evenodd" clip-rule="evenodd" d="M12 16C14.2091 16 16 14.2091 16 12C16 9.79086 14.2091 8 12 8C9.79086 8 8 9.79086 8 12C8 14.2091 9.79086 16 12 16ZM12 18C15.3137 18 18 15.3137 18 12C18 8.68629 15.3137 6 12 6C8.68629 6 6 8.68629 6 12C6 15.3137 8.68629 18 12 18Z" /><path fill-rule="evenodd" clip-rule="evenodd" d="M11 0H13V4.06189C12.6724 4.02104 12.3387 4 12 4C11.6613 4 11.3276 4.02104 11 4.06189V0ZM7.0943 5.68018L4.22173 2.80761L2.80752 4.22183L5.6801 7.09441C6.09071 6.56618 6.56608 6.0908 7.0943 5.68018ZM4.06189 11H0V13H4.06189C4.02104 12.6724 4 12.3387 4 12C4 11.6613 4.02104 11.3276 4.06189 11ZM5.6801 16.9056L2.80751 19.7782L4.22173 21.1924L7.0943 18.3198C6.56608 17.9092 6.09071 17.4338 5.6801 16.9056ZM11 19.9381V24H13V19.9381C12.6724 19.979 12.3387 20 12 20C11.6613 20 11.3276 19.979 11 19.9381ZM16.9056 18.3199L19.7781 21.1924L21.1923 19.7782L18.3198 16.9057C17.9092 17.4339 17.4338 17.9093 16.9056 18.3199ZM19.9381 13H24V11H19.9381C19.979 11.3276 20 11.6613 20 12C20 12.3387 19.979 12.6724 19.9381 13ZM18.3198 7.0943L21.1923 4.22183L19.7781 2.80762L16.9056 5.6801C17.4338 6.09071 17.9092 6.56608 18.3198 7.0943Z" />',
+        'heart': '<path fill-rule="evenodd" clip-rule="evenodd" d="M12.0122 5.57169L10.9252 4.48469C8.77734 2.33681 5.29493 2.33681 3.14705 4.48469C0.999162 6.63258 0.999162 10.115 3.14705 12.2629L11.9859 21.1017L11.9877 21.0999L12.014 21.1262L20.8528 12.2874C23.0007 10.1395 23.0007 6.65711 20.8528 4.50923C18.705 2.36134 15.2226 2.36134 13.0747 4.50923L12.0122 5.57169ZM11.9877 18.2715L16.9239 13.3352L18.3747 11.9342L18.3762 11.9356L19.4386 10.8732C20.8055 9.50635 20.8055 7.29028 19.4386 5.92344C18.0718 4.55661 15.8557 4.55661 14.4889 5.92344L12.0133 8.39904L12.006 8.3918L12.005 8.39287L9.51101 5.89891C8.14417 4.53207 5.92809 4.53207 4.56126 5.89891C3.19442 7.26574 3.19442 9.48182 4.56126 10.8487L7.10068 13.3881L7.10248 13.3863L11.9877 18.2715Z" />',
+        'star': '<path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>',
+        'check': '<path d="M10.5858 13.4142L7.75735 10.5858L6.34314 12L10.5858 16.2427L17.6568 9.1716L16.2426 7.75739L10.5858 13.4142Z" />',
+        'copy': '<path d="M13 7H7V5H13V7Z" /><path d="M13 11H7V9H13V11Z" /><path d="M7 15H13V13H7V15Z" /><path fill-rule="evenodd" clip-rule="evenodd" d="M3 19V1H17V5H21V23H7V19H3ZM15 17V3H5V17H15ZM17 7V19H9V21H19V7H17Z" />',
+        'link': '<path d="M14.8284 12L16.2426 13.4142L19.071 10.5858C20.6331 9.02365 20.6331 6.49099 19.071 4.9289C17.509 3.3668 14.9763 3.3668 13.4142 4.9289L10.5858 7.75732L12 9.17154L14.8284 6.34311C15.6095 5.56206 16.8758 5.56206 17.6568 6.34311C18.4379 7.12416 18.4379 8.39049 17.6568 9.17154L14.8284 12Z" /><path d="M12 14.8285L13.4142 16.2427L10.5858 19.0711C9.02372 20.6332 6.49106 20.6332 4.92896 19.0711C3.36686 17.509 3.36686 14.9764 4.92896 13.4143L7.75739 10.5858L9.1716 12L6.34317 14.8285C5.56212 15.6095 5.56212 16.8758 6.34317 17.6569C7.12422 18.4379 8.39055 18.4379 9.1716 17.6569L12 14.8285Z" /><path d="M14.8285 10.5857C15.219 10.1952 15.219 9.56199 14.8285 9.17147C14.4379 8.78094 13.8048 8.78094 13.4142 9.17147L9.1716 13.4141C8.78107 13.8046 8.78107 14.4378 9.1716 14.8283C9.56212 15.2188 10.1953 15.2188 10.5858 14.8283L14.8285 10.5857Z" />',
+        'trash': '<path fill-rule="evenodd" clip-rule="evenodd" d="M17 5V4C17 2.89543 16.1046 2 15 2H9C7.89543 2 7 2.89543 7 4V5H4C3.44772 5 3 5.44772 3 6C3 6.55228 3.44772 7 4 7H5V18C5 19.6569 6.34315 21 8 21H16C17.6569 21 19 19.6569 19 18V7H20C20.5523 7 21 6.55228 21 6C21 5.44772 20.5523 5 20 5H17ZM15 4H9V5H15V4ZM17 7H7V18C7 18.5523 7.44772 19 8 19H16C16.5523 19 17 18.5523 17 18V7Z" /><path d="M9 9H11V17H9V9Z" /><path d="M13 9H15V17H13V9Z" />',
+        'play': '<path d="M15 12.3301L9 16.6603L9 8L15 12.3301Z" />',
+        'pause': '<path d="M8 5h3.2v14H8zM12.8 5H16v14h-3.2z"/>',
+        'volume': '<path d="M24 12C24 16.4183 20.4183 20 16 20V18C19.3137 18 22 15.3137 22 12C22 8.68629 19.3137 6 16 6V4C20.4183 4 24 7.58172 24 12Z" /><path d="M20 12C20 14.2091 18.2091 16 16 16V14C17.1046 14 18 13.1046 18 12C18 10.8954 17.1046 10 16 10V8C18.2091 8 20 9.79086 20 12Z" /><path fill-rule="evenodd" clip-rule="evenodd" d="M9 16L15 20V4L9 8H5C2.79086 8 1 9.79086 1 12C1 14.2091 2.79086 16 5 16H9ZM5 10H9L13 7.5V16.5L9 14H5C3.89543 14 3 13.1046 3 12C3 10.8954 3.89543 10 5 10Z" />',
+        'search': '<path fill-rule="evenodd" clip-rule="evenodd" d="M18.319 14.4326C20.7628 11.2941 20.542 6.75347 17.6569 3.86829C14.5327 0.744098 9.46734 0.744098 6.34315 3.86829C3.21895 6.99249 3.21895 12.0578 6.34315 15.182C9.22833 18.0672 13.769 18.2879 16.9075 15.8442C16.921 15.8595 16.9351 15.8745 16.9497 15.8891L21.1924 20.1317C21.5829 20.5223 22.2161 20.5223 22.6066 20.1317C22.9971 19.7412 22.9971 19.1081 22.6066 18.7175L18.364 14.4749C18.3493 14.4603 18.3343 14.4462 18.319 14.4326ZM16.2426 5.28251C18.5858 7.62565 18.5858 11.4246 16.2426 13.7678C13.8995 16.1109 10.1005 16.1109 7.75736 13.7678C5.41421 11.4246 5.41421 7.62565 7.75736 5.28251C10.1005 2.93936 13.8995 2.93936 16.2426 5.28251Z" />',
+        'file': '<path fill-rule="evenodd" clip-rule="evenodd" d="M3 5C3 3.34315 4.34315 2 6 2H14C17.866 2 21 5.13401 21 9V19C21 20.6569 19.6569 22 18 22H6C4.34315 22 3 20.6569 3 19V5ZM13 4H6C5.44772 4 5 4.44772 5 5V19C5 19.5523 5.44772 20 6 20H18C18.5523 20 19 19.5523 19 19V9H13V4ZM18.584 7C17.9413 5.52906 16.6113 4.4271 15 4.10002V7H18.584Z" />',
+        'list': '<path fill-rule="evenodd" clip-rule="evenodd" d="M20 4H4C3.44771 4 3 4.44772 3 5V19C3 19.5523 3.44772 20 4 20H20C20.5523 20 21 19.5523 21 19V5C21 4.44771 20.5523 4 20 4ZM4 2C2.34315 2 1 3.34315 1 5V19C1 20.6569 2.34315 22 4 22H20C21.6569 22 23 20.6569 23 19V5C23 3.34315 21.6569 2 20 2H4ZM6 7H8V9H6V7ZM11 7C10.4477 7 10 7.44772 10 8C10 8.55228 10.4477 9 11 9H17C17.5523 9 18 8.55228 18 8C18 7.44772 17.5523 7 17 7H11ZM8 11H6V13H8V11ZM10 12C10 11.4477 10.4477 11 11 11H17C17.5523 11 18 11.4477 18 12C18 12.5523 17.5523 13 17 13H11C10.4477 13 10 12.5523 10 12ZM8 15H6V17H8V15ZM10 16C10 15.4477 10.4477 15 11 15H17C17.5523 15 18 15.4477 18 16C18 16.5523 17.5523 17 17 17H11C10.4477 17 10 16.5523 10 16Z" />',
+        'external': '<path d="M15.6396 7.02527H12.0181V5.02527H19.0181V12.0253H17.0181V8.47528L12.1042 13.3892L10.6899 11.975L15.6396 7.02527Z" /><path d="M10.9819 6.97473H4.98193V18.9747H16.9819V12.9747H14.9819V16.9747H6.98193V8.97473H10.9819V6.97473Z" />',
+        'x': '<path d="M6.2253 4.81108C5.83477 4.42056 5.20161 4.42056 4.81108 4.81108C4.42056 5.20161 4.42056 5.83477 4.81108 6.2253L10.5858 12L4.81114 17.7747C4.42062 18.1652 4.42062 18.7984 4.81114 19.1889C5.20167 19.5794 5.83483 19.5794 6.22535 19.1889L12 13.4142L17.7747 19.1889C18.1652 19.5794 18.7984 19.5794 19.1889 19.1889C19.5794 18.7984 19.5794 18.1652 19.1889 17.7747L13.4142 12L19.189 6.2253C19.5795 5.83477 19.5795 5.20161 19.189 4.81108C18.7985 4.42056 18.1653 4.42056 17.7748 4.81108L12 10.5858L6.2253 4.81108Z" />',
+        'clock': '<path d="M9 7H11V12H16V14H9V7Z" /><path fill-rule="evenodd" clip-rule="evenodd" d="M22 12C22 17.5228 17.5228 22 12 22C6.47715 22 2 17.5228 2 12C2 6.47715 6.47715 2 12 2C17.5228 2 22 6.47715 22 12ZM20 12C20 16.4183 16.4183 20 12 20C7.58172 20 4 16.4183 4 12C4 7.58172 7.58172 4 12 4C16.4183 4 20 7.58172 20 12Z" />',
+        'inbox': '<path fill-rule="evenodd" clip-rule="evenodd" d="M2 5C2 3.34315 3.34315 2 5 2H19C20.6569 2 22 3.34315 22 5V20C22 21.1046 21.1046 22 20 22H8.1477C8.09893 22.0036 8.04968 22.0054 8 22.0054H4C2.89543 22.0054 2 21.1099 2 20.0054V5ZM5 4H19C19.5523 4 20 4.44771 20 5V14H16C14.8954 14 14 14.8954 14 16V17H10V16.0054C10 14.9008 9.10457 14.0054 8 14.0054H4V5C4 4.44772 4.44771 4 5 4Z" />',
+        'user': '<path fill-rule="evenodd" clip-rule="evenodd" d="M16 7C16 9.20914 14.2091 11 12 11C9.79086 11 8 9.20914 8 7C8 4.79086 9.79086 3 12 3C14.2091 3 16 4.79086 16 7ZM14 7C14 8.10457 13.1046 9 12 9C10.8954 9 10 8.10457 10 7C10 5.89543 10.8954 5 12 5C13.1046 5 14 5.89543 14 7Z" /><path d="M16 15C16 14.4477 15.5523 14 15 14H9C8.44772 14 8 14.4477 8 15V21H6V15C6 13.3431 7.34315 12 9 12H15C16.6569 12 18 13.3431 18 15V21H16V15Z" />',
+        'alert': '<path d="M12 6C12.5523 6 13 6.44772 13 7V13C13 13.5523 12.5523 14 12 14C11.4477 14 11 13.5523 11 13V7C11 6.44772 11.4477 6 12 6Z" /><path d="M12 16C11.4477 16 11 16.4477 11 17C11 17.5523 11.4477 18 12 18C12.5523 18 13 17.5523 13 17C13 16.4477 12.5523 16 12 16Z" /><path fill-rule="evenodd" clip-rule="evenodd" d="M12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2ZM4 12C4 16.4183 7.58172 20 12 20C16.4183 20 20 16.4183 20 12C20 7.58172 16.4183 4 12 4C7.58172 4 4 7.58172 4 12Z" />',
+        'left': '<path d="M16.2426 6.34317L14.8284 4.92896L7.75739 12L14.8285 19.0711L16.2427 17.6569L10.5858 12L16.2426 6.34317Z" />',
+        'right': '<path d="M10.5858 6.34317L12 4.92896L19.0711 12L12 19.0711L10.5858 17.6569L16.2427 12L10.5858 6.34317Z" />',
+        'download': '<path d="M11 5C11 4.44772 11.4477 4 12 4C12.5523 4 13 4.44772 13 5V12.1578L16.2428 8.91501L17.657 10.3292L12.0001 15.9861L6.34326 10.3292L7.75748 8.91501L11 12.1575V5Z" /><path d="M4 14H6V18H18V14H20V18C20 19.1046 19.1046 20 18 20H6C4.89543 20 4 19.1046 4 18V14Z" />',
+        'zap': '<path d="M9 21.5L17.5 13L13 10L15 2.5L6.5 11L11 14L9 21.5Z" />',
+        'info': '<path d="M11 10.9794C11 10.4271 11.4477 9.97937 12 9.97937C12.5523 9.97937 13 10.4271 13 10.9794V16.9794C13 17.5317 12.5523 17.9794 12 17.9794C11.4477 17.9794 11 17.5317 11 16.9794V10.9794Z" /><path d="M12 6.05115C11.4477 6.05115 11 6.49886 11 7.05115C11 7.60343 11.4477 8.05115 12 8.05115C12.5523 8.05115 13 7.60343 13 7.05115C13 6.49886 12.5523 6.05115 12 6.05115Z" /><path fill-rule="evenodd" clip-rule="evenodd" d="M12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2ZM4 12C4 16.4183 7.58172 20 12 20C16.4183 20 20 16.4183 20 12C20 7.58172 16.4183 4 12 4C7.58172 4 4 7.58172 4 12Z" />',
+        'check-circle': '<path fill-rule="evenodd" clip-rule="evenodd" d="M12 2c5.523 0 10 4.477 10 10s-4.477 10-10 10S2 17.523 2 12 6.477 2 12 2zm0 2a8 8 0 1 0 0 16 8 8 0 0 0 0-16z"/><path d="M16.08 9.1l1.34 1.48-5.9 5.35-3.02-3.33 1.48-1.34 1.68 1.85z"/>',
+        'x-circle': '<path fill-rule="evenodd" clip-rule="evenodd" d="M12 2c5.523 0 10 4.477 10 10s-4.477 10-10 10S2 17.523 2 12 6.477 2 12 2zm0 2a8 8 0 1 0 0 16 8 8 0 0 0 0-16z"/><path d="M13.414 12l2.121 2.121-1.414 1.415L12 13.414l-2.121 2.122-1.415-1.415L10.586 12 8.464 9.879 9.88 8.464 12 10.586l2.121-2.122 1.414 1.415z"/>',
     };
     /* icons:generated:end */
 
@@ -93,6 +96,11 @@
     };
 
     function copyText(text, done) {
+        /* 复制成功蹭球：活着的球满意一下（没有球则零开销） */
+        function finish() {
+            Ecod.ballFlashAll('19', 1200);
+            if (done) done();
+        }
         function fallback() {
             var ok = false;
             var ta = document.createElement('textarea');
@@ -103,10 +111,10 @@
             ta.select();
             try { ok = document.execCommand('copy'); } catch (e) {}
             document.body.removeChild(ta);
-            if (ok) done();
+            if (ok) finish();
         }
         if (navigator.clipboard && navigator.clipboard.writeText) {
-            navigator.clipboard.writeText(text).then(done, fallback);
+            navigator.clipboard.writeText(text).then(finish, fallback);
             return;
         }
         fallback();
@@ -128,10 +136,16 @@
     Ecod.live = live;
 
     /* ---------- 轻提示 toast：统一的非阻断反馈（替代 alert / 散落的成功提示） ----------
-       Ecod.toast(msg, type, dur)；type: 'ok'（默认，绿勾）| 'bad'（红叹号）| 'info'（无图标） */
+       Ecod.toast(msg, type, dur) —— 旧签名兼容，type: 'ok'（默认）| 'bad' | 'info'
+       Ecod.toast(msg, opts) —— opts: { type:'ok|bad|warn|info', dur,
+           action: { label, href? , onClick? } }（动作药丸，可跳转或回调）；
+       带 action 的提示驻留更久，悬停暂停倒计时，点气泡任意处即可提前关掉 */
     var toastWrap = null;
 
     Ecod.toast = function (msg, type, dur) {
+        var o = (type && typeof type === 'object') ? type : { type: type, dur: dur };
+        var kind = o.type || 'ok';
+        if (kind !== 'ok' && kind !== 'bad' && kind !== 'warn' && kind !== 'info') kind = 'ok';
         if (!toastWrap) {
             toastWrap = document.createElement('div');
             toastWrap.className = 'ecod_toasts';
@@ -139,17 +153,103 @@
             document.body.appendChild(toastWrap);
         }
         var t = document.createElement('div');
-        t.className = 'ecod_toast' + (type && type !== 'ok' ? ' ecod_toast--' + type : '');
-        var icon = type === 'bad' ? Ecod.icon('alert', 15) : (type === 'info' ? '' : Ecod.icon('check', 15));
-        t.innerHTML = icon + '<span></span>';
+        t.className = 'ecod_toast' + (kind !== 'ok' ? ' ecod_toast--' + kind : '');
+        var icon = kind === 'bad' ? Ecod.icon('x-circle', 15)
+            : kind === 'warn' ? Ecod.icon('alert', 15)
+            : kind === 'info' ? Ecod.icon('info', 15)
+            : Ecod.icon('check-circle', 15);
+        t.innerHTML = icon + '<span></span>' + (o.action ? '<button type="button" class="ecod_toast__act"></button>' : '');
         t.querySelector('span').textContent = msg;
-        toastWrap.appendChild(t);
-        window.requestAnimationFrame(function () { t.classList.add('is-in'); });
-        window.setTimeout(function () {
+
+        var gone = false;
+        var timer = null;
+        function dismiss() {
+            if (gone) return;
+            gone = true;
+            if (timer) window.clearTimeout(timer);
             t.classList.remove('is-in');
             t.classList.add('is-out');
             window.setTimeout(function () { t.remove(); }, 240);
-        }, dur || 2600);
+        }
+        function arm() {
+            if (timer) window.clearTimeout(timer);
+            /* 有动作的提示需要阅读与点击时间，默认驻留延长 */
+            timer = window.setTimeout(dismiss, o.dur || (o.action ? 6000 : 2600));
+        }
+        var act = t.querySelector('.ecod_toast__act');
+        if (act) {
+            act.textContent = o.action.label || '查看';
+            act.addEventListener('click', function (e) {
+                e.stopPropagation();
+                dismiss();
+                if (o.action.onClick) o.action.onClick();
+                else if (o.action.href) window.location.href = o.action.href;
+            });
+        }
+        t.addEventListener('click', dismiss);
+        /* 悬停暂停倒计时（触屏无悬停即自动消失，不受影响） */
+        t.addEventListener('pointerenter', function () { if (timer) window.clearTimeout(timer); });
+        t.addEventListener('pointerleave', arm);
+        toastWrap.appendChild(t);
+        window.requestAnimationFrame(function () { t.classList.add('is-in'); });
+        arm();
+    };
+
+    /* ---------- 确认弹窗：替代 window.confirm 的统一二次确认 ----------
+       Ecod.confirm({ title, text, ok, cancel, tone }) → Promise<boolean>
+       tone: 'danger'（默认，红色确认键，用于删除/关闭等不可逆操作）| 'primary'；
+       Esc / 遮罩 / 取消键 → false。复用模态原语：焦点陷阱、滚动锁、焦点还原。
+       同一时刻允许多层（确认弹窗之上还能叠裁剪窗等），走 dialogStack。 */
+    Ecod.confirm = function (opts) {
+        opts = opts || {};
+        return new Promise(function (resolve) {
+            var settled = false;
+            function done(v) {
+                if (settled) return;
+                settled = true;
+                resolve(v);
+            }
+            var tone = opts.tone === 'primary' ? 'primary' : 'danger';
+            var wrap = document.createElement('div');
+            wrap.className = 'ecod_cdlg';
+            wrap.innerHTML = '<div class="ecod_cdlg__mask" data-ecod-cdlg-mask></div>'
+                + '<div class="ecod_cdlg__card" role="dialog" aria-modal="true">'
+                + '<div class="ecod_cdlg__badge ecod_cdlg__badge--' + tone + '" aria-hidden="true">'
+                + Ecod.icon(tone === 'primary' ? 'info' : 'alert', 20) + '</div>'
+                + '<h3 class="ecod_cdlg__title"></h3>'
+                + '<div class="ecod_cdlg__ops">'
+                + '<button type="button" class="ecod_cdlg__btn" data-ecod-cdlg-cancel></button>'
+                + '<button type="button" class="ecod_cdlg__btn ecod_cdlg__btn--' + tone + '" data-ecod-cdlg-ok></button>'
+                + '</div></div>';
+            wrap.querySelector('.ecod_cdlg__title').textContent = opts.title || '确认执行这个操作？';
+            if (opts.text) {
+                var p = document.createElement('p');
+                p.className = 'ecod_cdlg__text';
+                p.textContent = opts.text;
+                wrap.querySelector('.ecod_cdlg__title').after(p);
+            }
+            wrap.querySelector('[data-ecod-cdlg-cancel]').textContent = opts.cancel || '取消';
+            wrap.querySelector('[data-ecod-cdlg-ok]').textContent = opts.ok || '确认';
+            document.body.appendChild(wrap);
+            window.requestAnimationFrame(function () { wrap.classList.add('is-in'); });
+            /* 关层统一走 dialogClose：onClose 里收尾（移除 DOM、按需记为取消），
+               按钮先 done(v) 再关层，onClose 的 done(false) 因 settled 天然 no-op */
+            Ecod.dialogOpen(wrap, wrap.querySelector('[data-ecod-cdlg-cancel]'), function () {
+                done(false);
+                wrap.classList.add('is-out');
+                window.setTimeout(function () { wrap.remove(); }, 180);
+            });
+            wrap.querySelector('[data-ecod-cdlg-ok]').addEventListener('click', function () {
+                done(true);
+                Ecod.dialogClose(wrap);
+            });
+            wrap.querySelector('[data-ecod-cdlg-cancel]').addEventListener('click', function () {
+                Ecod.dialogClose(wrap);
+            });
+            wrap.querySelector('[data-ecod-cdlg-mask]').addEventListener('click', function () {
+                Ecod.dialogClose(wrap);
+            });
+        });
     };
 
     /* ---------- 无障碍：模态弹层原语 ----------
@@ -195,15 +295,18 @@
     }
 
     function dialogLock() {
-        document.documentElement.classList.toggle('ecod-modal-lock', dialogStack.length > 0);
+        var need = dialogStack.some(function (d) { return d.lock !== false; });
+        document.documentElement.classList.toggle('ecod-modal-lock', need);
     }
 
-    Ecod.dialogOpen = function (el, target, onClose) {
+    Ecod.dialogOpen = function (el, target, onClose, opts) {
         if (dialogStack.some(function (d) { return d.el === el; })) return;
         dialogStack.push({
             el: el,
             back: document.activeElement,
-            onClose: typeof onClose === 'function' ? onClose : null
+            onClose: typeof onClose === 'function' ? onClose : null,
+            /* 非模态浮层（AI 快问面板）传 { lock:false }：不锁 html 滚动 */
+            lock: !(opts && opts.lock === false)
         });
         document.addEventListener('keydown', dialogTrap, true);
         document.addEventListener('keydown', dialogKey, true);
@@ -587,6 +690,78 @@
         }
     };
 
+    /* ---------- 内置浏览器引导（微信 / QQ / 企业微信 / 钉钉） ----------
+       PHP 侧按 UA 决定是否输出浮层（components/header/inapp.php），这里只管
+       弹出时机、频率记忆与「复制链接」。频率：session（默认）/ day / always。 */
+    Ecod.initInApp = function () {
+        var root = document.querySelector('[data-ecod-inapp]');
+        if (!root || root.dataset.inappReady === '1') return;
+        root.dataset.inappReady = '1';
+
+        var rkey = 'ecod-inapp-guide';
+        var rate = root.dataset.rate || 'session';
+        var store = null;
+        var seen = '';
+        try {
+            if (rate === 'day') {
+                store = window.localStorage;
+                seen = store.getItem(rkey) === new Date().toDateString() ? '1' : '';
+            } else if (rate === 'session') {
+                store = window.sessionStorage;
+                seen = store.getItem(rkey) || '';
+            }
+        } catch (e) {}
+        if (seen) return;
+
+        var url = root.dataset.url || location.href;
+        var bar = root.querySelector('[data-ecod-inapp-copy]');
+        var label = root.querySelector('[data-ecod-inapp-copylabel]');
+
+        function mark() {
+            try {
+                if (store) store.setItem(rkey, rate === 'day' ? new Date().toDateString() : '1');
+            } catch (e) {}
+        }
+
+        function close() {
+            root.classList.remove('is-open');
+            root.setAttribute('aria-hidden', 'true');
+            Ecod.dialogClose(root);
+            mark();
+        }
+
+        function copy() {
+            Ecod.u.copyText(url, function () {
+                if (bar) bar.classList.add('is-copied');
+                if (label) label.textContent = '已复制';
+                Ecod.toast('链接已复制，粘贴到浏览器打开', 'ok');
+                window.setTimeout(function () {
+                    if (bar) bar.classList.remove('is-copied');
+                    if (label) label.textContent = '复制链接';
+                }, 2200);
+            });
+        }
+
+        once(root, 'inappClose', 'click', function (e) {
+            var closer = e.target.closest ? e.target.closest('[data-ecod-inapp-close]') : null;
+            if (closer) close();
+        });
+        once(bar, 'inappCopy', 'click', copy);
+        once(bar, 'inappCopyKey', 'keydown', function (e) {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                copy();
+            }
+        });
+
+        window.setTimeout(function () {
+            root.classList.add('is-open');
+            root.setAttribute('aria-hidden', 'false');
+            /* Esc / 焦点陷阱 / 滚动锁由弹层原语承担，onClose 负责收面板并记频率 */
+            Ecod.dialogOpen(root, bar, close);
+        }, 600);
+    };
+
     /* ---------- 阅读进度 ---------- */
     /* 进度计算：0-100 的阅读百分比。顶部进度条与目录进度环共用这一份口径 */
     Ecod.readProgress = function () {
@@ -759,6 +934,69 @@
         list.unshift(item);
         writeStore(HKEY, list.slice(0, 50));
     };
+
+    /* ---------- 最近阅读角标（数据源 = 上面的浏览历史，纯本地） ----------
+     * CFG.recent = 有效天数，0 = 关闭。命中即在卡片右上角悬浮一枚胶囊标
+     * （毛玻璃白底；z-index 压在悬浮操作组之下，右图卡两者同位时
+     * hover 操作组现身会自然盖过它）。不依赖封面角标层，
+     * default / grid / gallery / compact 等卡片版式全覆盖；
+     * title 版式（.ecod_titem）不是 .ecod_card，天然跳过。 */
+    Ecod.initRecent = function () {
+        var days = parseInt(CFG.recent, 10);
+        if (!days || days < 1) return;
+
+        var cards = document.querySelectorAll('.ecod_card[data-cid]');
+        if (!cards.length) return;
+
+        var span = days * 86400000;
+        var now = Date.now();
+        var hit = {};
+        var count = 0;
+        /* 逐条判定而不是只看存在性：过期记录不进 hit，无需任何清理任务 */
+        readStore(HKEY).forEach(function (h) {
+            var t = parseInt(h && h.time, 10);
+            if (!h || !h.cid || isNaN(t) || now - t > span) return;
+            hit[String(h.cid)] = t;
+            count++;
+        });
+
+        /* 反向清理：bfcache 恢复的旧 DOM 可能带着已过期 / 已失效的标，
+           先摘掉不再命中的，再补新的（命中项保留，不重播淡入动画） */
+        Array.prototype.forEach.call(document.querySelectorAll('.ecod_card__read'), function (el) {
+            var card = el.parentNode;
+            if (!card || !hit[String(card.getAttribute('data-cid'))]) {
+                el.remove();
+            }
+        });
+        if (!count) return;
+
+        var icon = Ecod.icon('clock', 11);
+        Array.prototype.forEach.call(cards, function (card) {
+            var t = hit[card.getAttribute('data-cid')];
+            if (!t || card.querySelector('.ecod_card__read')) return;
+
+            var d = Math.floor((now - t) / 86400000);
+            var el = document.createElement('span');
+            el.className = 'ecod_card__read';
+            el.innerHTML = icon + '<b>最近阅读</b>';
+            el.setAttribute('title', d <= 0 ? '今天读过' : d + ' 天前读过');
+            card.appendChild(el);
+        });
+    };
+
+    /* 不走 refresh 的三条更新路径，统一兜底重算（幂等，可重复调）：
+       ① 浏览器「后退/前进」命中 bfcache —— pageshow.persisted，JS 不会重跑，
+          列表页 DOM 还是旧的；② 从其它标签/应用切回前台 —— 期间可能读过文章；
+       ③ 整页往返（链接带 target / data-no-pjax 等绕过 PJAX 的场景）。 */
+    if (!Ecod._recentBound) {
+        Ecod._recentBound = 1;
+        window.addEventListener('pageshow', function (e) {
+            if (e.persisted) Ecod.initRecent();
+        });
+        document.addEventListener('visibilitychange', function () {
+            if (document.visibilityState === 'visible') Ecod.initRecent();
+        });
+    }
 
     /* ---------- 订单（本地，供支付类插件写入） ----------
      * 格式：{ no, title, amount, status, time }
@@ -1182,19 +1420,22 @@
     /* ---------- 头部用户面板：点外部收起 ---------- */
     /* 头部 details 弹层（用户面板 / 站内消息铃铛）：桌面端 hover 即展开，
        移出延时收起——延时盖过 summary → 弹层之间空隙的穿越时间。
-       触屏无 hover，保持原生点击。点外收起 / Esc 由 initPopDismiss 统一负责。 */
+       触屏无 hover，保持原生点击。点外收起 / Esc 由 initPopDismiss 统一负责。
+       bindHoverDetails(d, delay, group) 同时供其他 details 弹层复用
+       （文末动作条分享/赞赏/报错，见 ecod.post.js）：group 是「同组互斥」
+       选择器，hover 展开时关掉组内其他已展开的弹层，缺省为头部两个。 */
     function hoverCapable() {
         return !!(window.matchMedia && window.matchMedia('(hover: hover) and (pointer: fine)').matches);
     }
-    function bindHoverDetails(d, delay) {
+    function bindHoverDetails(d, delay, group) {
         if (!d || d.dataset.ecodHoverBound === '1') return;
         d.dataset.ecodHoverBound = '1';
         var timer = null;
         d.addEventListener('mouseenter', function () {
             if (timer) { clearTimeout(timer); timer = null; }
             /* hover 展开不走 click，initPopDismiss 的「点外收起」管不到，
-               这里手动关掉其他已展开的头部弹层（铃铛 / 用户面板） */
-            document.querySelectorAll('details.ecod_nav__user[open], details.ecod_nav__bell[open]').forEach(function (o) {
+               这里手动关掉同组其他已展开的弹层 */
+            document.querySelectorAll(group || 'details.ecod_nav__user[open], details.ecod_nav__bell[open]').forEach(function (o) {
                 if (o !== d) o.removeAttribute('open');
             });
             if (!d.open) d.open = true;
@@ -1204,6 +1445,8 @@
             timer = setTimeout(function () { timer = null; d.open = false; }, delay || 160);
         });
     }
+    Ecod.hoverCapable = hoverCapable;
+    Ecod.bindHoverDetails = bindHoverDetails;
 
     Ecod.initUserPop = function () {
         /* 下拉面板从触发头像处展开：用 offset 坐标（不受入场 scale 影响），
@@ -1243,6 +1486,9 @@
                 } else if (el.dataset.ecodLikeNum === 'short') {
                     /* 文末动作条 / 侧栏：0 赞回落「点赞」文案（与服务端渲染一致，不能留空） */
                     el.textContent = count > 0 ? shortNum(count) : '点赞';
+                    /* 标签自身的 is-num 也要同步（服务端渲染带在 b 上）：归零不摘的话，
+                       桌面「隐文字标签」与移动端「只显数字」两条规则都会让它残留常显 */
+                    el.classList.toggle('is-num', count > 0);
                 } else {
                     /* 卡片徽标：0 赞清空 + 摘掉 is-num，徽标整体隐藏 */
                     el.textContent = count > 0 ? shortNum(count) : '';
@@ -1263,6 +1509,7 @@
             var id = btn.dataset.cid || (card ? card.dataset.cid : '');
             if (String(id) !== String(cid)) return;
             el.textContent = count > 0 ? shortNum(count) : '收藏';
+            el.classList.toggle('is-num', count > 0);
             btn.classList.toggle('is-num', count > 0);
         });
     }
@@ -1424,13 +1671,13 @@
                         if (typeof data.count === 'number') setFavNum(cid, data.count);
                         if (favRemoteSet) favRemoteSet[String(cid)] = data.fav ? 1 : 0;
                         localSetFav(item, data.fav);
-                        if (data.fav) pop();
+                        if (data.fav) { pop(); Ecod.ballFlashAll('19', 1500); }
                         live(data.fav ? '已加入收藏' : '已取消收藏');
                     } else {
                         /* 无接口（或接口失败）：本地兜底 */
                         var on = toggleFav(item);
                         setFavBtn(btn, on);
-                        if (on) pop();
+                        if (on) { pop(); Ecod.ballFlashAll('19', 1500); }
                         live(on ? '已加入收藏' : '已取消收藏');
                     }
                 });
@@ -1457,6 +1704,7 @@
                         btn.classList.add('is-pop');
                         setTimeout(function () { btn.classList.remove('is-pop'); }, 320);
                         Ecod.likeBurst(btn);
+                        Ecod.ballFlashAll('19', 1500);
                     }
                     live(data.mine ? '已点赞' : '已取消点赞');
                 }).catch(function () { btn.dataset.busy = ''; });
@@ -1935,6 +2183,60 @@
         });
     };
 
+    /* ---------- 更新热力图（heatgrid 块）：拖动 / 悬停读某天 ---------- */
+    /* 单个 pointermove 监听同时覆盖鼠标悬停与触摸拖动（elementFromPoint
+       取当前格），松手 / 移出回到 summary；格子 DOM 由服务端输出，此处纯读。 */
+    Ecod.initHeatgrid = function () {
+        document.querySelectorAll('[data-ecod-heatgrid]').forEach(function (root) {
+            if (root._ecodHg) return;
+            root._ecodHg = 1;
+
+            var grid = root.querySelector('.ecod_heatgrid__grid');
+            var readout = root.querySelector('.ecod_heatgrid__readout');
+            if (!grid || !readout) return;
+
+            var summary = readout.textContent;
+            var start = root.getAttribute('data-start') || '';
+            var current = null;
+
+            /* 格子按列填充，DOM 序号即自然日序号（周一为首行） */
+            var cells = grid.querySelectorAll('.ecod_heatgrid__cell');
+
+            function dayLabel(index) {
+                var parts = /^(\d{4})-(\d{2})-(\d{2})$/.exec(start);
+                if (!parts) return '';
+                var d = new Date(+parts[1], +parts[2] - 1, +parts[3]);
+                d.setDate(d.getDate() + index);
+                return (d.getMonth() + 1) + '月' + d.getDate() + '日 周' + '日一二三四五六'.charAt(d.getDay());
+            }
+
+            function show(cell) {
+                if (cell === current) return;
+                if (current) current.classList.remove('is-current');
+                current = cell;
+                if (!cell) {
+                    readout.textContent = summary;
+                    return;
+                }
+                cell.classList.add('is-current');
+                var i = Array.prototype.indexOf.call(cells, cell);
+                var v = cell.getAttribute('data-v') || '0';
+                readout.textContent = dayLabel(i) + ' · ' + v + ' 篇';
+            }
+
+            grid.addEventListener('pointermove', function (e) {
+                var el = document.elementFromPoint(e.clientX, e.clientY);
+                show(el && el.closest ? el.closest('.ecod_heatgrid__cell') : null);
+            });
+            grid.addEventListener('pointerleave', function () {
+                show(null);
+            });
+            document.addEventListener('pointerup', function () {
+                show(null);
+            });
+        });
+    };
+
     /* ---------- 快捷键：Cmd/Ctrl + K ---------- */
     /* ESearchPanel=on 时唤起居中搜索面板；off 时退回旧行为：聚焦导航搜索框 */
     Ecod.initHotkey = function () {
@@ -1961,6 +2263,10 @@
         var body = panel.querySelector('[data-ecod-spanel-body]');
         var all = panel.querySelector('[data-ecod-spanel-all]');
         if (!input || !body) return;
+
+        /* 表情球（可选挂载）：好奇注视光标，检索中思考，出结果满意 / 空手困惑 */
+        var sBall = panel.querySelector('[data-ecod-spanel-ball]');
+        var ball = sBall ? Ecod.ballMount(sBall, { emotion: '03', size: 30 }) : null;
 
         var searchTpl = CFG.searchUrl || '/?s={q}';
         /* 搜索地址：路由模板（/search/{q}/）优先，退化为 ?s= 查询串 */
@@ -1991,6 +2297,8 @@
             panel.classList.add('is-open');
             panel.removeAttribute('aria-hidden');
             renderIdle(prefill || '');
+            /* 01 唤醒短弧线 → 回好奇 base */
+            if (ball) ball.flash('01', 1000);
             if (prefill) {
                 input.value = prefill;
                 onInput();
@@ -2113,6 +2421,7 @@
         }
 
         function fetchResults(q) {
+            if (ball) ball.set('30');
             fetch((CFG.api || '') + '?action=search_suggest&q=' + encodeURIComponent(q), {
                 credentials: 'same-origin'
             }).then(function (r) { return r.json(); }).then(function (data) {
@@ -2125,6 +2434,8 @@
         function renderResults(items, q) {
             /* 命中的历史记录作为推荐置顶（不含与当前输入完全相同的词） */
             var matched = histMatch(q);
+            /* 有历史命中 37 复述回忆（想起来了），有结果 19 满意，空手 20 困惑 */
+            if (ball) ball.flash(matched.length ? '37' : (items.length ? '19' : '20'), 1800);
             var html = '';
             if (matched.length) {
                 html += '<div class="ecod_spanel__row is-hist"><div class="ecod_spanel__rowlabel">来自历史</div><div class="ecod_spanel__chips">';
@@ -2147,8 +2458,88 @@
             } else {
                 html += '<div class="ecod_spanel__empty">没有匹配「' + esc(q) + '」的文章，回车全站搜索</div>';
             }
+            html += aiAskRow(q);
             body.innerHTML = html;
             body.classList.add('is-results');
+        }
+
+        /* ---- AI 搜索（F9）：列表尾部一条入口，点开就地出结论 + 引用 ---- */
+        function aiAskRow(q) {
+            if (!CFG.aiSearch || q.length < 2) return '';
+            return '<button type="button" class="ecod_spanel__aiask" data-ecod-spanel-ai="' + esc(q) + '">'
+                + '<span class="ecod_spanel__aiask-b">AI</span>'
+                + '<span>问问 AI：<b>' + esc(q) + '</b></span>'
+                + '<span class="ecod_spanel__aiask-go">' + Ecod.icon('arrow-up-right', 12) + '</span>'
+                + '</button>';
+        }
+
+        function aiAnswerView(q, data, cached) {
+            var html = '<div class="ecod_spanel__ai">'
+                + '<div class="ecod_spanel__ai-head">'
+                + '<span class="ecod_spanel__ai-t">AI 回答</span>'
+                + (data.keywords && data.keywords.length
+                    ? '<span class="ecod_spanel__ai-kw">检索词：' + esc(data.keywords.join(' / ')) + '</span>' : '')
+                + '</div>'
+                + '<p class="ecod_spanel__ai-ans">' + esc(data.answer || '') + '</p>';
+            var list = Array.isArray(data.items) ? data.items : [];
+            if (list.length) {
+                html += '<ol class="ecod_spanel__ai-refs">';
+                list.forEach(function (it, i) {
+                    html += '<li><a href="' + esc(it.url || postUrl(it.cid)) + '">'
+                        + '<span class="ecod_spanel__ai-no">' + (i + 1) + '</span>'
+                        + '<b>' + esc(it.title) + '</b>'
+                        + (it.date ? '<time>' + esc(it.date) + '</time>' : '')
+                        + '</a></li>';
+                });
+                html += '</ol>';
+            }
+            var price = CFG.aiFree ? 'VIP 免单' : (data.cost > 0 ? data.cost + ' ' + (CFG.credits || '积分') : '免费');
+            html += '<div class="ecod_spanel__ai-foot">'
+                + '<span>' + (cached ? '命中缓存 · 不扣积分' : '本次消耗 ' + esc(price)) + '</span>'
+                + '<button type="button" class="ecod_spanel__ai-back" data-ecod-spanel-aiback>返回搜索结果</button>'
+                + '</div></div>';
+            body.innerHTML = html;
+            body.classList.add('is-results');
+        }
+
+        function aiSearch(q) {
+            body.innerHTML = '<div class="ecod_spanel__ai"><div class="ecod_spanel__ai-head">'
+                + '<span class="ecod_spanel__ai-t">AI 回答</span></div>'
+                + '<p class="ecod_spanel__ai-ans is-loading">正在站内检索并归纳…</p></div>';
+            body.classList.add('is-results');
+            if (ball) ball.set('30');
+
+            var fd = new FormData();
+            fd.append('q', q);
+            fd.append('token', CFG.aiToken || '');
+            fetch((CFG.api || '') + '?action=ai_search', {
+                method: 'POST',
+                credentials: 'same-origin',
+                body: fd,
+                headers: { 'X-Requested-With': 'XMLHttpRequest' }
+            }).then(function (r) {
+                return r.json().then(function (d) { return { d: d, status: r.status }; });
+            }).then(function (res) {
+                var d = res.d || {};
+                if (d.ok) {
+                    if (ball) ball.flash(d.items && d.items.length ? '19' : '20', 1800);
+                    aiAnswerView(q, d, !!d.cached);
+                    return;
+                }
+                if (ball) ball.flash(res.status === 402 ? '38' : '34', 2200);
+                var msg = d.error || '生成失败，请稍后重试';
+                if (res.status === 401) msg = '登录后即可用 AI 搜索（<a href="' + esc(CFG.aiPage || '#') + '">去登录</a>）';
+                body.innerHTML = '<div class="ecod_spanel__ai"><p class="ecod_spanel__ai-ans is-err">' + msg + '</p>'
+                    + '<div class="ecod_spanel__ai-foot"><span></span>'
+                    + '<button type="button" class="ecod_spanel__ai-back" data-ecod-spanel-aiback>返回搜索结果</button>'
+                    + '</div></div>';
+            }).catch(function () {
+                if (ball) ball.flash('34', 2200);
+                body.innerHTML = '<div class="ecod_spanel__ai"><p class="ecod_spanel__ai-ans is-err">网络异常，请稍后重试</p>'
+                    + '<div class="ecod_spanel__ai-foot"><span></span>'
+                    + '<button type="button" class="ecod_spanel__ai-back" data-ecod-spanel-aiback>返回搜索结果</button>'
+                    + '</div></div>';
+            });
         }
 
         input.addEventListener('input', onInput);
@@ -2172,6 +2563,7 @@
             if (e.key === 'ArrowUp') { e.preventDefault(); setActive(activeIdx - 1); return; }
             if (e.key === 'Enter') {
                 e.preventDefault();
+                if (ball) ball.flash('31', 1200);
                 var q = input.value.trim();
                 if (activeIdx > -1 && list[activeIdx]) {
                     var a = list[activeIdx];
@@ -2188,6 +2580,18 @@
 
         /* 点击热词 / 标签 / 最近搜索 → 回填并即时搜索；点结果记历史 */
         body.addEventListener('click', function (e) {
+            var aiBtn = e.target.closest ? e.target.closest('[data-ecod-spanel-ai]') : null;
+            if (aiBtn) {
+                e.preventDefault();
+                aiSearch(aiBtn.getAttribute('data-ecod-spanel-ai') || input.value.trim());
+                return;
+            }
+            var back = e.target.closest ? e.target.closest('[data-ecod-spanel-aiback]') : null;
+            if (back) {
+                e.preventDefault();
+                onInput();
+                return;
+            }
             var chip = e.target.closest ? e.target.closest('.ecod_spanel__chip') : null;
             if (chip) {
                 e.preventDefault();
@@ -2404,11 +2808,12 @@
                 ? slider.parentElement
                 : null;
 
-            /* 取当前封面做外发光背景，切换时同步 */
+            /* 取当前封面做外发光背景，切换时同步（封面在内联变量 --ecod-cover 上） */
             function syncGlow(slide) {
                 if (!glowWrap || !slide) return;
-                var bg = slide.style.backgroundImage;
+                var bg = slide.style.getPropertyValue('--ecod-cover');
                 if (bg) glowWrap.style.setProperty('--ecod-slider-bg', bg);
+                else glowWrap.style.removeProperty('--ecod-slider-bg');
             }
 
             if (slides.length < 2) {
@@ -2486,6 +2891,53 @@
 
             show(0);
             arm();
+        });
+    };
+
+    /* ---------- 卡片轮播封面（三图卡 gallery：媒体区多图淡切） ----------
+       与首页轮播同一套心跳节流；卡片体量小，不设暂停按钮——
+       hover 即暂停（WCAG 2.2.2 认可的暂停机制），手动点过指示点后
+       该卡永久停播（用户已接管），reduced-motion 不自动播 */
+    Ecod.initGallery = function () {
+        document.querySelectorAll('.ecod_card--gallery').forEach(function (card) {
+            if (card.dataset.ecodGal === '1') return;
+            var imgs = card.querySelectorAll('.ecod_card__gallery img');
+            var dots = card.querySelectorAll('.ecod_card__gdots button');
+            if (imgs.length < 2) return;
+            card.dataset.ecodGal = '1';
+
+            var INTERVAL = 6000;
+            var current = 0;
+            var userPaused = false;
+            var hovering = false;
+            var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+            /* 按 cid 错开相位：整页多张轮播卡不同时翻面（cid 稳定，换页重跑也不变） */
+            var seed = parseInt(card.getAttribute('data-cid'), 10) || 0;
+            var lastTick = Date.now() - (seed % 6) * 900;
+
+            function show(i) {
+                current = (i + imgs.length) % imgs.length;
+                imgs.forEach(function (im, k) { im.classList.toggle('is-active', k === current); });
+                dots.forEach(function (d, k) { d.classList.toggle('is-active', k === current); });
+            }
+
+            if (card._ecodGalTimer) { clearInterval(card._ecodGalTimer); card._ecodGalTimer = null; }
+            card._ecodGalTimer = setInterval(function () {
+                /* PJAX 换页后游离节点自清理 */
+                if (!card.isConnected) { clearInterval(card._ecodGalTimer); card._ecodGalTimer = null; return; }
+                if (userPaused || reduce || hovering || document.hidden) { lastTick = Date.now(); return; }
+                if (Date.now() - lastTick >= INTERVAL) { lastTick = Date.now(); show(current + 1); }
+            }, 1000);
+
+            dots.forEach(function (dot) {
+                dot.addEventListener('click', function () {
+                    show(parseInt(dot.dataset.index, 10) || 0);
+                    userPaused = true; /* 手动接管后停播 */
+                });
+            });
+
+            card.addEventListener('mouseenter', function () { hovering = true; });
+            card.addEventListener('mouseleave', function () { hovering = false; lastTick = Date.now(); });
         });
     };
 
@@ -2581,11 +3033,55 @@
     Ecod.initPjax = function () {
         if (!CFG.pjax) return;
 
+        /* 加载效果变体由后台「外观 → 浏览体验 → 页面加载效果」决定，
+           <html data-loadfx> 上只挂值，具体动效全在 ecod.css §16；
+           none = 不想要任何指示器，连宿主元素都不建 */
         var bar = document.querySelector('.ecod_pjaxbar');
-        if (!bar) {
+        var fx = document.documentElement.getAttribute('data-loadfx') || 'bar';
+        if (fx === 'none') {
+            if (bar) bar.remove();
+            bar = null;
+        } else if (!bar) {
             bar = document.createElement('div');
             bar.className = 'ecod_pjaxbar';
+            bar.setAttribute('aria-hidden', 'true');
             document.body.appendChild(bar);
+        }
+
+        /* 指示器时序：点击即同步亮相，不做延迟出现——本站有 90ms 悬停预取，
+           命中时换页总耗时只有二三十毫秒，任何「超过阈值才出现」的延迟方案
+           都会在完成回调里被取消，快站永远轮不上场（已踩坑）。
+           每次换页保底停留 FX_MIN，读作「页面过渡」而非等待，加载越久停越久：
+           bar 是细条 200ms 快闪；ring/veil/logo 保底 360ms。
+           收尾走 is-done 完成态动画（冲满 / 回弹 / 显影）再整块撤掉。
+           data-loadbusy 与 is-loading 同步挂到 <html> 上：logo 变体不经过
+           pjaxbar 元素（它在 body 末尾，CSS 够不着它前面的吸顶导航） */
+        var FX_MIN = fx === 'bar' ? 200 : 360;
+        var fxEndT = null, fxShownAt = 0, fxShown = false;
+        function fxStart() {
+            if (!bar) return;
+            clearTimeout(fxEndT);
+            if (fxShown) {
+                /* 上次收尾未完又开始新导航：回到进行态 */
+                document.documentElement.setAttribute('data-loadbusy', '');
+                bar.classList.remove('is-done');
+                return;
+            }
+            fxShown = true;
+            fxShownAt = Date.now();
+            document.documentElement.setAttribute('data-loadbusy', '');
+            bar.classList.add('is-loading');
+        }
+        function fxDone() {
+            if (!bar || !fxShown) return;
+            fxEndT = setTimeout(function () {
+                document.documentElement.removeAttribute('data-loadbusy');
+                bar.classList.add('is-done');
+                fxEndT = setTimeout(function () {
+                    fxShown = false;
+                    bar.classList.remove('is-loading', 'is-done');
+                }, 420);
+            }, Math.max(0, FX_MIN - (Date.now() - fxShownAt)));
         }
 
         var busy = false;
@@ -2689,7 +3185,7 @@
             controller = 'AbortController' in window ? new AbortController() : null;
 
             busy = true;
-            bar.classList.add('is-loading');
+            fxStart();
             if (Ecod.drawerClose) Ecod.drawerClose();
 
             /* 服务端 302（例如「随机文章」页）时不能做无刷新替换：
@@ -2783,7 +3279,7 @@
                 if (my !== seq) return;
                 busy = false;
                 controller = null;
-                bar.classList.remove('is-loading');
+                fxDone();
             });
         }
 
@@ -3284,6 +3780,19 @@
             });
         }
 
+        /* 登录页大号陪伴球：卡片右侧空区（≥1320px 显示），好奇注视 + 点击自旋；
+           登录提交/失败的情绪反馈也由它承担（表单旁不再放小球） */
+        var petEl = document.querySelector('[data-ecod-login-pet]');
+        var loginPet = null;
+        if (petEl && !petEl.dataset.petReady) {
+            petEl.dataset.petReady = '1';
+            loginPet = Ecod.ballMount(petEl, { emotion: '03', size: 150 });
+            once(petEl, 'loginPetClick', 'click', function () {
+                loginPet.spin(2);
+                loginPet.flash('13', 1600);
+            });
+        }
+
         /* 登录表单（登录页 + 全站登录弹窗，逐个绑定） */
         var loginForm = document.querySelector('[data-ecod-login]');
         document.querySelectorAll('[data-ecod-login]').forEach(function (lf) {
@@ -3295,6 +3804,7 @@
                 var btn = lf.querySelector('[type="submit"]');
                 if (msg) { msg.hidden = true; }
                 if (btn) { btn.disabled = true; btn.textContent = '登录中…'; }
+                if (loginPet) loginPet.set('32');
                 var body = new FormData(lf);
                 var authCard = document.querySelector('[data-ecod-auth]');
                 var refInput = authCard ? authCard.querySelector('[data-ecod-auth-referer]') : null;
@@ -3309,10 +3819,12 @@
                         msg.hidden = false;
                         msg.classList.add('is-bad');
                     }
+                    if (loginPet) loginPet.flash('34', 2600);
                     capRefresh(lf);
                     if (btn) { btn.disabled = false; btn.textContent = '登 录'; }
                 }).catch(function () {
                     if (msg) { msg.textContent = '网络异常，请重试'; msg.hidden = false; msg.classList.add('is-bad'); }
+                    if (loginPet) loginPet.flash('34', 2600);
                     capRefresh(lf);
                     if (btn) { btn.disabled = false; btn.textContent = '登 录'; }
                 });
@@ -3982,6 +4494,156 @@
     };
 
     /* ------------------------------------------------------------------
+     * 实时动态（右下角槽位步进播报，完全对标 guaqi event-ticker）
+     *
+     * 结构：单份列表，每张卡绝对定位在 56px 槽位上（translateY），超出
+     * 视口的卡被 overflow 裁掉。步进：顶部卡上滑一格 + 淡出模糊出场，
+     * 其余卡各上移一格，320ms 后离场卡禁过渡回收至队尾再淡入——全程
+     * guaqi 同款过渡 transform .3s cubic-bezier(.22,.86,.2,1) / opacity·filter .22s。
+     * 整件 pointer-events:none 纯装饰。站长开启「自动刷新」后根元素才带
+     * data-ecod-ticker（秒数），按它轮询 api?action=ticker 换血列表；
+     * reduced-motion 不步进（静态展示前几条），页面隐藏时暂停步进。
+     * ---------------------------------------------------------------- */
+    Ecod.initTicker = function () {
+        var root = document.querySelector('.ecod_fticker');
+        if (!root || root.dataset.tickerReady === '1') return;
+        root.dataset.tickerReady = '1';
+
+        /* 避让右下既有浮动件（站宠球 / 回到顶部）：量它们的布局尺寸 + CSS bottom
+           （不用 rect——球引擎加载前后有缩放动画，rect 是瞬态值），留 12px 空隙；
+           站宠球按需加载后会换尺寸，3s 后复测一次。都不在时用 guaqi 同款 80px 兜底 */
+        function liftBottom() {
+            var lift = 0;
+            ['.ecod_ballpet', '.ecod_totop'].forEach(function (sel) {
+                var el = document.querySelector(sel);
+                if (!el) return;
+                var cs = getComputedStyle(el);
+                if (cs.display === 'none' || cs.visibility === 'hidden') return;
+                var h = el.offsetHeight, b = parseFloat(cs.bottom);
+                if (h > 0 && !isNaN(b)) lift = Math.max(lift, b + h + 12);
+            });
+            root.style.bottom = (lift || 80) + 'px';
+        }
+        liftBottom();
+        setTimeout(liftBottom, 3000);
+
+        var list = root.querySelector('.ecod_fticker__list');
+        var viewport = root.querySelector('.ecod_fticker__viewport');
+        var SLOT = 56;
+        var cards = list ? Array.prototype.slice.call(list.children) : [];
+
+        function layout() {
+            cards.forEach(function (c, i) {
+                c.style.transform = 'translateY(' + (i * SLOT) + 'px)';
+                c.style.opacity = '1';
+                c.style.filter = 'none';
+            });
+        }
+
+        function step() {
+            if (paused || document.hidden || cards.length < 2) return;
+            var first = cards[0];
+            first.style.opacity = '0';
+            first.style.filter = 'blur(3px)';
+            first.style.transform = 'translateY(-' + SLOT + 'px)';
+            for (var i = 1; i < cards.length; i++) {
+                cards[i].style.transform = 'translateY(' + ((i - 1) * SLOT) + 'px)';
+            }
+            setTimeout(function () {
+                first.style.transition = 'none';
+                first.style.transform = 'translateY(' + ((cards.length - 1) * SLOT) + 'px)';
+                first.style.filter = 'none';
+                void first.offsetWidth;
+                first.style.transition = '';
+                first.style.opacity = '1';
+                cards.push(cards.shift());
+            }, 320);
+        }
+
+        /* 悬停在可点击卡上时暂停步进：不然正要点击时卡被挪走（委托监听，
+           轮询换血重建卡片后依然有效） */
+        var paused = false;
+        root.addEventListener('mouseover', function (e) {
+            if (e.target.closest && e.target.closest('a.ecod_ftick')) paused = true;
+        });
+        root.addEventListener('mouseout', function (e) {
+            if (e.target.closest && e.target.closest('a.ecod_ftick')) paused = false;
+        });
+
+        if (cards.length > 1) {
+            layout();
+            var reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+            if (!reduced) {
+                /* 可见槽位数换算步进节奏：视口越高转得越从容，4s 为基准 */
+                var visible = viewport ? Math.max(1, Math.round(viewport.clientHeight / SLOT)) : 4;
+                setInterval(step, Math.max(3000, visible * 1000));
+            }
+        }
+
+        /* 以下为站长开启「自动刷新」后的轮询换血（未开启时到此为止） */
+        var api = root.getAttribute('data-api') || CFG.api || '';
+        if (!list || !api) return;
+        if (!root.hasAttribute('data-ecod-ticker')) return;
+
+        var secs = parseInt(root.getAttribute('data-ecod-ticker'), 10);
+        if (!secs || secs < 60) secs = 60;
+        var sources = root.getAttribute('data-sources') || '';
+        var limit = root.getAttribute('data-limit') || '8';
+
+        function fmtTime(ts) {
+            var d = Date.now() / 1000 - (Number(ts) || 0);
+            if (!isFinite(d) || d < 0) d = 0;
+            if (d < 60) return '刚刚';
+            if (d < 3600) return Math.floor(d / 60) + ' 分钟前';
+            if (d < 86400) return Math.floor(d / 3600) + ' 小时前';
+            if (d < 86400 * 30) return Math.floor(d / 86400) + ' 天前';
+            var t = new Date((Number(ts) || Date.now() / 1000) * 1000);
+            return (t.getMonth() + 1) + '-' + t.getDate();
+        }
+
+        /* 与 footer/ticker.php 的 SSR 输出同构，换血前后结构一致；
+           有 href 出 <a>（PJAX 跳转对应文章），无 href 出 span */
+        function itemHtml(it) {
+            var ava = it.avatar
+                ? '<img src="' + esc(it.avatar) + '" alt="" width="24" height="24" loading="lazy" decoding="async">'
+                : '<i>' + esc(String(it.name || '').charAt(0)) + '</i>';
+            var text = esc(it.text || '');
+            if (Number(it.delta)) text += ' <b class="ecod_ftick__delta">+' + Number(it.delta) + '</b>';
+            var inner = '<span class="ecod_ftick__avatar" aria-hidden="true">' + ava + '</span>'
+                + '<span class="ecod_ftick__card"><span class="ecod_ftick__meta"><b>' + esc(it.name) + '</b>'
+                + '<i aria-hidden="true">·</i><time>' + esc(fmtTime(it.created)) + '</time></span>'
+                + '<span class="ecod_ftick__text">' + text + '</span></span>';
+            if (!it.href) return '<span class="ecod_ftick">' + inner + '</span>';
+            return '<a class="ecod_ftick" href="' + esc(it.href) + '">' + inner + '</a>';
+        }
+
+        function build(items) {
+            var html = '';
+            items.forEach(function (it) { html += itemHtml(it); });
+            list.innerHTML = html;
+            cards = Array.prototype.slice.call(list.children);
+            layout();
+        }
+
+        var last = '';
+        function tick() {
+            fetch(api + '?action=ticker&sources=' + encodeURIComponent(sources) + '&limit=' + encodeURIComponent(limit), { credentials: 'same-origin' })
+                .then(function (r) { return r.json(); })
+                .then(function (data) {
+                    if (!data || !data.ok || !Array.isArray(data.items) || !data.items.length) return;
+                    var sig = JSON.stringify(data.items);
+                    if (sig === last) return;
+                    last = sig;
+                    build(data.items);
+                })
+                .catch(function () { });
+        }
+
+        tick();
+        setInterval(tick, secs * 1000);
+    };
+
+    /* ------------------------------------------------------------------
      * 任务中心
      *
      * 服务端直出首屏（进度是实时 COUNT 出来的，没有缓存要失效）；
@@ -4057,9 +4719,10 @@
             var sign = root.querySelector('[data-ecod-task-signin]');
             if (sign) {
                 sign.disabled = !!data.signed;
-                /* 只改「已签」文案：未签到时奖励数由服务端渲染，前端不知道 ECrCheckin */
-                var st = sign.querySelector('[data-ecod-task-signin-text]');
-                if (st && data.signed) st.textContent = '今日已签到';
+                /* 只改「已签」态：闪电换对勾 + 文案；未签到时奖励数由服务端渲染，前端不知道 ECrCheckin */
+                if (data.signed) {
+                    sign.innerHTML = Ecod.icon('check', 14) + '<span data-ecod-task-signin-text>今日已签到</span>';
+                }
             }
 
             var ready = 0;
@@ -4113,6 +4776,7 @@
                         return;
                     }
                     Ecod.toast('领取成功 +' + data.delta, 'ok');
+                    Ecod.ballCelebrate();
                     refresh();
                 });
                 return;
@@ -4128,6 +4792,7 @@
                         return;
                     }
                     Ecod.toast('签到成功' + (data.delta ? ' +' + data.delta : ''), 'ok');
+                    Ecod.ballCelebrate();
                     refresh();
                 });
             }
@@ -4505,16 +5170,22 @@
             if (closeBtn) {
                 var row = closeBtn.closest('.ecod_ticket__item');
                 if (!row) return;
-                if (!window.confirm('确认关闭这个工单？关闭后不能再继续回复。')) return;
-                closeBtn.disabled = true;
-                post('ticket_close', { id: row.getAttribute('data-id'), token: token }).then(function (data) {
-                    closeBtn.disabled = false;
-                    if (!data || !data.ok) {
-                        Ecod.toast((data && data.error) || '关闭失败', 'bad');
-                        return;
-                    }
-                    Ecod.toast('工单已关闭', 'ok');
-                    reload();
+                Ecod.confirm({
+                    title: '关闭这个工单？',
+                    text: '关闭后不能再继续回复。',
+                    ok: '确认关闭'
+                }).then(function (yes) {
+                    if (!yes) return;
+                    closeBtn.disabled = true;
+                    post('ticket_close', { id: row.getAttribute('data-id'), token: token }).then(function (data) {
+                        closeBtn.disabled = false;
+                        if (!data || !data.ok) {
+                            Ecod.toast((data && data.error) || '关闭失败', 'bad');
+                            return;
+                        }
+                        Ecod.toast('工单已关闭', 'ok');
+                        reload();
+                    });
                 });
             }
         });
@@ -4671,6 +5342,15 @@
        数字分页 .ecod_pager 保留在 DOM（SEO 可抓、无 JS 可用），客户端只做增强劫持。
        排序/分类内搜索参数由服务端 ecod_sort_pager 已补进分页链接，追加不会串序。
        PJAX 换页后 refresh() 重新接线，旧观察者随旧 DOM 一起废弃。 */
+    /* 单一滚动分发：PJAX 每次换页都会重新 initInfinite，window 上的滚动监听只绑一次，
+       由当前列表的 handler 接管（handler 内部自检 stat.isConnected，离开列表页即空转） */
+    if (!Ecod._infScrollBound) {
+        Ecod._infScrollBound = true;
+        window.addEventListener('scroll', function () {
+            if (Ecod._infOnScroll) Ecod._infOnScroll();
+        }, { passive: true });
+    }
+
     Ecod.initInfinite = function () {
         var mode = CFG.listLoad || 'auto';
         if (mode === 'pager') return;
@@ -4686,16 +5366,62 @@
         /* 数字分页让位给原地追加，但保留在 DOM 并随加载同步刷新 */
         pager.classList.add('is-inf');
 
-        var bar = document.createElement('button');
-        bar.type = 'button';
-        bar.className = 'ecod_loadmore';
-        bar.textContent = '加载更多';
-        /* 可访问名须包含可见文字（WCAG 2.5.3）：文字各状态变化时同步更新 */
-        bar.setAttribute('aria-label', '加载更多');
-        pager.parentNode.insertBefore(bar, pager.nextSibling);
-
         var busy = false;
         var url = nextLink.getAttribute('href');
+        /* auto 模式连续自动加载页数上限：攒够后转手动「加载更多」（Google Images 式
+           hybrid，页脚不再被无限流挡死）；0 = 不限制 */
+        var autoMax = parseInt(CFG.listAutoMax, 10);
+        if (isNaN(autoMax) || autoMax < 0) autoMax = 4;
+        var autoCount = 0;
+        var manual = mode === 'click';
+        var bar = null;
+
+        /* click 模式：一直是大按钮；auto 模式：隐形哨兵 + 细加载条，超页数后转按钮 */
+        if (manual) {
+            bar = document.createElement('button');
+            bar.type = 'button';
+            bar.className = 'ecod_loadmore';
+            bar.textContent = '加载更多';
+            /* 可访问名须包含可见文字（WCAG 2.5.3）：文字各状态变化时同步更新 */
+            bar.setAttribute('aria-label', '加载更多');
+            pager.parentNode.insertBefore(bar, pager.nextSibling);
+        }
+
+        /* 状态条（auto 模式）：空态是 1px 哨兵（display:none 会让 IO 永不触发），
+           busy = spinner 行，error = 重试按钮，done = 到底分割线 */
+        var stat = null;
+        if (!manual) {
+            stat = document.createElement('div');
+            stat.className = 'ecod_loadstat';
+            stat.setAttribute('aria-live', 'polite');
+            pager.parentNode.insertBefore(stat, pager.nextSibling);
+        }
+
+        function setStat(state) {
+            if (!stat) return;
+            stat.classList.toggle('is-busy', state === 'busy');
+            stat.classList.toggle('is-error', state === 'error');
+            stat.classList.toggle('is-done', state === 'done');
+            stat.innerHTML = state === 'busy'
+                ? '<i class="ecod_spin" aria-hidden="true"></i><span>正在加载</span>'
+                : state === 'error'
+                    ? '<button type="button" class="ecod_loadstat__retry">加载失败，点击重试</button>'
+                    : state === 'done' ? '<span>没有更多了</span>' : '';
+        }
+
+        /* 自动页数用完：弹出手动按钮接管（此后加载与状态都走按钮，滚动检测随 manual 关停） */
+        function switchManual() {
+            manual = true;
+            bar = document.createElement('button');
+            bar.type = 'button';
+            bar.className = 'ecod_loadmore';
+            bar.textContent = '加载更多';
+            bar.setAttribute('aria-label', '加载更多');
+            pager.parentNode.insertBefore(bar, stat);
+            bar.addEventListener('click', load);
+            stat.innerHTML = '';
+            stat.className = 'ecod_loadstat';
+        }
 
         function setBar(state) {
             var text = state === 'busy' ? '正在加载…'
@@ -4709,7 +5435,8 @@
         function load() {
             if (busy || !url) return;
             busy = true;
-            setBar('busy');
+            var pageUrl = url;
+            if (bar) setBar('busy'); else setStat('busy');
             fetch(url, {
                 credentials: 'same-origin',
                 headers: { 'X-Requested-With': 'XMLHttpRequest' }
@@ -4729,6 +5456,7 @@
                     seen[el.getAttribute('data-cid')] = 1;
                 });
                 var frag = document.createDocumentFragment();
+                var firstNew = null;
                 /* 先 slice 固化：src.children 是活 HTMLCollection，
                    循环里 adoptNode 会实时缩短集合，forEach 按下标推进
                    会隔张跳卡（10 篇只显示 8 篇的根因） */
@@ -4736,46 +5464,100 @@
                     var cardCid = card.getAttribute('data-cid');
                     if (cardCid && seen[cardCid]) return;
                     if (cardCid) seen[cardCid] = 1;
+                    if (!firstNew) firstNew = card;
                     frag.appendChild(document.adoptNode(card));
                 });
                 box.appendChild(frag);
+                /* 记录本批内容的页码归属，syncUrl 按阅读位置同步地址栏 */
+                if (firstNew) marks.push({ url: pageUrl, el: firstNew });
 
                 var link = newPager ? newPager.querySelector('a.next') : null;
                 if (link) {
                     url = link.getAttribute('href');
                     pager.innerHTML = newPager.innerHTML;
-                    setBar('idle');
+                    if (bar) {
+                        setBar('idle');
+                    } else {
+                        autoCount++;
+                        if (autoMax > 0 && autoCount >= autoMax) switchManual();
+                        else setStat('off');
+                    }
                 } else {
                     url = '';
-                    bar.classList.add('is-done');
-                    bar.textContent = '已经到底了';
-                    bar.setAttribute('aria-label', '已经到底了');
+                    if (bar) {
+                        bar.classList.add('is-done');
+                        bar.textContent = '已经到底了';
+                        bar.setAttribute('aria-label', '已经到底了');
+                    } else {
+                        setStat('done');
+                    }
                     if (pager.parentNode) pager.parentNode.removeChild(pager);
                 }
-                /* 新卡片补初始化：悬浮操作组归位 / 点赞状态 / 懒加载 / 入场动效 */
+                /* 新卡片补初始化：悬浮操作组归位 / 点赞状态 / 懒加载 / 入场动效 / 最近阅读角标 */
                 Ecod.initCardAct();
                 Ecod.initLikeState();
                 Ecod.initImages();
                 Ecod.initAnimate();
-                /* 地址栏同步到当前页码，刷新后不丢位置（链接已带 sort/q 参数） */
-                try { history.replaceState(null, '', url || location.href); } catch (err) {}
+                Ecod.initRecent();
+                Ecod.initGallery();
+                /* 地址栏不随加载跳页：交给滚动时的 syncUrl 按阅读位置同步 */
                 busy = false;
+                /* 用户停在列表末端等下一页时不会再产生滚动事件，就地补一次检测。
+                   top > 0：哨兵已被滚过视口顶 = 用户在侧栏/页脚区，不续载
+                   （侧栏比流长时这里曾连环把余下页全拉完）；100px 紧边距
+                   保证只有真的停在底部才续 */
+                if (!bar && url && stat && stat.isConnected) {
+                    var stTop = stat.getBoundingClientRect().top;
+                    if (stTop > 0 && stTop < window.innerHeight + 100) load();
+                }
             }).catch(function () {
                 busy = false;
-                setBar('error');
+                if (bar) setBar('error'); else setStat('error');
             });
         }
 
-        bar.addEventListener('click', load);
-        /* click 模式只走按钮；auto 模式距底部 600px 预取（不支持 IO 退化为点击） */
-        if (mode === 'auto' && 'IntersectionObserver' in window) {
-            var io = new IntersectionObserver(function (entries) {
-                Array.prototype.forEach.call(entries, function (entry) {
-                    if (entry.isIntersecting) load();
-                });
-            }, { rootMargin: '600px 0px' });
-            io.observe(bar);
+        /* URL 跟随阅读位置而不是加载进度：每批追加的卡片记下页码归属，
+           滚动时看「视口上 40% 落进了哪一批」，地址栏就显示那批的页码。
+           预取不再改地址——旧实现加载完第 2 页就把地址换成下一页链接
+           （page/3），比实际内容超前整整一页 */
+        var marks = [];
+        var firstPageUrl = location.href;
+        var lastSync = location.href;
+        function syncUrl() {
+            var target = '';
+            for (var i = 0; i < marks.length; i++) {
+                var m = marks[i];
+                if (!m.el || !m.el.isConnected) continue;
+                if (m.el.getBoundingClientRect().top <= window.innerHeight * 0.4) target = m.url;
+                else break;
+            }
+            if (target === lastSync) return;
+            lastSync = target;
+            try { history.replaceState(null, '', target || firstPageUrl); } catch (err) {}
         }
+
+        if (bar) bar.addEventListener('click', load);
+        if (stat) stat.addEventListener('click', function () {
+            if (stat.classList.contains('is-error')) load();
+        });
+        /* auto 模式用「真实滚动 + 距离检测」而非 IO 交叉：加载追加后的布局抖动
+           （懒加载图片撑高、字体交换）会让哨兵在边距内反复进出，
+           IO 补发的旧交叉快照会让页面刚打开就连环加载。
+           经典方案每次续载都必须有一次真实滚动驱动，布局位移不触发 */
+        var ticking = false;
+        Ecod._infOnScroll = function () {
+            if (ticking) return;
+            ticking = true;
+            requestAnimationFrame(function () {
+                ticking = false;
+                if (!stat || !stat.isConnected) return;
+                syncUrl();
+                if (busy || !url || manual) return;
+                var top = stat.getBoundingClientRect().top;
+                /* 哨兵被滚到视口顶以上 = 用户已滑出文章流（侧栏/页脚区），停止预取 */
+                if (top >= 0 && top <= window.innerHeight + 600) load();
+            });
+        };
     };
 
     /* ---------- 我的积分（个人中心 credits 面板） ----------
@@ -4791,11 +5573,24 @@
         var msg = root.querySelector('[data-ecod-credits-msg]');
         var balEl = root.querySelector('[data-ecod-credits-balance]');
         var logEl = root.querySelector('[data-ecod-credits-log]');
+        var meterEl = root.querySelector('[data-ecod-credits-meter]');
+        var factsEl = root.querySelector('[data-ecod-credits-facts]');
+        var earnEl = root.querySelector('[data-ecod-credits-earn]');
+        var spendEl = root.querySelector('[data-ecod-credits-spend]');
+        var tabsEl = root.querySelector('[data-ecod-credits-tabs]');
+        var pagerEl = root.querySelector('[data-ecod-credits-pager]');
+        var prevEl = root.querySelector('[data-ecod-credits-prev]');
+        var nextEl = root.querySelector('[data-ecod-credits-next]');
+        var pageinfoEl = root.querySelector('[data-ecod-credits-pageinfo]');
         var LABELS = {
             checkin: '每日签到', comment: '发表评论', like_recv: '文章被赞', post: '发布文章',
-            ai: 'AI 对话', lottery: '抽奖消耗', lottery_win: '抽奖中奖', vip_gift: '开通会员赠送',
+            task: '任务奖励',
+            ai: 'AI 对话', ai_refund: 'AI 失败退回', ai_ad: '看广告奖励',
+            lottery: '抽奖消耗', lottery_win: '抽奖中奖', vip_gift: '开通会员赠送',
             shop: '积分兑换', referral: '推广返佣', admin: '管理员调整'
         };
+        /* 明细状态：当前 tab 类型 + 页码；tab 切换回到第 1 页 */
+        var view = { type: '', page: 1, pages: 1 };
 
         function say(text) {
             if (!msg) return;
@@ -4806,6 +5601,107 @@
         function day(ts) {
             var d = new Date(ts * 1000);
             return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+        }
+
+        /* 余额数字滚动（约 800ms 计数上涌；prefers-reduced-motion 直接落值） */
+        var countRaf = 0;
+        function countUp(el, target) {
+            if (!el) return;
+            var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+            if (countRaf) cancelAnimationFrame(countRaf);
+            if (reduce || target <= 0) { el.textContent = target; return; }
+            var from = parseInt(el.textContent, 10) || 0;
+            if (from >= target) { el.textContent = target; return; }
+            var t0 = performance.now(), dur = 800;
+            function step(t) {
+                var p = Math.min(1, (t - t0) / dur);
+                p = 1 - Math.pow(1 - p, 3);
+                el.textContent = Math.round(from + (target - from) * p);
+                if (p < 1) countRaf = requestAnimationFrame(step);
+            }
+            countRaf = requestAnimationFrame(step);
+        }
+
+        /* 近 30 天走势条：净收入亮主色、净支出警示色、无变动灰条 */
+        function renderMeter(meter) {
+            if (!meterEl) return;
+            if (!meter || !meter.length) { meterEl.hidden = true; return; }
+            var html = '';
+            for (var i = 0; i < meter.length; i++) {
+                var m = meter[i];
+                var cls = m.net > 0 ? ' is-up' : (m.net < 0 ? ' is-down' : '');
+                html += '<i class="ecod_credits__bar' + cls + '" title="' + esc(m.day) + (m.net ? ' · ' + (m.net > 0 ? '+' : '') + m.net : '') + '"></i>';
+            }
+            meterEl.innerHTML = html;
+        }
+
+        function renderStats(stats) {
+            if (!factsEl) return;
+            if (!stats || (!stats.earn && !stats.spend)) { factsEl.hidden = true; return; }
+            factsEl.hidden = false;
+            if (earnEl) earnEl.textContent = '+' + (stats.earn || 0);
+            if (spendEl) spendEl.textContent = '-' + (stats.spend || 0);
+        }
+
+        /* 类型 tab：全部 + 该账本出现过的类型（带笔数） */
+        function renderTabs(types) {
+            if (!tabsEl) return;
+            var seen = {};
+            var html = '<button type="button" class="ecod_credits__tab is-active" data-type="">全部</button>';
+            (types || []).forEach(function (t) {
+                if (!t || !t.type || seen[t.type]) return;
+                seen[t.type] = true;
+                html += '<button type="button" class="ecod_credits__tab" data-type="' + esc(t.type) + '">'
+                    + esc(LABELS[t.type] || t.label || t.type) + '<em>' + t.count + '</em></button>';
+            });
+            tabsEl.innerHTML = html;
+        }
+
+        function renderLog(rows) {
+            if (!logEl) return;
+            if (!rows || !rows.length) {
+                logEl.innerHTML = '<p class="ecod_credits__empty">'
+                    + (view.type ? '该类型下暂无记录。' : '还没有积分记录，点上面的「每日签到」开始赚。')
+                    + '</p>';
+                return;
+            }
+            var html = '';
+            rows.forEach(function (row) {
+                var label = LABELS[row.type] || row.note || row.type;
+                /* note 与类型文案相同（如「AI 对话」）时不重复展示 */
+                var note = row.note && row.note !== label && row.note !== LABELS[row.type] ? row.note : '';
+                html += '<div class="ecod_credits__row' + (row.delta < 0 ? ' is-out' : '') + '">'
+                    + '<span class="ecod_credits__why">' + esc(label) + '</span>'
+                    + (note ? '<span class="ecod_credits__note">' + esc(note) + '</span>' : '')
+                    + '<b class="ecod_credits__delta">' + (row.delta > 0 ? '+' : '') + row.delta + '</b>'
+                    + '<time>' + day(row.created) + '</time>'
+                    + '</div>';
+            });
+            logEl.innerHTML = html;
+        }
+
+        function renderPager() {
+            if (!pagerEl) return;
+            if (view.pages <= 1) { pagerEl.hidden = true; return; }
+            pagerEl.hidden = false;
+            if (pageinfoEl) pageinfoEl.textContent = view.page + ' / ' + view.pages;
+            if (prevEl) prevEl.disabled = view.page <= 1;
+            if (nextEl) nextEl.disabled = view.page >= view.pages;
+        }
+
+        function loadLog() {
+            if (!logEl) return;
+            var url = api + '?action=credits_log&page=' + view.page + (view.type ? '&type=' + encodeURIComponent(view.type) : '');
+            fetch(url, {
+                credentials: 'same-origin',
+                headers: { 'X-Requested-With': 'XMLHttpRequest' }
+            }).then(function (r) { return r.json(); }).then(function (data) {
+                if (!data || !data.ok) return;
+                view.page = data.page || view.page;
+                view.pages = data.pages || 1;
+                renderLog(data.rows);
+                renderPager();
+            }).catch(function () {});
         }
 
         /* 推广返佣：一键复制专属链接（clipboard 不可用时走 execCommand 兜底） */
@@ -4845,10 +5741,22 @@
                     if (res && res.ok) {
                         btn.textContent = '今日已签到';
                         btn.disabled = true;
-                        if (balEl) balEl.textContent = res.balance;
+                        countUp(balEl, res.balance || 0);
                         Ecod.creditsSync(res);
                         say('签到成功' + (res.delta > 0 ? ' +' + res.delta : '')
                             + (res.streak > 1 ? '，已连续 ' + res.streak + ' 天' : ''));
+                        Ecod.ballCelebrate();
+                        /* 签到入账后刷新走势 / 收支 / 明细（回到当前 tab 第 1 页拿最新一条） */
+                        view.page = 1;
+                        loadLog();
+                        fetch(api + '?action=credits_state', {
+                            credentials: 'same-origin',
+                            headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                        }).then(function (r) { return r.json(); }).then(function (fresh) {
+                            if (!fresh || !fresh.ok) return;
+                            renderMeter(fresh.meter);
+                            renderStats(fresh.stats);
+                        }).catch(function () {});
                     } else {
                         if (res && res.signed) btn.textContent = '今日已签到';
                         else btn.disabled = false;
@@ -4861,6 +5769,33 @@
             });
         }
 
+        /* tab 与翻页事件（事件委托，tab 列表是 JS 动态渲染的） */
+        if (tabsEl && !tabsEl.dataset.ecodBound) {
+            tabsEl.dataset.ecodBound = '1';
+            tabsEl.addEventListener('click', function (e) {
+                var tab = e.target.closest('.ecod_credits__tab');
+                if (!tab || tab.classList.contains('is-active')) return;
+                var cur = tabsEl.querySelector('.ecod_credits__tab.is-active');
+                if (cur) cur.classList.remove('is-active');
+                tab.classList.add('is-active');
+                view.type = tab.dataset.type || '';
+                view.page = 1;
+                loadLog();
+            });
+        }
+        if (prevEl && !prevEl.dataset.ecodBound) {
+            prevEl.dataset.ecodBound = '1';
+            prevEl.addEventListener('click', function () {
+                if (view.page > 1) { view.page--; loadLog(); }
+            });
+        }
+        if (nextEl && !nextEl.dataset.ecodBound) {
+            nextEl.dataset.ecodBound = '1';
+            nextEl.addEventListener('click', function () {
+                if (view.page < view.pages) { view.page++; loadLog(); }
+            });
+        }
+
         fetch(api + '?action=credits_state', {
             credentials: 'same-origin',
             headers: { 'X-Requested-With': 'XMLHttpRequest' }
@@ -4868,7 +5803,7 @@
             if (!data || !data.ok) return;
             var nameEl = root.querySelector('[data-ecod-credits-name]');
             if (nameEl) nameEl.textContent = data.name || 'Credit';
-            if (balEl) balEl.textContent = data.balance;
+            countUp(balEl, data.balance || 0);
             if (btn) {
                 if (data.signed) {
                     btn.textContent = '今日已签到';
@@ -4878,24 +5813,10 @@
                 }
             }
 
-            if (logEl) {
-                var rows = data.log || [];
-                if (!rows.length) {
-                    logEl.innerHTML = '<p class="ecod_credits__empty">还没有积分记录，点上面的「每日签到」开始赚 ' + esc(data.name || 'Credit') + '。</p>';
-                } else {
-                    var html = '';
-                    rows.forEach(function (row) {
-                        var label = LABELS[row.type] || row.note || row.type;
-                        html += '<div class="ecod_credits__row' + (row.delta < 0 ? ' is-out' : '') + '">'
-                            + '<span class="ecod_credits__why">' + esc(label) + '</span>'
-                            + (row.note ? '<span class="ecod_credits__note">' + esc(row.note) + '</span>' : '')
-                            + '<b class="ecod_credits__delta">' + (row.delta > 0 ? '+' : '') + row.delta + '</b>'
-                            + '<time>' + day(row.created) + '</time>'
-                            + '</div>';
-                    });
-                    logEl.innerHTML = html;
-                }
-            }
+            renderMeter(data.meter);
+            renderStats(data.stats);
+            renderTabs(data.types);
+            loadLog();
         }).catch(function () {});
     };
 
@@ -5071,6 +5992,844 @@
         });
     };
 
+    /* ---------- AI 快问面板（全站浮层，见 docs/ai-design.html §4.1） ----------
+       一个组件两种作用域：chat（默认）/ post（就本文追问，正文由服务端注入）。
+       历史只进 sessionStorage（30 分钟、同标签页）：关闭再开不丢，换页即清。
+       登录走整页 reload，所以打开登录前写 pending 标记，回来自动重开。 */
+    var AI_STATE_KEY = 'ecod_ai_state';
+    var AI_PENDING_KEY = 'ecod_ai_pending';
+    var AI_TTL = 30 * 60 * 1000;
+
+    var aiRoot = null;
+    var aiIsOpen = false;
+    var aiBusy = false;
+    var aiAbort = null;
+    var aiMsgs = [];
+    var aiScope = 'chat';
+    var aiCid = 0;
+    var aiTitle = '';
+    var aiSigned = null;
+    var aiBalance = null;
+    /* 实际计价（credits_state 回填）：会员免单时 cost=0、free=true */
+    var aiPrice = null;
+    /* 看广告领点数（F12）：credits_state 只回「有没有 / 还剩几次」，
+       观看令牌在点开广告时单独申请（用后即焚） */
+    var aiAd = { on: false, left: 0, reward: 0, token: '', timer: 0, open: false };
+
+    function aiQ(name) {
+        return aiRoot ? aiRoot.querySelector('[data-ecod-aiask-' + name + ']') : null;
+    }
+
+    function aiInline(text) {
+        var s = esc(text);
+        s = s.replace(/`([^`]+)`/g, '<code>$1</code>');
+        s = s.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+        s = s.replace(/(^|[^*])\*([^*\n]+)\*/g, '$1<em>$2</em>');
+        s = s.replace(/\[([^\]]+)\]\((https?:[^)\s]+)\)/g,
+            '<a href="$2" target="_blank" rel="noopener nofollow">$1</a>');
+        return s;
+    }
+
+    function aiCodeBlock(lang, code) {
+        return '<div class="ecod_aiask__code">'
+            + '<div class="ecod_aiask__codebar"><span>' + esc(lang || 'code') + '</span>'
+            + '<button type="button" data-ecod-aiask-copy>复制</button></div>'
+            + '<pre>' + esc(code) + '</pre></div>';
+    }
+
+    /* 窄面板白名单：段落 / 粗体 / 斜体 / 行内码 / 列表 / 引用 / 链接；
+       代码块降级为可复制纯文本，表格不渲染（文档 §14.4） */
+    function aiMd(src) {
+        var lines = String(src || '').replace(/\r/g, '').split('\n');
+        var out = [];
+        var buf = [];
+        var i = 0;
+
+        function flush() {
+            if (buf.length) {
+                out.push('<p>' + aiInline(buf.join(' ')) + '</p>');
+                buf = [];
+            }
+        }
+
+        while (i < lines.length) {
+            var line = lines[i];
+
+            var fence = line.match(/^\s*```\s*([\w+#.-]*)\s*$/);
+            if (fence) {
+                flush();
+                var code = [];
+                i++;
+                while (i < lines.length && !/^\s*```/.test(lines[i])) { code.push(lines[i]); i++; }
+                i++;
+                out.push(aiCodeBlock(fence[1], code.join('\n')));
+                continue;
+            }
+            if (/^\s*\|.+\|\s*$/.test(line)) {
+                flush();
+                while (i < lines.length && /^\s*\|.+\|\s*$/.test(lines[i])) { i++; }
+                out.push('<div class="ecod_aiask__tbl">表格已省略：面板太窄，可在完整对话页查看</div>');
+                continue;
+            }
+            if (/^\s*[-*+]\s+/.test(line)) {
+                flush();
+                var li = [];
+                while (i < lines.length && /^\s*[-*+]\s+/.test(lines[i])) {
+                    li.push('<li>' + aiInline(lines[i].replace(/^\s*[-*+]\s+/, '')) + '</li>');
+                    i++;
+                }
+                out.push('<ul>' + li.join('') + '</ul>');
+                continue;
+            }
+            if (/^\s*\d+[.)]\s+/.test(line)) {
+                flush();
+                var ol = [];
+                while (i < lines.length && /^\s*\d+[.)]\s+/.test(lines[i])) {
+                    ol.push('<li>' + aiInline(lines[i].replace(/^\s*\d+[.)]\s+/, '')) + '</li>');
+                    i++;
+                }
+                out.push('<ol>' + ol.join('') + '</ol>');
+                continue;
+            }
+            if (/^\s*>\s?/.test(line)) {
+                flush();
+                var quote = [];
+                while (i < lines.length && /^\s*>\s?/.test(lines[i])) {
+                    quote.push(aiInline(lines[i].replace(/^\s*>\s?/, '')));
+                    i++;
+                }
+                out.push('<blockquote>' + quote.join('<br>') + '</blockquote>');
+                continue;
+            }
+            if (/^\s*#{1,6}\s+/.test(line)) {
+                flush();
+                out.push('<p class="ecod_aiask__h">' + aiInline(line.replace(/^\s*#+\s+/, '')) + '</p>');
+                i++;
+                continue;
+            }
+            if (line.trim() === '') {
+                flush();
+                i++;
+                continue;
+            }
+            buf.push(line);
+            i++;
+        }
+        flush();
+        return out.join('');
+    }
+
+    function aiWelcome() {
+        var chips = Array.isArray(CFG.aiChips) ? CFG.aiChips : [];
+        var hello = '你好，我是本站的 AI 助手，关于文章内容或建站问题都可以问我。';
+        if (aiScope === 'post') hello = '我读完了这篇，关于它的问题都可以问。';
+        if (aiScope === 'site') hello = '说说你想看什么，我从站内挑几个地方给你。';
+        var html = '<div class="ecod_aiask__welcome">'
+            + '<p>' + hello + '</p>';
+        if (chips.length) {
+            html += '<div class="ecod_aiask__chips">';
+            chips.forEach(function (c) {
+                html += '<button type="button" data-ecod-aiask-chip="' + esc(c) + '">' + esc(c) + '</button>';
+            });
+            html += '</div>';
+        }
+        return html + '</div>';
+    }
+
+    function aiLoginCard() {
+        return '<div class="ecod_aiask__login">'
+            + '<b>登录后即可对话</b>'
+            + '<p>AI 回答按次消耗 ' + esc(CFG.credits || '积分') + '，登录还能签到赚回来。</p>'
+            + '<button type="button" class="ecod_aiask__lgbtn" data-ecod-login-open>登录 / 注册</button>'
+            + '</div>';
+    }
+
+    function aiPaintBal() {
+        var el = aiQ('bal');
+        if (!el) return;
+        if (aiBalance === null) {
+            el.hidden = true;
+            return;
+        }
+        el.hidden = false;
+        el.textContent = (CFG.credits || '积分') + ' ' + aiBalance
+            + (aiPrice && aiPrice.free ? ' · VIP 免费' : '');
+        el.classList.toggle('is-vip', !!(aiPrice && aiPrice.free));
+    }
+
+    /* ---------- 看广告领点数（F12） ---------- */
+    function aiPaintEarn() {
+        var box = aiQ('earn');
+        if (!box) return;
+        var show = !!(aiSigned && aiAd.on && aiAd.left > 0 && !aiAd.open);
+        box.hidden = !show;
+        var amt = aiQ('adamt');
+        if (amt) amt.textContent = aiAd.reward || 0;
+    }
+
+    function aiAdReset() {
+        if (aiAd.timer) { clearInterval(aiAd.timer); aiAd.timer = 0; }
+        aiAd.token = '';
+        aiAd.open = false;
+        var card = aiQ('ad');
+        if (card) card.hidden = true;
+        aiPaintEarn();
+    }
+
+    function aiAdFill(state) {
+        var ad = (state && state.ad) || {};
+        var link = aiQ('adlink');
+        var title = aiQ('adtitle');
+        var note = aiQ('adnote');
+        var cover = aiQ('adcover');
+        if (title) title.textContent = ad.title || '本站推荐';
+        if (note) note.textContent = ad.sponsor ? '赞助内容' : '本站精选';
+        if (link) {
+            /* 没有落地页就退回首页，绝不写 javascript: 之类的伪协议 */
+            var href = String(ad.link || '');
+            if (!/^https?:\/\//i.test(href) && href.charAt(0) !== '/') href = '/';
+            link.setAttribute('href', href);
+        }
+        if (cover) {
+            if (ad.image) {
+                cover.style.backgroundImage = "url('" + String(ad.image).replace(/'/g, '%27') + "')";
+                cover.hidden = false;
+            } else {
+                cover.style.backgroundImage = '';
+                cover.hidden = true;
+            }
+        }
+    }
+
+    function aiAdStart(state) {
+        aiAd.open = true;
+        aiAd.token = String((state && state.token) || '');
+        aiAd.reward = parseInt(state && state.reward, 10) || aiAd.reward || 1;
+        aiAdFill(state);
+        aiPaintEarn();
+        var card = aiQ('ad');
+        if (card) card.hidden = false;
+        var btn = aiQ('adclaim');
+        var left = Math.max(3, parseInt(state && state.wait, 10) || 10);
+        if (btn) { btn.disabled = true; btn.textContent = '广告播放中 ' + left + 's'; }
+        if (aiAd.timer) clearInterval(aiAd.timer);
+        aiAd.timer = setInterval(function () {
+            left--;
+            if (left > 0) {
+                if (btn) btn.textContent = '广告播放中 ' + left + 's';
+                return;
+            }
+            clearInterval(aiAd.timer);
+            aiAd.timer = 0;
+            if (btn) { btn.disabled = false; btn.textContent = '领取 +' + aiAd.reward + ' 点'; }
+        }, 1000);
+    }
+
+    function aiAdLoad() {
+        var fd = new FormData();
+        fd.append('token', CFG.aiToken || '');
+        fetch((CFG.api || '') + '?action=ai_ad', {
+            method: 'POST', credentials: 'same-origin', body: fd
+        }).then(function (r) { return r.json().catch(function () { return null; }); }).then(function (d) {
+            if (!d || !d.ok) {
+                Ecod.toast((d && d.error) || '暂时没有可看的广告', 'warn');
+                return;
+            }
+            aiAd.on = !!d.enabled;
+            aiAd.left = parseInt(d.left, 10) || 0;
+            aiAd.reward = parseInt(d.reward, 10) || aiAd.reward;
+            if (aiAd.left <= 0) {
+                aiPaintEarn();
+                Ecod.toast('今天的次数已经领完', 'info');
+                return;
+            }
+            aiAdStart(d);
+        }).catch(function () {
+            Ecod.toast('网络异常，请稍后重试', 'bad');
+        });
+    }
+
+    function aiAdClaim() {
+        if (!aiAd.token) return;
+        var btn = aiQ('adclaim');
+        if (btn) btn.disabled = true;
+        var fd = new FormData();
+        fd.append('token', CFG.aiToken || '');
+        fd.append('ad_token', aiAd.token);
+        fetch((CFG.api || '') + '?action=ai_ad_claim', {
+            method: 'POST', credentials: 'same-origin', body: fd
+        }).then(function (r) { return r.json().catch(function () { return null; }); }).then(function (d) {
+            if (!d || !d.ok) {
+                if (btn) btn.disabled = false;
+                Ecod.toast((d && d.error) || '领取失败，请稍后重试', 'warn');
+                return;
+            }
+            aiBalance = typeof d.balance !== 'undefined' ? d.balance : aiBalance;
+            aiAd.left = typeof d.left !== 'undefined' ? d.left : Math.max(0, aiAd.left - 1);
+            aiAdReset();
+            aiPaintBal();
+            Ecod.toast('已领取 +' + (d.delta || aiAd.reward) + ' ' + (CFG.credits || '积分'), 'ok');
+            if (window.Ecod && Ecod.ballFlashAll) Ecod.ballFlashAll('19', 1400);
+        }).catch(function () {
+            if (btn) btn.disabled = false;
+            Ecod.toast('网络异常，请稍后重试', 'bad');
+        });
+    }
+
+    function aiPaintHead() {
+        var title = aiQ('title');
+        var scope = aiQ('scope');
+        var ctx = aiQ('ctx');
+        var ctxt = aiQ('ctxt');
+        if (title) {
+            title.textContent = aiScope === 'post' ? '就本文追问'
+                : (aiScope === 'site' ? '站内向导' : 'AI 快问');
+        }
+        if (scope) {
+            scope.hidden = aiScope !== 'post';
+            scope.textContent = 'post';
+        }
+        if (ctx && ctxt) {
+            ctx.hidden = aiScope !== 'post';
+            ctxt.textContent = '上下文：' + (aiTitle || '本文');
+        }
+        var tip = aiQ('tip');
+        if (tip) {
+            var unit = aiPrice ? aiPrice.cost : (CFG.aiCost || 0);
+            var price = aiPrice && aiPrice.free
+                ? 'VIP 免单'
+                : unit + ' ' + (CFG.credits || '积分');
+            tip.textContent = aiScope === 'post'
+                ? '回答仅基于本文 · 1 条消息 = ' + price
+                : '回答由 AI 生成，仅供参考 · 1 条消息 = ' + price;        }
+        aiPaintBal();
+    }
+
+    function aiScroll(force) {
+        var list = aiQ('list');
+        if (!list) return;
+        var near = list.scrollHeight - list.scrollTop - list.clientHeight < 48;
+        if (force || near) list.scrollTop = list.scrollHeight;
+    }
+
+    function aiRender() {
+        var list = aiQ('list');
+        if (!list) return;
+        if (aiSigned === false) {
+            list.innerHTML = aiLoginCard();
+            aiSetBusy(false);
+            return;
+        }
+        if (!aiMsgs.length) {
+            list.innerHTML = aiWelcome();
+            return;
+        }
+        var html = '';
+        aiMsgs.forEach(function (m, idx) {
+            if (m.role === 'user') {
+                html += '<div class="ecod_aiask__msg is-me"><div class="ecod_aiask__bub">'
+                    + esc(m.content).replace(/\n/g, '<br>') + '</div></div>';
+                return;
+            }
+            if (m.role === 'error') {
+                html += '<div class="ecod_aiask__msg"><div class="ecod_aiask__bub is-err">'
+                    + esc(m.content)
+                    + (m.action ? '<a href="' + esc(m.action.href) + '">' + esc(m.action.text) + '</a>' : '')
+                    + (m.retry ? '<button type="button" data-ecod-aiask-retry="' + idx + '">重试</button>' : '')
+                    + '</div></div>';
+                return;
+            }
+            html += '<div class="ecod_aiask__msg"><span class="ecod_aiask__ava" aria-hidden="true"></span>'
+                + '<div class="ecod_aiask__bub" data-ecod-aiask-body="' + idx + '">'
+                + (m.pending ? '<i class="ecod_aiask__dots"><b></b><b></b><b></b></i>' : aiMd(m.content))
+                + '</div></div>';
+        });
+        list.innerHTML = html;
+        aiScroll();
+    }
+
+    function aiPaintLast(idx) {
+        var el = aiRoot ? aiRoot.querySelector('[data-ecod-aiask-body="' + idx + '"]') : null;
+        if (!el) return;
+        el.innerHTML = aiMd(aiMsgs[idx].content);
+        aiScroll();
+    }
+
+    function aiSetBusy(on) {
+        aiBusy = !!on;
+        var btn = aiQ('send');
+        var ta = aiQ('ta');
+        if (btn) {
+            btn.classList.toggle('is-stop', aiBusy);
+            btn.setAttribute('aria-label', aiBusy ? '停止生成' : '发送');
+            btn.innerHTML = aiBusy
+                ? '<span class="ecod_aiask__stopicon" aria-hidden="true"></span>'
+                : (Ecod.icon ? Ecod.icon('arrow-up', 15) : '↑');
+        }
+        if (ta) ta.disabled = false;
+    }
+
+    function aiSave() {
+        try {
+            sessionStorage.setItem(AI_STATE_KEY, JSON.stringify({
+                t: Date.now(),
+                scope: aiScope,
+                cid: aiCid,
+                title: aiTitle,
+                msgs: aiMsgs.slice(-12)
+            }));
+        } catch (e) {}
+    }
+
+    function aiRestore() {
+        try {
+            var raw = sessionStorage.getItem(AI_STATE_KEY);
+            if (!raw) return null;
+            var s = JSON.parse(raw);
+            if (!s || Date.now() - (s.t || 0) > AI_TTL) {
+                sessionStorage.removeItem(AI_STATE_KEY);
+                return null;
+            }
+            return s;
+        } catch (e) {
+            return null;
+        }
+    }
+
+    function aiHistory() {
+        var out = [];
+        aiMsgs.forEach(function (m) {
+            if ((m.role === 'user' || m.role === 'assistant') && m.content && !m.pending) {
+                out.push({ role: m.role, content: m.content });
+            }
+        });
+        return out.slice(-8);
+    }
+
+    function aiSyncUser() {
+        if (!CFG.api) return;
+        fetch((CFG.api || '') + '?action=credits_state', { credentials: 'same-origin' })
+            .then(function (r) { return r.json().catch(function () { return null; }); })
+            .then(function (d) {
+                var was = aiSigned;
+                aiSigned = !!(d && d.ok);
+                if (aiSigned && d && typeof d.balance !== 'undefined') aiBalance = d.balance;
+                if (aiSigned && d && typeof d.ai_cost !== 'undefined') {
+                    aiPrice = { cost: parseInt(d.ai_cost, 10) || 0, free: !!d.ai_free, vip: !!d.ai_vip };
+                }
+                if (aiSigned && d && typeof d.ai_ad_on !== 'undefined') {
+                    aiAd.on = !!d.ai_ad_on;
+                    aiAd.left = parseInt(d.ai_ad_left, 10) || 0;
+                    aiAd.reward = parseInt(d.ai_ad_reward, 10) || aiAd.reward;
+                } else if (!aiSigned) {
+                    aiAd.on = false;
+                    aiAd.left = 0;
+                }
+                aiPaintBal();
+                aiPaintEarn();
+                if (aiSigned) aiPaintHead();
+                if (was !== aiSigned || !aiMsgs.length) aiRender();
+            })
+            .catch(function () {});
+    }
+
+    function aiFocus() {
+        var ta = aiQ('ta');
+        if (ta) {
+            try { ta.focus({ preventScroll: true }); } catch (e) {}
+        }
+    }
+
+    function aiHide() {
+        if (!aiRoot || !aiIsOpen) return;
+        aiRoot.hidden = true;
+        aiIsOpen = false;
+        aiAdReset();
+        aiSave();
+        document.documentElement.classList.remove('ecod-aiask-on');
+    }
+
+    function aiClose() {
+        if (!aiRoot || !aiIsOpen) return;
+        if (aiAbort) {
+            try { aiAbort.abort(); } catch (e) {}
+            aiAbort = null;
+        }
+        Ecod.dialogClose(aiRoot);
+        aiHide();
+    }
+
+    function aiNeedLogin() {
+        try {
+            sessionStorage.setItem(AI_PENDING_KEY, JSON.stringify({
+                scope: aiScope, cid: aiCid, title: aiTitle, msgs: aiMsgs.slice(-8)
+            }));
+        } catch (e) {}
+        var btn = aiRoot ? aiRoot.querySelector('[data-ecod-login-open]') : null;
+        if (btn) {
+            btn.click();
+            return;
+        }
+        location.reload();
+    }
+
+    function aiFail(idx, msg, retryText, action) {
+        aiMsgs[idx] = { role: 'error', content: msg, retry: retryText || '', action: action || null };
+        aiRender();
+        aiSetBusy(false);
+    }
+
+    function aiEvent(data, idx) {
+        var asst = aiMsgs[idx];
+        if (!asst) return;
+        if (data.t === 'meta') {
+            if (typeof data.balance !== 'undefined') {
+                aiBalance = data.balance;
+                aiPaintBal();
+            }
+            asst.pending = false;
+            aiPaintLast(idx);
+            return;
+        }
+        if (data.t === 'delta') {
+            asst.pending = false;
+            asst.content += String(data.s || '');
+            aiPaintLast(idx);
+            return;
+        }
+        if (data.t === 'done') {
+            asst.pending = false;
+            if (data.reply) asst.content = String(data.reply);
+            if (typeof data.balance !== 'undefined') {
+                aiBalance = data.balance;
+                aiPaintBal();
+            }
+            aiRender();
+            aiSetBusy(false);
+            aiSave();
+            if (window.Ecod && Ecod.ballFlashAll) Ecod.ballFlashAll('19', 1600);
+            return;
+        }
+        if (data.t === 'err') {
+            if (typeof data.balance !== 'undefined') {
+                aiBalance = data.balance;
+                aiPaintBal();
+            }
+            aiFail(idx, String(data.error || '生成失败，请稍后重试'), aiLastQuestion());
+        }
+    }
+
+    function aiLastQuestion() {
+        for (var i = aiMsgs.length - 1; i >= 0; i--) {
+            if (aiMsgs[i].role === 'user') return aiMsgs[i].content;
+        }
+        return '';
+    }
+
+    function aiReadStream(res, idx) {
+        if (!res.body || !res.body.getReader) {
+            return res.text().then(function (t) {
+                try { aiEvent(JSON.parse(t), idx); } catch (e) { aiFail(idx, '响应异常', aiLastQuestion()); }
+            });
+        }
+        var reader = res.body.getReader();
+        var dec = window.TextDecoder ? new TextDecoder() : null;
+        var buf = '';
+        function pump() {
+            return reader.read().then(function (r) {
+                if (r.done) {
+                    aiSetBusy(false);
+                    var m = aiMsgs[idx];
+                    if (m && m.role === 'assistant' && m.pending) {
+                        /* 流提前结束且零输出：按失败处理（服务端会全额退回） */
+                        aiFail(idx, '接口未返回内容，请稍后重试', aiLastQuestion());
+                        return;
+                    }
+                    if (m && m.role === 'assistant') aiSave();
+                    return;
+                }
+                buf += dec ? dec.decode(r.value, { stream: true }) : String.fromCharCode.apply(null, r.value);
+                var blocks = buf.split('\n\n');
+                buf = blocks.pop();
+                blocks.forEach(function (block) {
+                    var line = block.trim();
+                    if (line.indexOf('data:') !== 0) return;
+                    var data;
+                    try { data = JSON.parse(line.slice(5).trim()); } catch (e) { return; }
+                    aiEvent(data, idx);
+                });
+                return pump();
+            });
+        }
+        return pump();
+    }
+
+    function aiJson(res, idx, question) {
+        return res.json().catch(function () {
+            return { ok: false, error: '响应异常' };
+        }).then(function (d) {
+            if (d && d.ok) {
+                aiMsgs[idx] = { role: 'assistant', content: String(d.reply || '') };
+                if (typeof d.balance !== 'undefined') {
+                    aiBalance = d.balance;
+                    aiPaintBal();
+                }
+                aiRender();
+                aiSetBusy(false);
+                aiSave();
+                return;
+            }
+            if (res.status === 401) {
+                aiSigned = false;
+                aiRender();
+                return;
+            }
+            if (res.status === 402) {
+                aiFail(idx, (d && d.error) || '积分不足', question, { href: CFG.aiPage || '#', text: '去签到' });
+                return;
+            }
+            aiFail(idx, (d && d.error) || '生成失败，请稍后重试', question);
+        });
+    }
+
+    function aiSend(text) {
+        text = String(text || '').trim();
+        if (!text || aiBusy) return;
+        if (aiSigned === false) {
+            aiNeedLogin();
+            return;
+        }
+        aiMsgs.push({ role: 'user', content: text });
+        aiMsgs.push({ role: 'assistant', content: '', pending: true });
+        var idx = aiMsgs.length - 1;
+        aiRender();
+        aiSetBusy(true);
+
+        var body = new FormData();
+        body.append('message', text);
+        body.append('token', CFG.aiToken || '');
+        body.append('history', JSON.stringify(aiHistory()));
+        if (aiScope === 'post' && aiCid > 0) {
+            body.append('scope', 'post');
+            body.append('cid', aiCid);
+        } else if (aiScope === 'site') {
+            body.append('scope', 'site');
+        }
+        if (CFG.aiStream !== false) body.append('stream', '1');
+
+        aiAbort = window.AbortController ? new AbortController() : null;
+        fetch((CFG.api || '') + '?action=ai_chat', {
+            method: 'POST',
+            credentials: 'same-origin',
+            body: body,
+            signal: aiAbort ? aiAbort.signal : undefined
+        }).then(function (res) {
+            var ct = (res.headers.get('content-type') || '');
+            if (ct.indexOf('text/event-stream') >= 0) return aiReadStream(res, idx);
+            return aiJson(res, idx, text);
+        }).catch(function (err) {
+            if (err && err.name === 'AbortError') {
+                if (aiMsgs[idx] && aiMsgs[idx].role === 'assistant') {
+                    aiMsgs[idx].pending = false;
+                    if (!aiMsgs[idx].content) aiMsgs[idx].content = '（已停止）';
+                }
+                aiRender();
+                aiSetBusy(false);
+                return;
+            }
+            aiFail(idx, '网络异常，请稍后重试', text);
+        });
+    }
+
+    function aiOpenPanel(opts) {
+        if (!aiRoot) return;
+        opts = opts || {};
+        var wantScope = opts.scope === 'post' ? 'post' : (opts.scope === 'site' ? 'site' : 'chat');
+        var wantCid = wantScope === 'post' ? (parseInt(opts.cid, 10) || 0) : 0;
+
+        /* 带预置问题的入口（404「我该去哪？」）：同 scope 重复点也要把问题补发出去 */
+        if (aiIsOpen && wantScope === aiScope && wantCid === aiCid) {
+            if (opts.prompt) aiSend(opts.prompt);
+            else aiFocus();
+            return;
+        }
+
+        var saved = aiRestore();
+        if (saved && (saved.scope || 'chat') === wantScope && (parseInt(saved.cid, 10) || 0) === wantCid) {
+            aiMsgs = Array.isArray(saved.msgs) ? saved.msgs : [];
+            aiTitle = saved.title || opts.title || '';
+        } else {
+            aiMsgs = [];
+            aiTitle = opts.title || '';
+        }
+        aiScope = wantScope;
+        aiCid = wantCid;
+        if (opts.title) aiTitle = opts.title;
+
+        aiRoot.hidden = false;
+        aiIsOpen = true;
+        document.documentElement.classList.add('ecod-aiask-on');
+        aiPaintHead();
+        aiRender();
+        aiSyncUser();
+        Ecod.dialogOpen(aiRoot, aiQ('ta'), aiHide, { lock: false });
+        aiFocus();
+        if (opts.draft) {
+            var ta = aiQ('ta');
+            if (ta) ta.value = opts.draft;
+        }
+        if (opts.prompt) aiSend(opts.prompt);
+    }
+
+    Ecod.aiAskOpen = function (opts) {
+        aiOpenPanel(opts || {});
+    };
+    Ecod.aiAskClose = function () {
+        aiClose();
+    };
+    /* 对话页复用同一套受限 Markdown：一份白名单，避免两套渲染器各漏一处 */
+    Ecod.md = aiMd;
+
+    Ecod.initAiAsk = function () {
+        aiRoot = document.querySelector('[data-ecod-aiask]');
+        if (!aiRoot || !CFG.aiAsk || aiRoot.dataset.ecodBound) return;
+        aiRoot.dataset.ecodBound = '1';
+
+        /* 登录回来：pending 标记 → 自动重开并还原草稿 */
+        try {
+            var pend = sessionStorage.getItem(AI_PENDING_KEY);
+            if (pend) {
+                sessionStorage.removeItem(AI_PENDING_KEY);
+                var p = JSON.parse(pend);
+                setTimeout(function () {
+                    aiOpenPanel({ scope: p.scope, cid: p.cid, title: p.title, draft: p.draft || '' });
+                    if (Array.isArray(p.msgs) && p.msgs.length) {
+                        aiMsgs = p.msgs;
+                        aiRender();
+                    }
+                }, 60);
+            }
+        } catch (e) {}
+
+        /* 头像球：懒加载引擎后挂到面板头部（与站宠同一份资源） */
+        var head = aiQ('ball');
+        if (head && Ecod.ballMount) {
+            Ecod.ballMount(head, { emotion: '03', idle: { standbyAfter: 60000, sleepAfter: 180000 } });
+        }
+
+        aiRoot.addEventListener('submit', function (e) {
+            e.preventDefault();
+            if (aiBusy) {
+                if (aiAbort) { try { aiAbort.abort(); } catch (err) {} }
+                return;
+            }
+            var ta = aiQ('ta');
+            var text = ta ? ta.value : '';
+            if (ta) ta.value = '';
+            aiSend(text);
+        });
+
+        aiRoot.addEventListener('click', function (e) {
+            var t = e.target;
+
+            if (t.closest('[data-ecod-aiask-close]')) { aiClose(); return; }
+
+            if (t.closest('[data-ecod-aiask-send]') && aiBusy) {
+                if (aiAbort) { try { aiAbort.abort(); } catch (err) {} }
+                return;
+            }
+
+            var chip = t.closest('[data-ecod-aiask-chip]');
+            if (chip) { aiSend(chip.getAttribute('data-ecod-aiask-chip')); return; }
+
+            var retry = t.closest('[data-ecod-aiask-retry]');
+            if (retry) {
+                var q = aiLastQuestion();
+                var i = parseInt(retry.getAttribute('data-ecod-aiask-retry'), 10);
+                if (!isNaN(i)) aiMsgs.splice(i, 1);
+                aiRender();
+                if (q) aiSend(q);
+                return;
+            }
+
+            if (t.closest('[data-ecod-aiask-unpin]')) {
+                aiMsgs = [];
+                aiScope = 'chat';
+                aiCid = 0;
+                aiTitle = '';
+                aiPaintHead();
+                aiRender();
+                aiSave();
+                return;
+            }
+
+            var copy = t.closest('[data-ecod-aiask-copy]');
+            if (copy) {
+                var box = copy.closest('.ecod_aiask__code');
+                var pre = box ? box.querySelector('pre') : null;
+                if (pre) {
+                    Ecod.u.copyText(pre.textContent || '');
+                    copy.textContent = '已复制';
+                    setTimeout(function () { copy.textContent = '复制'; }, 1400);
+                }
+                return;
+            }
+
+            if (t.closest('[data-ecod-aiask-adopen]')) { aiAdLoad(); return; }
+            if (t.closest('[data-ecod-aiask-adclose]')) { aiAdReset(); return; }
+            if (t.closest('[data-ecod-aiask-adclaim]')) { aiAdClaim(); return; }
+
+            if (t.closest('[data-ecod-login-open]')) {
+                try {
+                    sessionStorage.setItem(AI_PENDING_KEY, JSON.stringify({
+                        scope: aiScope, cid: aiCid, title: aiTitle, msgs: aiMsgs.slice(-8),
+                        draft: aiQ('ta') ? aiQ('ta').value : ''
+                    }));
+                } catch (err) {}
+            }
+        });
+
+        document.addEventListener('click', function (e) {
+            if (!aiIsOpen) return;
+            if (aiRoot.contains(e.target)) return;
+            if (e.target.closest('[data-ecod-aiask-open]')) return;
+            if (e.target.closest('[data-ecod-authmodal]')) return;
+            aiClose();
+        });
+
+        /* 摘要卡药丸 / dock 条目 / 球：统一入口，scope 由按钮声明 */
+        document.addEventListener('click', function (e) {
+            var opener = e.target.closest('[data-ecod-aiask-open]');
+            if (!opener) return;
+            e.preventDefault();
+            var mode = opener.getAttribute('data-ecod-aiask-open') || 'chat';
+            aiOpenPanel({
+                scope: mode === 'post' ? 'post' : (mode === 'site' ? 'site' : 'chat'),
+                cid: opener.getAttribute('data-cid') || 0,
+                title: opener.getAttribute('data-title') || '',
+                prompt: opener.getAttribute('data-ecod-aiask-prompt') || ''
+            });
+        });
+
+        var ta = aiQ('ta');
+        if (ta) {
+            ta.addEventListener('keydown', function (e) {
+                if (e.key === 'Enter' && !e.shiftKey && !e.isComposing) {
+                    e.preventDefault();
+                    if (!aiBusy) {
+                        var v = ta.value;
+                        ta.value = '';
+                        aiSend(v);
+                    }
+                }
+            });
+            ta.addEventListener('input', function () {
+                ta.style.height = 'auto';
+                ta.style.height = Math.min(96, ta.scrollHeight) + 'px';
+            });
+        }
+    };
+
     Ecod.refresh = function () {
         /* 换页时先停掉上一页的朗读，避免声音延续到新页面 */
         Ecod.runPost('stopTts');
@@ -5081,6 +6840,7 @@
            （applyTheme 幂等，toggle 绑定走 once 不会重复） */
         Ecod.initTheme();
         Ecod.initHistory();
+        Ecod.initRecent();
         Ecod.renderUserCenter();
         Ecod.initCredits();
         Ecod.initCreditsQuick();
@@ -5093,6 +6853,7 @@
         Ecod.initProgress();
         Ecod.runPost('initToc');
         Ecod.runPost('initContent');
+        Ecod.runPost('initNote');
         Ecod.runPost('initEmbeds');
         Ecod.initImages();
         Ecod.runPost('initInline');
@@ -5118,31 +6879,40 @@
         Ecod.initRank();
         Ecod.initTp();
         Ecod.initWtabs();
+        Ecod.initHeatgrid();
         Ecod.initFollow();
         Ecod.runPost('initContribute');
         Ecod.runPost('initUcPosts');
         Ecod.runPost('initClike');
         Ecod.runPost('initExtras');
+        Ecod.runPost('initAudio');
         Ecod.initDock();
         Ecod.initNotice();
+        Ecod.initInApp();
         Ecod.initAccount();
         Ecod.runPost('initFriendApply');
         Ecod.initSearchSuggest();
         Ecod.initSearchPanel();
         Ecod.initSearchRecord();
         Ecod.initNotifs();
+        Ecod.initTicker();
         Ecod.initTasks();
         Ecod.initMsgCenter();
         Ecod.initTickets();
         Ecod.initSlider();
+        Ecod.initGallery();
         Ecod.initCardAct();
         Ecod.initLikeState();
         Ecod.initStream();
         Ecod.runPost('initAi');
+        Ecod.initAiAsk();
+        /* 换页即收起面板：旧页的上下文与滚动位置不该带进新页 */
+        Ecod.aiAskClose();
         Ecod.runPost('bindPayComment');
         Ecod.runPost('initShowMore');
         Ecod.runPost('initPoll');
         Ecod.runPost('initAiChat');
+        Ecod.runPost('initCmtAi');
         Ecod.runPost('initLottery');
         Ecod.runPost('initAdSelf');
         Ecod.runPost('initShop');
@@ -5151,6 +6921,7 @@
         Ecod.runPost('initPrism');
         syncFavButtons();
         Ecod.renderFavs();
+        Ecod.initBalls();
     };
 
     /* ------------------------------------------------------------------
@@ -5225,6 +6996,165 @@
             s.onload = s.onerror = next;
             document.head.appendChild(s);
         })();
+    };
+
+    /* ------------------------------------------------------------------
+     * 表情球（Grok Ball，assets/js/vendor/grok-ball.js，MIT）
+     *
+     * 引擎 32KB gzip，绝不进首屏：ensureBall() 与 ensurePostBundle 同一套
+     * 注入约定按需加载（AI 对话页 / 404 彩蛋 / 抽奖页 / 搜索面板 / 站宠）。
+     * reduced-motion 用户连引擎都不发（ballMount / ballCelebrate 直接短路）。
+     * ballMount 返回「壳句柄」：加载完成前方法为空操作，加载后透明升级，
+     * 调用方无须关心引擎是否已就位。
+     * ---------------------------------------------------------------- */
+    Ecod._ballLoaded = false;
+    Ecod._ballLoading = false;
+    Ecod._ballQ = [];
+    Ecod.ensureBall = function (done) {
+        if (Ecod._ballLoaded) {
+            if (done) done();
+            return;
+        }
+        if (done) Ecod._ballQ.push(done);
+        if (Ecod._ballLoading) return;
+        Ecod._ballLoading = true;
+        var chain = [CFG.ballEngine, CFG.ball].filter(Boolean);
+        (function next() {
+            var url = chain.shift();
+            if (!url) {
+                Ecod._ballLoaded = true;
+                var q = Ecod._ballQ;
+                Ecod._ballQ = [];
+                q.forEach(function (cb) { cb(); });
+                return;
+            }
+            var s = document.createElement('script');
+            s.src = url;
+            s.onload = s.onerror = next;
+            document.head.appendChild(s);
+        })();
+    };
+    Ecod.ballMount = function (mount, opts) {
+        var stub = {
+            set: function () {}, flash: function () {}, celebrate: function () {},
+            spin: function () {}, burst: function () {}, resetIdle: function () {},
+            wake: function () {}, destroy: function () {}, holding: function () { return false; },
+            _h: null
+        };
+        if (!mount || (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches)) {
+            return stub;
+        }
+        Ecod.ensureBall(function () {
+            if (!window.EcodBall || !document.contains(mount)) return;
+            stub._h = window.EcodBall.create(mount, opts || {});
+            if (!stub._h) return;
+            ['set', 'flash', 'celebrate', 'spin', 'burst', 'resetIdle', 'wake', 'holding', 'destroy'].forEach(function (k) {
+                stub[k] = function () { return stub._h[k].apply(stub._h, arguments); };
+            });
+        });
+        return stub;
+    };
+    /* 全员短表情（点赞/收藏/复制成功等「蹭球」联动）：只有已经活着的球响应。
+       引擎未加载或无实例时直接跳过——绝不为一次性反馈加载 32KB 引擎 */
+    Ecod.ballFlashAll = function (id, ms) {
+        if (!Ecod._ballLoaded || !window.EcodBall || !window.EcodBall.count()) return;
+        window.EcodBall.flashAll(id, ms);
+    };
+    /* 站内喜事（签到成功等）：活着的球一起撒花 */
+    Ecod.ballCelebrate = function (ms) {
+        Ecod.ballFlashAll('33', ms || 2800);
+    };
+
+    /* ---------- 页面级挂载：404 彩蛋 + 站宠（refresh 每次换页都跑） ---------- */
+    Ecod.initBalls = function () {
+        if (window.EcodBall && window.EcodBall.sweep) window.EcodBall.sweep();
+
+        /* 404 彩蛋：好奇注视 + 点击自旋甩彩带 */
+        var b404 = document.querySelector('[data-ecod-ball404]');
+        if (b404 && !b404.dataset.ballReady) {
+            b404.dataset.ballReady = '1';
+            var egg = Ecod.ballMount(b404, { emotion: '03' });
+            once(b404, 'ball404Click', 'click', function () {
+                egg.spin(2);
+                egg.flash('13', 1800);
+            });
+        }
+
+        Ecod.initMascot();
+    };
+
+    /* 站宠：右下角常驻表情球（后台「互动 → 积分与 AI → 表情球站宠」开关）。
+       桌面端专属（≤680px 隐藏，避免与移动 dock 抢位置）；idle 期懒加载引擎。
+       睡眠/待机由引擎内置 idle 生命周期驱动，用户活动经 wake() 唤醒。 */
+    Ecod.initMascot = function () {
+        if (!CFG.mascot || document.querySelector('.ecod_ballpet')) return;
+        var mqReduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        if (window.matchMedia && window.matchMedia('(max-width: 680px)').matches) return;
+
+        /* 减少动态效果：动画引擎不加载（既有逻辑），但 AI 入口开着时
+           降级渲染一个静态圆脸按钮——功能不依赖动画（文档 §14.5） */
+        if (mqReduce) {
+            if (!CFG.aiAsk) return;
+            var bootStatic = function () {
+                if (!document.body || document.querySelector('.ecod_ballpet')) return;
+                var el = document.createElement('button');
+                el.type = 'button';
+                el.className = 'ecod_ballpet is-static';
+                el.setAttribute('aria-label', '打开 AI 助手');
+                el.setAttribute('data-ecod-aiask-open', 'chat');
+                el.innerHTML = '<svg viewBox="0 0 64 64" aria-hidden="true">'
+                    + '<circle cx="32" cy="32" r="30" fill="currentColor"/>'
+                    + '<circle cx="23" cy="27" r="4.5" fill="#fff"/><circle cx="41" cy="27" r="4.5" fill="#fff"/>'
+                    + '<path d="M22 41q10 7 20 0" stroke="#fff" stroke-width="3" fill="none" stroke-linecap="round"/>'
+                    + '</svg>';
+                document.body.appendChild(el);
+            };
+            if (window.requestIdleCallback) requestIdleCallback(bootStatic, { timeout: 4000 });
+            else setTimeout(bootStatic, 2500);
+            return;
+        }
+
+        var boot = function () {
+            if (!document.body || document.querySelector('.ecod_ballpet')) return;
+            /* AI 入口开着时球是唯一入口 → 必须是真 button；关着才是纯装饰 */
+            var ask = !!CFG.aiAsk;
+            var el = document.createElement(ask ? 'button' : 'div');
+            el.className = 'ecod_ballpet';
+            if (ask) {
+                el.type = 'button';
+                el.setAttribute('aria-label', '打开 AI 助手');
+                el.setAttribute('data-ecod-aiask-open', 'chat');
+            } else {
+                el.setAttribute('aria-hidden', 'true');
+            }
+            document.body.appendChild(el);
+            var pet = Ecod.ballMount(el, {
+                emotion: '02',
+                idle: { standbyAfter: 45000, sleepAfter: 150000 }
+            });
+            once(el, 'ballpetClick', 'click', function () {
+                /* 展开动画由面板负责；这里只留一次微自旋作过渡 */
+                if (ask) {
+                    pet.spin(1);
+                    return;
+                }
+                pet.spin(2);
+                pet.flash('13', 1600);
+            });
+            /* 任意输入都算「还在」：重置待机计时并从瞌睡里唤醒（2s 节流） */
+            var last = 0;
+            var wake = function () {
+                var now = Date.now();
+                if (now - last < 2000) return;
+                last = now;
+                pet.wake();
+            };
+            ['pointermove', 'keydown', 'scroll', 'touchstart'].forEach(function (ev) {
+                window.addEventListener(ev, wake, { passive: true });
+            });
+        };
+        if (window.requestIdleCallback) requestIdleCallback(boot, { timeout: 4000 });
+        else setTimeout(boot, 2500);
     };
 
     /* 内部工具导出：ecod.post.js 经 Ecod.u 取用（函数声明已提升，可安全引用） */

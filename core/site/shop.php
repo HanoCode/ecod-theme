@@ -26,6 +26,9 @@ if (!defined('__TYPECHO_ROOT_DIR__')) {
  */
 function ecod_shop_enabled(): bool
 {
+    if (function_exists('ecod_license_allows') && !ecod_license_allows('shop')) {
+        return false;
+    }
     if ((string) ecod_option('EShop', 'off') !== 'on') {
         return false;
     }
@@ -35,7 +38,7 @@ function ecod_shop_enabled(): bool
 /**
  * 商品池解析（请求内静态缓存）
  *
- * @return array<int, array{key:string,name:string,cost:int,type:string,value:string,stock:int,limit:int}>
+ * @return array<int, array{key:string,name:string,cost:int,type:string,value:string,stock:int,limit:int,cover:string}>
  */
 function ecod_shop_items(): array
 {
@@ -74,10 +77,25 @@ function ecod_shop_items(): array
             'value' => mb_substr((string) ($parts[3] ?? ''), 0, 60, 'UTF-8'),
             'stock' => max(0, (int) ($parts[4] ?? 0)),
             'limit' => max(0, (int) ($parts[5] ?? 0)),
+            /* 可选封面图地址，商城页卡片展示；留空按类型出图标占位 */
+            'cover' => ecod_shop_cover_url((string) ($parts[6] ?? '')),
         ];
     }
 
     return $items;
+}
+
+/** 商品封面地址白名单：仅接受站内绝对路径与 http(s) 链接，其余按无封面处理 */
+function ecod_shop_cover_url(string $raw): string
+{
+    $url = trim(strip_tags($raw));
+    if ($url === '') {
+        return '';
+    }
+    if ($url[0] === '/' || preg_match('#^https?://#i', $url)) {
+        return mb_substr($url, 0, 255, 'UTF-8');
+    }
+    return '';
 }
 
 /** 某商品已兑换数量（全部历史，请求内缓存） */
@@ -140,6 +158,7 @@ function ecod_shop_overview(int $uid = 0, int $limit = 0): array
             'name'   => $item['name'],
             'cost'   => $item['cost'],
             'type'   => $item['type'],
+            'cover'  => $item['cover'],
             'left'   => $item['stock'] > 0 ? $item['stock'] - $used : null,
             'bought' => $uid > 0 ? ecod_shop_bought($uid, $item['key']) : 0,
             'limit'  => $item['limit'],

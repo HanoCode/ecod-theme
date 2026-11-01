@@ -130,6 +130,7 @@ const JS_KEYS = [
     'moon', 'sun', 'heart', 'star', 'check', 'copy', 'link', 'trash',
     'play', 'pause', 'volume', 'search', 'file', 'list', 'external',
     'x', 'clock', 'inbox', 'user', 'alert', 'left', 'right', 'download', 'zap',
+    'info', 'check-circle', 'x-circle',
 ];
 
 const byName = new Map(entries);
@@ -138,7 +139,8 @@ if (jsMissing.length) {
     throw new Error(`映射表缺少 JS 子集所需图标: ${jsMissing.join(', ')}`);
 }
 
-const jsLines = JS_KEYS.map((name) => `        ${name}: ${jsQuote(byName.get(name))},`);
+/* 键名统一加引号：带连字符的键（check-circle 等）不加引号是非法 JS */
+const jsLines = JS_KEYS.map((name) => `        ${jsQuote(name)}: ${jsQuote(byName.get(name))},`);
 const jsBlock =
     '    ' + JS_START + '\n    var ICON_PATHS = {\n'
     + jsLines.join('\n') + '\n    };\n    ' + JS_END;

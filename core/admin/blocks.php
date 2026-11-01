@@ -34,7 +34,7 @@ define('ECOD_BLOCKS_OPTION', 'EBlocks');
 define('ECOD_WIDGET_PINNED', 'pinned');
 
 /** 数据结构版本 */
-define('ECOD_WIDGET_SCHEMA', 4);
+define('ECOD_WIDGET_SCHEMA', 5);
 
 /** 单个区域的实例上限（旧 EBlocks 首页最多 14 条，故取 20 保证迁移不截断） */
 define('ECOD_WIDGET_LIMIT', 20);
@@ -587,6 +587,15 @@ function ecod_widgets_raw(): array
         return $GLOBALS['ecod_widgets_doc'];
     }
 
+    /* 画布模式：预览暂存草稿（未发布的区域布局），保存发布后才写入 EWidgets */
+    if (function_exists('ecod_builder_mode') && ecod_builder_mode()
+        && function_exists('ecod_wgt_stage_doc')) {
+        $staged = ecod_wgt_stage_doc();
+        if ($staged !== null) {
+            return $GLOBALS['ecod_widgets_doc'] = $staged;
+        }
+    }
+
     $doc = ecod_widgets_read_option();
     if ($doc === null) {
         $doc = ecod_widgets_legacy_doc();
@@ -630,6 +639,28 @@ function ecod_widgets_migrate(array $doc): array
  */
 function ecod_widgets_migrate_map(array $doc, int $from): array
 {
+    /* v4 → v5（第 11 轮）：首页顶部大图组件化——老布局首位补 banner 实例，
+       开关跟随旧的 EBanner 选项（没配图则默认停用，构建器里可见可开） */
+    if ($from < 5) {
+        $rows = $doc['areas']['home_top_content'] ?? [];
+        $hasBanner = false;
+        foreach ($rows as $row) {
+            if ((string) ($row['type'] ?? '') === 'banner') {
+                $hasBanner = true;
+                break;
+            }
+        }
+        if (!$hasBanner) {
+            $bannerOn = 0;
+            try {
+                $bannerOn = function_exists('ecod_option') && trim((string) ecod_option('EBanner', '')) !== '' ? 1 : 0;
+            } catch (\Throwable $e) {
+            }
+            array_unshift($rows, ['uid' => 'banner-1', 'type' => 'banner', 'on' => $bannerOn, 'params' => []]);
+            $doc['areas']['home_top_content'] = $rows;
+        }
+    }
+
     if ($from < 3) {
         $map = [
             'aside-ad' => ['ad', []],
@@ -1055,7 +1086,7 @@ function ecod_block_head(array $o = []): void
  * 模块模板文件路径
  *
  * 优先声明里的 file；跨区放置时优先用当前区域对应的同名变体
- * （区域 key → 模板目录：sidebar→aside、single_top_content→post，
+ * （槽位 → 模板目录：sidebar→aside、top_content→post，
  * 如「标题速览」放进侧栏时用紧凑挂件版，标题在卡片内，与原生侧栏挂件一致）；
  * 没有变体的模块回落声明目录，最后才按当前区域兜底。
  */
@@ -1065,10 +1096,13 @@ function ecod_block_file(array $block): string
     $type = (string) ($block['type'] ?? $block['id']);
     $defArea = (string) $def['area'];
 
-    /* 渲染区域 key → 模板目录；共享槽位（top_content 等）没有同名目录，走声明区域 */
-    $areaMap = ['sidebar' => 'aside', 'single_top_content' => 'post'];
+    /* 区域键是 {page}_{slot}（home_sidebar…）或全局区（all_sidebar_top…），
+       不能整键匹配；统一经区域注册表取槽位名再映射槽位 → 模板目录 */
+    $areaMap = ['sidebar' => 'aside', 'top_content' => 'post'];
     $area = (string) ($block['area'] ?? $defArea);
-    $dir = $areaMap[$area] ?? '';
+    $areaMeta = ecod_widget_areas()[$area] ?? [];
+    $slot = (string) ($areaMeta['slot'] ?? '');
+    $dir = $areaMap[$slot] ?? $areaMap[$area] ?? '';
 
     $candidates = [];
     if (!empty($def['file'])) {
@@ -1109,10 +1143,7 @@ function ecod_block_shell_defaults(): array
         'aside/about'    => ['density' => 'loose', 'head' => 'none'],
         'aside/wstats'   => ['density' => 'compact'],
         'aside/tags'     => ['density' => 'compact'],
-        'aside/toc'      => ['head' => 'plain'],
-        'aside/wsearch'  => ['head' => 'none'],
-        'aside/wtab'     => ['head' => 'plain'],
-        'post/authorbox' => ['shell' => 'member', 'head' => 'plain'],
+        'post/authorbox' => ['shell' => 'member'],
     ];
     return $map;
 }
@@ -1139,6 +1170,30 @@ function ecod_block_head_icons(): array
         'aside/flash'      => 'zap',
         'aside/checkin'    => 'calendar',
         'aside/title-list' => 'list',
+        /* 成长/工具挂件补齐：卡内标题统一图标块头（设计稿 §6.3） */
+        'aside/lottery'    => 'gift',
+        'aside/adbuy'      => 'dollar',
+        'aside/shop'       => 'shopping-bag',
+        'footer/ticker'    => 'radio',
+        'aside/wstats'     => 'chart',
+        'aside/traffic'    => 'chart',
+        'aside/uads'       => 'briefcase',
+        'aside/wsearch'    => 'search',
+        'aside/toc'        => 'list-tree',
+        'aside/wtab'       => 'read',
+        'post/authorbox'   => 'user',
+        /* 卡片型 home 模块（模板即 .ecod_widget，标题同样融合进卡） */
+        'home/tab-posts'   => 'read',
+        'home/tile-zone'   => 'grid',
+        /* home 模块跨区投放侧栏时走紧凑变体，图标跟随变体 */
+        'home/title-list'  => 'list',
+        'home/hot'         => 'medal',
+        'home/feed'        => 'radio',
+        'home/flash'       => 'zap',
+        'home/recommend'   => 'star',
+        'home/cat-post'    => 'folder',
+        'home/heatgrid'    => 'trending',
+        'home/note-pick'   => 'image',
     ];
     return $map;
 }
@@ -1179,8 +1234,8 @@ function ecod_block_decorate(string $html, array $block): string
         if ($iconName !== '' && !str_contains($html, 'ecod_widget__icon')) {
             $icon = ecod_icon($iconName, 13);
             $html = preg_replace(
-                '/(<h2 class="ecod_widget__title)((">))/',
-                '$1 has-icon$3<span class="ecod_widget__icon" aria-hidden="true">' . $icon . '</span>',
+                '/(<h2 class="ecod_widget__title)("(?:\s[^>]*)?>)/',
+                '$1 has-icon$2<span class="ecod_widget__icon" aria-hidden="true">' . $icon . '</span>',
                 $html,
                 1
             );
@@ -1231,10 +1286,46 @@ function ecod_render_block(array $block, $widget = null): void
 
 /**
  * 渲染一个区域（只渲染启用的实例）
+ *
+ * 画布模式（builder.php 的 iframe 快照）下给每个实例包一层带 data-buid
+ * 的壳，编辑器才能点选 / 拖动 v4 区域模块；前台路径零输出。
  */
 function ecod_widgets_render_area(string $area, $widget = null): void
 {
-    foreach (ecod_widget_instances($area) as $one) {
+    $builder = function_exists('ecod_builder_mode') && ecod_builder_mode();
+    $instances = ecod_widget_instances($area);
+
+    if ($builder) {
+        /* 画布只渲染启用的实例：可选挂件迁移时会以「停用」形态占位
+           （访客永远看不到），逐个画框只会制造噪音——停用的收纳进
+           构建器「区域」面板启停 / 清理。 */
+        $label = (string) (ecod_widget_areas()[$area]['label'] ?? $area);
+        $enabled = array_values(array_filter($instances, static function (array $one): bool {
+            return !empty($one['on']);
+        }));
+        $offCount = count($instances) - count($enabled);
+
+        if (!$enabled) {
+            $hint = $offCount > 0
+                ? $label . ' · ' . $offCount . ' 个已停用模块（在「区域」面板启停或清理）'
+                : $label . ' · 空区域 · 从左栏拖入模块';
+            echo '<div class="ecod-b-cta" data-bareadrop="' . htmlspecialchars($area, ENT_QUOTES, 'UTF-8') . '">'
+                . htmlspecialchars($hint, ENT_QUOTES, 'UTF-8') . '</div>';
+            return;
+        }
+
+        foreach ($enabled as $one) {
+            echo '<div class="ecod-b-mod ecod-b-mod--' . htmlspecialchars((string) $one['type'], ENT_QUOTES, 'UTF-8') . '"'
+                . ' data-buid="' . htmlspecialchars((string) $one['uid'], ENT_QUOTES, 'UTF-8') . '"'
+                . ' data-btype="' . htmlspecialchars((string) $one['type'], ENT_QUOTES, 'UTF-8') . '"'
+                . ' data-barea="' . htmlspecialchars($area, ENT_QUOTES, 'UTF-8') . '">';
+            ecod_render_block($one, $widget);
+            echo '</div>';
+        }
+        return;
+    }
+
+    foreach ($instances as $one) {
         ecod_render_block($one, $widget);
     }
 }
@@ -1266,9 +1357,18 @@ function ecod_widgets_render(string $slot, $widget = null, ?string $page = null)
 function ecod_widget_render(string $key, $widget = null): void
 {
     $one = ecod_widget_find($key);
-    if ($one) {
-        ecod_render_block($one, $widget);
+    if (!$one) {
+        return;
     }
+    if (function_exists('ecod_builder_mode') && ecod_builder_mode()) {
+        echo '<div class="ecod-b-mod ecod-b-mod--' . htmlspecialchars((string) $one['type'], ENT_QUOTES, 'UTF-8') . '"'
+            . ' data-buid="' . htmlspecialchars((string) $one['uid'], ENT_QUOTES, 'UTF-8') . '"'
+            . ' data-btype="' . htmlspecialchars((string) $one['type'], ENT_QUOTES, 'UTF-8') . '">';
+        ecod_render_block($one, $widget);
+        echo '</div>';
+        return;
+    }
+    ecod_render_block($one, $widget);
 }
 
 /**
@@ -1293,6 +1393,16 @@ function ecod_widgets_zone(string $slot, $widget = null): void
         $total += count(ecod_widget_instances($id));
     }
     if (!$total) {
+        /* 画布模式：空通栏也要出投放点，否则编辑器里没地方拖模块进去 */
+        if (function_exists('ecod_builder_mode') && ecod_builder_mode()) {
+            echo '<div class="ecod_zone" data-zone="' . htmlspecialchars($slot, ENT_QUOTES, 'UTF-8') . '">';
+            foreach ($ids as $id) {
+                $label = (string) (ecod_widget_areas()[$id]['label'] ?? $id);
+                echo '<div class="ecod-b-cta" data-bareadrop="' . htmlspecialchars($id, ENT_QUOTES, 'UTF-8') . '">'
+                    . htmlspecialchars($label, ENT_QUOTES, 'UTF-8') . ' · 空区域 · 从左栏拖入模块</div>';
+            }
+            echo '</div>';
+        }
         return;
     }
 
@@ -1357,6 +1467,13 @@ function ecod_aside_pos($widget = null): string
 {
     $page = ecod_page_type($widget);
 
+    /* ⓪ 页面构建器接管：布局文档自带板块侧栏时隐藏全局侧栏（builder-doc.php） */
+    if (function_exists('ecod_layout_active_doc')
+        && ($ecodLayout = ecod_layout_active_doc($widget)) !== null
+        && !empty($ecodLayout['has_aside'])) {
+        return 'none';
+    }
+
     /* ① 单篇覆盖 */
     if (is_object($widget) && isset($widget->fields)) {
         try {
@@ -1381,20 +1498,38 @@ function ecod_aside_pos($widget = null): string
 }
 
 /**
- * 某页面类型的侧栏位置（后台开关用，未设置时回落到全站默认）
+ * 侧栏覆盖表的原始回显（编辑器初始数据用）
+ *
+ * 只带「显式设置过」的页面，未设置的返回空串 = 跟随全站默认；
+ * 不能用 ecod_aside_map() 回显——它会把未设置页填成全局值，
+ * 前端原样保存后覆盖表被全量写死，全站默认（EAside）从此被遮蔽。
+ *
+ * @return array<string, string> 页面 => right|left|none|''
+ */
+function ecod_aside_raw_map(): array
+{
+    $doc = ecod_widgets_raw();
+    $out = [];
+    foreach (array_keys(ecod_widget_pages()) as $page) {
+        $pos = (string) ($doc['aside'][$page] ?? '');
+        $out[$page] = in_array($pos, ['right', 'left', 'none'], true) ? $pos : '';
+    }
+    return $out;
+}
+
+/**
+ * 某页面类型的侧栏位置（展示用，未设置时回落到全站默认）
  */
 function ecod_aside_map(): array
 {
-    $doc = ecod_widgets_raw();
     $global = (string) ecod_option('EAside', 'right');
     if (!in_array($global, ['right', 'left', 'none'], true)) {
         $global = 'right';
     }
 
     $out = [];
-    foreach (array_keys(ecod_widget_pages()) as $page) {
-        $pos = $doc['aside'][$page] ?? '';
-        $out[$page] = in_array($pos, ['right', 'left', 'none'], true) ? $pos : $global;
+    foreach (ecod_aside_raw_map() as $page => $pos) {
+        $out[$page] = $pos !== '' ? $pos : $global;
     }
     return $out;
 }
@@ -1460,7 +1595,7 @@ function ecod_widgets_admin_data(): array
         'pages'     => ecod_widget_pages(),
         'slots'     => ecod_widget_slots(),
         'globals'   => ecod_widget_globals(),
-        'aside'     => ecod_aside_map(),
+        'aside'     => ecod_aside_raw_map(),
         'limit'     => ECOD_WIDGET_LIMIT,
         'rev'       => ecod_widgets_rev(),
         'legacy'    => ecod_widgets_is_legacy(),

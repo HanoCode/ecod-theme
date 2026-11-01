@@ -100,6 +100,7 @@ $ecodLoginBg = trim((string) ecod_option('ELoginBg', ''));
                 </div>
             </div>
         <?php else: ?>
+            <div class="ecod_login__pet" data-ecod-login-pet aria-hidden="true"></div>
             <div class="ecod_login__card" data-ecod-auth
                  data-ecod-token="<?php echo htmlspecialchars($ecodToken, ENT_QUOTES, 'UTF-8'); ?>">
 
@@ -142,11 +143,11 @@ $ecodLoginBg = trim((string) ecod_option('ELoginBg', ''));
                       data-ecod-auth-panel="login">
                     <label class="ecod_login__field">
                         <span>用户名或邮箱</span>
-                        <input class="ecod_input" type="text" name="name" required autocomplete="username" placeholder="用户名或邮箱">
+                        <input class="ecod_input" type="text" name="name" required autocomplete="username">
                     </label>
                     <label class="ecod_login__field">
                         <span>密码</span>
-                        <input class="ecod_input" type="password" name="password" required autocomplete="current-password" placeholder="密码">
+                        <input class="ecod_input" type="password" name="password" required autocomplete="current-password">
                     </label>
                     <label class="ecod_login__field">
                         <span>验证码</span>

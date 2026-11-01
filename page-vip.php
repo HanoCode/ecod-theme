@@ -101,7 +101,7 @@ $ecodPick = isset($ecodTiers[2]) && !empty($ecodTiers[2]['plans'])
         <div class="ecod_vip__grid">
             <?php foreach ($ecodTiers as $ecodLevel => $ecodTier): ?>
                 <?php
-                $ecodCopy = $ecodTierCopy[(int) $ecodLevel] ?? ['desc' => '', 'perks' => []];
+                $ecodCopy = $ecodTierCopy[(int) $ecodLevel] ?? ['perks' => []];
                 /* 最长付费周期，用于推荐推荐 CTA 与月均折算 */
                 $ecodYear = $ecodTier['plans']['year'] ?? null;
                 ?>
@@ -115,7 +115,6 @@ $ecodPick = isset($ecodTiers[2]) && !empty($ecodTiers[2]['plans'])
                                     <i class="ecod_vip__pick">推荐</i>
                                 <?php endif; ?>
                             </h2>
-                            <p class="ecod_vip__desc"><?php echo htmlspecialchars($ecodCopy['desc'], ENT_QUOTES, 'UTF-8'); ?></p>
                         </div>
                     </header>
 
@@ -158,11 +157,13 @@ $ecodPick = isset($ecodTiers[2]) && !empty($ecodTiers[2]['plans'])
                                 </a>
                             <?php endforeach; ?>
                         </div>
-                        <p class="ecod_vip__hint">点击任意周期进入收银台<?php echo $ecodUid <= 0 ? '，购买前需<a href="' . htmlspecialchars($ecodLoginHref !== '' ? $ecodLoginHref : '#', ENT_QUOTES, 'UTF-8') . '">登录</a>' : ''; ?></p>
                     <?php endif; ?>
                 </section>
             <?php endforeach; ?>
         </div>
+        <?php if ($ecodUid <= 0): ?>
+            <p class="ecod_vip__hint">购买前需<a href="<?php echo htmlspecialchars($ecodLoginHref !== '' ? $ecodLoginHref : '#', ENT_QUOTES, 'UTF-8'); ?>">登录</a></p>
+        <?php endif; ?>
 
         <div class="ecod_vip__faq">
             <h3 class="ecod_vip__faq-title">常见问题</h3>

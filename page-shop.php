@@ -33,6 +33,8 @@ try {
 $ecodSp = $ecodSpOn ? ecod_shop_overview($ecodUid) : [];
 $ecodCrName = ecod_credits_name();
 $ecodLoginUrl = ecod_login_url();
+/* 余额不足 toast 的「去签到」动作落点：个人中心 #credits（未登录为空，不渲染动作） */
+$ecodSpSignUrl = $ecodUid > 0 ? ecod_user_center_url() . '#credits' : '';
 ?>
 <main class="ecod_main" id="ecod-main">
     <?php ecod_widgets_render('top_content', $this); ?>
@@ -46,7 +48,7 @@ $ecodLoginUrl = ecod_login_url();
 
     <?php
     ecod_page_hero(
-        (string) $this->title(),
+        (string) $this->title,
         '兑换商城',
         $ecodSpOn ? '点数当钱花：用 ' . $ecodCrName . ' 兑换会员、单篇解锁与定制权益，vip 类商品即时到账。' : ''
     );
@@ -60,7 +62,10 @@ $ecodLoginUrl = ecod_login_url();
     <?php else: ?>
         <section class="ecod_shop" data-ecod-shop
                  data-api="<?php echo htmlspecialchars(ecod_api_url(), ENT_QUOTES, 'UTF-8'); ?>"
-                 data-token="<?php echo htmlspecialchars(ecod_account_token(), ENT_QUOTES, 'UTF-8'); ?>">
+                 data-token="<?php echo htmlspecialchars(ecod_account_token(), ENT_QUOTES, 'UTF-8'); ?>"
+                 data-sign-url="<?php echo htmlspecialchars($ecodSpSignUrl, ENT_QUOTES, 'UTF-8'); ?>">
+
+            <span class="ecod_shop__ball" data-ecod-shop-ball aria-hidden="true"></span>
 
             <div class="ecod_shop__balance ecod_shop__balance--page">
                 <span>我的<?php echo htmlspecialchars($ecodCrName, ENT_QUOTES, 'UTF-8'); ?></span>
@@ -73,30 +78,45 @@ $ecodLoginUrl = ecod_login_url();
 
             <div class="ecod_shop__grid">
                 <?php foreach ($ecodSp['items'] as $ecodSpItem): ?>
+                    <?php
+                    $ecodSpIcon = ['vip' => 'crown', 'post' => 'file', 'text' => 'gift'];
+                    $ecodSpType = (string) $ecodSpItem['type'];
+                    ?>
                     <div class="ecod_shop__card<?php echo $ecodSpItem['soldout_for_me'] ? ' is-off' : ''; ?>"
                          data-item="<?php echo htmlspecialchars($ecodSpItem['key'], ENT_QUOTES, 'UTF-8'); ?>">
-                        <span class="ecod_shop__flag"><?php echo htmlspecialchars(ecod_shop_type_label($ecodSpItem['type']), ENT_QUOTES, 'UTF-8'); ?></span>
+                        <div class="ecod_shop__media">
+                            <?php if ($ecodSpItem['cover'] !== ''): ?>
+                                <img src="<?php echo htmlspecialchars($ecodSpItem['cover'], ENT_QUOTES, 'UTF-8'); ?>"
+                                     alt="<?php echo htmlspecialchars($ecodSpItem['name'], ENT_QUOTES, 'UTF-8'); ?>"
+                                     loading="lazy" decoding="async">
+                            <?php else: ?>
+                                <span class="ecod_shop__ph ecod_shop__ph--<?php echo htmlspecialchars($ecodSpType, ENT_QUOTES, 'UTF-8'); ?>">
+                                    <?php echo ecod_icon($ecodSpIcon[$ecodSpType] ?? 'gift', 30); ?>
+                                </span>
+                            <?php endif; ?>
+                            <span class="ecod_shop__flag"><?php echo htmlspecialchars(ecod_shop_type_label($ecodSpType), ENT_QUOTES, 'UTF-8'); ?></span>
+                        </div>
                         <b class="ecod_shop__name"><?php echo htmlspecialchars($ecodSpItem['name'], ENT_QUOTES, 'UTF-8'); ?></b>
                         <div class="ecod_shop__meta">
                             <?php if ($ecodSpItem['left'] !== null): ?><span>剩 <?php echo (int) $ecodSpItem['left']; ?></span><?php endif; ?>
                             <?php if ($ecodSpItem['limit'] > 0): ?><span>限 <?php echo (int) $ecodSpItem['limit']; ?> 次</span><?php endif; ?>
                         </div>
                         <div class="ecod_shop__foot">
-                            <em><?php echo (int) $ecodSpItem['cost']; ?> <?php echo htmlspecialchars($ecodCrName, ENT_QUOTES, 'UTF-8'); ?></em>
                             <?php if (!$ecodLogged): ?>
+                                <em class="ecod_shop__price"><i>兑换</i><b><?php echo (int) $ecodSpItem['cost']; ?></b><?php echo htmlspecialchars($ecodCrName, ENT_QUOTES, 'UTF-8'); ?></em>
                                 <a class="ecod-btn ecod-btn--ghost" data-ecod-login-open data-no-pjax
                                    href="<?php echo htmlspecialchars($ecodLoginUrl, ENT_QUOTES, 'UTF-8'); ?>?referer=<?php echo rawurlencode($this->permalink); ?>">登录</a>
                             <?php elseif ($ecodSpItem['soldout_for_me']): ?>
                                 <em class="ecod_shop__off">已达限购</em>
                             <?php else: ?>
-                                <button type="button" class="ecod-btn" data-ecod-shop-buy="<?php echo htmlspecialchars($ecodSpItem['key'], ENT_QUOTES, 'UTF-8'); ?>">立即兑换</button>
+                                <button type="button" class="ecod_shop__price" data-ecod-shop-buy="<?php echo htmlspecialchars($ecodSpItem['key'], ENT_QUOTES, 'UTF-8'); ?>">
+                                    <i>兑换</i><b><?php echo (int) $ecodSpItem['cost']; ?></b><?php echo htmlspecialchars($ecodCrName, ENT_QUOTES, 'UTF-8'); ?>
+                                </button>
                             <?php endif; ?>
                         </div>
                     </div>
                 <?php endforeach; ?>
             </div>
-
-            <p class="ecod_shop__msg" data-ecod-shop-msg role="status"></p>
 
             <?php if ($ecodLogged): ?>
                 <details class="ecod_lottery__records">

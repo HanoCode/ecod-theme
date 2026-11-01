@@ -189,8 +189,8 @@ magnet:?xt=urn:btih:xxxx | | 磁力
 
 | 标签 | 属性 | 说明 |
 | --- | --- | --- |
-| `posts` | `category` / `tag` / `limit` / `order` / `mode` / `column` / `title` / `desc` / `thumb` / `related` / `exclude` / `self` | 文章列表，按分类、标签或同分类取多篇 |
-| `article` | `id`（文章 cid）/ `img` | 引用文章卡，自动抓标题、摘要、日期 |
+| `posts` | `category` / `tag` / `limit` / `order` / `mode` / `column` / `title` / `related` / `exclude` / `self` | 文章列表，按分类、标签或同分类取多篇 |
+| `article` | `id`（文章 cid）/ `mode` / `img` | 引用文章卡，自动抓标题、摘要、封面 |
 | `github` | `repo` / `desc` | GitHub 仓库卡，前端异步取 Star |
 | `reply` | — | 评论可见（留下过已审核评论的访客可见） |
 | `hide` | `type` / `level` / `tip` / `pw` | 登录 / 评论 / 等级 / 密码可见 |
@@ -198,9 +198,10 @@ magnet:?xt=urn:btih:xxxx | | 磁力
 ```text
 [posts limit="5" title="延伸阅读"]
 [posts category="tech" order="hot" limit="4"]
-[posts related="1" mode="grid" column="2" desc="1"]
+[posts related="1" mode="grid" column="2"]
 
 [article id="4"]
+[article id="4" mode="feature"]
 [article id="4" img="https://example.com/cover.jpg"]
 
 [github repo="owner/repo" desc="仓库说明"]
@@ -222,12 +223,29 @@ magnet:?xt=urn:btih:xxxx | | 磁力
 | `related` | `1` | — | 取当前文章的首个分类，做「相关阅读」 |
 | `limit` | `1`–`20` | `5` | 条数 |
 | `order` | `date` / `hot` / `comment` / `random` | `date` | 最新 / 阅读量 / 评论数 / 随机 |
-| `mode` | `list` / `grid` / `title` | `list` | 横排列表 / 两列网格 / 纯标题行 |
-| `column` | `1`–`3` | `2` | `grid` 模式的列数（移动端强制单列） |
+| `mode` | 见下表「显示类型」 | 跟随后台 | 卡片形态，与后台「默认卡片模式」同一套取值 |
+| `column` | `1`–`4` | CSS 默认 3 列 | 仅 `grid` / `note` / `mosaic` 生效 |
 | `title` | 文本 | — | 列表上方的分组标题 |
-| `desc` | `1` | 关 | 显示两行摘要 |
-| `thumb` | `0` | 开 | 关闭封面 |
 | `exclude` | `cid,cid` | 当前文章 | 排除指定文章 |
+
+**显示类型（`mode`，与后台「版式 → 默认卡片模式」完全同源）**
+
+| 取值 | 形态 |
+| --- | --- |
+| 留空 | 跟随后台默认卡片模式 |
+| `default` | 列表（文左图右）；旧写法 `list` 等价于此 |
+| `feature` | 大图（重点文章） |
+| `gallery` | 三图（封面轮播） |
+| `bare` | 无图 |
+| `grid` | 网格 |
+| `title` | 标题式 |
+| `compact` | 紧凑行（无摘要） |
+| `mosaic` | 混合网格（1 大 + N 小） |
+| `item` | 清单 / 装备（价格·规格·评分，读自定义字段 price / spec / rating / buy） |
+| `note` | 笔记卡（竖版封面网格） |
+
+> 卡片走的是列表页同一套渲染（`ecod_card()`），尺寸、摘要、角标、悬浮操作与首页一致；
+> 摘要与封面不再由短代码参数控制，取文章自身的摘要 / 封面设置。
 | `self` | `1` | 关 | 允许把当前文章也列进去 |
 
 - `posts` 默认排除当前文章；封面取正文首图 → 自定义字段 `thumb` → 后台缩略图池，都没有时显示标题首字色块。

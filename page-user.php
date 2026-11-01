@@ -91,6 +91,7 @@ $ecodTabs = [
     'lottery' => ['抽奖记录', 'gift'],
 ];
 
+
 /* 互动类合并成顶部 tab 组：一级「互动」+ 子标签（收藏 / 点赞 / 关注 / 历史） */
 $ecodSocial = [
     'favs'    => ['收藏', 'star'],
@@ -505,7 +506,7 @@ $ecodLotteryPageUrl = ecod_template_page_url('page-lottery.php');
                                 <span data-ecod-task-todaynum><?php echo (int) $ecodTaskData['today']['claimed']; ?> / <?php echo (int) $ecodTaskData['today']['total']; ?></span>
                             </div>
                             <button type="button" class="ecod-btn ecod-btn--primary" data-ecod-task-signin<?php echo !empty($ecodTaskData['signed']) ? ' disabled' : ''; ?>>
-                                <?php echo ecod_icon('zap', 14); ?><span data-ecod-task-signin-text><?php echo !empty($ecodTaskData['signed']) ? '今日已签到' : '签到 +' . $ecodCheckinReward; ?></span>
+                                <?php echo ecod_icon(!empty($ecodTaskData['signed']) ? 'check' : 'zap', 14); ?><span data-ecod-task-signin-text><?php echo !empty($ecodTaskData['signed']) ? '今日已签到' : '签到 +' . $ecodCheckinReward; ?></span>
                             </button>
                         </div>
 
@@ -574,14 +575,23 @@ $ecodLotteryPageUrl = ecod_template_page_url('page-lottery.php');
                     <div class="ecod_credits" data-ecod-credits
                          data-api="<?php echo htmlspecialchars(ecod_api_url(), ENT_QUOTES, 'UTF-8'); ?>"
                          data-token="<?php echo htmlspecialchars(ecod_account_token(), ENT_QUOTES, 'UTF-8'); ?>">
-                        <div class="ecod_credits__head">
-                            <div class="ecod_credits__bal">
-                                <small data-ecod-credits-name><?php echo htmlspecialchars(ecod_credits_name(), ENT_QUOTES, 'UTF-8'); ?></small>
-                                <b data-ecod-credits-balance>—</b>
+                        <div class="ecod_credits__card">
+                            <div class="ecod_credits__head">
+                                <span class="ecod_credits__ico" aria-hidden="true"><?php echo ecod_icon('zap', 18); ?></span>
+                                <b class="ecod_credits__title" data-ecod-credits-name><?php echo htmlspecialchars(ecod_credits_name(), ENT_QUOTES, 'UTF-8'); ?></b>
+                                <button type="button" class="ecod_credits__apply" data-ecod-credits-signin>
+                                    <?php echo ecod_icon('zap', 13); ?><span>每日签到</span>
+                                </button>
                             </div>
-                            <button type="button" class="ecod-btn" data-ecod-credits-signin>
-                                <?php echo ecod_icon('zap', 14); ?>每日签到
-                            </button>
+                            <div class="ecod_credits__body">
+                                <p class="ecod_credits__line">当前拥有 <b data-ecod-credits-balance>—</b> <?php echo htmlspecialchars(ecod_credits_name(), ENT_QUOTES, 'UTF-8'); ?></p>
+                                <p class="ecod_credits__hint">签到、评论、发文都能赚 <?php echo htmlspecialchars(ecod_credits_name(), ENT_QUOTES, 'UTF-8'); ?>，可在积分商城兑换会员与卡密。</p>
+                                <div class="ecod_credits__meter" data-ecod-credits-meter aria-hidden="true"></div>
+                            </div>
+                        </div>
+                        <div class="ecod_credits__facts" data-ecod-credits-facts hidden>
+                            <div class="ecod_credits__fact"><small>累计收入</small><b data-ecod-credits-earn>0</b></div>
+                            <div class="ecod_credits__fact"><small>累计支出</small><b data-ecod-credits-spend>0</b></div>
                         </div>
                         <p class="ecod_credits__msg" data-ecod-credits-msg role="status"></p>
                         <?php if (ecod_ref_on() && (int) ecod_option('ECrRefPercent', 10) > 0):
@@ -604,7 +614,15 @@ $ecodLotteryPageUrl = ecod_template_page_url('page-lottery.php');
                             <div class="ecod_ref__earn">累计推广收益 <b><?php echo $ecodRefEarned; ?></b> <?php echo htmlspecialchars(ecod_credits_name(), ENT_QUOTES, 'UTF-8'); ?></div>
                         </div>
                         <?php endif; ?>
-                        <div class="ecod_credits__log" data-ecod-credits-log></div>
+                        <div class="ecod_credits__detail">
+                            <div class="ecod_credits__tabs" data-ecod-credits-tabs role="tablist" aria-label="积分明细类型"></div>
+                            <div class="ecod_credits__log" data-ecod-credits-log></div>
+                            <div class="ecod_credits__pager" data-ecod-credits-pager hidden>
+                                <button type="button" class="ecod_credits__pagebtn" data-ecod-credits-prev aria-label="上一页">‹</button>
+                                <span class="ecod_credits__pageinfo" data-ecod-credits-pageinfo></span>
+                                <button type="button" class="ecod_credits__pagebtn" data-ecod-credits-next aria-label="下一页">›</button>
+                            </div>
+                        </div>
                     </div>
                 <?php endif; ?>
             </div>
@@ -772,7 +790,6 @@ $ecodLotteryPageUrl = ecod_template_page_url('page-lottery.php');
 
             <div class="ecod_uc__panel" data-ecod-uc-panel="likes" hidden>
                 <h3 class="ecod_uc__title">我的点赞</h3>
-                <p class="ecod_uc__desc">以浏览器访客标识为准，与点赞按钮的状态一致。</p>
                 <div class="ecod_uc__list" data-ecod-uc-list="likes"></div>
             </div>
 
@@ -877,6 +894,7 @@ $ecodLotteryPageUrl = ecod_template_page_url('page-lottery.php');
                 <?php endif; ?>
             </div>
 
+
             <!-- 工单：列表内联展开详情（少一次跳转，tab 内不破坏滚动位置） -->
             <div class="ecod_uc__panel" data-ecod-uc-panel="ticket" hidden>
                 <?php if (!$ecodLogged): ?>
@@ -974,7 +992,6 @@ $ecodLotteryPageUrl = ecod_template_page_url('page-lottery.php');
 
             <div class="ecod_uc__panel" data-ecod-uc-panel="lottery" hidden>
                 <h3 class="ecod_uc__title">抽奖记录</h3>
-                <p class="ecod_uc__desc">幸运抽奖的每一次开奖与兑换都会留档在这里。</p>
                 <?php if (!$ecodLogged): ?>
                     <div class="ecod_uc__empty">
                         <p>登录后可查看抽奖记录。</p>

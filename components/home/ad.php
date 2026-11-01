@@ -12,6 +12,7 @@ if (!defined('__TYPECHO_ROOT_DIR__')) {
 }
 $ecodAdImage = trim((string) ecod_p('image', ''));
 if ($ecodAdImage === '') {
+    ecod_block_setup_hint('广告位未配置图片：在「页面构建器」编辑本模块上传广告图后显示（访客看不到本提示）。');
     return;
 }
 $ecodAdLink = trim((string) ecod_p('link', ''));

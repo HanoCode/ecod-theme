@@ -3,7 +3,7 @@
  * 文章卡片组件
  *
  * 用法：ecod_card($this) / ecod_card($this, 'grid')
- * 模式：default | feature | gallery | bare | grid | title | compact | mosaic | item
+ * 模式：default | feature | gallery | bare | grid | title | compact | mosaic | item | note
  *
  * @package Ecod Theme
  * @author  Ecod
@@ -42,9 +42,10 @@ if (!function_exists('ecod_card')) {
         ecod_cards_preload($archive);
 
         $mode = $mode ?: ecod_card_mode($archive);
-        /* 列表统一版式下的 per-post 三图恢复：default / grid 容器与三图卡兼容，
-           文章自定义字段 mode=gallery 时该卡升级为三图；title / compact / item 等
-           纯文本版式不混入，避免行高被撑破（版式显式指定 gallery 时本就生效） */
+        /* 列表统一版式下的 per-post 轮播卡恢复：default / grid 容器与轮播卡兼容，
+           文章自定义字段 mode=gallery 时该卡升级为轮播封面（多图淡切）；
+           title / compact / item 等纯文本版式不混入，避免行高被撑破
+           （版式显式指定 gallery 时本就生效） */
         if (($mode === 'default' || $mode === 'grid') && isset($archive->fields) && isset($archive->fields->mode)) {
             $postMode = (string) $archive->fields->mode;
             if ($postMode === 'gallery') {
@@ -271,6 +272,64 @@ if (!function_exists('ecod_card')) {
             return;
         }
 
+        /* 笔记卡（note）：竖版封面 + 两行标题 + 作者行，配合 .ecod_list--note 网格容器
+           （docs/dev/NOTE-ARTICLE-DESIGN.html §7.3）。比例跟随「封面比例」设置，
+           与详情页图集同源，列表点进来不会换比例。 */
+        if ($mode === 'note') {
+            list($noteRatio, $noteW, $noteH) = function_exists('ecod_note_ratio')
+                ? ecod_note_ratio()
+                : ['3 / 4', 480, 640];
+            $noteImgs = function_exists('ecod_thumbnails') ? ecod_thumbnails($archive, 3, 'note') : [];
+            if (!$noteImgs) {
+                $noteImgs = $images;
+            }
+            /* 角标用「真实图片数」（不把兜底图池算进去），没有真实多图时不显示 */
+            $noteCount = function_exists('ecod_note_total') ? ecod_note_total($archive) : count($noteImgs);
+            /* 首图角标：多图时显示张数，与详情页图集形成一致预期 */
+            echo '<article class="ecod_card ecod_card--note' . ($locked ? ' is-locked' : '') . '"'
+                . ' data-cid="' . (int) $archive->cid . '"'
+                . ' data-url="' . htmlspecialchars($permalink, ENT_QUOTES, 'UTF-8') . '"'
+                . ' data-title="' . $titleAttr . '"'
+                . ' style="--ecod-note-ratio:' . htmlspecialchars($noteRatio, ENT_QUOTES, 'UTF-8') . '">';
+            echo '<a class="ecod_card__media" href="' . $permalink . '" aria-hidden="true" tabindex="-1" style="background:' . $tint . '">';
+            echo ecod_badges($archive);
+            if ($category !== '') {
+                echo '<span class="ecod_card__cat">' . $category . '</span>';
+            }
+            if ($noteCount > 0) {
+                echo '<img src="' . htmlspecialchars($noteImgs[0], ENT_QUOTES, 'UTF-8') . '" alt="' . $titleAttr . '"'
+                    . ' width="' . (int) $noteW . '" height="' . (int) $noteH . '"'
+                    . $imgFirstAttrs . ' decoding="async" data-ecod-img>';
+                if ($noteCount > 1) {
+                    echo '<span class="ecod_card__shots">' . ecod_icon('layers', 11) . $noteCount . '</span>';
+                }
+            } else {
+                echo '<span class="ecod_ph ecod_card__placeholder">' . mb_substr($rawTitle, 0, 1, 'UTF-8') . '</span>';
+            }
+            echo '</a>';
+            echo '<div class="ecod_card__body">';
+            echo '<h3 class="ecod_card__title"><a href="' . $permalink . '">'
+                . ($locked ? ecod_lock_icon(12, 'ecod_card__lock-i') : '') . $title . '</a></h3>';
+            echo '<div class="ecod_card__meta">';
+            if ($authorName !== '') {
+                $ecodNoteAuthorInner = '<img src="' . htmlspecialchars($authorAvatar, ENT_QUOTES, 'UTF-8') . '"'
+                    . ' alt="" width="18" height="18" loading="lazy" decoding="async"><b>'
+                    . htmlspecialchars($authorName, ENT_QUOTES, 'UTF-8') . '</b>';
+                echo $authorHref !== ''
+                    ? '<a class="ecod_card__meta-author" href="' . htmlspecialchars($authorHref, ENT_QUOTES, 'UTF-8') . '">' . $ecodNoteAuthorInner . '</a>'
+                    : '<span class="ecod_card__meta-author">' . $ecodNoteAuthorInner . '</span>';
+            }
+            if (ecod_option('ELike', 'on') !== 'off') {
+                $noteLikes = ecod_likes((int) $archive->cid);
+                echo '<span class="ecod_card__likes">' . ecod_icon('heart', 12)
+                    . '<b>' . ($noteLikes > 0 ? ecod_num_short((int) $noteLikes) : '赞') . '</b></span>';
+            }
+            echo '</div>';
+            echo '</div>';
+            echo '</article>';
+            return;
+        }
+
         $hasThumb = !empty($images);
 
         /* 首屏第一张封面走 eager + 高优先级，其余交给浏览器懒加载；
@@ -286,7 +345,7 @@ if (!function_exists('ecod_card')) {
         if (in_array($mode, ['default', 'feature'], true) && ecod_thumb_side($archive) === 'left') {
             $classes[] = 'ecod_card--media-left';
         }
-        if (!$hasThumb && in_array($mode, ['default', 'feature', 'grid', 'mosaic'], true)) {
+        if (!$hasThumb && in_array($mode, ['default', 'feature', 'grid', 'mosaic', 'gallery'], true)) {
             $classes[] = 'is-nothumb';
         }
 
@@ -295,8 +354,34 @@ if (!function_exists('ecod_card')) {
             . ' data-title="' . $titleAttr . '">';
 
         /* 缩略图区 */
-        if (in_array($mode, ['default', 'feature', 'grid', 'mosaic'], true)) {
+        if (in_array($mode, ['default', 'feature', 'grid', 'mosaic', 'gallery'], true)) {
             /* 渐变色块既是占位图也是加载中的低清替代（图片到位后直接盖住） */
+            if ($mode === 'gallery' && count($images) > 1) {
+                /* 轮播封面：几何挂 .ecod_card__media（列表容器=侧缩略图 / 网格容器=通栏），
+                   多图堆叠淡切；指示点必须是真实 button，不能嵌进 <a>，
+                   所以拆成「几何层 div + 链接层 a + 点层」三层 */
+                echo '<div class="ecod_card__media ecod_card__galwrap" style="background:' . $tint . '">';
+                echo ecod_badges($archive);
+                if ($category !== '') {
+                    echo '<span class="ecod_card__cat">' . $category . '</span>';
+                }
+                echo '<a class="ecod_card__gallery" href="' . $permalink . '" aria-hidden="true" tabindex="-1">';
+                foreach ($images as $gi => $gsrc) {
+                    echo '<img src="' . htmlspecialchars($gsrc, ENT_QUOTES, 'UTF-8') . '" alt="' . $titleAttr . '"'
+                        . ' width="400" height="264"'
+                        . ($gi === 0 ? $imgFirstAttrs : ' loading="lazy"')
+                        . ($gi === 0 ? ' class="is-active"' : '')
+                        . ' decoding="async" data-ecod-img>';
+                }
+                echo '</a>';
+                echo '<div class="ecod_card__gdots">';
+                foreach ($images as $gi => $gsrc) {
+                    echo '<button type="button" class="' . ($gi === 0 ? 'is-active' : '') . '"'
+                        . ' data-index="' . $gi . '" aria-label="第 ' . ($gi + 1) . ' 张"></button>';
+                }
+                echo '</div>';
+                echo '</div>';
+            } else {
             echo '<a class="ecod_card__media" href="' . $permalink . '" aria-hidden="true" tabindex="-1" style="background:' . $tint . '">';
             echo ecod_badges($archive);
             if ($category !== '') {
@@ -311,41 +396,20 @@ if (!function_exists('ecod_card')) {
                 echo '<span class="ecod_ph ecod_card__placeholder">' . mb_substr($title, 0, 1, 'UTF-8') . '</span>';
             }
             echo '</a>';
+            }
         }
 
         echo '<div class="ecod_card__body">';
 
         /* 没有缩略图的卡片没有角标位，锁标记改挂在标题前（放进链接内，避免被 line-clamp 拆行） */
-        $lockInTitle = $locked && (!$hasThumb || !in_array($mode, ['default', 'feature', 'grid', 'mosaic'], true))
+        $lockInTitle = $locked && (!$hasThumb || !in_array($mode, ['default', 'feature', 'grid', 'mosaic', 'gallery'], true))
             ? ecod_lock_icon(12, 'ecod_card__lock-i')
             : '';
 
-        if ($mode !== 'gallery') {
-            echo '<h3 class="ecod_card__title"><a href="' . $permalink . '">' . $lockInTitle . $title . '</a></h3>';
-        }
+        echo '<h3 class="ecod_card__title"><a href="' . $permalink . '">' . $lockInTitle . $title . '</a></h3>';
 
-        if ($mode !== 'title' && $mode !== 'gallery' && $excerpt !== '') {
+        if ($mode !== 'title' && $excerpt !== '') {
             echo '<p class="ecod_card__excerpt">' . $excerpt . '</p>';
-        }
-
-        /* 三图模式：图片在上、文字在下 */
-        if ($mode === 'gallery') {
-            echo '<div class="ecod_card__gallery">';
-            for ($i = 0; $i < 3; $i++) {
-                $src = $images[$i] ?? '';
-                if ($src !== '') {
-                    echo '<a href="' . $permalink . '" tabindex="-1" aria-hidden="true"><img src="' . htmlspecialchars($src, ENT_QUOTES, 'UTF-8') . '" alt="" width="400" height="400"'
-                        . ($i === 0 ? $imgFirstAttrs : ' loading="lazy"')
-                        . ' decoding="async" data-ecod-img></a>';
-                } else {
-                    echo '<span class="ecod_card__gallery-ph"></span>';
-                }
-            }
-            echo '</div>';
-            echo '<h3 class="ecod_card__title"><a href="' . $permalink . '">' . $lockInTitle . $title . '</a></h3>';
-            if ($excerpt !== '') {
-                echo '<p class="ecod_card__excerpt">' . $excerpt . '</p>';
-            }
         }
 
         /* 元信息 */

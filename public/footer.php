@@ -44,6 +44,7 @@ $ecodShowFooterBar = ecod_block_on('credits') || ecod_block_on('links') || ecod_
 
 <?php ecod_block_render('progress', $this); ?>
 <?php ecod_block_render('totop', $this); ?>
+<?php ecod_block_render('ticker', $this); ?>
 <?php ecod_block_render('dock', $this); ?>
 
 <?php if (function_exists('ecod_itemlist_output')) {
@@ -60,7 +61,48 @@ $ecodShowFooterBar = ecod_block_on('credits') || ecod_block_on('links') || ecod_
 ?>
 <script src="<?php echo ecod_asset('assets/vendor/ecod-qr.js'); ?>" defer></script>
 <?php endif; ?>
+<?php if (ecod_option('EBackdrop', 'none') === 'lightfall'):
+/* 流光背景（Lightfall，WebGL2）：引擎 + 封装只在选中该项时下发；
+   图层挂在 body 首个子元素（#ecod-shell 之外），PJAX 换页不重建 */
+?>
+<script src="<?php echo ecod_asset('assets/js/vendor/lightfall.js'); ?>" defer></script>
+<script src="<?php echo ecod_asset('assets/js/ecod.lightfall.js'); ?>" defer></script>
+<?php endif; ?>
 <script src="<?php echo ecod_asset('assets/js/ecod.global.js'); ?>" defer></script>
+<?php if (ecod_stats_enabled()):
+/* 访问统计停留上报：只补「停留时长 + 是否跳出」，PV/UV 服务端已经记过。
+   pagehide / 切后台时用 sendBeacon 发一次（不阻塞卸载，也不影响 BFCache）。
+   PJAX 换页会改写 history，这里包一层拿「换过页」的信号并重置计时：
+   换过页的不算跳出，停留时长按最后一页算。 */
+?>
+<script>
+(function () {
+    var api = window.ECOD && ECOD.api;
+    if (!api || !navigator.sendBeacon) return;
+    var start = Date.now(), moved = false, sent = false;
+    ['pushState', 'replaceState'].forEach(function (m) {
+        var orig = history[m];
+        history[m] = function () {
+            moved = true;
+            start = Date.now();
+            return orig.apply(this, arguments);
+        };
+    });
+    function send() {
+        if (sent) return;
+        sent = true;
+        var body = JSON.stringify({ d: Math.round((Date.now() - start) / 1000), b: moved ? 0 : 1 });
+        try {
+            navigator.sendBeacon(api + '?action=stats_ping', new Blob([body], { type: 'application/json' }));
+        } catch (e) {}
+    }
+    addEventListener('pagehide', send);
+    document.addEventListener('visibilitychange', function () {
+        if (document.hidden) send();
+    });
+})();
+</script>
+<?php endif; ?>
 <?php if ($ecodIsContentPage):
 /* 内容页增强包：目录 / 评论 / 朗读 / 收银台等模块只在 post 与独立页用到，
    首页与列表页不输出这个标签，减少首屏 JS。

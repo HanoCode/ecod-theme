@@ -93,10 +93,8 @@ function ecod_push_http(string $url, array $payload, bool $form = false): array
     $code = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
     if ($resp === false) {
         $err = (string) curl_error($ch);
-        curl_close($ch);
         return ['ok' => false, 'msg' => '请求失败: ' . $err];
     }
-    curl_close($ch);
 
     if ($code < 200 || $code >= 300) {
         return ['ok' => false, 'msg' => 'HTTP ' . $code . ': ' . mb_substr((string) $resp, 0, 120, 'UTF-8')];

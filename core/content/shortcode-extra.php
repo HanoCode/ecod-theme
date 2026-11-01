@@ -23,7 +23,8 @@
  *   [cloud]url | 提取码 | 说明[/cloud]                     网盘卡（多行，标准格式 URL 开头；
  *                                                          也容错「名称 | 链接: url 提取码: xx | 说明」）
  *   [cloud url="…" pwd="…" type=baidu]标题[/cloud]          网盘卡（单条）
- *   [article id="15"]                                      引用文章卡
+ *   [posts limit="5" mode="grid"]                          文章列表（mode 同后台「默认卡片模式」）
+ *   [article id="15" mode="feature"]                       引用文章卡
  *   [cat slug="dev"] / [cat id=3]                          分类卡
  *   [tag slug="php"] / [tag id=7]                          标签卡
  *   [github repo="owner/name" desc="…"]                    GitHub 仓库卡
@@ -669,148 +670,112 @@ function ecod_sc_meta_mid(string $key, string $kind): int
 }
 
 /**
- * 批量读取自定义字段 thumb，一次查询拿全，避免每篇一条 SQL
+ * 短代码卡片模式：与后台「默认卡片模式」ECardMode 同一套取值
  *
- * @param array<int, mixed> $cids
- * @return array<int, string>
+ * mode 缺省 / 非法值时跟随后台默认；旧写法 mode="list" 等价于 default。
+ * 取值：default feature gallery bare grid title compact mosaic item note
+ *
+ * @param mixed $raw 短代码里的 mode 属性
  */
-function ecod_sc_thumb_fields(array $cids): array
+function ecod_sc_card_mode($raw): string
 {
-    $cids = array_values(array_unique(array_filter(array_map('intval', $cids))));
-    if (!$cids) {
-        return [];
+    static $modes = ['default', 'feature', 'gallery', 'bare', 'grid', 'title', 'compact', 'mosaic', 'item', 'note'];
+
+    $mode = strtolower(trim((string) $raw));
+    if ($mode === 'list') {
+        $mode = 'default';
+    }
+    if (in_array($mode, $modes, true)) {
+        return $mode;
     }
 
-    try {
-        $db = \Typecho\Db::get();
-        $rows = $db->fetchAll(
-            $db->select('cid', 'str_value')->from('table.fields')
-                ->where('name = ?', 'thumb')
-                ->where('cid IN (' . implode(',', $cids) . ')')
-        );
-    } catch (\Throwable $e) {
-        return [];
-    }
+    $default = function_exists('ecod_list_force_mode') ? ecod_list_force_mode(null) : 'default';
 
-    $out = [];
-    foreach ($rows as $row) {
-        $value = trim((string) $row['str_value']);
-        if ($value !== '') {
-            $out[(int) $row['cid']] = trim((string) strtok($value, "\r\n"));
-        }
-    }
-
-    return $out;
+    return in_array($default, $modes, true) ? $default : 'default';
 }
 
 /**
- * 文章列表查询
+ * 短代码用的文章查询实例（EcodPostQuery）
  *
- * @param array<string, mixed> $args category / tag / exclude / order / limit
- * @return array<int, array<string, mixed>>
+ * Widget 池按别名缓存：共用别名时第二段列表会拿到已经走完的堆栈，
+ * 渲染出来是空白，所以每次调用都取一个新别名。
+ *
+ * @param array<string, mixed> $params EcodPostQuery 参数
+ * @return \Widget\Base\Contents
  */
-function ecod_sc_posts_rows(array $args): array
+function ecod_sc_card_query(array $params)
 {
-    try {
-        $db = \Typecho\Db::get();
-    } catch (\Throwable $e) {
-        return [];
+    static $seq = 0;
+    $seq++;
+
+    $query = [];
+    foreach ($params as $key => $value) {
+        if ($value === '' || $value === null || $value === 0 || $value === '0') {
+            continue;
+        }
+        $query[$key] = (string) $value;
     }
 
-    $views = function_exists('ecod_views_available') && ecod_views_available();
-    $cols = [
-        'table.contents.cid',
-        'table.contents.title',
-        'table.contents.text',
-        'table.contents.created',
-        'table.contents.commentsNum',
-        'table.contents.slug',
-    ];
-    if ($views) {
-        $cols[] = 'table.contents.views';
+    return \EcodPostQuery::allocWithAlias('sc' . $seq, http_build_query($query, '', '&', PHP_QUERY_RFC3986));
+}
+
+/**
+ * 卡片列表容器：列表容器类 + 模式类，并去掉列表壳（背景 / 内边距）
+ */
+function ecod_sc_card_list_class(string $mode): string
+{
+    $class = function_exists('ecod_list_class') ? ecod_list_class($mode) : 'ecod_list';
+
+    return $class . ' ecod_list--plain ecod_sc_cards';
+}
+
+/**
+ * 把查询结果渲染成卡片串
+ *
+ * @param \Widget\Base\Contents $query 已执行过的查询
+ * @param string                $mode  卡片模式
+ */
+function ecod_sc_card_render($query, string $mode): string
+{
+    if (!$query->have()) {
+        return '';
     }
 
-    $limit = max(1, min(20, (int) ($args['limit'] ?? 5)));
-    $order = (string) ($args['order'] ?? 'date');
+    /* 渲染期间挂递归保护（见 ecod_shortcode_apply）：卡片摘要会读 $archive->content，
+       正文里的 [posts] / [article] 会被再展开一次，不拦住会无限递归 */
+    $hadFlag = isset($GLOBALS['ecodScRendering']);
+    $GLOBALS['ecodScRendering'] = true;
 
-    try {
-        $select = $db->select(...$cols)->from('table.contents')
-            ->where('table.contents.type = ?', 'post')
-            ->where('table.contents.status = ?', 'publish')
-            ->where('table.contents.created <= ?', time());
-
-        $exclude = array_values(array_filter(array_map('intval', (array) ($args['exclude'] ?? []))));
-        if ($exclude) {
-            $select->where('table.contents.cid NOT IN (' . implode(',', $exclude) . ')');
-        }
-
-        $mid = 0;
-        if (!empty($args['category'])) {
-            $mid = ecod_sc_meta_mid((string) $args['category'], 'category');
-            if ($mid <= 0) {
-                return [];
-            }
-        } elseif (!empty($args['tag'])) {
-            $mid = ecod_sc_meta_mid((string) $args['tag'], 'tag');
-            if ($mid <= 0) {
-                return [];
-            }
-        }
-
-        if ($mid > 0) {
-            $select->join('table.relationships', 'table.contents.cid = table.relationships.cid', \Typecho\Db::INNER_JOIN)
-                ->where('table.relationships.mid = ?', $mid);
-        }
-
-        if ($order === 'hot') {
-            /* 评论数用「已通过」实算的派生表（与卡片显示的条数同源），
-               失败时回退 commentsNum */
-            $cmtCol = function_exists('ecod_comment_order_join') ? ecod_comment_order_join($select) : '';
-            $select->order(
-                $views ? 'table.contents.views' : ($cmtCol !== '' ? $cmtCol : 'table.contents.commentsNum'),
-                \Typecho\Db::SORT_DESC
-            );
-        } elseif ($order === 'comment') {
-            $cmtCol = function_exists('ecod_comment_order_join') ? ecod_comment_order_join($select) : '';
-            $select->order($cmtCol !== '' ? $cmtCol : 'table.contents.commentsNum', \Typecho\Db::SORT_DESC);
-        } else {
-            $select->order('table.contents.created', \Typecho\Db::SORT_DESC);
-        }
-
-        /* 随机排序在 PHP 侧做：取一批再洗牌，避免依赖各数据库的随机函数 */
-        $select->limit($order === 'random' ? min(80, $limit * 5) : $limit);
-        $rows = $db->fetchAll($select);
-    } catch (\Throwable $e) {
-        return [];
+    $html = '';
+    while ($query->next()) {
+        ob_start();
+        ecod_card($query, $mode);
+        $html .= (string) ob_get_clean();
     }
 
-    if ($order === 'random') {
-        shuffle($rows);
-        $rows = array_slice($rows, 0, $limit);
+    if (!$hadFlag) {
+        unset($GLOBALS['ecodScRendering']);
     }
 
-    return $rows;
+    return $html;
 }
 
 /**
  * 文章列表
  *
- * [posts limit="5" category="tech"] / [posts related="1" mode="grid"]
+ * [posts limit="5" category="tech" mode="grid"] / [posts related="1" mode="note"]
+ * mode 与后台「默认卡片模式」同源，留空即跟随该设置。
  */
 function ecod_sc_posts(string $content): string
 {
     return ecod_sc_self('posts', $content, static function (array $attrs): string {
         $limit = max(1, min(20, (int) ($attrs['limit'] ?? ($attrs['type'] ?? 5))));
-
-        $mode = strtolower(trim((string) ($attrs['mode'] ?? 'list')));
-        if (!in_array($mode, ['list', 'grid', 'title'], true)) {
-            $mode = 'list';
-        }
+        $mode = ecod_sc_card_mode($attrs['mode'] ?? '');
 
         $order = strtolower(trim((string) ($attrs['order'] ?? 'date')));
-        if (!in_array($order, ['date', 'hot', 'comment', 'random'], true)) {
-            $order = 'date';
-        }
+        /* 短代码的排序词 → EcodPostQuery 的排序词（hot 历来按阅读量） */
+        $orderMap = ['date' => 'recent', 'hot' => 'views', 'comment' => 'hot', 'random' => 'rand'];
+        $orderParam = $orderMap[$order] ?? 'recent';
 
         $current = $GLOBALS['ecod_sc_archive'] ?? null;
         $currentCid = (int) ($current->cid ?? 0);
@@ -837,118 +802,40 @@ function ecod_sc_posts(string $content): string
             $exclude[] = $currentCid;
         }
 
-        $rows = ecod_sc_posts_rows([
-            'category' => $category,
-            'tag'      => $tag,
-            'exclude'  => $exclude,
-            'order'    => $order,
-            'limit'    => $limit,
-        ]);
+        $params = [
+            'pageSize' => $limit,
+            'order'    => $orderParam,
+            'tags'     => $tag,
+            'exclude'  => implode(',', array_filter($exclude)),
+        ];
+        if ($category !== '') {
+            $mid = ecod_sc_meta_mid($category, 'category');
+            if ($mid <= 0) {
+                return '<div class="ecod_posts is-empty">没有符合条件的文章</div>';
+            }
+            $params['category'] = $mid;
+        }
 
-        if (!$rows) {
+        $cards = ecod_sc_card_render(ecod_sc_card_query($params), $mode);
+        if ($cards === '') {
             return '<div class="ecod_posts is-empty">没有符合条件的文章</div>';
         }
 
-        $thumbs = ecod_sc_thumb_fields(array_column($rows, 'cid'));
-
-        $pool = [];
-        if (function_exists('ecod_option')) {
-            $rawPool = trim((string) ecod_option('EThumbnail', ''));
-            if ($rawPool !== '') {
-                $pool = array_values(array_filter(array_map('trim', preg_split('/\r\n|\r|\n/', $rawPool) ?: [])));
-            }
+        /* 列数只对网格系生效（grid / note / mosaic），其余模式忽略 column */
+        $style = '';
+        if (isset($attrs['column']) && in_array($mode, ['grid', 'note', 'mosaic'], true)) {
+            $col = max(1, min(4, (int) $attrs['column']));
+            $style = ' style="grid-template-columns:repeat(' . $col . ',minmax(0,1fr))"';
         }
 
-        $withThumb = !isset($attrs['thumb']) || (string) $attrs['thumb'] !== '0';
-        $withDesc = isset($attrs['desc']) && (string) $attrs['desc'] === '1';
         $headTitle = trim((string) ($attrs['title'] ?? ''));
-        $col = max(1, min(3, (int) ($attrs['column'] ?? 2)));
-
-        $items = '';
-        foreach ($rows as $row) {
-            $cid = (int) $row['cid'];
-            $name = (string) $row['title'];
-            $text = (string) $row['text'];
-            $created = (int) $row['created'];
-
-            try {
-                $url = (string) \Typecho\Router::url('post', $row, \Utils\Helper::options()->index);
-            } catch (\Throwable $e) {
-                $url = '';
-            }
-            /* 路由未初始化（CLI / 非常规入口）时退回固定归档地址 */
-            if ($url === '' || $url === '#') {
-                $url = rtrim((string) \Utils\Helper::options()->index, '/') . '/archives/' . $cid . '/';
-            }
-            $urlAttr = htmlspecialchars($url, ENT_QUOTES, 'UTF-8');
-            $nameAttr = htmlspecialchars($name, ENT_QUOTES, 'UTF-8');
-
-            /* 标题模式：极简一行，复用列表页的 .ecod_titem */
-            if ($mode === 'title') {
-                $items .= '<a class="ecod_titem" href="' . $urlAttr . '">'
-                    . '<span class="ecod_titem__dot"></span>'
-                    . '<span class="ecod_titem__title">' . $nameAttr . '</span>'
-                    . '<time class="ecod_titem__date" datetime="' . date('Y-m-d', $created) . '">'
-                    . date('m-d', $created) . '</time>'
-                    . '</a>';
-                continue;
-            }
-
-            $thumb = '';
-            if ($withThumb) {
-                if (preg_match('#<img[^>]+src=["\']([^"\']+)["\']#i', $text, $im)) {
-                    $thumb = html_entity_decode($im[1], ENT_QUOTES, 'UTF-8');
-                }
-                if ($thumb === '' && isset($thumbs[$cid])) {
-                    $thumb = $thumbs[$cid];
-                }
-                if ($thumb === '' && $pool && function_exists('ecod_pool_pick')) {
-                    $picked = ecod_pool_pick($pool, 1, (object) ['cid' => $cid, 'title' => $name]);
-                    if ($picked) {
-                        $thumb = (string) $picked[0];
-                    }
-                }
-                $thumb = ecod_sc_url($thumb, '');
-            }
-
-            $desc = '';
-            if ($withDesc) {
-                $plain = trim(preg_replace('#\s+#u', ' ', strip_tags($text)) ?? '');
-                $plain = function_exists('ecod_shortcode_strip') ? ecod_shortcode_strip($plain) : $plain;
-                $desc = mb_substr(trim($plain), 0, 70, 'UTF-8');
-            }
-
-            $thumbHtml = $thumb !== ''
-                ? '<span class="ecod_posts__thumb" style="--ecod-cover:url(&quot;'
-                    . htmlspecialchars($thumb, ENT_QUOTES, 'UTF-8') . '&quot;)"></span>'
-                : '<span class="ecod_posts__thumb is-empty">' . htmlspecialchars(mb_substr($name, 0, 1, 'UTF-8'), ENT_QUOTES, 'UTF-8') . '</span>';
-
-            $meta = '<time datetime="' . date('Y-m-d', $created) . '">' . date('Y-m-d', $created) . '</time>';
-            if (isset($row['views'])) {
-                $meta .= '<i>' . ecod_num_short((int) $row['views']) . ' 阅读</i>';
-            }
-            $meta .= '<i>' . ecod_comment_count((int) $row['cid']) . ' 评论</i>';
-
-            $items .= '<a class="ecod_posts__item" href="' . $urlAttr . '">'
-                . $thumbHtml
-                . '<span class="ecod_posts__main">'
-                . '<b>' . $nameAttr . '</b>'
-                . ($desc !== '' ? '<small>' . htmlspecialchars($desc, ENT_QUOTES, 'UTF-8') . '…</small>' : '')
-                . '<span class="ecod_posts__meta">' . $meta . '</span>'
-                . '</span>'
-                . '<span class="ecod_posts__go">' . ecod_icon('arrow-up-right', 13) . '</span>'
-                . '</a>';
-        }
-
         $head = $headTitle !== ''
             ? '<div class="ecod_posts__head"><span class="ecod_posts__title">'
                 . htmlspecialchars($headTitle, ENT_QUOTES, 'UTF-8') . '</span><i></i></div>'
             : '';
 
-        $style = $mode === 'grid' ? ' style="--col:' . $col . '"' : '';
-
-        return '<div class="ecod_posts ecod_posts--' . $mode . '">' . $head
-            . '<div class="ecod_posts__list"' . $style . '>' . $items . '</div>'
+        return '<div class="ecod_posts">' . $head
+            . '<div class="' . ecod_sc_card_list_class($mode) . '"' . $style . '>' . $cards . '</div>'
             . '</div>';
     });
 }
@@ -959,6 +846,9 @@ function ecod_sc_posts(string $content): string
 
 /**
  * 引用文章卡
+ *
+ * [article id="15"] / [article id="15" mode="feature"]
+ * mode 同 [posts]，取后台「默认卡片模式」那 10 种；留空跟随该设置。
  */
 function ecod_sc_article(string $content): string
 {
@@ -968,92 +858,20 @@ function ecod_sc_article(string $content): string
             return '';
         }
 
-        static $cache = [];
-        if (!array_key_exists($cid, $cache)) {
-            $cache[$cid] = null;
-            try {
-                $db = \Typecho\Db::get();
-                $row = $db->fetchRow($db->select('cid', 'title', 'text', 'created', 'commentsNum')
-                    ->from('table.contents')
-                    ->where('cid = ?', $cid)
-                    ->where('type = ?', 'post')
-                    ->where('status = ?', 'publish')
-                    ->limit(1));
-                if ($row && (int) $row['created'] <= time()) {
-                    $cache[$cid] = $row;
-                }
-            } catch (\Throwable $e) {
-                $cache[$cid] = null;
-            }
+        $mode = ecod_sc_card_mode($attrs['mode'] ?? '');
+
+        /* img="…"：手动指定封面（交给 ecod_thumbnails 的临时覆盖表） */
+        $img = trim((string) ($attrs['img'] ?? ''));
+        if ($img !== '') {
+            $GLOBALS['ecodCoverOverride'][$cid] = function_exists('ecod_sc_url') ? ecod_sc_url($img, '') : $img;
         }
 
-        $row = $cache[$cid];
-        if (!$row) {
+        $card = ecod_sc_card_render(ecod_sc_card_query(['pageSize' => 1, 'cids' => $cid]), $mode);
+        if ($card === '') {
             return '<div class="ecod_acard is-miss">未找到文章（cid=' . $cid . '）</div>';
         }
 
-        $text = (string) $row['text'];
-        $thumb = '';
-        if (preg_match('#<img[^>]+src=["\']([^"\']+)["\']#i', $text, $im)) {
-            $thumb = $im[1];
-        }
-
-        /* 封面优先级：img 属性 > 自定义字段 thumb > 正文图片 > 全局随机图池（与列表卡片口径一致） */
-        if (!empty($attrs['img'])) {
-            $thumb = (string) $attrs['img'];
-        } else {
-            try {
-                $f = \Typecho\Db::get()->fetchRow(
-                    \Typecho\Db::get()->select('str_value')->from('table.fields')
-                        ->where('cid = ?', $cid)->where('name = ?', 'thumb')->limit(1)
-                );
-                $fv = trim((string) ($f['str_value'] ?? ''));
-                if ($fv !== '') {
-                    $thumb = trim((string) strtok($fv, "\r\n"));
-                }
-            } catch (\Throwable $e) {
-            }
-            if ($thumb === '' && function_exists('ecod_option') && function_exists('ecod_pool_pick')) {
-                $pool = trim((string) ecod_option('EThumbnail', ''));
-                if ($pool !== '') {
-                    $items = array_values(array_filter(array_map('trim', preg_split('/\r\n|\r|\n/', $pool) ?: [])));
-                    $picked = ecod_pool_pick($items, 1, (object) ['cid' => $cid, 'title' => (string) $row['title']]);
-                    if ($picked) {
-                        $thumb = (string) $picked[0];
-                    }
-                }
-            }
-        }
-
-        /* 无封面时渲染占位块，保证卡片始终是图文模式 */
-        $thumb = ecod_sc_url($thumb, '');
-        if ($thumb !== '') {
-            $thumbHtml = '<span class="ecod_acard__thumb" style="--ecod-cover:url(&quot;'
-                . htmlspecialchars($thumb, ENT_QUOTES, 'UTF-8') . '&quot;)"></span>';
-        } else {
-            $thumbHtml = '<span class="ecod_acard__thumb is-empty">' . ecod_icon('file', 24) . '</span>';
-        }
-
-        $plain = trim(preg_replace('#\s+#u', ' ', strip_tags($text)) ?? '');
-        $plain = function_exists('ecod_shortcode_strip') ? ecod_shortcode_strip($plain) : $plain;
-        $desc = mb_substr($plain, 0, 90, 'UTF-8');
-
-        try {
-            $url = (string) \Typecho\Router::url('post', $row, \Utils\Helper::options()->index);
-        } catch (\Throwable $e) {
-            $url = '#';
-        }
-
-        return '<a class="ecod_acard" href="' . htmlspecialchars($url, ENT_QUOTES, 'UTF-8') . '">'
-            . $thumbHtml
-            . '<span class="ecod_acard__main">'
-            . '<b>' . htmlspecialchars((string) $row['title'], ENT_QUOTES, 'UTF-8') . '</b>'
-            . '<small>' . htmlspecialchars($desc, ENT_QUOTES, 'UTF-8') . '…</small>'
-            . '<span class="ecod_acard__meta">' . date('Y-m-d', (int) $row['created'])
-            . ' · ' . ecod_comment_count((int) $row['cid']) . ' 条评论</span>'
-            . '</span>'
-            . '<span class="ecod_acard__go">' . ecod_icon('arrow-up-right', 13) . '</span>'
-            . '</a>';
+        return '<div class="ecod_list ecod_list--plain ecod_sc_cards">' . $card . '</div>';
     });
 }
 
@@ -1193,7 +1011,62 @@ function ecod_sc_video(string $content): string
 }
 
 /**
- * 单曲音频：网易云链接转官方外链播放器，其余走原生 <audio>
+ * 播放卡控件（进度 / 时间 / 控制键 / 音量），单曲与播放列表共用
+ *
+ * <audio> 保留 controls：JS 就绪后由脚本摘掉走自绘控件，
+ * JS 不可用时回退原生控件，功能不丢。
+ *
+ * @param string $src  音频地址
+ * @param bool   $skip 是否输出上一首/下一首（播放列表用）
+ */
+function ecod_sc_player_html(string $src, bool $skip): string
+{
+    $skipHtml = '';
+    if ($skip) {
+        $skipHtml = '<button type="button" class="ecod_player__btn" data-ecod-prev aria-label="上一首">'
+            . '<svg viewBox="0 0 24 24" width="15" height="15" fill="currentColor" aria-hidden="true">'
+            . '<path d="M6.8 5h2.3v14H6.8z" /><path d="M18.6 6.6v10.8c0 .95-1.07 1.51-1.85.97l-7.9-5.4a1.2 1.2 0 0 1 0-1.94l7.9-5.4c.78-.54 1.85.02 1.85.97z" /></svg>'
+            . '</button>'
+            . '<button type="button" class="ecod_player__btn" data-ecod-next aria-label="下一首">'
+            . '<svg viewBox="0 0 24 24" width="15" height="15" fill="currentColor" aria-hidden="true">'
+            . '<path d="M14.9 5h2.3v14h-2.3z" /><path d="M5.4 6.6v10.8c0 .95 1.07 1.51 1.85.97l7.9-5.4a1.2 1.2 0 0 0 0-1.94l-7.9-5.4C6.47 5.09 5.4 5.65 5.4 6.6z" /></svg>'
+            . '</button>';
+    }
+
+    return '<span class="ecod_player" data-ecod-player>'
+        . '<audio controls preload="none" src="' . htmlspecialchars($src, ENT_QUOTES, 'UTF-8') . '"></audio>'
+        . '<span class="ecod_player__bar">'
+        . '<span class="ecod_player__time" data-ecod-cur>0:00</span>'
+        . '<span class="ecod_player__slider" data-ecod-seek>'
+        . '<span class="ecod_player__track"><span class="ecod_player__fill"></span></span>'
+        . '</span>'
+        . '<span class="ecod_player__time ecod_player__time--rem" data-ecod-rem>-0:00</span>'
+        . '</span>'
+        . '<span class="ecod_player__bar ecod_player__bar--ctl">'
+        . '<span class="ecod_player__btns">' . $skipHtml
+        . '<button type="button" class="ecod_player__btn ecod_player__btn--main" data-ecod-play aria-label="播放">'
+        . ecod_icon('play', 20)
+        . '</button>'
+        . '</span>'
+        . '<span class="ecod_player__vol">'
+        . '<button type="button" class="ecod_player__btn ecod_player__btn--mute" data-ecod-mute aria-label="静音">'
+        . '<svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" aria-hidden="true">'
+        . '<path d="M4 9.5v5c0 .55.45 1 1 1h2.6l3.9 3.2c.65.53 1.5.07 1.5-.77V6.07c0-.84-.85-1.3-1.5-.77L7.6 8.5H5c-.55 0-1 .45-1 1z" /></svg>'
+        . '</button>'
+        . '<span class="ecod_player__slider ecod_player__slider--vol" data-ecod-vol>'
+        . '<span class="ecod_player__track"><span class="ecod_player__fill" style="width:100%"></span></span>'
+        . '</span>'
+        . '<svg class="ecod_player__volmax" viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true">'
+        . '<path d="M3 9.5v5c0 .55.45 1 1 1h2.1l3.6 3c.65.53 1.5.07 1.5-.77V6.27c0-.84-.85-1.3-1.5-.77l-3.6 3H4c-.55 0-1 .45-1 1z" />'
+        . '<path d="M14.5 8.2a.9.9 0 0 0-.25 1.25 4.6 4.6 0 0 1 0 5.1.9.9 0 1 0 1.5 1 6.4 6.4 0 0 0 0-7.1.9.9 0 0 0-1.25-.25z" />'
+        . '<path d="M16.8 5.4a.9.9 0 0 0-.3 1.24 8.3 8.3 0 0 1 0 10.72.9.9 0 1 0 1.44 1.08 10.1 10.1 0 0 0 0-12.88.9.9 0 0 0-1.14-.16z" /></svg>'
+        . '</span>'
+        . '</span>'
+        . '</span>';
+}
+
+/**
+ * 单曲音频：网易云链接转官方外链播放器，其余渲染成音乐卡（elastic slider）
  */
 function ecod_sc_mp3(string $content): string
 {
@@ -1219,9 +1092,10 @@ function ecod_sc_mp3(string $content): string
 
         return '<div class="ecod_audio">'
             . ($cover !== '' ? '<span class="ecod_audio__cover" style="--ecod-cover:url(&quot;'
-                . htmlspecialchars($cover, ENT_QUOTES, 'UTF-8') . '&quot;)"></span>' : '')
+                . htmlspecialchars($cover, ENT_QUOTES, 'UTF-8') . '&quot;)"></span>'
+                : '<span class="ecod_audio__cover">' . ecod_icon('music', 26) . '</span>')
             . '<span class="ecod_audio__main"><b>' . htmlspecialchars($name, ENT_QUOTES, 'UTF-8') . '</b>'
-            . '<audio controls preload="none" src="' . htmlspecialchars($url, ENT_QUOTES, 'UTF-8') . '"></audio>'
+            . ecod_sc_player_html($url, false)
             . '</span></div>';
     });
 }
@@ -1273,8 +1147,10 @@ function ecod_sc_music(string $content): string
             . '<div class="ecod_playlist__player">'
             . '<span class="ecod_playlist__cover" style="--ecod-cover:url(&quot;'
             . htmlspecialchars($first['cover'], ENT_QUOTES, 'UTF-8') . '&quot;)"></span>'
+            . '<span class="ecod_playlist__meta">'
             . '<span class="ecod_playlist__now" data-ecod-now>' . htmlspecialchars($first['name'], ENT_QUOTES, 'UTF-8') . '</span>'
-            . '<audio controls preload="none" src="' . htmlspecialchars($first['url'], ENT_QUOTES, 'UTF-8') . '" data-ecod-audio></audio>'
+            . ecod_sc_player_html($first['url'], true)
+            . '</span>'
             . '</div>'
             . '<ol class="ecod_playlist__list">' . $list . '</ol>'
             . '</div>';

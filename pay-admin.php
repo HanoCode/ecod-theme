@@ -98,7 +98,8 @@ if ($ecodAction !== '') {
         $ecodFlashBad = true;
     } elseif ($ecodAction === 'settle') {
         $orderNo = trim((string) ($_POST['order_no'] ?? ''));
-        $result = ecod_pay_settle($orderNo, 'admin-' . (int) $ecodUser->uid, 'manual');
+        /* trade_no 必须每单唯一：防重放按 trade_no 查重，固定 admin-{uid} 会让第二笔起全部误判 */
+        $result = ecod_pay_settle($orderNo, 'manual-' . $orderNo, 'manual');
         if (!empty($result['ok'])) {
             ecod_audit_log('pay_settle', ['order' => $orderNo, 'via' => 'admin']);
         }
@@ -269,6 +270,8 @@ form.inline { display: inline; }
 .grid { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)) auto; gap: 8px; align-items: end; }
 .grid label { display: block; font-size: 12px; color: var(--tx3); }
 .grid input, .grid select { width: 100%; height: 34px; padding: 0 10px; border: 1px solid var(--bd); border-radius: 8px; font: inherit; font-size: 13px; background: #fff; }
+/* 下拉统一箭头（与主题后台其他面板同构）：去原生箭头，画右向居中 V 形 */
+.grid select { padding-right: 28px; -webkit-appearance: none; appearance: none; background-image: linear-gradient(45deg, transparent 50%, var(--tx3) 50%), linear-gradient(135deg, var(--tx3) 50%, transparent 50%); background-position: calc(100% - 14px) center, calc(100% - 9px) center; background-size: 5px 5px; background-repeat: no-repeat; cursor: pointer; }
 .codes { margin-top: 12px; padding: 12px; border: 1px dashed var(--bd); border-radius: 8px; background: #fafbfc; font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 12px; white-space: pre-wrap; word-break: break-all; }
 .empty { padding: 16px; color: var(--tx3); font-size: 13px; text-align: center; }
 .hint { margin: 8px 0 0; color: var(--tx3); font-size: 12px; }

@@ -1,8 +1,8 @@
 /**
  * Ecod Theme · 主题字段可视化面板
  *
- * 接管 themeFields() 声明的全部七个字段：
- * thumb / mode / side / pin / series / topic / excerpt，
+ * 接管 themeFields() 声明的全部字段：
+ * thumb / mode / side / pin / series / topic / excerpt / note / note_tags，
  * 原控件保留在 DOM 中（display:none）作为提交载体，本脚本只负责读写它们的值，
  * 因此保存逻辑与 Typecho 原生完全一致。
  *
@@ -12,8 +12,11 @@
     'use strict';
 
     var CFG = window.ECOD_EDITOR || {};
-    var MAX_THUMB = 3;
     var SERIES_KEY = 'ecod:series';
+    /* 普通文章最多 3 张封面；笔记模式放宽到「图集张数上限」（1–9） */
+    var THUMB_BASE = 3;
+
+    var NOTE_FALLBACK = { on: false, max: 9, ratio: '3:4', ratioCss: '3 / 4', coverText: false };
 
     var MODES = [
         { value: '', label: '跟随', view: 'default' },
@@ -33,6 +36,30 @@
 
     var els = {};
     var thumbs = [];
+
+    function noteCfg() {
+        var cfg = CFG.note || {};
+        return {
+            on: !!cfg.on,
+            max: Math.max(1, Math.min(9, parseInt(cfg.max, 10) || NOTE_FALLBACK.max)),
+            ratio: cfg.ratio || NOTE_FALLBACK.ratio,
+            ratioCss: cfg.ratioCss || NOTE_FALLBACK.ratioCss,
+            coverText: !!cfg.coverText
+        };
+    }
+
+    function isNote() {
+        return !!(els.note && String(els.note.value || '').trim().toLowerCase() === 'on');
+    }
+
+    function maxThumb() {
+        return isNote() ? noteCfg().max : THUMB_BASE;
+    }
+
+    function currentTitle() {
+        var input = document.getElementById('title');
+        return input ? String(input.value || '').trim() : '';
+    }
 
     function make(tag, cls, html) {
         var node = document.createElement(tag);
@@ -105,20 +132,28 @@
      * ------------------------------------------------------------------ */
 
     function parseThumbs() {
+        /* 不裁剪：超出上限的图也保留在字段里，只在界面上标记「不输出」，
+           避免从笔记模式切回普通模式时静默丢图 */
         return String(els.thumb.value || '').split(/[\r\n]+/).map(function (line) {
             return line.trim();
-        }).filter(Boolean).slice(0, MAX_THUMB);
+        }).filter(Boolean);
     }
 
     function writeThumbs(list) {
-        els.thumb.value = list.slice(0, MAX_THUMB).join('\n');
+        els.thumb.value = list.filter(Boolean).join('\n');
     }
 
     function paintThumbs() {
         els.thumbBox.innerHTML = '';
 
+        var limit = maxThumb();
+        var note = isNote();
+
         thumbs.forEach(function (url, index) {
-            var cell = make('div', 'ecod-thumb');
+            var cell = make('div', 'ecod-thumb' + (note ? ' ecod-thumb--note' : ''));
+            if (note) {
+                cell.style.aspectRatio = noteCfg().ratioCss;
+            }
             var img = make('img');
             img.src = url;
             img.alt = '缩略图 ' + (index + 1);
@@ -131,15 +166,26 @@
                 thumbs.splice(index, 1);
                 writeThumbs(thumbs);
                 paintThumbs();
+                paintPreview();
             });
 
             cell.appendChild(img);
             cell.appendChild(del);
+
+            /* 笔记模式：首图即封面，超出上限的标黄提示不会输出 */
+            if (note && index === 0) {
+                cell.appendChild(make('span', 'ecod-thumb__flag', '封面'));
+            } else if (note && index >= limit) {
+                cell.classList.add('is-over');
+                cell.appendChild(make('span', 'ecod-thumb__flag ecod-thumb__flag--over', '不输出'));
+                cell.title = '超出图集上限（' + limit + ' 张），不会出现在前台';
+            }
+
             els.thumbBox.appendChild(cell);
         });
 
-        if (thumbs.length < MAX_THUMB) {
-            var add = make('div', 'ecod-thumb ecod-thumb--add', '+ 添加');
+        if (thumbs.length < limit) {
+            var add = make('div', 'ecod-thumb ecod-thumb--add' + (note ? ' ecod-thumb--note' : ''), '+ 添加');
             add.title = '上传图片';
             add.addEventListener('click', pickImage);
             els.thumbBox.appendChild(add);
@@ -154,9 +200,10 @@
                 title: '选择封面缩略图',
                 value: thumbs.slice(),
                 onPick: function (urls) {
-                    thumbs = urls.slice(0, MAX_THUMB);
+                    thumbs = urls.slice();
                     writeThumbs(thumbs);
                     paintThumbs();
+                    paintPreview();
                 }
             });
             return;
@@ -184,7 +231,7 @@
             return;
         }
 
-        if (thumbs.length >= MAX_THUMB) {
+        if (thumbs.length >= maxThumb()) {
             return;
         }
 
@@ -216,6 +263,7 @@
                 thumbs.push(data[1].url);
                 writeThumbs(thumbs);
                 paintThumbs();
+                paintPreview();
             })
             .catch(function () {
                 if (placeholder.parentNode) {
@@ -351,6 +399,95 @@
     }
 
     /* ------------------------------------------------------------------ *
+     * 笔记模式（note / note_tags）
+     * ------------------------------------------------------------------ */
+
+    function paintNote() {
+        if (!els.noteBox) {
+            paintThumbs();
+            return;
+        }
+
+        var cfg = noteCfg();
+        var on = isNote();
+        els.noteBox.innerHTML = '';
+
+        var choices = [
+            { value: '', label: '普通文章' },
+            { value: 'on', label: '图文笔记' }
+        ];
+
+        choices.forEach(function (item) {
+            var btn = make('button', 'ecod-note' + (on === (item.value === 'on') ? ' is-on' : ''));
+            btn.type = 'button';
+            btn.textContent = item.label;
+            if (!cfg.on) {
+                btn.disabled = true;
+                btn.title = '先到「设置 → 文章页 → 图文笔记」开启总开关';
+            }
+            btn.addEventListener('click', function () {
+                els.note.value = item.value;
+                els.note.dispatchEvent(new Event('change', { bubbles: true }));
+                paintNote();
+            });
+            els.noteBox.appendChild(btn);
+        });
+
+        /* 笔记模式下卡片模式与封面位置都不生效（详情页版式由笔记模板决定），直接收起避免误配 */
+        if (els.modeSec) {
+            els.modeSec.style.display = on ? 'none' : '';
+        }
+        if (els.sideSec) {
+            els.sideSec.style.display = on ? 'none' : '';
+        }
+        if (els.thumbHint) {
+            els.thumbHint.textContent = on
+                ? '笔记图集 · 最多 ' + cfg.max + ' 张，首图为封面'
+                : '最多 ' + THUMB_BASE + ' 张';
+        }
+
+        paintThumbs();
+        paintPreview();
+    }
+
+    /* 封面预览：按「封面比例」画一个真实比例的框，首图 + 标题叠字所见即所得 */
+    function paintPreview() {
+        if (!els.notePrev) {
+            return;
+        }
+
+        var cfg = noteCfg();
+        els.notePrev.innerHTML = '';
+
+        if (!isNote()) {
+            els.notePrev.style.display = 'none';
+            return;
+        }
+        els.notePrev.style.display = '';
+
+        var box = make('div', 'ecod-noteprev__box');
+        box.style.aspectRatio = cfg.ratioCss;
+
+        if (thumbs.length) {
+            var img = make('img');
+            img.src = thumbs[0];
+            img.alt = '封面预览';
+            box.appendChild(img);
+        } else {
+            box.appendChild(make('span', 'ecod-noteprev__ph', '首图'));
+        }
+
+        var title = currentTitle();
+        if (cfg.coverText && title) {
+            box.appendChild(make('span', 'ecod-noteprev__cap', title));
+        }
+
+        els.notePrev.appendChild(box);
+        els.notePrev.appendChild(make('div', 'ecod-noteprev__hd',
+            '封面预览 · ' + cfg.ratio + (cfg.coverText ? ' · 标题叠在封面上' : '')));
+    }
+
+    /* ------------------------------------------------------------------ *
      * 构建
      * ------------------------------------------------------------------ */
 
@@ -365,6 +502,8 @@
         els.side = fields.side ? fields.side.input : null;
         els.excerpt = fields.excerpt ? fields.excerpt.input : null;
         els.topic = fields.topic ? fields.topic.input : null;
+        els.note = fields.note ? fields.note.input : null;
+        els.noteTags = fields.note_tags ? fields.note_tags.input : null;
 
         /* 原控件全部隐藏，只留值参与提交 */
         Object.keys(fields).forEach(function (key) {
@@ -373,9 +512,43 @@
 
         var body = make('div', 'ecod-fields__body');
 
+        /* 阅读形态（note）：笔记模式与普通文章互斥，放最上面先定调 */
+        if (els.note) {
+            var secNote = make('div', 'ecod-fields__sec ecod-fields__sec--note');
+            secNote.appendChild(make('div', 'ecod-fields__label',
+                '阅读形态<span class="ecod-fields__hint">图文笔记只在详情页生效，列表版式另设</span>'));
+            els.noteBox = make('div', 'ecod-notes');
+            secNote.appendChild(els.noteBox);
+
+            if (!noteCfg().on) {
+                secNote.appendChild(make('div', 'ecod-fields__warn',
+                    '总开关未开启：到「设置 → 文章页 → 图文笔记」打开后才能选笔记模式。'));
+            }
+
+            /* 话题标签（note_tags）：手填优先，留空则用文章自身标签 */
+            if (els.noteTags) {
+                secNote.appendChild(make('div', 'ecod-fields__label',
+                    '话题标签<span class="ecod-fields__hint">逗号或空格分隔，最多 8 个；留空用文章标签</span>'));
+                els.noteTagsInput = make('input', 'ecod-input');
+                els.noteTagsInput.type = 'text';
+                els.noteTagsInput.placeholder = '例如：排版 主题设计 Typecho';
+                els.noteTagsInput.value = els.noteTags.value || '';
+                els.noteTagsInput.addEventListener('input', function () {
+                    els.noteTags.value = els.noteTagsInput.value;
+                });
+                secNote.appendChild(els.noteTagsInput);
+            }
+
+            els.notePrev = make('div', 'ecod-noteprev');
+            secNote.appendChild(els.notePrev);
+
+            body.appendChild(secNote);
+        }
+
         /* 封面位置（side：仅列表 / 大图模式生效） */
         if (els.side) {
             var secSide = make('div', 'ecod-fields__sec');
+            els.sideSec = secSide;
             secSide.appendChild(make('div', 'ecod-fields__label',
                 '封面位置<span class="ecod-fields__hint">列表 / 大图模式生效</span>'));
             els.sideBox = make('div', 'ecod-sides');
@@ -385,14 +558,16 @@
 
         /* 缩略图 */
         var secThumb = make('div', 'ecod-fields__sec');
-        secThumb.appendChild(make('div', 'ecod-fields__label',
-            '封面缩略图<span class="ecod-fields__hint">最多 3 张</span>'));
+        var thumbLabel = make('div', 'ecod-fields__label', '封面缩略图<span class="ecod-fields__hint">最多 3 张</span>');
+        els.thumbHint = thumbLabel.querySelector('.ecod-fields__hint');
+        secThumb.appendChild(thumbLabel);
         els.thumbBox = make('div', 'ecod-thumbs');
         secThumb.appendChild(els.thumbBox);
         body.appendChild(secThumb);
 
         /* 卡片模式 */
         var secMode = make('div', 'ecod-fields__sec');
+        els.modeSec = secMode;
         secMode.appendChild(make('div', 'ecod-fields__label', '卡片模式'));
         els.modeBox = make('div', 'ecod-modes');
         secMode.appendChild(els.modeBox);
@@ -466,12 +641,18 @@
         list.parentNode.insertBefore(body, list);
 
         thumbs = parseThumbs();
-        paintThumbs();
+        paintNote();
         paintModes();
         paintSide();
         paintPin();
         paintSeries();
         paintTopics();
+
+        /* 标题改动实时反映到封面预览（笔记叠字模式下尤其直观） */
+        var titleInput = document.getElementById('title');
+        if (titleInput && els.notePrev) {
+            titleInput.addEventListener('input', paintPreview);
+        }
     }
 
     function init() {

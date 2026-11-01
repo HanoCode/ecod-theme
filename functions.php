@@ -50,6 +50,9 @@ require_once __DIR__ . '/core/content/related.php';
 /* 服务端缩略图裁剪 */
 require_once __DIR__ . '/core/content/thumbs.php';
 
+/* 图文笔记（文章类型：竖版封面 + 图集 + 话题标签） */
+require_once __DIR__ . '/core/content/note.php';
+
 /* 媒体存储驱动层（local / oss / cos / s3 + 上传管线） */
 require_once __DIR__ . '/core/media/storage.php';
 
@@ -70,6 +73,9 @@ require_once __DIR__ . '/core/site/push.php';
 
 /* 自定义短链（ecod_shortlinks 表 + 后台管理，与 go 中转共用 ?go= 入口） */
 require_once __DIR__ . '/core/site/golinks.php';
+
+/* 内置浏览器引导（微信 / QQ / 企业微信 / 钉钉内打开时提示改用浏览器） */
+require_once __DIR__ . '/core/site/inapp.php';
 
 /* 关键词内链（DOM 文本节点替换，正文管线在 go_rewrite 之前调用） */
 require_once __DIR__ . '/core/content/keywords.php';
@@ -95,6 +101,9 @@ require_once __DIR__ . '/core/site/commentstats.php';
 /* 分类 / 标签增强：封面与独立 SEO（规格 docs/dev/design-proposal.html §32） */
 require_once __DIR__ . '/core/site/meta-meta.php';
 
+/* 访问统计：PV/UV/来源/设备按天聚合，后台 stats.php 与侧栏组件共用（core/site/stats.php） */
+require_once __DIR__ . '/core/site/stats.php';
+
 /* 付费与会员可见：门槛 / 权益 / 交易三层分离（见 docs/paywall-design.md） */
 require_once __DIR__ . '/core/pay/pay.php';
 require_once __DIR__ . '/core/pay/pay-channel.php';
@@ -111,6 +120,9 @@ require_once __DIR__ . '/core/support/tickets.php';
 /* 账户令牌 / 自定义头像：挂件与功能页的表单令牌对访客也要可用，全局加载 */
 require_once __DIR__ . '/core/user/account.php';
 
+/* 用户扩展资料：作者卡、AI 日额度计数、看广告令牌都依赖它 */
+require_once __DIR__ . '/core/user/meta.php';
+
 /* 站点抽奖（奖品池在主题设置维护，见 core/site/lottery.php 头注） */
 require_once __DIR__ . '/core/site/lottery.php';
 
@@ -122,6 +134,12 @@ require_once __DIR__ . '/core/site/shop.php';
 
 /* 推广返佣（?ref= 归因 + 订单结算返积分，见 core/user/referral.php 头注） */
 require_once __DIR__ . '/core/user/referral.php';
+
+/* 主题授权：内置公钥 + 核心状态机 + 锁死 + 插件桥接 */
+require_once __DIR__ . '/core/license/pubkey.php';
+require_once __DIR__ . '/core/license/license.php';
+require_once __DIR__ . '/core/license/selfserve.php';
+require_once __DIR__ . '/core/license/block.php';
 
 /* ------------------------------------------------------------------
  * 后台配置项
@@ -150,7 +168,7 @@ function themeFields($layout)
         null,
         '',
         _t('自定义缩略图'),
-        _t('每行一个图片地址，第一张作为封面，最多读取三张')
+        _t('每行一个图片地址，第一张作为封面；列表卡片最多读取三张，图文笔记模式最多读取九张')
     );
     $layout->addItem($thumb);
 
@@ -305,6 +323,28 @@ function themeFields($layout)
         _t('显示在付费卡与列表摘要里；留空使用「付费内容，购买后可阅读全文。」')
     );
     $layout->addItem($payDoc);
+
+    /* ---- 图文笔记（docs/dev/NOTE-ARTICLE-DESIGN.html） ---- */
+    $note = new \Typecho\Widget\Helper\Form\Element\Select(
+        'note',
+        [
+            ''   => _t('普通文章'),
+            'on' => _t('图文笔记'),
+        ],
+        '',
+        _t('图文笔记'),
+        _t('开启后这篇的详情页改用竖版封面 + 图集 + 话题标签的笔记排版。需先在「设置 → 文章页 → 图文笔记」打开总开关')
+    );
+    $layout->addItem($note);
+
+    $noteTags = new \Typecho\Widget\Helper\Form\Element\Text(
+        'note_tags',
+        null,
+        '',
+        _t('话题标签'),
+        _t('空格或逗号分隔，最多 8 个；留空则用文章自身的标签。仅图文笔记模式生效')
+    );
+    $layout->addItem($noteTags);
 }
 
 /* ------------------------------------------------------------------
@@ -312,8 +352,53 @@ function themeFields($layout)
  * ---------------------------------------------------------------- */
 function themeInit($archive = null)
 {
+    ecod_license_gate($archive);
     ecod_schema_upgrade();
     ecod_sitemap_maybe_output();
+
+    /* 页面构建器画布 = 快照模式（iframe sandbox 禁 JS，见 builder.php）：
+       页面自身脚本不再运行，JS 懒加载不会发生——这里把响应改写为静态可看：
+       ① 整段剥掉 <script>（快照不需要任何脚本，也免掉浏览器逐条
+          「sandboxed ... allow-scripts」警告）；
+       ② 拆掉 noscript 兜底图（脚本禁用时它会与占位图同时渲染成双图）；
+       ③ data-src 兑现成 src、去掉 loading=lazy，快照里图片直接可看。
+       注意：只看 URL 参数触发，不依赖 User/Security 初始化时机——
+       themeInit 阶段鉴权组件可能尚未就绪（剥脚本对请求者自身无害）。 */
+    if (isset($_GET['ecod_builder']) && $_GET['ecod_builder'] === '1') {
+        ob_start(static function (string $html): string {
+            /* 剥脚本用 DOM 级处理：正则对整页文档可能因回溯超限 / 属性内 >
+               而 null（整体失败时 PHP 原样输出未过滤内容，脚本就漏剥了） */
+            try {
+                $dom = new \DOMDocument();
+                $prev = libxml_use_internal_errors(true);
+                $dom->loadHTML('<?xml encoding="utf-8"?>' . $html, LIBXML_NOWARNING | LIBXML_NOERROR);
+                libxml_clear_errors();
+                libxml_use_internal_errors($prev);
+                foreach ((new \DOMXPath($dom))->query('//script') as $node) {
+                    $node->parentNode->removeChild($node);
+                }
+                foreach ((new \DOMXPath($dom))->query('//noscript[.//img]') as $node) {
+                    $node->parentNode->removeChild($node);
+                }
+                $html = (string) $dom->saveHTML();
+            } catch (\Throwable $e) {
+                $html = (string) preg_replace('#<script\b.*?</script>#is', '', $html);
+                $html = (string) preg_replace('/<noscript>\s*<img\b.*?<\/noscript>/is', '', $html);
+            }
+            /* img 级处理：占位 src 删除后把 data-src 兑现成唯一 src（直接字符串替换
+               会产生双 src，浏览器取第一个，图永远是占位灰块） */
+            $html = (string) preg_replace_callback('/<img\b[^>]*>/i', static function (array $m): string {
+                $tag = $m[0];
+                if (!preg_match('/\sdata-src="([^"]*)"/i', $tag, $d)) {
+                    return $tag;
+                }
+                $tag = (string) preg_replace('/\ssrc="[^"]*"/i', '', $tag);
+                $tag = (string) preg_replace('/\sdata-src="[^"]*"/i', '', $tag);
+                return (string) preg_replace('/<img\b/i', '<img src="' . htmlspecialchars($d[1], ENT_QUOTES, 'UTF-8') . '"', $tag, 1);
+            }, $html);
+            return str_replace(' loading="lazy"', '', $html);
+        });
+    }
 
     /* 推广归因：任意页面带 ?ref=<uid> 写 30 天 Cookie（注册时归因，见 referral.php） */
     ecod_ref_capture();
@@ -997,7 +1082,7 @@ function ecod_postext_needed(string $content): bool
         return false;
     }
     return (bool) preg_match(
-        '/\[(alert|callout|anote|message|mtitle|copy|progress|abtn|dotted|lamp|task|cards?|grid|cloud|article|github|gallery|bilibili|video|mp3|music|tooltip|badge|spoiler|poll)[\s\]=\]]|:[a-z_]+:/',
+        '/\[(alert|callout|anote|message|mtitle|copy|progress|abtn|dotted|lamp|task|cards?|grid|cloud|article|posts|github|gallery|bilibili|video|mp3|music|tooltip|badge|spoiler|poll)[\s\]=\]]|:[a-z_]+:/',
         $content
     );
 }
@@ -1028,11 +1113,18 @@ function ecod_css_family($archive): array
         if (ecod_postext_needed($content)) {
             $fams[] = 'postext';
         }
+        /* 正文含卡片短代码（[posts] / [article]）：笔记卡版式（§50）在 list 族，
+           不追加时 note 模式会渲染成没有网格样式的裸卡片 */
+        if (preg_match('/\[(?:posts|article)\b/i', $content)) {
+            $fams[] = 'list';
+        }
         if ($archive->is('page')) {
-            /* 独立页：个人中心 / 商城族按模板细分，其余归 page 兜底族；
+            /* 独立页：个人中心 / 商城族按模板细分，其余归 page 兜底族
+               （page 族含 §8.5 特色页页头；page-rank 是特色页形态，归 page，
+               读者墙列表 §19.5 随 post 族下发）；
                list 只有 2.4KB（列表排序浮层），独立页一并带上以覆盖专题页等场景 */
             $tpl = basename((string) ($archive->template ?? ''));
-            if (preg_match('/^page-(user|shop|vip|cashier|ai|rank)\.php$/', $tpl)) {
+            if (preg_match('/^page-(user|shop|vip|cashier|ai)\.php$/', $tpl)) {
                 $fams[] = 'user';
             } else {
                 $fams[] = 'page';
@@ -1062,6 +1154,12 @@ function ecod_thumbnails($archive, int $limit = 3, string $preset = ''): array
     $memoKey = $cid . ':' . $limit . ':' . $preset;
     if ($cid > 0 && isset($memo[$memoKey])) {
         return $memo[$memoKey];
+    }
+
+    /* 短代码 [article img="…"] 的手动封面：按 cid 覆盖（只在本请求内存里） */
+    $override = trim((string) ($GLOBALS['ecodCoverOverride'][$cid] ?? ''));
+    if ($cid > 0 && $override !== '') {
+        return [$preset !== '' && function_exists('ecod_thumb_url') ? ecod_thumb_url($override, $preset) : $override];
     }
 
     $result = [];
@@ -1554,7 +1652,7 @@ function ecod_thumb_side($archive = null): string
  */
 function ecod_card_mode($archive): string
 {
-    $allowed = ['default', 'feature', 'gallery', 'bare', 'grid', 'title', 'compact', 'mosaic', 'item'];
+    $allowed = ['default', 'feature', 'gallery', 'bare', 'grid', 'title', 'compact', 'mosaic', 'item', 'note'];
     $fields = $archive->fields;
     $mode = $fields && isset($fields->mode) ? (string) $fields->mode : '';
     if (in_array($mode, $allowed, true)) {
@@ -1606,6 +1704,10 @@ function ecod_list_class(?string $mode = null): string
     }
     if ($mode === 'item') {
         return 'ecod_list ecod_list--item';
+    }
+    if ($mode === 'note') {
+        /* 笔记卡：三列竖版网格（容器必须与卡片同源，否则卡片被压成横向） */
+        return 'ecod_list ecod_list--note';
     }
     return 'ecod_list';
 }
@@ -2341,7 +2443,6 @@ function ecod_http_post(string $url, array $fields, int $timeout = 8): ?string
         ]);
         $out = curl_exec($ch);
         $code = (int) curl_getinfo($ch, CURLINFO_RESPONSE_CODE);
-        curl_close($ch);
 
         return ($out !== false && $code >= 200 && $code < 300) ? (string) $out : null;
     }
@@ -2652,6 +2753,9 @@ if (class_exists('\Typecho\Plugin')) {
 
 /* 块（插件）系统 */
 require_once __DIR__ . '/core/admin/blocks.php';
+
+/* 页面构建器 · 布局文档（v5，见 docs/builder-design.html） */
+require_once __DIR__ . '/core/admin/builder-doc.php';
 
 /* 友链申请：落库、审核写回友链页 */
 require_once __DIR__ . '/core/site/friends.php';

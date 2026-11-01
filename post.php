@@ -43,6 +43,11 @@ if ($ecodStaleDays > 0) {
    锁定或付费锁不泄封面（内容未授权） */
 $ecodCover = (!$ecodLocked && !$ecodPayLocked) ? (ecod_thumbnails($this, 1, 'banner')[0] ?? '') : '';
 
+/* 图文笔记（docs/dev/NOTE-ARTICLE-DESIGN.html）：单篇字段开关 + 头部外壳换装。
+   笔记模式下封面并入图集，不再单独输出横幅封面 */
+$ecodNote = ecod_note_on($this);
+$ecodNoteData = $ecodNote ? ecod_note_options($this) : [];
+
 /* 头卡作者条：与文末 authorbox、作者主页共用同一数据源 */
 if (!function_exists('ecod_user_card')) {
     require_once __DIR__ . '/core/user/meta.php';
@@ -70,6 +75,9 @@ $ecodCrumbSticky = ecod_option('ECrumbSticky', 'off') === 'on' ? ' is-sticky' : 
 $ecodCrumbEmbed = ecod_option('EReadBarMode', 'top') === 'crumb';
 ?>
 <main class="ecod_main" id="ecod-main">
+    <?php if (ecod_layout_render_page($this)): ?>
+        <?php /* 页面构建器布局文档接管：整页由板块文档输出 */ ?>
+    <?php else: ?>
 
     <nav class="ecod_crumb<?php echo $ecodCrumbSticky; ?>" aria-label="面包屑">
         <a class="ecod_crumb__back" href="javascript:history.back()" aria-label="返回"><?php echo ecod_icon('chevron', 13); ?></a>
@@ -88,18 +96,23 @@ $ecodCrumbEmbed = ecod_option('EReadBarMode', 'top') === 'crumb';
         <?php endif; ?>
     </nav>
 
-    <article class="ecod_article<?php echo $ecodLocked ? ' is-locked' : ''; ?>" data-ecod-article
+    <article class="ecod_article<?php echo $ecodNote ? ' ecod_noteart' : ''; ?><?php echo $ecodLocked ? ' is-locked' : ''; ?>" data-ecod-article
              data-cid="<?php echo (int) $this->cid; ?>"
              data-url="<?php echo htmlspecialchars((string) $this->permalink, ENT_QUOTES, 'UTF-8'); ?>"
              data-title="<?php echo htmlspecialchars((string) $this->title, ENT_QUOTES, 'UTF-8'); ?>">
 
-        <?php if ($ecodCover !== ''): ?>
+        <?php if ($ecodCover !== '' && !$ecodNote): ?>
             <figure class="ecod_article__cover">
                 <img src="<?php echo htmlspecialchars($ecodCover, ENT_QUOTES, 'UTF-8'); ?>" alt=""
                      width="960" height="540" fetchpriority="high" decoding="async">
             </figure>
         <?php endif; ?>
 
+        <?php if ($ecodNote): ?>
+            <?php /* 互动条锚点须在卡内最前：桌面 sticky 竖排从顶部开始跟随滚动 */ ?>
+            <?php include __DIR__ . '/components/post/note-bar.php'; ?>
+            <?php include __DIR__ . '/components/post/note-head.php'; ?>
+        <?php else: ?>
         <header class="ecod_article__head">
             <?php if (!empty($this->categories) || $ecodHasPwd || $ecodPay['mode'] !== 'free'): ?>
                 <div class="ecod_article__badges">
@@ -194,6 +207,7 @@ $ecodCrumbEmbed = ecod_option('EReadBarMode', 'top') === 'crumb';
             </div>
             <?php endif; ?>
         </header>
+        <?php endif; /* 笔记模式 / 普通头卡 */ ?>
 
         <?php if ($ecodLocked): ?>
             <div class="ecod_locknote">
@@ -219,11 +233,16 @@ $ecodCrumbEmbed = ecod_option('EReadBarMode', 'top') === 'crumb';
             </aside>
         <?php endif; ?>
 
-        <?php if (!$ecodLocked && ecod_option('EAI', 'off') === 'on'): ?>
+        <?php /* 密码锁与付费锁都隐藏摘要卡：付费未授权时不展示由全文生成的摘要 */ ?>
+        <?php if (!$ecodLocked && !$ecodPayLocked && ecod_option('EAI', 'off') === 'on'): ?>
             <section class="ecod_ai ecod_ai--sum" data-ecod-ai data-cid="<?php echo (int) $this->cid; ?>" hidden>
                 <header class="ecod_ai__head">
                     <b><span class="ecod_ai__logo" aria-hidden="true">AI</span>AI 摘要</b>
                     <small data-ecod-ai-tag hidden></small>
+                    <?php if (ecod_ai_ask_enabled()): ?>
+                        <button type="button" class="ecod_ai__ask" data-ecod-aiask-open="post" data-cid="<?php echo (int) $this->cid; ?>">就本文追问<?php echo ecod_icon('arrow-right', 12); ?></button>
+                    <?php endif; ?>
+                    <span class="ecod_ai__ball" data-ecod-ai-ball aria-hidden="true"></span>
                 </header>
                 <div class="ecod_ai__body" data-ecod-ai-body aria-busy="true">
                     <i></i><i></i><i style="width:62%"></i>
@@ -249,7 +268,16 @@ $ecodCrumbEmbed = ecod_option('EReadBarMode', 'top') === 'crumb';
             echo ecod_pay_box($this, $ecodPay);
         }
         ?>
-        <div class="ecod_content<?php echo $ecodLocked ? ' is-locked' : ''; ?><?php echo $ecodPayLocked ? ' is-paylocked' : ''; ?>"<?php if ($ecodProseStyle = ecod_prose_style()) echo ' style="' . $ecodProseStyle . '"'; ?> data-ecod-content>
+        <div class="ecod_content<?php echo $ecodLocked ? ' is-locked' : ''; ?><?php echo $ecodPayLocked ? ' is-paylocked' : ''; ?><?php echo $ecodNote ? ' is-note' : ''; ?>"<?php
+            /* 正文排版变量：阅读设置的字号/行高，笔记模式再补栏宽上限 */
+            $ecodProseStyle = ecod_prose_style();
+            if ($ecodNote) {
+                $ecodProseStyle .= '--ecod-note-w:' . (int) $ecodNoteData['width'] . 'px;';
+            }
+            if ($ecodProseStyle !== '') {
+                echo ' style="' . $ecodProseStyle . '"';
+            }
+        ?> data-ecod-content>
             <?php
             /* 短代码在主题层处理：Typecho 的 contentEx 钩子按运行时子类分发，
                只注册基类会漏掉，这里直接接管输出更可靠。
@@ -289,7 +317,18 @@ $ecodCrumbEmbed = ecod_option('EReadBarMode', 'top') === 'crumb';
         }
         ?>
 
-        <?php if (!$ecodLocked && $this->tags): ?>
+        <?php if ($ecodNote && !$ecodLocked && !$ecodPayLocked && !empty($ecodNoteData['tagsOn']) && !empty($ecodNoteData['tags'])): ?>
+            <div class="ecod_noteart__tags">
+                <?php foreach ($ecodNoteData['tags'] as $ecodNoteTag): ?>
+                    <?php $ecodNoteTagUrl = (string) ($ecodNoteTag['url'] ?? ''); ?>
+                    <?php if ($ecodNoteTagUrl !== ''): ?>
+                        <a href="<?php echo htmlspecialchars($ecodNoteTagUrl, ENT_QUOTES, 'UTF-8'); ?>">#<?php echo htmlspecialchars((string) $ecodNoteTag['name'], ENT_QUOTES, 'UTF-8'); ?></a>
+                    <?php else: ?>
+                        <span>#<?php echo htmlspecialchars((string) $ecodNoteTag['name'], ENT_QUOTES, 'UTF-8'); ?></span>
+                    <?php endif; ?>
+                <?php endforeach; ?>
+            </div>
+        <?php elseif (!$ecodLocked && $this->tags): ?>
             <div class="ecod_article__tags">
                 <?php $this->tags(' ', true); ?>
             </div>
@@ -311,6 +350,7 @@ $ecodCrumbEmbed = ecod_option('EReadBarMode', 'top') === 'crumb';
     /* D3 底部快速评论条（仅移动端显示，见 CSS 媒体查询）：
        锁定 / 付费锁 / 评论关闭的文章不输出；第三方评论区也允许（滚动到 #comments） */
     if (ecod_option('EQuickBar', 'on') === 'on'
+        && !$ecodNote
         && !$ecodLocked && !$ecodPayLocked
         && ecod_option('EComment', 'on') !== 'off'
         && $this->allow('comment')):
@@ -321,10 +361,11 @@ $ecodCrumbEmbed = ecod_option('EReadBarMode', 'top') === 'crumb';
     </button>
     <?php endif; ?>
 
-    <?php if (ecod_option('EFloatToc', 'on') === 'on'): ?>
+    <?php if (ecod_option('EFloatToc', 'on') === 'on' && !$ecodNote): ?>
         <div class="ecod_floattoc" data-ecod-floattoc></div>
     <?php endif; ?>
 
+    <?php endif; /* 页面构建器接管分支结束 */ ?>
 </main>
 
 <?php $this->need('public/aside.php'); ?>

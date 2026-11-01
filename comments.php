@@ -55,10 +55,16 @@ $GLOBALS['ecodCLikeCounts'] = $GLOBALS['ecodCLikeOn'] ? ecod_comment_like_counts
     <noscript><style>.ecod_cmt__fold,.ecod_cmtall{display:none!important}.ecod_cmt__children[hidden]{display:block!important}</style></noscript>
 
     <?php $ecodExpandMode = ecod_comment_expand_mode(); ?>
+    <?php $ecodCmtAiOn = ecod_ai_enabled() && ecod_option('EComAISum', 'on') === 'on' && $ecodCmtTotal >= 3; ?>
     <div class="ecod_comments__head">
         <h2 class="ecod_comments__title">
             <?php echo $ecodCmtTotal > 0 ? '<b>' . (int) $ecodCmtTotal . '</b> 条评论' : '暂无评论'; ?>
         </h2>
+        <?php if ($ecodCmtAiOn): ?>
+            <button type="button" class="ecod_cmtai__btn" data-ecod-cmtai="<?php echo (int) $this->cid; ?>">
+                <?php echo ecod_icon('zap', 12); ?><span>AI 看评论</span>
+            </button>
+        <?php endif; ?>
         <?php if ($ecodExpandMode === 'button' && $ecodCmtTotal > 0): ?>
             <?php /* 没有折叠节点时由 JS 保持隐藏，避免空按钮 */ ?>
             <button type="button" class="ecod_cmtall" data-ecod-fold-all aria-expanded="false" hidden>
@@ -66,6 +72,17 @@ $GLOBALS['ecodCLikeCounts'] = $GLOBALS['ecodCLikeOn'] ? ecod_comment_like_counts
             </button>
         <?php endif; ?>
     </div>
+
+    <?php if ($ecodCmtAiOn): ?>
+        <div class="ecod_cmtai" data-ecod-cmtai-box hidden>
+            <span class="ecod_cmtai__ava" aria-hidden="true"><?php echo ecod_icon('zap', 12); ?></span>
+            <div class="ecod_cmtai__body">
+                <b class="ecod_cmtai__t">AI 看评论</b>
+                <p class="ecod_cmtai__text" data-ecod-cmtai-text></p>
+            </div>
+            <button type="button" class="ecod_cmtai__x" data-ecod-cmtai-close aria-label="收起"><?php echo ecod_icon('x', 11); ?></button>
+        </div>
+    <?php endif; ?>
 
     <?php if ($comments->have()): ?>
         <?php $comments->listComments([
@@ -98,21 +115,21 @@ $GLOBALS['ecodCLikeCounts'] = $GLOBALS['ecodCLikeOn'] ? ecod_comment_like_counts
                     <div class="ecod_field">
                         <label class="ecod_field__item">
                             <span class="ecod_field__label">昵称 *</span>
-                            <input class="ecod_input" type="text" name="author" id="author" placeholder="怎么称呼你" value="<?php $this->remember('author'); ?>" required>
+                            <input class="ecod_input" type="text" name="author" id="author" value="<?php $this->remember('author'); ?>" required>
                         </label>
                         <label class="ecod_field__item">
                             <span class="ecod_field__label">邮箱<?php if ($this->options->commentsRequireMail): ?> *<?php endif; ?></span>
-                            <input class="ecod_input" type="email" name="mail" id="mail" placeholder="不会公开" value="<?php $this->remember('mail'); ?>"<?php if ($this->options->commentsRequireMail): ?> required<?php endif; ?>>
+                            <input class="ecod_input" type="email" name="mail" id="mail" value="<?php $this->remember('mail'); ?>"<?php if ($this->options->commentsRequireMail): ?> required<?php endif; ?>>
                         </label>
                         <label class="ecod_field__item">
                             <span class="ecod_field__label">网站</span>
-                            <input class="ecod_input" type="url" name="url" id="url" placeholder="选填" value="<?php $this->remember('url'); ?>">
+                            <input class="ecod_input" type="url" name="url" id="url" value="<?php $this->remember('url'); ?>">
                         </label>
                     </div>
                 <?php endif; ?>
 
                 <div class="ecod_editor">
-                    <textarea class="ecod_textarea" name="text" id="textarea" placeholder="说点什么…支持 Markdown" required data-ecod-textarea><?php $this->remember('text'); ?></textarea>
+                    <textarea class="ecod_textarea" name="text" id="textarea" placeholder="说点什么…" required data-ecod-textarea><?php $this->remember('text'); ?></textarea>
                     <div class="ecod_editor__foot">
                         <div class="ecod_editor__tools">
                             <button type="button" class="ecod_editor__emoji" data-ecod-emoji-toggle aria-expanded="false" aria-label="插入表情">
@@ -145,7 +162,10 @@ $GLOBALS['ecodCLikeCounts'] = $GLOBALS['ecodCLikeOn'] ? ecod_comment_like_counts
                         </div>
                     <?php endif; ?>
                     <p class="ecod_respond__tip" role="alert" data-ecod-tip hidden></p>
-                    <button type="submit" class="ecod_btn" data-ecod-submit>发表评论</button>
+                    <div class="ecod_respond__send">
+                        <span class="ecod_respond__ball" data-ecod-cmt-ball aria-hidden="true"></span>
+                        <button type="submit" class="ecod_btn" data-ecod-submit>发表评论</button>
+                    </div>
                 </div>
 
                 <?php if ($ecodTurnstile !== ''): ?>

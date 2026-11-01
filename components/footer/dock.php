@@ -58,6 +58,15 @@ if ($ecodDockOn('show_search')) {
         'home'  => false,
     ];
 }
+if ($ecodDockOn('show_ai') && function_exists('ecod_ai_ask_enabled') && ecod_ai_ask_enabled()) {
+    $ecodDockItems[] = [
+        'kind'  => 'button',
+        'icon'  => 'zap',
+        'label' => 'AI',
+        'extra' => ' data-ecod-aiask-open="chat" data-ecod-dock-ai',
+        'home'  => false,
+    ];
+}
 if ($ecodDockOn('show_theme') && ecod_option('EDark', 'auto') !== 'off') {
     $ecodDockItems[] = [
         'kind'  => 'button',

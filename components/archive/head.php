@@ -5,7 +5,8 @@
  * 分类从「筛选条件」变成「目的地」：名称、描述、三个统计数字、
  * 以及该分类下文章命中的专题 chips。
  *
- * 背景取最新一篇文章的封面；取不到时用主题色柔光（不额外查库）。
+ * 背景取最新一篇文章的封面；取不到时退到 CSS 特色背景
+ * （品牌色极光 + 图纸网格，--ecod-hero-h 随 mid 旋转出每分类不同色调，不额外查库）。
  * 开关与形态由主题设置控制：ECatHead / ECatHeadBg / ECatHeadStats / ECatHeadTopics。
  *
  * @package Ecod Theme
@@ -67,7 +68,7 @@ $ecodCatTopics = ecod_option('ECatHeadTopics', 'on') === 'off' ? [] : ecod_cat_t
 $GLOBALS['ecodCatHeadDone'] = true;
 ?>
 <section class="ecod_chead<?php echo $ecodCatCover === '' ? ' is-nocover' : ''; ?>"
-    <?php if ($ecodCatCover !== ''): ?>style="--ecod-chead-cover:url('<?php echo htmlspecialchars($ecodCatCover, ENT_QUOTES, 'UTF-8'); ?>')"<?php endif; ?>>
+    <?php if ($ecodCatCover !== ''): ?>style="--ecod-chead-cover:url('<?php echo htmlspecialchars($ecodCatCover, ENT_QUOTES, 'UTF-8'); ?>')"<?php else: ?>style="--ecod-hero-h:<?php echo ($ecodCat['mid'] * 137) % 360; ?>"<?php endif; ?>>
     <div class="ecod_chead__inner">
         <span class="ecod_chead__tag"><?php echo ecod_icon('folder', 12); ?>分类</span>
         <h1 class="ecod_chead__title"><?php echo htmlspecialchars($ecodCat['name'], ENT_QUOTES, 'UTF-8'); ?></h1>

@@ -214,20 +214,18 @@ $ecodMailReady = function_exists('ecod_mail_ready') && ecod_mail_ready();
             </label>
 
             <label class="ecod_fmodal__field">
-                <span>一句话简介 <em>选填</em></span>
-                <input type="text" name="desc" maxlength="60" autocomplete="off" placeholder="显示在名称下方，10 字内最好">
+                <span>一句话简介 <em>选填 · 10 字内最好</em></span>
+                <input type="text" name="desc" maxlength="60" autocomplete="off">
             </label>
 
             <label class="ecod_fmodal__field">
-                <span>头像地址 <em>选填</em></span>
-                <input type="text" name="avatar" maxlength="200" inputmode="url" autocomplete="off"
-                       placeholder="留空则使用站点图标">
+                <span>头像地址 <em>选填 · 留空用站点图标</em></span>
+                <input type="text" name="avatar" maxlength="200" inputmode="url" autocomplete="off">
             </label>
 
             <label class="ecod_fmodal__field">
-                <span>联系邮箱 <i>*</i></span>
-                <input type="email" name="mail" required maxlength="120" inputmode="email" autocomplete="off"
-                       placeholder="必填，用于接收审核结果通知">
+                <span>联系邮箱 <i>*</i> <em>用于接收审核结果通知</em></span>
+                <input type="email" name="mail" required maxlength="120" inputmode="email" autocomplete="off">
             </label>
 
             <label class="ecod_fmodal__field">

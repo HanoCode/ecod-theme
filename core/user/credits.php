@@ -130,6 +130,27 @@ function ecod_credits_today_amount(int $uid, string $type): int
 }
 
 /**
+ * 某类型今天的消耗次数（只统计负数流水，用于 AI 每日次数上限）
+ */
+function ecod_credits_today_spend_count(int $uid, string $type): int
+{
+    if ($uid <= 0 || $type === '') {
+        return 0;
+    }
+    try {
+        $db = \Typecho\Db::get();
+        $row = $db->fetchObject(
+            $db->select('COUNT(*) AS n')->from('table.ecod_credits')
+                ->where('uid = ?', $uid)->where('type = ?', $type)
+                ->where('delta < 0')->where('created >= ?', ecod_credits_day_start())
+        );
+        return $row && $row->n !== null ? (int) $row->n : 0;
+    } catch (\Throwable $e) {
+        return 0;
+    }
+}
+
+/**
  * 每日任务发奖（签到 / 评论 / 被赞 / 投稿共用）
  *
  * 配置键显式映射（like_recv 这类带下划线的任务名不能机械拼接，
@@ -289,7 +310,161 @@ function ecod_credits_signed_today(int $uid): bool
 }
 
 /**
- * 流水列表（个人中心 / 积分页）
+ * 流水分页（个人中心积分明细：tab 按类型过滤 + 翻页）
+ *
+ * @param string $type 只取某个流水类型；空串 = 全部
+ * @return array{rows:array, total:int, pages:int, page:int}
+ */
+function ecod_credits_log_paged(int $uid, int $page = 1, int $perPage = 10, string $type = ''): array
+{
+    $perPage = max(1, min(50, $perPage));
+    $out = ['rows' => [], 'total' => 0, 'pages' => 1, 'page' => 1];
+    if ($uid <= 0) {
+        return $out;
+    }
+
+    try {
+        $db = \Typecho\Db::get();
+
+        $count = $db->select('COUNT(*) AS n')->from('table.ecod_credits')->where('uid = ?', $uid);
+        if ($type !== '') {
+            $count->where('type = ?', $type);
+        }
+        $row = $db->fetchObject($count);
+        $total = $row && $row->n !== null ? (int) $row->n : 0;
+        $pages = max(1, (int) ceil($total / $perPage));
+        $page = max(1, min($pages, $page));
+
+        $query = $db->select('delta', 'type', 'note', 'created')->from('table.ecod_credits')
+            ->where('uid = ?', $uid);
+        if ($type !== '') {
+            $query->where('type = ?', $type);
+        }
+        $rows = $db->fetchAll(
+            $query->order('id', \Typecho\Db::SORT_DESC)
+                ->offset(($page - 1) * $perPage)->limit($perPage)
+        );
+
+        $out['total'] = $total;
+        $out['pages'] = $pages;
+        $out['page'] = $page;
+        foreach ($rows ?: [] as $one) {
+            $out['rows'][] = [
+                'delta'   => (int) $one['delta'],
+                'type'    => (string) $one['type'],
+                'note'    => (string) $one['note'],
+                'created' => (int) $one['created'],
+            ];
+        }
+        return $out;
+    } catch (\Throwable $e) {
+        return $out;
+    }
+}
+
+/**
+ * 流水类型清单（明细 tab 数据源：该用户账本里出现过的类型 + 笔数）
+ *
+ * @return array<int, array{type:string,label:string,count:int}>
+ */
+function ecod_credits_log_types(int $uid): array
+{
+    if ($uid <= 0) {
+        return [];
+    }
+    try {
+        $db = \Typecho\Db::get();
+        $rows = $db->fetchAll(
+            $db->select('type', 'COUNT(*) AS n')->from('table.ecod_credits')
+                ->where('uid = ?', $uid)
+                ->group('type')
+        );
+        $out = [];
+        foreach ($rows ?: [] as $row) {
+            $type = (string) $row['type'];
+            $out[] = [
+                'type'  => $type,
+                'label' => ecod_credits_type_label($type),
+                'count' => (int) $row['n'],
+            ];
+        }
+        return $out;
+    } catch (\Throwable $e) {
+        return [];
+    }
+}
+
+/**
+ * 收支统计（累计收入 / 累计支出，积分卡副行展示用）
+ *
+ * @return array{earn:int, spend:int}
+ */
+function ecod_credits_stats(int $uid): array
+{
+    $out = ['earn' => 0, 'spend' => 0];
+    if ($uid <= 0) {
+        return $out;
+    }
+    try {
+        $db = \Typecho\Db::get();
+        $earn = $db->fetchObject(
+            $db->select('SUM(delta) AS total')->from('table.ecod_credits')
+                ->where('uid = ?', $uid)->where('delta > 0')
+        );
+        $spend = $db->fetchObject(
+            $db->select('SUM(delta) AS total')->from('table.ecod_credits')
+                ->where('uid = ?', $uid)->where('delta < 0')
+        );
+        $out['earn'] = $earn && $earn->total !== null ? (int) $earn->total : 0;
+        $out['spend'] = $spend && $spend->total !== null ? (int) (-$spend->total) : 0;
+        return $out;
+    } catch (\Throwable $e) {
+        return $out;
+    }
+}
+
+/**
+ * 近 30 天积分走势（积分卡底部条形走势，PHP 侧按日聚合，不走 SQL 日期方言）
+ *
+ * 固定返回 30 个槽位（今天 → 往前 29 天），net 为当日净额。
+ *
+ * @return array<int, array{day:string, net:int}>
+ */
+function ecod_credits_meter(int $uid, int $days = 30): array
+{
+    $days = max(7, min(60, $days));
+    $slots = [];
+    if ($uid <= 0) {
+        return $slots;
+    }
+
+    $start = ecod_credits_day_start();
+    try {
+        $db = \Typecho\Db::get();
+        $rows = $db->fetchAll(
+            $db->select('delta', 'created')->from('table.ecod_credits')
+                ->where('uid = ?', $uid)
+                ->where('created >= ?', $start - ($days - 1) * 86400)
+        );
+        $net = [];
+        foreach ($rows ?: [] as $row) {
+            $day = date('Y-m-d', (int) $row['created']);
+            $net[$day] = ($net[$day] ?? 0) + (int) $row['delta'];
+        }
+    } catch (\Throwable $e) {
+        $net = [];
+    }
+
+    for ($i = $days - 1; $i >= 0; $i--) {
+        $ts = $start - $i * 86400;
+        $day = date('Y-m-d', $ts);
+        $slots[] = ['day' => $day, 'net' => $net[$day] ?? 0];
+    }
+    return $slots;
+}
+
+/**
+ * 流水列表（旧口径：最近 N 条，兼容保留）
  *
  * @return array<int, array{delta:int,type:string,note:string,created:int}>
  */
@@ -331,7 +506,10 @@ function ecod_credits_type_label(string $type, string $note = ''): string
         'comment'    => '发表评论',
         'like_recv'  => '文章被赞',
         'post'       => '发布文章',
+        'task'       => '任务奖励',
         'ai'         => 'AI 对话',
+        'ai_refund'  => 'AI 失败退回',
+        'ai_ad'      => '看广告奖励',
         'lottery'    => '抽奖消耗',
         'lottery_win'=> '抽奖中奖',
         'vip_gift'   => '开通会员赠送',
@@ -350,7 +528,7 @@ function ecod_credits_type_label(string $type, string $note = ''): string
  *
  * @param string            $type    只取某个流水类型；空串 = 全部类型
  * @param array<int,string> $exclude 不对外展示的类型（管理员手工调整属于账务，不播报）
- * @return array<int, array{uid:int,name:string,type:string,delta:int,created:int}>
+ * @return array<int, array{uid:int,name:string,type:string,note:string,delta:int,created:int}>
  */
 function ecod_credits_public_rows(int $limit, string $type = '', array $exclude = []): array
 {
@@ -359,7 +537,7 @@ function ecod_credits_public_rows(int $limit, string $type = '', array $exclude 
     try {
         $db = \Typecho\Db::get();
 
-        $query = $db->select('uid', 'type', 'delta', 'created')->from('table.ecod_credits')
+        $query = $db->select('uid', 'type', 'note', 'delta', 'created')->from('table.ecod_credits')
             ->where('delta > 0');
         if ($type !== '') {
             $query->where('type = ?', $type);
@@ -401,6 +579,7 @@ function ecod_credits_public_rows(int $limit, string $type = '', array $exclude 
                 'uid'     => $uid,
                 'name'    => $names[$uid],
                 'type'    => (string) $row['type'],
+                'note'    => (string) ($row['note'] ?? ''),
                 'delta'   => (int) $row['delta'],
                 'created' => (int) $row['created'],
             ];

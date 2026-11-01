@@ -71,6 +71,11 @@ function ecod_pay_epay_ready(): bool
 function ecod_pay_default_channel(): string
 {
     $channel = (string) ecod_option('EPayChannel', 'manual');
+    if (function_exists('ecod_license_allows') && !ecod_license_allows('card')) {
+        if ($channel === 'card') {
+            $channel = 'manual';
+        }
+    }
     if ($channel === 'epay' && !ecod_pay_epay_ready()) {
         return 'manual';
     }
@@ -98,6 +103,9 @@ function ecod_pay_channel_list(): array
         'manual' => ['id' => 'manual', 'name' => '联系站长 / 线下付款'],
         'card'   => ['id' => 'card', 'name' => '卡密兑换'],
     ];
+    if (function_exists('ecod_license_allows') && !ecod_license_allows('card')) {
+        unset($list['card']);
+    }
     if (ecod_pay_epay_ready()) {
         $list['epay'] = ['id' => 'epay', 'name' => '支付宝 / 微信'];
     }
@@ -299,6 +307,9 @@ function ecod_pay_card_batch(array $spec): array
  */
 function ecod_pay_card_redeem(string $code, int $uid): array
 {
+    if (function_exists('ecod_license_allows') && !ecod_license_allows('card')) {
+        return ['ok' => false, 'message' => '当前授权未包含卡密功能'];
+    }
     $hash = ecod_pay_card_hash($code);
     if ($uid <= 0) {
         return ['ok' => false, 'message' => '请先登录'];

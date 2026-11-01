@@ -27,7 +27,7 @@ $ecodTopicHeadCount = (int) ($ecodTopicHeadCount ?? 0);
 $ecodTopicHeadLatest = (int) ($ecodTopicHeadLatest ?? 0);
 ?>
 <section class="ecod_thead<?php echo $ecodTopicHeadCover === '' ? ' is-nocover' : ''; ?>"
-    <?php if ($ecodTopicHeadCover !== ''): ?>style="--ecod-thead-cover:url('<?php echo htmlspecialchars($ecodTopicHeadCover, ENT_QUOTES, 'UTF-8'); ?>')"<?php endif; ?>>
+    <?php if ($ecodTopicHeadCover !== ''): ?>style="--ecod-thead-cover:url('<?php echo htmlspecialchars($ecodTopicHeadCover, ENT_QUOTES, 'UTF-8'); ?>')"<?php else: ?>style="--ecod-hero-h:<?php echo abs(crc32((string) $ecodTopicHead['slug'])) % 360; ?>"<?php endif; ?>>
     <div class="ecod_thead__inner">
         <span class="ecod_thead__tag"><?php echo ecod_icon('folder', 12); ?>专题</span>
         <h1 class="ecod_thead__title"><?php echo htmlspecialchars((string) $ecodTopicHead['name'], ENT_QUOTES, 'UTF-8'); ?></h1>

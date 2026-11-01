@@ -21,7 +21,6 @@ $this->need('public/header.php');
 $ecodAiChatOn = ecod_option('EAIChat', 'on') === 'on' && ecod_ai_enabled();
 $ecodCrOn = ecod_credits_enabled();
 $ecodCrName = ecod_credits_name();
-$ecodCrCost = max(0, (int) ecod_option('ECrAICost', 1));
 $ecodCtx = max(0, min(10, (int) ecod_option('EAIChatCtx', 4)));
 $ecodWelcome = trim((string) ecod_option('EAIChatWelcome', ''));
 if ($ecodWelcome === '') {
@@ -35,8 +34,16 @@ try {
     $ecodLogged = (bool) $ecodMe->hasLogin();
 } catch (\Throwable $e) {
 }
-$ecodBalance = $ecodLogged ? ecod_credits_balance((int) $ecodMe->uid) : 0;
-$ecodSigned = $ecodLogged ? ecod_credits_signed_today((int) $ecodMe->uid) : false;
+$ecodUid = $ecodLogged ? (int) $ecodMe->uid : 0;
+
+/* 计价走唯一入口：会员免单 / 折扣都在 ecod_ai_cost() 里，别在这里另算 */
+$ecodPrice = ecod_ai_cost($ecodUid);
+$ecodCrCost = (int) $ecodPrice['cost'];
+$ecodAiFree = (bool) $ecodPrice['free'];
+$ecodChips = ecod_ai_chips();
+
+$ecodBalance = $ecodLogged ? ecod_credits_balance($ecodUid) : 0;
+$ecodSigned = $ecodLogged ? ecod_credits_signed_today($ecodUid) : false;
 $ecodLoginUrl = ecod_login_url();
 $ecodUcUrl = ecod_user_center_url();
 ?>
@@ -52,9 +59,11 @@ $ecodUcUrl = ecod_user_center_url();
 
     <?php
     ecod_page_hero(
-        (string) $this->title(),
+        (string) $this->title,
         'AI 助手',
-        '基于站内接入的大模型，' . ($ecodCrCost > 0 ? '每条消息消耗 ' . $ecodCrCost . ' ' . $ecodCrName : '当前免费使用') . '。'
+        '基于站内接入的大模型，'
+        . ($ecodAiFree ? '会员免单，提问不扣 ' . $ecodCrName : ($ecodCrCost > 0 ? '每条消息消耗 ' . $ecodCrCost . ' ' . $ecodCrName : '当前免费使用'))
+        . '。'
     );
     ?>
 
@@ -77,13 +86,17 @@ $ecodUcUrl = ecod_user_center_url();
                  data-api="<?php echo htmlspecialchars(ecod_api_url(), ENT_QUOTES, 'UTF-8'); ?>"
                  data-token="<?php echo htmlspecialchars(ecod_account_token(), ENT_QUOTES, 'UTF-8'); ?>"
                  data-cost="<?php echo $ecodCrCost; ?>"
+                 data-free="<?php echo $ecodAiFree ? '1' : '0'; ?>"
                  data-ctx="<?php echo $ecodCtx; ?>"
-                 data-credit-name="<?php echo htmlspecialchars($ecodCrName, ENT_QUOTES, 'UTF-8'); ?>">
+                 data-credit-name="<?php echo htmlspecialchars($ecodCrName, ENT_QUOTES, 'UTF-8'); ?>"
+                 data-welcome="<?php echo htmlspecialchars($ecodWelcome, ENT_QUOTES, 'UTF-8'); ?>">
             <header class="ecod_aichat__bar">
+                <span class="ecod_aichat__ball" data-ecod-aichat-ball aria-hidden="true"></span>
                 <span class="ecod_aichat__who"><?php echo ecod_icon('zap', 15); ?>AI 助手</span>
-                <span class="ecod_aichat__bal">
+                <span class="ecod_aichat__bal<?php echo $ecodAiFree ? ' is-vip' : ''; ?>">
                     <?php echo htmlspecialchars($ecodCrName, ENT_QUOTES, 'UTF-8'); ?>
                     <b data-ecod-aichat-balance><?php echo $ecodBalance; ?></b>
+                    <?php if ($ecodAiFree): ?><i class="ecod_aichat__viptag">VIP 免费</i><?php endif; ?>
                     <?php if ($ecodUcUrl !== ''): ?>
                         <a href="<?php echo htmlspecialchars($ecodUcUrl, ENT_QUOTES, 'UTF-8'); ?>#credits"
                            data-ecod-aichat-signin<?php echo $ecodSigned ? ' is-signed' : ''; ?>>
@@ -93,11 +106,48 @@ $ecodUcUrl = ecod_user_center_url();
                 </span>
             </header>
 
+            <?php /* 多会话：chips 由前端从 localStorage 渲染（F6） */ ?>
+            <div class="ecod_aichat__sessions">
+                <div class="ecod_aichat__sess" data-ecod-aichat-sess role="tablist" aria-label="会话列表"></div>
+                <button type="button" class="ecod_aichat__new" data-ecod-aichat-new aria-label="新建对话">
+                    <?php echo ecod_icon('plus', 13); ?>
+                </button>
+            </div>
+
+            <?php /* 文章上下文：从快捷指令「总结一篇文章」选中站内文章后出现 */ ?>
+            <div class="ecod_aichat__ctx" data-ecod-aichat-ctx hidden>
+                <span data-ecod-aichat-ctxt></span>
+                <button type="button" data-ecod-aichat-unpin aria-label="取消本文上下文"><?php echo ecod_icon('x', 11); ?></button>
+            </div>
+
             <div class="ecod_aichat__list" data-ecod-aichat-list aria-live="polite">
                 <div class="ecod_aichat__msg is-ai">
                     <span class="ecod_aichat__ava" aria-hidden="true"><?php echo ecod_icon('zap', 14); ?></span>
                     <div class="ecod_aichat__bubble"><?php echo nl2br(htmlspecialchars($ecodWelcome, ENT_QUOTES, 'UTF-8')); ?></div>
                 </div>
+                <?php if ($ecodChips): ?>
+                    <div class="ecod_aichat__hints">
+                        <?php foreach ($ecodChips as $ecodChip): ?>
+                            <button type="button" class="ecod_aichat__hint" data-ecod-aichat-chip="<?php echo htmlspecialchars($ecodChip, ENT_QUOTES, 'UTF-8'); ?>">
+                                <?php echo htmlspecialchars($ecodChip, ENT_QUOTES, 'UTF-8'); ?>
+                            </button>
+                        <?php endforeach; ?>
+                    </div>
+                <?php endif; ?>
+            </div>
+
+            <div class="ecod_aichat__cmds" data-ecod-aichat-cmds>
+                <button type="button" data-ecod-aichat-cmd="summarize">总结一篇文章</button>
+                <button type="button" data-ecod-aichat-cmd="translate">翻译成英文</button>
+                <button type="button" data-ecod-aichat-cmd="rephrase">换个说法</button>
+                <button type="button" data-ecod-aichat-cmd="typo">挑错别字</button>
+                <span class="ecod_aichat__cmdsp" data-ecod-aichat-cmdsp></span>
+            </div>
+
+            <div class="ecod_aichat__picker" data-ecod-aichat-picker hidden>
+                <input type="search" class="ecod_aichat__picker-i" data-ecod-aichat-picker-i
+                       placeholder="搜索站内文章，选中后带着正文提问…" aria-label="搜索文章">
+                <div class="ecod_aichat__picker-l" data-ecod-aichat-picker-l></div>
             </div>
 
             <div class="ecod_aichat__input">
@@ -108,7 +158,7 @@ $ecodUcUrl = ecod_user_center_url();
                 </button>
             </div>
             <p class="ecod_aichat__tip" data-ecod-aichat-msg role="status"></p>
-            <p class="ecod_aichat__note">内容由 AI 生成，仅供参考；对话记录仅保留在当前页面。</p>
+            <p class="ecod_aichat__note">内容由 AI 生成，仅供参考；会话记录只存在你的浏览器里，可随时清空。</p>
         </section>
     <?php endif; ?>
 

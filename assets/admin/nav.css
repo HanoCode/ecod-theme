@@ -33,10 +33,16 @@
     min-width: 172px;
     max-width: 240px;
     height: 30px;
-    padding: 0 10px;
+    padding: 0 28px 0 10px;
     border: 1px solid #dfe3ee;
     border-radius: var(--ea-radius-sm);
     background: var(--ea-soft);
+    background-image: linear-gradient(45deg, transparent 50%, var(--ea-sub) 50%), linear-gradient(135deg, var(--ea-sub) 50%, transparent 50%);
+    background-position: calc(100% - 14px) center, calc(100% - 9px) center;
+    background-size: 5px 5px;
+    background-repeat: no-repeat;
+    appearance: none;
+    -webkit-appearance: none;
     color: var(--ea-ink);
     font-size: var(--ea-fs-xs);
     font-weight: 600;
@@ -512,7 +518,17 @@ body.is-navb-dragging {
     font-size: var(--ea-fs-xs);
     color: var(--ea-ink);
 }
-.ecod-navb__field select { padding: 0 4px; cursor: pointer; }
+/* 28px 矮控件：箭头收紧到右缘 5px（与其他后台下拉同构、垂直居中） */
+.ecod-navb__field select {
+    padding: 0 18px 0 6px;
+    background-image: linear-gradient(45deg, transparent 50%, var(--ea-sub) 50%), linear-gradient(135deg, var(--ea-sub) 50%, transparent 50%);
+    background-position: calc(100% - 10px) center, calc(100% - 5px) center;
+    background-size: 5px 5px;
+    background-repeat: no-repeat;
+    appearance: none;
+    -webkit-appearance: none;
+    cursor: pointer;
+}
 
 /* 前置图标选择器：触发按钮 + 图标网格浮层（替代文本下拉） */
 .ecod-navb__ipick {

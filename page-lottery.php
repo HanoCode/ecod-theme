@@ -54,7 +54,7 @@ $ecodLotPoor = $ecodUid > 0 && $ecodLot && $ecodLot['cost'] > 0 && $ecodLot['bal
 
     <?php
     ecod_page_hero(
-        (string) $this->title(),
+        (string) $this->title,
         trim((string) ecod_option('ELotteryTitle', '幸运抽奖')) ?: '幸运抽奖',
         $ecodLotteryOn
             ? (($ecodLot['cost'] > 0 ? '每次消耗 ' . $ecodLot['cost'] . ' ' . $ecodCrName . '，' : '')
@@ -72,7 +72,10 @@ $ecodLotPoor = $ecodUid > 0 && $ecodLot && $ecodLot['cost'] > 0 && $ecodLot['bal
         <section class="ecod_lottery" data-ecod-lottery
                  data-api="<?php echo htmlspecialchars(ecod_api_url(), ENT_QUOTES, 'UTF-8'); ?>"
                  data-token="<?php echo htmlspecialchars(ecod_account_token(), ENT_QUOTES, 'UTF-8'); ?>"
-                 data-grid="<?php echo $ecodIsGrid ? '1' : '0'; ?>">
+                 data-grid="<?php echo $ecodIsGrid ? '1' : '0'; ?>"
+                 data-sign-url="<?php echo htmlspecialchars($ecodLotCreditsUrl, ENT_QUOTES, 'UTF-8'); ?>">
+
+            <span class="ecod_lottery__ball" data-ecod-lot-ball aria-hidden="true"></span>
 
             <?php /* 活动横幅（后台「活动横幅图」配置，16:7 裁切） */ ?>
             <?php if ($ecodLotteryBanner !== ''): ?>

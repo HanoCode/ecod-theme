@@ -63,7 +63,7 @@ $ecodPreSlot = preg_replace('/[^a-z_]/', '', (string) ($_GET['slot'] ?? ''));
 
     <?php
     ecod_page_hero(
-        (string) $this->title(),
+        (string) $this->title,
         '自助广告',
         '在线选择广告位、按' . $ecodUnitLabel . '购买，支付后经审核即可上线。'
     );

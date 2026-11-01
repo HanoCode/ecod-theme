@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>editor harness + typecho select{height:28px} repro</title>
+<link rel="stylesheet" href="../../../../admin/css/style.css">
+<link rel="stylesheet" href="../assets/admin/tokens.css">
+<link rel="stylesheet" href="../admin/editor.css">
+<style>
+    body { max-width: 1240px; margin: 24px auto; padding: 0 16px 48px; background: #f3f4f8;
+           font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif; color: #333; }
+    h1 { font-size: 15px; color: #666; }
+</style>
+</head>
+<body>
+<h1>编辑器 harness（短代码弹窗 / 图标）— 静态桩页，不进生产</h1>
+<form>
+    <p><input type="text" id="title" value="测试文章" class="w-100"></p>
+    <p><textarea id="text" name="text" rows="12">## 开头标题
+
+这是一段正文，用来观察右侧实时预览。</textarea></p>
+</form>
+<script>
+window.ECOD_EDITOR = {
+    mode: 'markdown',
+    type: 'post',
+    cid: 0,
+    draft: false,
+    frame: '../admin/frame.css',
+    home: '',
+    title: '文章',
+    thumb: '',
+    emojis: [
+        { code: '[{{face:1}}]', label: '微笑', src: '../assets/img/smiley/1.gif' },
+        { code: '[{{face:2}}]', label: '大笑', src: '../assets/img/smiley/2.gif' }
+    ],
+    topics: []
+};
+</script>
+<script src="../admin/editor.js?v=harness2"></script>
+</body>
+</html>

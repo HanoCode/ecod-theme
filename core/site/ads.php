@@ -25,12 +25,16 @@ function ecod_ads_slots(): array
         'home_top'    => '首页顶部通栏',
         'sidebar'     => '侧边栏卡片',
         'post_bottom' => '文章底部通栏',
+        'ai_panel'    => 'AI 面板赞助位',
     ];
 }
 
 /** 自助广告总开关 */
 function ecod_ads_enabled(): bool
 {
+    if (function_exists('ecod_license_allows') && !ecod_license_allows('ads')) {
+        return false;
+    }
     return (string) ecod_option('EAdSelf', 'off') === 'on' && ecod_pay_enabled();
 }
 
@@ -49,6 +53,7 @@ function ecod_ads_price(string $slot): ?int
         'home_top'    => 'EAdSelfPriceHomeTop',
         'sidebar'     => 'EAdSelfPriceSidebar',
         'post_bottom' => 'EAdSelfPricePostBottom',
+        'ai_panel'    => 'EAdSelfPriceAiPanel',
     ];
     if (!isset($map[$slot])) {
         return null;

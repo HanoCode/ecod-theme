@@ -25,7 +25,7 @@ if (!defined('__TYPECHO_ROOT_DIR__')) {
 }
 
 /** 当前数据结构版本，改动表结构时 +1 */
-define('ECOD_SCHEMA_VERSION', 14);
+define('ECOD_SCHEMA_VERSION', 17);
 
 /**
  * 数据库类型：mysql / pgsql / sqlite
@@ -128,6 +128,15 @@ function ecod_cache_get(string $name, $default = null)
  */
 function ecod_cache_set(string $name, $value): void
 {
+    /* options.name 只有 varchar(32)，且主键是 (name, user)：超过 32 字符的键
+     * 在严格模式下 INSERT 直接报错，异常又被下面的 catch 吞掉，线上表现就是
+     * 「缓存永远不命中，同一件事反复花时间/花钱」。宁可在写入口显式失败并
+     * 留一条日志，也不要静默降级。超长键请改用 ecod_file_cache_write()。 */
+    if (strlen($name) > 32) {
+        error_log('[ecod cache] option key too long (' . strlen($name) . '): ' . $name);
+        return;
+    }
+
     try {
         $db = \Typecho\Db::get();
         $raw = json_encode($value, JSON_UNESCAPED_UNICODE);
@@ -1703,6 +1712,123 @@ function ecod_schema_ensure_task_claims(\Typecho\Db $db): bool
 }
 
 /**
+ * 页面构建器 · 单页/单分类布局覆盖表（docs/builder-design.html §3.2）
+ *
+ * 页面类型默认布局存 options 行 ELayouts（小 JSON）；
+ * cat:<mid> / cid:<cid> 级别的覆盖存这里，行数少、主键查询。
+ */
+function ecod_schema_ensure_page_layout(\Typecho\Db $db): bool
+{
+    static $ok = null;
+    if ($ok !== null) {
+        return $ok;
+    }
+
+    $table = $db->getPrefix() . 'ecod_page_layout';
+    $adapter = ecod_schema_adapter($db);
+
+    try {
+        if ($adapter === 'sqlite') {
+            $db->query(
+                'CREATE TABLE IF NOT EXISTS "' . $table . '" ('
+                . ' "id" INTEGER PRIMARY KEY AUTOINCREMENT,'
+                . ' "kind" VARCHAR(8) NOT NULL DEFAULT \'cid\','
+                . ' "ref" INTEGER NOT NULL DEFAULT 0,'
+                . ' "doc" MEDIUMTEXT,'
+                . ' "updated" INTEGER NOT NULL DEFAULT 0)'
+            );
+            $db->query('CREATE UNIQUE INDEX IF NOT EXISTS "' . $table . '_kind_ref" ON "' . $table . '" ("kind", "ref")');
+        } elseif ($adapter === 'pgsql') {
+            $db->query(
+                'CREATE TABLE IF NOT EXISTS "' . $table . '" ('
+                . ' "id" SERIAL PRIMARY KEY,'
+                . ' "kind" VARCHAR(8) NOT NULL DEFAULT \'cid\','
+                . ' "ref" INTEGER NOT NULL DEFAULT 0,'
+                . ' "doc" TEXT,'
+                . ' "updated" INTEGER NOT NULL DEFAULT 0)'
+            );
+            $db->query('CREATE UNIQUE INDEX IF NOT EXISTS "' . $table . '_kind_ref" ON "' . $table . '" ("kind", "ref")');
+        } else {
+            $db->query(
+                'CREATE TABLE IF NOT EXISTS `' . $table . '` ('
+                . ' `id` INT(10) UNSIGNED NOT NULL AUTO_INCREMENT,'
+                . ' `kind` VARCHAR(8) NOT NULL DEFAULT \'cid\','
+                . ' `ref` INT(10) UNSIGNED NOT NULL DEFAULT 0,'
+                . ' `doc` MEDIUMTEXT,'
+                . ' `updated` INT(10) UNSIGNED NOT NULL DEFAULT 0,'
+                . ' PRIMARY KEY (`id`),'
+                . ' UNIQUE KEY `kind_ref` (`kind`, `ref`)'
+                . ') ENGINE=InnoDB DEFAULT CHARSET=utf8mb4'
+            );
+        }
+        $ok = true;
+    } catch (\Throwable $e) {
+        $ok = false;
+    }
+
+    return $ok;
+}
+
+/**
+ * 布局文档保存历史（快照）表
+ *
+ * v6 起布局文档更大，原 ELayoutSnaps 单行 options 方案（24KB/条）会先于
+ * 文档本身撞上列上限，迁到独立表（docs/builder-v6-design.md §7.3）。
+ * 每文档保留 8 份、单份超 64KB 跳过；doc_key 为主查询列。
+ */
+function ecod_schema_ensure_layout_snap(\Typecho\Db $db): bool
+{
+    static $ok = null;
+    if ($ok !== null) {
+        return $ok;
+    }
+
+    $table = $db->getPrefix() . 'ecod_layout_snap';
+    $adapter = ecod_schema_adapter($db);
+
+    try {
+        if ($adapter === 'sqlite') {
+            $db->query(
+                'CREATE TABLE IF NOT EXISTS "' . $table . '" ('
+                . ' "id" INTEGER PRIMARY KEY AUTOINCREMENT,'
+                . ' "doc_key" VARCHAR(64) NOT NULL DEFAULT \'\','
+                . ' "t" INTEGER NOT NULL DEFAULT 0,'
+                . ' "size" INTEGER NOT NULL DEFAULT 0,'
+                . ' "doc" MEDIUMTEXT)'
+            );
+            $db->query('CREATE INDEX IF NOT EXISTS "' . $table . '_key_t" ON "' . $table . '" ("doc_key", "t")');
+        } elseif ($adapter === 'pgsql') {
+            $db->query(
+                'CREATE TABLE IF NOT EXISTS "' . $table . '" ('
+                . ' "id" SERIAL PRIMARY KEY,'
+                . ' "doc_key" VARCHAR(64) NOT NULL DEFAULT \'\','
+                . ' "t" INTEGER NOT NULL DEFAULT 0,'
+                . ' "size" INTEGER NOT NULL DEFAULT 0,'
+                . ' "doc" TEXT)'
+            );
+            $db->query('CREATE INDEX IF NOT EXISTS "' . $table . '_key_t" ON "' . $table . '" ("doc_key", "t")');
+        } else {
+            $db->query(
+                'CREATE TABLE IF NOT EXISTS `' . $table . '` ('
+                . ' `id` INT(10) UNSIGNED NOT NULL AUTO_INCREMENT,'
+                . ' `doc_key` VARCHAR(64) NOT NULL DEFAULT \'\','
+                . ' `t` INT(10) UNSIGNED NOT NULL DEFAULT 0,'
+                . ' `size` INT(10) UNSIGNED NOT NULL DEFAULT 0,'
+                . ' `doc` MEDIUMTEXT,'
+                . ' PRIMARY KEY (`id`),'
+                . ' KEY `doc_key_t` (`doc_key`, `t`)'
+                . ') ENGINE=InnoDB DEFAULT CHARSET=utf8mb4'
+            );
+        }
+        $ok = true;
+    } catch (\Throwable $e) {
+        $ok = false;
+    }
+
+    return $ok;
+}
+
+/**
  * 工单主表 + 消息表
  *
  * 存储状态只有 open / resolved / closed 三种，「已回复 / 待处理」是
@@ -1801,6 +1927,18 @@ function ecod_schema_ensure_tickets(\Typecho\Db $db): bool
 }
 
 /**
+ * 访问统计四张表
+ *
+ * 建表逻辑放 core/site/stats.php（采集链路在 api.php / 独立入口也要用到），
+ * 这里只负责在结构升级时触发一次，保持「升级入口统一」的约定。
+ */
+function ecod_schema_ensure_stats(\Typecho\Db $db): bool
+{
+    require_once __DIR__ . '/../site/stats.php';
+    return ecod_stats_ensure($db);
+}
+
+/**
  * 结构升级入口：版本号落后时才执行，每个请求最多一次
  */
 function ecod_schema_upgrade(): void
@@ -1840,10 +1978,13 @@ function ecod_schema_upgrade(): void
     $shop = ecod_schema_ensure_shop($db);
     $taskClaims = ecod_schema_ensure_task_claims($db);
     $tickets = ecod_schema_ensure_tickets($db);
+    $stats = ecod_schema_ensure_stats($db);
+    $pageLayout = ecod_schema_ensure_page_layout($db);
+    $layoutSnap = ecod_schema_ensure_layout_snap($db);
     $likesUid = $likes ? ecod_schema_migrate_likes_uid($db, $db->getPrefix() . 'ecod_likes') : false;
 
     /* 全部成功才记版本，否则下次请求重试 */
-    if ($likes && $likesUid && $views && $avatars && $mailcode && $favs && $oauth && $pay && $metameta && $throttle && $usermeta && $clikes && $follows && $polls && $credits && $lottery && $ads && $shop && $taskClaims && $tickets) {
+    if ($likes && $likesUid && $views && $avatars && $mailcode && $favs && $oauth && $pay && $metameta && $throttle && $usermeta && $clikes && $follows && $polls && $credits && $lottery && $ads && $shop && $taskClaims && $tickets && $stats && $pageLayout && $layoutSnap) {
         ecod_schema_mark($db, ECOD_SCHEMA_VERSION);
     }
 }
